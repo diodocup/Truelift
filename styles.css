@@ -25,6 +25,10 @@ html {
   scroll-behavior: smooth;
 }
 
+section[id] {
+  scroll-margin-top: 92px;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -732,6 +736,10 @@ details p {
 }
 
 @media (max-width: 980px) {
+  section[id] {
+    scroll-margin-top: 76px;
+  }
+
   .site-header {
     grid-template-columns: auto auto;
     justify-content: space-between;
