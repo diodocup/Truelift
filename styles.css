@@ -69,6 +69,7 @@ a {
   padding: 18px 42px;
   background: rgba(8, 11, 8, 0.72);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
 
@@ -464,7 +465,7 @@ h3 {
 .pro-section {
   background:
     linear-gradient(90deg, rgba(8, 11, 8, 0.94), rgba(8, 11, 8, 0.72)),
-    url("Portada%20PRO.png") center / cover fixed;
+    url("Portada%20PRO.png") center / cover no-repeat;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -819,6 +820,10 @@ details p {
 }
 
 @media (max-width: 700px) {
+  html {
+    scroll-behavior: auto;
+  }
+
   .section,
   .section-band,
   .closing-cta {
@@ -830,12 +835,24 @@ details p {
     width: min(100% - 32px, var(--max));
   }
 
+  .site-header {
+    background: rgba(8, 11, 8, 0.96);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
   .hero {
-    min-height: 780px;
+    min-height: auto;
+    padding: 96px 0 56px;
+  }
+
+  .hero-content {
+    padding-top: 0;
   }
 
   .hero-media {
     background-position: 63% center;
+    transform: none;
   }
 
   h1 {
@@ -865,9 +882,23 @@ details p {
     gap: 10px;
   }
 
+  .feature-card,
+  .pro-panel div {
+    min-height: auto;
+  }
+
+  .phone-stage img,
+  .screen-view img {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  }
+
+  .pro-panel div {
+    box-shadow: none;
+  }
+
   .screen-thumbs {
-    max-height: 420px;
-    overflow: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .screen-thumbs button {
