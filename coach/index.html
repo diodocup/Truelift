@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrueLift Coach</title>
+<meta name="theme-color" content="#0c0e11">
+<link rel="icon" type="image/png" href="media/icono.png">
+<link rel="apple-touch-icon" href="media/icono.png">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="cabecera" class="no-print">
+<header id="topbar">
+  <div class="brand"><img src="media/icono.png" alt="" class="brand-icono">TrueLift <span>Coach</span></div>
+  <select id="selCliente" title="Cliente activo"></select>
+  <div id="ctrlRango">
+    <select id="selRango" title="Rango de fechas">
+      <option value="bloque">Bloque actual</option>
+      <option value="7">Última semana</option>
+      <option value="28">Últimas 4 semanas</option>
+      <option value="todo">Todo</option>
+      <option value="custom">Personalizado…</option>
+    </select>
+    <span id="rangoCustom" class="oculto">
+      <input type="date" id="fDesde"> <span class="muted">a</span> <input type="date" id="fHasta">
+    </span>
+    <span id="rangoTexto" class="muted"></span>
+  </div>
+  <div class="spacer"></div>
+  <button id="btnImprimir" class="btn sec" title="Imprimir informe del resumen">Imprimir informe</button>
+  <button id="btnClientes" class="btn sec">Clientes</button>
+  <button id="btnImportar" class="btn pri">+ Importar JSON</button>
+  <input type="file" id="fileInput" accept=".json,application/json" hidden>
+</header>
+
+<nav id="tabs">
+  <button data-tab="cartera" class="activa">Cartera</button>
+  <button data-tab="resumen">Resumen</button>
+  <button data-tab="sesiones">Sesiones</button>
+  <button data-tab="ejercicios">Ejercicios</button>
+  <button data-tab="rutina">Rutina</button>
+  <button data-tab="planificador">Planificador</button>
+  <button data-tab="readiness">Readiness</button>
+</nav>
+</div>
+
+<main id="contenido"></main>
+
+<div id="dropzone" class="oculto no-print">Suelta aquí el archivo JSON del cliente</div>
+
+<div id="modal" class="oculto no-print"><div id="modalCaja"></div></div>
+
+<div id="informe"></div>
+
+<script src="data.js"></script>
+<script src="charts.js"></script>
+<script src="views.js"></script>
+<script src="catalogo.js"></script>
+<script src="plantilla.js"></script>
+<script src="xlsx.js"></script>
+<script src="planner.js"></script>
+<script src="app.js"></script>
+<script>
+// PWA: registrar service worker (solo funciona bajo https, ignora file://)
+if ('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+</body>
+</html>

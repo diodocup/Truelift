@@ -1,0 +1,16 @@
+{
+  "name": "TrueLift Coach",
+  "short_name": "TL Coach",
+  "description": "Herramienta para entrenadores: analiza los entrenamientos de tus clientes de TrueLift y crea o revisa sus rutinas.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0c0e11",
+  "theme_color": "#0c0e11",
+  "lang": "es",
+  "icons": [
+    { "src": "media/icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "media/icono.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "media/icono.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
