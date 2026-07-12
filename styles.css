@@ -522,7 +522,7 @@ h3 {
 .pro-section {
   background:
     linear-gradient(90deg, rgba(8, 11, 8, 0.94), rgba(8, 11, 8, 0.72)),
-    url("Portada%20PRO.png") center / cover no-repeat;
+    url("Banner.png") center / cover no-repeat;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -548,6 +548,155 @@ h3 {
   color: var(--gold);
   font-size: 1.8rem;
   font-weight: 900;
+}
+
+/* Opciones de pago PRO */
+.price-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 22px 0 18px;
+}
+
+.price-options div {
+  min-width: 132px;
+  padding: 14px 18px;
+  border: 1px solid rgba(226, 186, 74, 0.28);
+  border-radius: var(--radius);
+  background: rgba(8, 11, 8, 0.7);
+  text-align: center;
+}
+
+.price-options div.is-featured {
+  border-color: rgba(226, 186, 74, 0.65);
+  background: rgba(226, 186, 74, 0.08);
+  box-shadow: 0 0 30px rgba(226, 186, 74, 0.12);
+}
+
+.price-options strong {
+  display: block;
+  color: var(--gold);
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.price-options span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Señales de planificación */
+.signal-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.signal-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.signal-group {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.signal-group h4 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 1.02rem;
+}
+
+.signal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signal-chips li {
+  padding: 5px 12px;
+  border: 1px solid rgba(168, 238, 25, 0.28);
+  border-radius: 999px;
+  background: rgba(134, 198, 23, 0.08);
+  color: #e5eadf;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.signal-chips.gold li {
+  border-color: rgba(226, 186, 74, 0.32);
+  background: rgba(226, 186, 74, 0.07);
+}
+
+/* Etiquetas Gratis / PRO */
+.tag-free,
+.tag-pro {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tag-free {
+  border: 1px solid rgba(168, 238, 25, 0.4);
+  color: var(--lime-strong);
+  background: rgba(134, 198, 23, 0.1);
+}
+
+.tag-pro {
+  border: 1px solid rgba(226, 186, 74, 0.45);
+  color: var(--gold);
+  background: rgba(226, 186, 74, 0.08);
+}
+
+/* Precios en tarjeta de plan */
+.plan-prices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 4px;
+}
+
+.plan-prices div {
+  padding: 10px 8px;
+  border: 1px solid rgba(226, 186, 74, 0.28);
+  border-radius: var(--radius);
+  background: rgba(8, 11, 8, 0.45);
+  text-align: center;
+}
+
+.plan-prices div.is-featured {
+  border-color: rgba(226, 186, 74, 0.65);
+  background: rgba(226, 186, 74, 0.08);
+}
+
+.plan-prices strong {
+  display: block;
+  color: var(--gold);
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.plan-prices span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .trial-strip {
@@ -1000,7 +1149,8 @@ h3 {
   .pro-layout,
   .screen-gallery,
   .faq-layout,
-  .plan-cards {
+  .plan-cards,
+  .signal-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1071,7 +1221,17 @@ h3 {
 
   .hero-proof,
   .feature-grid,
-  .screen-thumbs {
+  .screen-thumbs,
+  .signal-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .price-options {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .plan-prices {
     grid-template-columns: 1fr;
   }
 
