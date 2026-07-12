@@ -306,33 +306,76 @@ h3 {
 
 .hero-proof {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  width: min(980px, 100%);
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  width: min(920px, 100%);
   margin: 54px 0 0;
-  padding: 1px;
-  background: var(--line);
+}
+
+.proof-panel {
+  position: relative;
+  padding: 26px 26px 22px;
   border-radius: var(--radius);
-  overflow: hidden;
+  background: rgba(12, 16, 11, 0.86);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
-.hero-proof div {
-  padding: 18px;
-  background: rgba(12, 16, 11, 0.84);
+.proof-panel.free {
+  border: 1px solid rgba(168, 238, 25, 0.32);
+  box-shadow: 0 0 44px rgba(134, 198, 23, 0.1);
 }
 
-.hero-proof dt {
+.proof-panel.pro {
+  border: 1px solid rgba(226, 186, 74, 0.42);
+  box-shadow: 0 0 44px rgba(226, 186, 74, 0.12);
+}
+
+.proof-panel > .tag-free,
+.proof-panel > .tag-pro {
+  position: absolute;
+  top: -11px;
+  left: 22px;
+  padding: 3px 14px;
+  background: #0c100b;
+  font-size: 0.72rem;
+}
+
+.proof-item + .proof-item {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(244, 247, 240, 0.14);
+}
+
+.proof-item h3 {
+  position: relative;
+  margin: 0 0 4px;
+  padding-left: 24px;
+  font-size: 1.08rem;
+}
+
+.proof-panel.free .proof-item h3 {
   color: var(--lime-strong);
-  font-size: 1.15rem;
-  font-weight: 900;
 }
 
-.hero-proof .is-pro dt {
+.proof-panel.pro .proof-item h3 {
   color: var(--gold);
 }
 
-.hero-proof dd {
-  margin: 4px 0 0;
+.proof-item h3::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0.28em;
+  width: 6px;
+  height: 12px;
+  border: solid currentColor;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+}
+
+.proof-item p {
+  margin: 0;
   color: var(--muted);
   font-size: 0.95rem;
 }
@@ -1242,10 +1285,6 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hero-proof {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .privacy-strip {
     grid-template-columns: 1fr;
   }
@@ -1327,8 +1366,8 @@ h3 {
     grid-template-columns: 1fr;
   }
 
-  .hero-proof div {
-    padding: 16px;
+  .proof-panel {
+    padding: 22px 18px 18px;
   }
 
   .phone-stage.multi {
