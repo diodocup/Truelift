@@ -320,12 +320,23 @@ const originalMetadata = {
 };
 
 function translatedValue(value, language) {
-  if (language !== "en") return value;
-  return englishTranslations[normaliseTranslationKey(value)] || value;
+  const translations = language === "en"
+    ? englishTranslations
+    : language === "pt-BR"
+      ? portugueseTranslations
+      : null;
+  return translations?.[normaliseTranslationKey(value)] || value;
+}
+
+function normaliseLanguage(language) {
+  const value = String(language || "").toLowerCase();
+  if (value === "en" || value.startsWith("en-")) return "en";
+  if (value === "pt" || value.startsWith("pt-")) return "pt-BR";
+  return "es";
 }
 
 function setPageLanguage(language, { updateUrl = false } = {}) {
-  const selectedLanguage = language === "en" ? "en" : "es";
+  const selectedLanguage = normaliseLanguage(language);
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       return node.parentElement?.closest("script, style")
@@ -339,10 +350,11 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
     if (!originalText.has(textNode)) originalText.set(textNode, textNode.nodeValue || "");
     const source = originalText.get(textNode) || "";
     const key = normaliseTranslationKey(source);
-    if (key && englishTranslations[key] && selectedLanguage === "en") {
+    const translation = translatedValue(key, selectedLanguage);
+    if (key && translation !== key) {
       const leading = source.match(/^\s*/)?.[0] || "";
       const trailing = source.match(/\s*$/)?.[0] || "";
-      textNode.nodeValue = `${leading}${englishTranslations[key]}${trailing}`;
+      textNode.nodeValue = `${leading}${translation}${trailing}`;
     } else {
       textNode.nodeValue = source;
     }
@@ -381,16 +393,20 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
 
   document.querySelectorAll('img[src*="play.google.com/intl/"]').forEach((badge) => {
     if (!badge.dataset.spanishSrc) badge.dataset.spanishSrc = badge.getAttribute("src") || "";
-    badge.setAttribute("src", selectedLanguage === "en"
-      ? "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-      : badge.dataset.spanishSrc);
+    const badgeSources = {
+      en: "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png",
+      "pt-BR": "https://play.google.com/intl/pt_br/badges/static/images/badges/pt-br_badge_web_generic.png"
+    };
+    badge.setAttribute("src", badgeSources[selectedLanguage] || badge.dataset.spanishSrc);
   });
 
   document.querySelectorAll('a.store-badge.ios').forEach((link) => {
     if (!link.dataset.spanishHref) link.dataset.spanishHref = link.getAttribute("href") || "";
-    link.setAttribute("href", selectedLanguage === "en"
-      ? "https://www.apple.com/app-store/"
-      : link.dataset.spanishHref);
+    const appStoreLinks = {
+      en: "https://www.apple.com/app-store/",
+      "pt-BR": "https://www.apple.com/br/app-store/"
+    };
+    link.setAttribute("href", appStoreLinks[selectedLanguage] || link.dataset.spanishHref);
   });
 
   try {
@@ -401,7 +417,7 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
 
   if (updateUrl && window.history?.replaceState) {
     const url = new URL(window.location.href);
-    if (selectedLanguage === "en") url.searchParams.set("lang", "en");
+    if (selectedLanguage !== "es") url.searchParams.set("lang", selectedLanguage);
     else url.searchParams.delete("lang");
     window.history.replaceState({}, "", url);
   }
@@ -420,7 +436,8 @@ try {
 } catch (_) {
   storedLanguage = "";
 }
-setPageLanguage(requestedLanguage || storedLanguage || "es");
+const browserLanguage = navigator.languages?.find((language) => language.toLowerCase().startsWith("pt")) || "";
+setPageLanguage(requestedLanguage || storedLanguage || browserLanguage || "es");
 
 const navToggle = document.querySelector("[data-nav-toggle]");
 const nav = document.querySelector("[data-nav]");
