@@ -409,6 +409,17 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
     link.setAttribute("href", appStoreLinks[selectedLanguage] || link.dataset.spanishHref);
   });
 
+  const manualFiles = {
+    es: "Manual_TrueLift.pdf",
+    en: "Manual_TrueLift_EN.pdf",
+    "pt-BR": "Manual_TrueLift_PT-BR.pdf"
+  };
+  document.querySelectorAll("a[data-manual-download]").forEach((link) => {
+    const manualFile = manualFiles[selectedLanguage];
+    link.setAttribute("href", manualFile);
+    link.setAttribute("download", manualFile);
+  });
+
   try {
     localStorage.setItem("truelift-language", selectedLanguage);
   } catch (_) {
