@@ -24,6 +24,16 @@ const XLSX = {
   MAX_FILAS: 10,   // filas 4..13 de cada hoja Día
   MAX_DIAS: 5,
 
+  // Biblioteca embebida por la app TrueLift en la hoja «Listas» (zona
+  // reservada que no interfiere con validaciones ni estilos). Debe
+  // coincidir con rutina_excel.dart / rutina_screen.dart de la app:
+  //   marca en W101; datos desde la fila 102, columnas
+  //   W nombre · X grupo · Y patrón · Z secundarios(JSON) ·
+  //   AA prioridad · AB nota · AC descanso.
+  MARCA_BIBLIOTECA: 'TRUELIFT_EXERCISES_V1',
+  FILA_BIBLIOTECA: 101,
+  COLS_BIBLIOTECA: ['W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC'],
+
   // ============================ ZIP ============================
 
   _crcTable: (() => {
@@ -43,8 +53,21 @@ const XLSX = {
     return (c ^ 0xFFFFFFFF) >>> 0;
   },
 
-  /* Empaqueta {nombre → Uint8Array} en un zip sin compresión (STORE). */
-  _zip(files){
+  /* Comprime con DEFLATE crudo (método 8) usando la API nativa del navegador,
+     la misma familia que _unzip usa para leer. Devuelve null si no hay soporte
+     (entonces _zip recurre a STORE para ese archivo). */
+  async _deflateRaw(data){
+    if (typeof CompressionStream === 'undefined') return null;
+    const cs = new CompressionStream('deflate-raw');
+    const resp = new Response(new Blob([data]).stream().pipeThrough(cs));
+    return new Uint8Array(await resp.arrayBuffer());
+  },
+
+  /* Empaqueta {nombre → Uint8Array} en un zip. Usa DEFLATE (método 8), igual
+     que los .xlsx que genera la app TrueLift: su importador (paquete «excel»)
+     espera esa compresión; los archivos STORE le hacían fallar con
+     «Damaged Excel file: styles». Async por la compresión nativa. */
+  async _zip(files){
     const enc = new TextEncoder();
     const locals = [], centrals = [];
     let offset = 0;
@@ -53,22 +76,25 @@ const XLSX = {
 
     for (const [name, data] of Object.entries(files)){
       const nameB = enc.encode(name);
-      const crc = this._crc32(data);
+      const crc = this._crc32(data);            // CRC-32 siempre sobre el original
+      let contenido = await this._deflateRaw(data);
+      let metodo = 8;
+      if (!contenido){ contenido = data; metodo = 0; } // sin soporte: STORE
       const head = new Uint8Array([
-        0x50,0x4B,0x03,0x04, ...u16(20), ...u16(0x0800), ...u16(0),
+        0x50,0x4B,0x03,0x04, ...u16(20), ...u16(0x0800), ...u16(metodo),
         ...u16(0), ...u16(0x21),                       // hora/fecha fijas
-        ...u32(crc), ...u32(data.length), ...u32(data.length),
+        ...u32(crc), ...u32(contenido.length), ...u32(data.length),
         ...u16(nameB.length), ...u16(0),
       ]);
-      locals.push(head, nameB, data);
+      locals.push(head, nameB, contenido);
       centrals.push(new Uint8Array([
-        0x50,0x4B,0x01,0x02, ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0),
+        0x50,0x4B,0x01,0x02, ...u16(20), ...u16(20), ...u16(0x0800), ...u16(metodo),
         ...u16(0), ...u16(0x21),
-        ...u32(crc), ...u32(data.length), ...u32(data.length),
+        ...u32(crc), ...u32(contenido.length), ...u32(data.length),
         ...u16(nameB.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0),
         ...u32(0), ...u32(offset),
       ]), nameB);
-      offset += head.length + nameB.length + data.length;
+      offset += head.length + nameB.length + contenido.length;
     }
     const cdStart = offset;
     let cdLen = 0;
@@ -128,6 +154,17 @@ const XLSX = {
 
   // ====================== LECTURA DE RUTINA ======================
 
+  /* Castellano canónico de un valor leído del Excel. La app exporta
+     traducido cuando el móvil está en inglés (hojas «Day 1..5»,
+     ejercicios y grupos en inglés); esto replica I18n.canonical de la
+     app usando el mapa generado en canonico.js. Tolera que el script
+     no esté cargado (p. ej. en pruebas). */
+  _canon(v){
+    const s = String(v ?? '').trim();
+    if (typeof CANON_ES !== 'undefined' && CANON_ES[s]) return CANON_ES[s];
+    return s;
+  },
+
   _xml(bytes){
     let texto = new TextDecoder('utf-8').decode(bytes);
     if (texto.charCodeAt(0) === 0xFEFF) texto = texto.slice(1);
@@ -170,6 +207,41 @@ const XLSX = {
     return out;
   },
 
+  /* Lee la biblioteca embebida (TRUELIFT_EXERCISES_V1) del mapa de celdas de
+     la hoja «Listas». Devuelve [] si el archivo no la incluye (plantillas
+     creadas fuera de la app o versiones antiguas). Formato de cada registro:
+     { nombre, grupo, patron, secundarios:[], prioridad, nota, descanso }. */
+  _leerBiblioteca(celdas){
+    const [cNom, cGru, cPat, cSec, cPri, cNot, cDes] = this.COLS_BIBLIOTECA;
+    const fila = this.FILA_BIBLIOTECA;
+    if (String(celdas.get(cNom + fila) ?? '').trim() !== this.MARCA_BIBLIOTECA)
+      return [];
+    const out = [];
+    for (let r = fila + 1; r < fila + 10000; r++){
+      const nombre = String(celdas.get(cNom + r) ?? '').trim();
+      if (!nombre) break;
+      let secundarios = [];
+      const raw = celdas.get(cSec + r);
+      if (raw != null){
+        try {
+          const d = JSON.parse(raw);
+          if (Array.isArray(d))
+            secundarios = d.map(x => String(x).trim()).filter(Boolean);
+        } catch (_){ /* bloque parcial: no impide leer el resto */ }
+      }
+      out.push({
+        nombre: this._canon(nombre),
+        grupo: this._canon(celdas.get(cGru + r)),
+        patron: this._canon(celdas.get(cPat + r)),
+        secundarios: secundarios.map(s => this._canon(s)),
+        prioridad: this._canon(celdas.get(cPri + r)),
+        nota: this._canon(celdas.get(cNot + r)),
+        descanso: this._canon(celdas.get(cDes + r)),
+      });
+    }
+    return out;
+  },
+
   /* Lee un archivo .xlsx (ArrayBuffer) → modelo de rutina.
      Lanza Error con mensaje en castellano si no es una plantilla válida. */
   async leerRutina(arrayBuffer){
@@ -202,46 +274,61 @@ const XLSX = {
       hojas.set(s.getAttribute('name'), target);
     });
 
-    // Sistema (Instrucciones B3)
+    // Sistema (Instrucciones/Instructions B3; la app exporta en inglés
+    // cuando el móvil está en ese idioma)
     let sistema = 'doble';
-    const instr = hojas.has('Instrucciones') ? leer(hojas.get('Instrucciones')) : null;
+    const hojaInstr = hojas.get('Instrucciones') ?? hojas.get('Instructions');
+    const instr = hojaInstr ? leer(hojaInstr) : null;
     if (instr){
       const v = this._celdas(instr, shared).get('B3');
       if (typeof v === 'string' && /simple/i.test(v)) sistema = 'simple';
     }
 
-    // Hojas Día 1..5
+    // Hojas Día 1..5 (o Day 1..5 en exportaciones en inglés)
     const dias = [];
     for (let d = 1; d <= this.MAX_DIAS; d++){
-      const nombreHoja = `Día ${d}`;
-      if (!hojas.has(nombreHoja)) continue;
-      const doc = leer(hojas.get(nombreHoja));
+      const rutaHoja = hojas.get(`Día ${d}`) ?? hojas.get(`Day ${d}`);
+      if (!rutaHoja) continue;
+      const doc = leer(rutaHoja);
       if (!doc) continue;
       const celdas = this._celdas(doc, shared);
       const filas = [];
       for (let r = 4; r < 4 + this.MAX_FILAS; r++){
         const g = col => celdas.get(col + r);
-        const patron = String(g('A') ?? '').trim();
-        const ejercicio = String(g('B') ?? '').trim();
-        if (!patron || patron === '(Ninguno)' || !ejercicio) continue;
+        const patron = this._canon(g('A'));
+        const ejercicio = this._canon(g('B'));
+        if (!patron || patron === '(Ninguno)' || patron === '(None)' || !ejercicio) continue;
         const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
         filas.push({
           patron, ejercicio,
           series: num(g('C')), rir: num(g('D')),
           repsMin: num(g('E')), repsMax: num(g('F')),
           descanso: num(g('G')),
-          topBack: /^s[ií]/i.test(String(g('H') ?? '')),
+          // «sí» (es), «yes» (en), «sim» (pt) o 1; igual que la app (s/y/1)
+          topBack: /^\s*(s|y|1)/i.test(String(g('H') ?? '')),
           backoffPct: num(g('I')), rirBack: num(g('J')),
         });
       }
+      const nombreDia = `Día ${d}`;
       if (filas.length || celdas.get('B1'))
-        dias.push({ nombre: String(celdas.get('B1') ?? nombreHoja).trim() || nombreHoja, filas });
+        dias.push({ nombre: this._canon(celdas.get('B1')) || nombreDia, filas });
     }
 
     const conFilas = dias.filter(d => d.filas.length);
     if (!conFilas.length)
       throw new Error('El Excel no contiene ejercicios en las hojas Día 1–5. ¿Es la plantilla de TrueLift?');
-    return { sistema, dias: conFilas };
+
+    // Biblioteca embebida por la app (opcional): permite recuperar los
+    // ejercicios personalizados del cliente con sus metadatos.
+    let biblioteca = [];
+    const nomListas = hojas.has('Listas') ? 'Listas'
+                    : (hojas.has('Lists') ? 'Lists' : null);
+    if (nomListas){
+      const docL = leer(hojas.get(nomListas));
+      if (docL) biblioteca = this._leerBiblioteca(this._celdas(docL, shared));
+    }
+
+    return { sistema, dias: conFilas, biblioteca };
   },
 
   // ===================== ESCRITURA DE RUTINA =====================
@@ -283,6 +370,62 @@ const XLSX = {
     return xml;
   },
 
+  /* Celda de texto SIN estilo, tal y como escribe la app en el bloque de
+     biblioteca (rutina_screen.dart · _celdaInline). */
+  _celdaBiblioteca(ref, valor){
+    return `<x:c r="${ref}" t="inlineStr"><x:is><x:t xml:space="preserve">${this._escXml(valor)}</x:t></x:is></x:c>`;
+  },
+
+  /* Sustituye el bloque privado de la hoja «Listas». La plantilla anterior del
+     Coach contenía en W101:AC todo el catálogo base y la app lo interpretaba
+     como ejercicios creados por el usuario. Se conservan únicamente las filas
+     1..100 y se escribe la marca más los personalizados relevantes. */
+  _reemplazarBiblioteca(xmlHoja, ejercicios){
+    const ini = xmlHoja.indexOf('<x:sheetData>');
+    const fin = xmlHoja.indexOf('</x:sheetData>');
+    if (ini < 0 || fin < 0)
+      throw new Error('Plantilla embebida corrupta (Listas/sheetData).');
+    const interior = xmlHoja.slice(ini + '<x:sheetData>'.length, fin);
+    const filasBase = [];
+    const reFila = /<x:row\b(?=[^>]*\br="(\d+)")[^>]*(?:\/>|>[\s\S]*?<\/x:row>)/g;
+    let coincidencia;
+    while ((coincidencia = reFila.exec(interior))){
+      if (parseInt(coincidencia[1], 10) < this.FILA_BIBLIOTECA)
+        filasBase.push(coincidencia[0]);
+    }
+
+    const [cNom, cGru, cPat, cSec, cPri, cNot, cDes] = this.COLS_BIBLIOTECA;
+    const marca = this.FILA_BIBLIOTECA;
+    const filas = [...filasBase,
+      `<x:row r="${marca}">${this._celdaBiblioteca(cNom + marca, this.MARCA_BIBLIOTECA)}</x:row>`];
+    let r = marca + 1;
+    const vistos = new Set();
+    for (const e of (Array.isArray(ejercicios) ? ejercicios : [])){
+      const nombre = String(e.nombre ?? '').trim();
+      const clave = nombre.toLocaleLowerCase('es').normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      if (!nombre || vistos.has(clave)) continue;
+      vistos.add(clave);
+      const sec = Array.isArray(e.secundarios) && e.secundarios.length
+        ? e.secundarios.filter(Boolean)
+        : [e.grupo2, e.grupo3].filter(Boolean);
+      let celdas = this._celdaBiblioteca(cNom + r, nombre)
+                 + this._celdaBiblioteca(cGru + r, String(e.grupo ?? ''))
+                 + this._celdaBiblioteca(cPat + r, String(e.patron ?? ''))
+                 + this._celdaBiblioteca(cSec + r, JSON.stringify(sec))
+                 + this._celdaBiblioteca(cPri + r, String(e.prioridad ?? ''))
+                 + this._celdaBiblioteca(cNot + r, String(e.nota ?? ''))
+                 + this._celdaBiblioteca(cDes + r, String(e.descanso ?? ''));
+      filas.push(`<x:row r="${r}">${celdas}</x:row>`);
+      r++;
+    }
+    let salida = xmlHoja.slice(0, ini + '<x:sheetData>'.length)
+      + filas.join('') + xmlHoja.slice(fin);
+    salida = salida.replace(/(<x:dimension\b[^>]*\bref=")[^"]*(")/,
+      `$1A1:AC${r - 1}$2`);
+    return salida;
+  },
+
   _reemplazaSheetData(xmlHoja, nuevoInterior){
     const ini = xmlHoja.indexOf('<x:sheetData>');
     const fin = xmlHoja.indexOf('</x:sheetData>');
@@ -299,12 +442,25 @@ const XLSX = {
 
   /* Genera el xlsx (Uint8Array) a partir del modelo de rutina,
      parcheando la plantilla oficial embebida. */
-  escribirRutina(rutina){
+  async escribirRutina(rutina){
     const enc = new TextEncoder();
     const dec = new TextDecoder('utf-8');
     const files = {};
     for (const [nombre, b64] of Object.entries(PLANTILLA_XLSX))
       files[nombre] = this._b64aBytes(b64);
+
+    // Los Target del rels de la plantilla son absolutos ("/xl/styles.xml").
+    // El importador de la app (paquete «excel» de Dart) resuelve cada ruta
+    // como 'xl/' + Target, así que con rutas absolutas no encuentra los
+    // estilos y falla con «Damage Excel file: styles». Se normalizan a
+    // relativos, la forma estándar que aceptan Excel y todos los lectores.
+    {
+      const ruta = 'xl/_rels/workbook.xml.rels';
+      if (files[ruta]){
+        const xml = dec.decode(files[ruta]).replaceAll('Target="/xl/', 'Target="');
+        files[ruta] = enc.encode(xml);
+      }
+    }
 
     // Instrucciones (sheet1): sistema en B3
     {
@@ -327,12 +483,50 @@ const XLSX = {
       files[entrada] = enc.encode(xml);
     }
 
-    return this._zip(files);
+    // Listas: el contrato exige siempre una única marca en W101; aunque no
+    // haya personalizados se limpia cualquier bloque heredado de la plantilla.
+    {
+      const rutaListas = this._rutaHoja(files, dec, 'Listas')
+                      || this._rutaHoja(files, dec, 'Lists');
+      if (rutaListas && files[rutaListas]){
+        const xml = this._reemplazarBiblioteca(
+          dec.decode(files[rutaListas]), rutina.biblioteca || []);
+        files[rutaListas] = enc.encode(xml);
+      }
+    }
+
+    return await this._zip(files);
+  },
+
+  /* Resuelve el nombre de una hoja → ruta del worksheet dentro del zip,
+     leyendo workbook.xml y sus relaciones (sin depender del orden). */
+  _rutaHoja(files, dec, nombreHoja){
+    const wb = files['xl/workbook.xml'];
+    const rels = files['xl/_rels/workbook.xml.rels'];
+    if (!wb || !rels) return null;
+    const wbTxt = dec.decode(wb), relsTxt = dec.decode(rels);
+    const destino = {};
+    for (const m of relsTxt.matchAll(/<Relationship\b[^>]*>/g)){
+      const id = /Id="([^"]+)"/.exec(m[0])?.[1];
+      const tgt = /Target="([^"]+)"/.exec(m[0])?.[1];
+      if (id && tgt) destino[id] = tgt;
+    }
+    for (const m of wbTxt.matchAll(/<(?:[A-Za-z_][\w.-]*:)?sheet\b[^>]*\/?>/g)){
+      const name = /name="([^"]*)"/.exec(m[0])?.[1];
+      if (name !== nombreHoja) continue;
+      const rid = /r:id="([^"]+)"/.exec(m[0])?.[1];
+      let tgt = rid ? destino[rid] : null;
+      if (!tgt) return null;
+      tgt = tgt.replace(/^\//, '');
+      if (!tgt.startsWith('xl/')) tgt = 'xl/' + tgt;
+      return tgt;
+    }
+    return null;
   },
 
   /* Descarga la rutina como archivo xlsx. */
-  descargar(rutina, nombreArchivo){
-    const bytes = this.escribirRutina(rutina);
+  async descargar(rutina, nombreArchivo){
+    const bytes = await this.escribirRutina(rutina);
     const blob = new Blob([bytes],
       { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const a = document.createElement('a');

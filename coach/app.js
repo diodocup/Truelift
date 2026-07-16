@@ -13,7 +13,13 @@ const State = {
   hastaCustom: null,
   ejercicioSel: null,
   buscaEj: '',
+  serie1: null, // id de serie o null (→ por defecto). Ver catalogoSeries()
+  serie2: null, // id de serie, '' (ninguna) o null (→ por defecto)
+  mostrarFcReposo: false,
 };
+// Migra copias antiguas y recupera ejercicios personalizados de los JSON que
+// ya estuvieran guardados en la cartera.
+Planner.prepararBiblioteca();
 const normCache = new Map(); // clienteId → datos normalizados
 
 function clienteActivo(){
@@ -180,6 +186,25 @@ function render(){
     if (l2) l2.scrollTop = scrollLista;
   }
 
+  // Bindings de los selectores de series (Resumen)
+  const selS1 = $('#selSerie1');
+  if (selS1){
+    selS1.addEventListener('change', () => { State.serie1 = selS1.value; render(); });
+  }
+  const selS2 = $('#selSerie2');
+  if (selS2){
+    selS2.addEventListener('change', () => { State.serie2 = selS2.value; render(); });
+  }
+
+  // Botón para superponer/ocultar la FC en reposo en la gráfica de VFC.
+  const btnFcReposo = $('#btnToggleFcReposo');
+  if (btnFcReposo){
+    btnFcReposo.addEventListener('click', () => {
+      State.mostrarFcReposo = !State.mostrarFcReposo;
+      render();
+    });
+  }
+
   // Bindings específicos de la vista Ejercicios
   const busca = $('#buscaEj');
   if (busca){
@@ -235,6 +260,7 @@ function modalRestaurar(raw){
   $('#bkReemplazar').addEventListener('click', () => {
     State.store = raw.store;
     if (!Array.isArray(State.store.clientes)) State.store.clientes = [];
+    Planner.prepararBiblioteca();
     if (!State.store.clientes.find(c => c.id === State.store.clienteActivoId))
       State.store.clienteActivoId = State.store.clientes[0]?.id ?? null;
     normCache.clear();
@@ -246,6 +272,8 @@ function modalRestaurar(raw){
       if (ex){ Object.assign(ex, nc); normCache.delete(nc.id); }
       else State.store.clientes.push(nc);
     });
+    Planner._fusionarBiblioteca(raw.store?.ejerciciosCoach || []);
+    Planner.prepararBiblioteca();
     if (Store.guardar(State.store)){ cerrarModal(); render(); }
   });
 }
@@ -284,10 +312,11 @@ function modalImportar(raw, nombreArchivo){
     .replace(/\.json$/i, '').replace(/copia[_ ]?(truelift|pruebas)?[_ ]?/i, '')
     .replace(/[_-]+/g, ' ').trim() || 'Cliente';
   const nFuerza = (raw.logs || []).filter(l => l && l.tipo !== 'cardio').length;
+  const nuevosEj = Planner.nuevosDesdeJson(raw).length;
   const existentes = State.store.clientes;
 
   abrirModal(`<h2>Importar copia de TrueLift</h2>
-    <p class="muted">${nFuerza} sesiones de fuerza · ${(raw.logs || []).length - nFuerza} de cardio · ${(raw.readinessDiario || []).length} cuestionarios</p>
+    <p class="muted">${nFuerza} sesiones de fuerza · ${(raw.logs || []).length - nFuerza} de cardio · ${(raw.readinessDiario || []).length} cuestionarios${nuevosEj ? ` · <b>${nuevosEj} ejercicio${nuevosEj === 1 ? '' : 's'} nuevo${nuevosEj === 1 ? '' : 's'} para la biblioteca</b>` : ''}</p>
     <div class="mod-fila">
       <label><input type="radio" name="impModo" value="nuevo" checked> Cliente nuevo:</label>
       <input type="text" id="impNombre" value="${esc(sugerido)}">
@@ -319,6 +348,7 @@ function modalImportar(raw, nombreArchivo){
         State.store.clienteActivoId = id;
       }
     }
+    Planner.sincronizarDesdeJson(raw);
     if (Store.guardar(State.store)){
       State.ejercicioSel = null;
       cerrarModal();
@@ -477,7 +507,42 @@ function init(){
     }
   });
 
+  initTooltipGraficas();
   render();
+}
+
+/* Tooltip que sigue al cursor sobre cualquier punto/barra de las gráficas.
+   Cada elemento con [data-tt] muestra su texto (fecha · valor). */
+function initTooltipGraficas(){
+  let tip = document.getElementById('chartTip');
+  if (!tip){
+    tip = document.createElement('div');
+    tip.id = 'chartTip';
+    document.body.appendChild(tip);
+  }
+  const mostrar = (el, x, y) => {
+    tip.textContent = el.getAttribute('data-tt');
+    tip.style.display = 'block';
+    const m = 14, r = tip.getBoundingClientRect();
+    let px = x + m, py = y + m;
+    if (px + r.width > window.innerWidth) px = x - m - r.width;
+    if (py + r.height > window.innerHeight) py = y - m - r.height;
+    tip.style.left = Math.max(4, px) + 'px';
+    tip.style.top  = Math.max(4, py) + 'px';
+  };
+  const ocultar = () => { tip.style.display = 'none'; };
+  document.addEventListener('mousemove', ev => {
+    const el = ev.target.closest ? ev.target.closest('[data-tt]') : null;
+    if (el) mostrar(el, ev.clientX, ev.clientY);
+    else if (tip.style.display === 'block') ocultar();
+  });
+  document.addEventListener('mouseleave', ocultar);
+  // Táctil: mostrar al tocar un punto
+  document.addEventListener('touchstart', ev => {
+    const t = ev.target.closest ? ev.target.closest('[data-tt]') : null;
+    if (t){ const p = ev.touches[0]; mostrar(t, p.clientX, p.clientY); }
+    else ocultar();
+  }, { passive: true });
 }
 
 document.addEventListener('DOMContentLoaded', init);

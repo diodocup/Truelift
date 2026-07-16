@@ -112,6 +112,10 @@ cite{font-style:italic;color:var(--texto)}
 svg text{fill:var(--muted);font-size:11px}
 .leyenda{display:flex;gap:16px;font-size:12px;color:var(--muted);margin:4px 6px}
 .leyenda i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+svg [data-tt]{cursor:pointer}
+#chartTip{position:fixed;z-index:9999;pointer-events:none;display:none;white-space:nowrap;
+  background:var(--bg);border:1px solid var(--borde);color:var(--texto);
+  font-size:12px;padding:4px 8px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
 
 /* Escala de puntos 1-4 con color semáforo */
 .esc{letter-spacing:2px;font-size:12px;white-space:nowrap}
@@ -141,10 +145,16 @@ textarea.notas{width:100%;min-height:60px;margin-top:4px}
 .pln-dia{margin-bottom:14px}
 .pln-dia-cab{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .pln-nombre-dia{font-weight:700;font-size:16px;min-width:180px;flex:0 1 260px}
-.pln-fila{padding:6px 0;border-bottom:1px solid var(--borde)}
+.pln-fila{padding:6px 0;border-bottom:1px solid var(--borde);transition:opacity .12s,box-shadow .12s}
 .pln-fila:last-of-type{border-bottom:none}
+.pln-fila.arrastrando{opacity:.38}
+.pln-fila.pln-drop-antes{box-shadow:inset 0 3px 0 var(--lima)}
+.pln-fila.pln-drop-despues{box-shadow:inset 0 -3px 0 var(--lima)}
 .pln-fila-linea{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .pln-fila-linea select{max-width:180px}
+.pln-drag{display:inline-flex;align-items:center;justify-content:center;width:22px;height:30px;color:var(--muted);font-size:18px;line-height:1;cursor:grab;user-select:none;touch-action:none}
+.pln-drag:hover{color:var(--lima)}
+.pln-drag:active{cursor:grabbing}
 .pln-num{min-width:16px;text-align:right;font-size:12px}
 .pln-ej{flex:1;min-width:220px}
 .pln-ej input,.pln-ej select{width:100%;max-width:none}

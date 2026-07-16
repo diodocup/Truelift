@@ -4,10 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TrueLift Coach</title>
-<meta name="theme-color" content="#0c0e11">
 <link rel="icon" type="image/png" href="media/icono.png">
-<link rel="apple-touch-icon" href="media/icono.png">
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -59,15 +56,10 @@
 <script src="charts.js"></script>
 <script src="views.js"></script>
 <script src="catalogo.js"></script>
+<script src="canonico.js"></script>
 <script src="plantilla.js"></script>
 <script src="xlsx.js"></script>
 <script src="planner.js"></script>
 <script src="app.js"></script>
-<script>
-// PWA: registrar service worker (solo funciona bajo https, ignora file://)
-if ('serviceWorker' in navigator && location.protocol === 'https:'){
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
 </body>
 </html>

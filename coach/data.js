@@ -139,6 +139,7 @@ function normalizar(raw){
       enfermo: r.enfermo === true,
       vfc: (typeof r.vfc === 'number') ? r.vfc : null,
       vfcDescartada: r.vfcDescartada === true,
+      fcReposo: (typeof r.fcReposo === 'number') ? r.fcReposo : null,
       estadoEntrenar: (typeof r.estadoEntrenar === 'number') ? r.estadoEntrenar : null,
       estadoDia: r.estadoDia ?? null,                  // verde | ambar | rojo | null
     }))
@@ -411,6 +412,35 @@ const VFC = {
     if (perfil.vfcBandaMin != null)
       return { baja: perfil.vfcBandaMin, muyBaja: perfil.vfcBandaMin * 0.9, auto: false };
     return { baja: null, muyBaja: null, auto: false };
+  },
+};
+
+/* ================================================================
+   FC en reposo — banda robusta portada de la app móvil
+   ================================================================ */
+const FCReposo = {
+  MAD_PISO_FRAC: 0.03,
+  NOCHES_BANDA: 30,
+  MIN_NOCHES_BANDA: 14,
+
+  // La marca vfcDescartada identifica una noche no representativa completa.
+  validas(readiness){
+    return readiness
+      .filter(r => Number.isFinite(r.fcReposo) && !r.vfcDescartada && r.fecha)
+      .map(r => ({ fecha: soloDia(r.fecha), clave: fmtISO(r.fecha), fcReposo: r.fcReposo }))
+      .sort((a,b) => a.fecha - b.fecha);
+  },
+
+  /* FC alta = mediana + MAD sobre las últimas 30 noches válidas.
+     Requiere al menos 14 noches y aplica un suelo al MAD del 3% de la mediana. */
+  banda(readiness){
+    const validas = this.validas(readiness);
+    if (validas.length < this.MIN_NOCHES_BANDA) return null;
+    const valores = validas.slice(-this.NOCHES_BANDA).map(r => r.fcReposo);
+    const mediana = VFC._mediana(valores);
+    const madBruto = VFC._mediana(valores.map(x => Math.abs(x - mediana)));
+    const mad = Math.max(madBruto, mediana * this.MAD_PISO_FRAC);
+    return { alta: mediana + mad, mediana, mad, noches: valores.length };
   },
 };
 

@@ -47,9 +47,214 @@ const Planner = {
     Store.guardar(State.store);
   },
 
+  // ---------- Biblioteca de ejercicios del entrenador ----------
+  /* Ejercicios personalizados del entrenador: se guardan en el store y
+     viajan en su copia de seguridad. Formato: { nombre, patron, grupo }. */
+  ejerciciosCoach(){ return State.store.ejerciciosCoach || []; },
+  _claveEjercicio(valor){
+    return String(valor ?? '').trim().toLocaleLowerCase('es')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  },
+  _clavesCatalogo(){
+    if (!this.__clavesCatalogo){
+      const nombres = new Set(Object.keys(CAT_GRUPO_DE));
+      Object.values(CAT_LISTAS).forEach(lista => lista.forEach(n => nombres.add(n)));
+      this.__clavesCatalogo = new Set([...nombres].map(n => this._claveEjercicio(n)));
+    }
+    return this.__clavesCatalogo;
+  },
+  _esEjercicioBase(nombre){ return this._clavesCatalogo().has(this._claveEjercicio(nombre)); },
+  _listaMeta(valor){
+    if (Array.isArray(valor)) return valor.map(v => String(v).trim()).filter(Boolean);
+    if (typeof valor !== 'string' || !valor.trim()) return [];
+    try {
+      const lista = JSON.parse(valor);
+      if (Array.isArray(lista)) return lista.map(v => String(v).trim()).filter(Boolean);
+    } catch (_) { /* formato antiguo separado por comas */ }
+    return valor.split(/[,;|]/).map(v => v.trim()).filter(Boolean);
+  },
+  _normalizarEjercicio(valor, fallback = {}, fuente = 'json'){
+    const e = valor && typeof valor === 'object' && !Array.isArray(valor)
+      ? valor : { nombre: valor };
+    const primero = (claves, predeterminado = '') => {
+      for (const k of claves){
+        if (e[k] != null && String(e[k]).trim()) return e[k];
+      }
+      return predeterminado;
+    };
+    const nombre = String(primero(['nombre','ejercicio','name','exercise'], fallback.nombre || '')).trim();
+    if (!nombre) return null;
+    const secundarios = this._listaMeta(primero(
+      ['secundarios','gruposSecundarios','musculosSecundarios','músculosSecundarios','secondaryMuscles'],
+      fallback.secundarios || [fallback.grupo2, fallback.grupo3].filter(Boolean)));
+    return {
+      nombre,
+      patron: String(primero(['patron','patrón','pattern'], fallback.patron || 'Aislamiento')).trim() || 'Aislamiento',
+      grupo: String(primero(['grupo','grupoMuscular','musculo','músculo','muscleGroup'], fallback.grupo || 'Otros')).trim() || 'Otros',
+      grupo2: secundarios[0] || null,
+      grupo3: secundarios[1] || null,
+      prioridad: String(primero(['prioridad','tipo','origen'], fallback.prioridad || 'Añadido por ti')).trim() || 'Añadido por ti',
+      nota: String(primero(['nota','indicaciones','descripcion','descripción','notas'], fallback.nota || '')).trim(),
+      descanso: String(primero(['descanso','descansoSugerido','rest'], fallback.descanso || '')).trim(),
+      fuente,
+    };
+  },
+  ejerciciosCoachDePatron(patron){
+    return this.ejerciciosCoach()
+      .filter(e => !patron || e.patron === patron)
+      .map(e => e.nombre);
+  },
+  /* Grupos secundario y terciario de un ejercicio de la biblioteca del
+     entrenador. Cada uno cuenta como media serie (0,5) en el volumen. */
+  gruposSecundariosDe(ejercicio){
+    const e = this.ejerciciosCoach().find(x => x.nombre === ejercicio);
+    return e ? [e.grupo2, e.grupo3].filter(Boolean) : [];
+  },
+  FACTOR_SECUNDARIO: 0.5,
+
+  /* Fusiona la biblioteca embebida en un Excel de la app con la del entrenador.
+     Aditivo: no sobrescribe ejercicios ya existentes ni los del catálogo base.
+     Conserva prioridad/nota/descanso de la app para poder re-exportarlos. */
+  _fusionarBiblioteca(lista){
+    if (!Array.isArray(lista) || !lista.length) return { nuevos: 0, actualizados: 0 };
+    if (!State.store.ejerciciosCoach) State.store.ejerciciosCoach = [];
+    const existentes = new Map(State.store.ejerciciosCoach.map(e =>
+      [this._claveEjercicio(e.nombre), e]));
+    let nuevos = 0, actualizados = 0;
+    lista.forEach(valor => {
+      const b = this._normalizarEjercicio(valor, valor, valor?.fuente || 'json');
+      if (!b) return;
+      const clave = this._claveEjercicio(b.nombre);
+      // Ya está en la biblioteca del entrenador o es un ejercicio del catálogo
+      // oficial de la plantilla: no hay nada que añadir.
+      if (this._esEjercicioBase(b.nombre)) return;
+      const anterior = existentes.get(clave);
+      if (anterior){
+        let cambio = false;
+        for (const k of ['patron','grupo','grupo2','grupo3','prioridad','nota','descanso']){
+          if (b[k] && !anterior[k]){ anterior[k] = b[k]; cambio = true; }
+        }
+        if (cambio) actualizados++;
+        return;
+      }
+      const reg = {
+        nombre: b.nombre,
+        patron: b.patron,
+        grupo: b.grupo,
+        grupo2: b.grupo2,
+        grupo3: b.grupo3,
+      };
+      // Metadatos exclusivos de la app: se guardan para un round-trip sin
+      // pérdida, aunque el planner no los edite. Prioridad vacía →
+      // «Importado», igual que hace la app al fusionar.
+      reg.prioridad = b.prioridad || 'Importado';
+      if (b.nota) reg.nota = b.nota;
+      if (b.descanso) reg.descanso = b.descanso;
+      State.store.ejerciciosCoach.push(reg);
+      existentes.set(clave, reg);
+      nuevos++;
+    });
+    State.store.ejerciciosCoach.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    return { nuevos, actualizados };
+  },
+
+  _ejerciciosDesdeJson(raw){
+    const plan = Array.isArray(raw?.planMod) ? raw.planMod : [];
+    const porNombre = new Map();
+    plan.forEach(p => {
+      const e = this._normalizarEjercicio(p, {}, 'plan');
+      if (e) porNombre.set(this._claveEjercicio(e.nombre), e);
+    });
+    const candidatos = [];
+    (Array.isArray(raw?.logs) ? raw.logs : []).forEach(log => {
+      (Array.isArray(log?.entradas) ? log.entradas : []).forEach(entrada => {
+        const nombre = String(entrada?.ejercicio || '').trim();
+        if (!nombre) return;
+        candidatos.push(this._normalizarEjercicio(
+          entrada, porNombre.get(this._claveEjercicio(nombre)) || {}, 'log'));
+      });
+    });
+    candidatos.push(...porNombre.values());
+    (Array.isArray(raw?.ejerciciosUsuario) ? raw.ejerciciosUsuario : []).forEach(e =>
+      candidatos.push(this._normalizarEjercicio(e, {}, 'json')));
+
+    const prioridad = { log: 1, plan: 2, manual: 3, json: 4, excel: 4 };
+    const mapa = new Map();
+    candidatos.filter(Boolean).forEach(e => {
+      if (this._esEjercicioBase(e.nombre)) return;
+      const clave = this._claveEjercicio(e.nombre);
+      const anterior = mapa.get(clave);
+      if (!anterior || (prioridad[e.fuente] || 0) >= (prioridad[anterior.fuente] || 0))
+        mapa.set(clave, { ...(anterior || {}), ...e });
+    });
+    return [...mapa.values()];
+  },
+  nuevosDesdeJson(raw){
+    const existentes = new Set(this.ejerciciosCoach().map(e => this._claveEjercicio(e.nombre)));
+    return this._ejerciciosDesdeJson(raw).filter(e => !existentes.has(this._claveEjercicio(e.nombre)));
+  },
+  sincronizarDesdeJson(raw){ return this._fusionarBiblioteca(this._ejerciciosDesdeJson(raw)); },
+  prepararBiblioteca(){
+    if (!Array.isArray(State.store.ejerciciosCoach)) State.store.ejerciciosCoach = [];
+    (Array.isArray(State.store.clientes) ? State.store.clientes : []).forEach(c =>
+      this.sincronizarDesdeJson(c?.datos));
+  },
+
+  /* Ejercicios usados en los días de una rutina importada que no existen ni
+     en el catálogo base ni en la biblioteca del entrenador (excels antiguos
+     sin bloque TRUELIFT_EXERCISES_V1, o filas con ejercicios sueltos). Se
+     añaden con el grupo inferido del patrón, igual que hace la app, para que
+     el entrenador se quede siempre con cualquier ejercicio adicional. */
+  _fusionarEjerciciosDeRutina(rutina){
+    if (!rutina || !Array.isArray(rutina.dias)) return;
+    const candidatos = new Map();
+    rutina.dias.forEach(d => (d.filas || []).forEach(f => {
+      const nombre = String(f.ejercicio || '').trim();
+      if (nombre && !candidatos.has(nombre))
+        candidatos.set(nombre, {
+          nombre,
+          patron: String(f.patron || '').trim(),
+          grupo: CAT_PATRON_GRUPO[f.patron] || 'Sin clasificar',
+          prioridad: 'Importado',
+        });
+    }));
+    this._fusionarBiblioteca([...candidatos.values()]);
+  },
+
+  /* Biblioteca del entrenador en el formato que la app incrusta en el Excel
+     (marca TRUELIFT_EXERCISES_V1). Se adjunta a la rutina al exportar. */
+  bibliotecaParaExcel(rutina, rawCliente){
+    const candidatos = [];
+    (Array.isArray(rawCliente?.ejerciciosUsuario) ? rawCliente.ejerciciosUsuario : []).forEach(e =>
+      candidatos.push(this._normalizarEjercicio(e, {}, 'json')));
+    (rutina?.dias || []).forEach(d => (d.filas || []).forEach(f => {
+      if (!f.ejercicio || this._esEjercicioBase(f.ejercicio)) return;
+      const clave = this._claveEjercicio(f.ejercicio);
+      const guardado = this.ejerciciosCoach().find(e => this._claveEjercicio(e.nombre) === clave);
+      candidatos.push(this._normalizarEjercicio(guardado || { nombre: f.ejercicio }, {
+        nombre: f.ejercicio,
+        patron: f.patron,
+        grupo: CAT_PATRON_GRUPO[f.patron] || 'Otros',
+      }, guardado ? 'manual' : 'plan'));
+    }));
+    const mapa = new Map();
+    candidatos.filter(Boolean).forEach(e => mapa.set(this._claveEjercicio(e.nombre), e));
+    return [...mapa.values()].map(e => ({
+      nombre: e.nombre,
+      grupo: e.grupo || '',
+      patron: e.patron || '',
+      secundarios: [e.grupo2, e.grupo3].filter(Boolean),
+      prioridad: e.prioridad || 'Añadido por ti',
+      nota: e.nota || '',
+      descanso: e.descanso || '',
+    }));
+  },
+
   // ---------- Grupo muscular de un ejercicio ----------
   grupoDe(ejercicio, patron, datos){
     if (CAT_GRUPO_DE[ejercicio]) return CAT_GRUPO_DE[ejercicio];
+    const propio = this.ejerciciosCoach().find(e => e.nombre === ejercicio);
+    if (propio && propio.grupo) return propio.grupo;
     if (datos && datos.grupoDe.get(ejercicio)) return datos.grupoDe.get(ejercicio);
     return CAT_PATRON_GRUPO[patron] || 'Otros';
   },
@@ -109,6 +314,102 @@ const Planner = {
     });
   },
 
+  // ---------- Biblioteca: crear/gestionar ejercicios propios ----------
+  modalNuevoEjercicio(){
+    const patrones = CAT_PATRONES.filter(p => p !== '(Ninguno)');
+    const lib = this.ejerciciosCoach();
+    const listaLib = lib.length
+      ? `<table>
+          <thead><tr><th>Ejercicio</th><th>Patrón</th><th>Grupo</th><th>Secundario</th><th>Terciario</th><th></th></tr></thead>
+          <tbody>${lib.map((e, i) => `<tr>
+            <td>${esc(e.nombre)}</td>
+            <td class="muted">${esc(e.patron || '—')}</td>
+            <td class="muted">${esc(e.grupo || '—')}</td>
+            <td class="muted">${esc(e.grupo2 || '—')}</td>
+            <td class="muted">${esc(e.grupo3 || '—')}</td>
+            <td class="num"><button class="btn-mini peligro nej-del" data-i="${i}" title="Eliminar de la biblioteca">✕</button></td>
+          </tr>`).join('')}</tbody>
+        </table>`
+      : '<div class="muted" style="font-size:13px">Todavía no has creado ejercicios propios.</div>';
+
+    abrirModal(`<h2>Nuevo ejercicio</h2>
+      <p class="muted" style="font-size:13px">Se guarda en la biblioteca del entrenador y viaja en tu copia de seguridad.
+      Aparecerá en el desplegable de ejercicios del patrón elegido, para cualquier cliente.
+      Recuerda que, para exportar a TrueLift, el ejercicio también debe existir en la app del cliente.</p>
+      <div style="display:grid;gap:8px;max-width:440px;margin-bottom:6px">
+        <label>Nombre del ejercicio
+          <input type="text" id="nejNombre" placeholder="p. ej. Press horizontal en polea baja" style="width:100%">
+        </label>
+        <label>Patrón
+          <select id="nejPatron" style="width:100%">
+            ${patrones.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
+          </select>
+        </label>
+        <label>Grupo muscular (principal)
+          <select id="nejGrupo" style="width:100%">
+            ${ORDEN_GRUPOS.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('')}
+          </select>
+        </label>
+        <label>Grupo secundario (opcional)
+          <select id="nejGrupo2" style="width:100%">
+            <option value="">— ninguno —</option>
+            ${ORDEN_GRUPOS.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('')}
+          </select>
+        </label>
+        <label>Grupo terciario (opcional)
+          <select id="nejGrupo3" style="width:100%">
+            <option value="">— ninguno —</option>
+            ${ORDEN_GRUPOS.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('')}
+          </select>
+        </label>
+      </div>
+      <div class="mod-acciones">
+        <button class="btn sec" onclick="cerrarModal()">Cerrar</button>
+        <button class="btn pri" id="nejGuardar">Guardar ejercicio</button>
+      </div>
+      <h3 style="margin-top:16px">Tu biblioteca (${lib.length})</h3>
+      ${listaLib}`);
+
+    // Sugerir grupo automáticamente según el patrón
+    const selP = document.querySelector('#nejPatron');
+    const selG = document.querySelector('#nejGrupo');
+    const sugerir = () => { const g = CAT_PATRON_GRUPO[selP.value]; if (g) selG.value = g; };
+    if (selP){ selP.addEventListener('change', sugerir); sugerir(); }
+
+    document.querySelector('#nejGuardar').addEventListener('click', () => {
+      const nombre = (document.querySelector('#nejNombre').value || '').trim();
+      if (!nombre){ alert('Escribe el nombre del ejercicio.'); return; }
+      const enCatalogo = !!CAT_GRUPO_DE[nombre] || Object.values(CAT_LISTAS).some(l => l.includes(nombre));
+      if (enCatalogo){ alert('Ese ejercicio ya existe en el catálogo de la plantilla.'); return; }
+      if (this.ejerciciosCoach().some(e => e.nombre.toLowerCase() === nombre.toLowerCase())){
+        alert('Ese ejercicio ya está en tu biblioteca.'); return;
+      }
+      const grupo = selG.value;
+      let grupo2 = document.querySelector('#nejGrupo2').value || null;
+      let grupo3 = document.querySelector('#nejGrupo3').value || null;
+      // Evitar duplicados entre principal/secundario/terciario
+      if (grupo2 === grupo) grupo2 = null;
+      if (grupo3 === grupo || grupo3 === grupo2) grupo3 = null;
+      if (grupo3 && !grupo2){ grupo2 = grupo3; grupo3 = null; }
+      if (!State.store.ejerciciosCoach) State.store.ejerciciosCoach = [];
+      // Misma ficha que crea la app (agregarEjercicioBiblioteca): así el
+      // ejercicio viaja por Excel a la app con los mismos metadatos.
+      State.store.ejerciciosCoach.push({
+        nombre, patron: selP.value, grupo, grupo2, grupo3,
+        prioridad: 'Añadido por ti', nota: '', descanso: '',
+      });
+      if (Store.guardar(State.store)){ this.modalNuevoEjercicio(); render(); }
+    });
+
+    document.querySelectorAll('.nej-del').forEach(el => el.addEventListener('click', () => {
+      const i = +el.dataset.i;
+      const e = this.ejerciciosCoach()[i];
+      if (!e || !confirm(`¿Eliminar "${e.nombre}" de tu biblioteca?`)) return;
+      State.store.ejerciciosCoach.splice(i, 1);
+      if (Store.guardar(State.store)){ this.modalNuevoEjercicio(); render(); }
+    }));
+  },
+
   // ---------- Análisis de volumen y frecuencia ----------
   /* Devuelve { porGrupo, totalSeries, porDia, avisos } asumiendo que la
      rutina se ejecuta una vez por semana (planificación semanal de TrueLift). */
@@ -139,6 +440,12 @@ const Planner = {
         if (!porGrupo.has(g)) porGrupo.set(g, { series: 0, dias: new Set(), ejercicios: new Set() });
         const e = porGrupo.get(g);
         e.series += s; e.dias.add(di); e.ejercicios.add(f.ejercicio);
+        // Grupos secundario y terciario: media serie cada uno
+        this.gruposSecundariosDe(f.ejercicio).forEach(g2 => {
+          if (!porGrupo.has(g2)) porGrupo.set(g2, { series: 0, dias: new Set(), ejercicios: new Set() });
+          const e2 = porGrupo.get(g2);
+          e2.series += s * this.FACTOR_SECUNDARIO; e2.dias.add(di); e2.ejercicios.add(f.ejercicio);
+        });
 
         if (!f.series) add('ambar', `${d.nombre} · ${f.ejercicio}: faltan las series.`);
         if (f.repsMin == null) add('ambar', `${d.nombre} · ${f.ejercicio}: faltan las repeticiones.`);
@@ -148,8 +455,9 @@ const Planner = {
           add('ambar', `${d.nombre} · ${f.ejercicio}: en sistema doble faltan las reps máx.`);
         if (!CAT_LISTAS[f.patron])
           add('azul', `${d.nombre} · ${f.ejercicio}: el patrón "${f.patron}" no es de la plantilla; al exportar se ajustará si es posible.`);
-        else if (!CAT_LISTAS[f.patron].includes(f.ejercicio) && !CAT_GRUPO_DE[f.ejercicio])
-          add('azul', `${d.nombre} · "${f.ejercicio}" no está en las listas de la plantilla: comprueba que existe en la app del cliente (ejercicio personalizado).`);
+        else if (this._esEjercicioBase(f.ejercicio) === false &&
+                 !this.ejerciciosCoach().some(e => this._claveEjercicio(e.nombre) === this._claveEjercicio(f.ejercicio)))
+          add('azul', `${d.nombre} · "${f.ejercicio}" no está aún en la biblioteca: se añadirá al Excel como ejercicio personalizado.`);
       });
       if (!nEj) add('ambar', `${d.nombre} está vacío; se exportará sin ejercicios.`);
       porDia.push({ nombre: d.nombre, nEj, series: seriesDia, durMin: Math.round(durMin) });
@@ -195,6 +503,9 @@ const Planner = {
     fuerzaR.forEach(s => s.entradas.forEach(e => {
       const g = this.grupoDe(e.ejercicio, '', datos);
       tot.set(g, (tot.get(g) || 0) + e.nSeries);
+      // Grupos secundario y terciario: media serie cada uno
+      this.gruposSecundariosDe(e.ejercicio).forEach(g2 =>
+        tot.set(g2, (tot.get(g2) || 0) + e.nSeries * this.FACTOR_SECUNDARIO));
     }));
     const out = new Map();
     tot.forEach((v, g) => out.set(g, Math.round(v / nSem * 10) / 10));
@@ -244,6 +555,12 @@ const Planner = {
     if (!file) return;
     try {
       const rutina = await XLSX.leerRutina(await file.arrayBuffer());
+      // Añade a la biblioteca del entrenador los ejercicios personalizados que
+      // la app incrustó en el Excel (aditivo, sin pisar los existentes) y,
+      // después, cualquier ejercicio usado en los días que siga siendo
+      // desconocido (excels antiguos sin biblioteca embebida).
+      this._fusionarBiblioteca(rutina.biblioteca);
+      this._fusionarEjerciciosDeRutina(rutina);
       this.rutina = rutina;
       this.guardar(); render();
     } catch (err){
@@ -258,7 +575,18 @@ const Planner = {
     this.guardar(); render();
   },
 
-  exportar(){
+  /* Reordena una fila dentro de su mismo día. Los índices son posiciones
+     finales, por lo que sirve tanto para arrastre como para pruebas. */
+  _reordenarEnDia(dia, desde, destino){
+    const filas = this.rutina.dias[dia]?.filas;
+    if (!filas || desde < 0 || desde >= filas.length ||
+        destino < 0 || destino >= filas.length || desde === destino) return false;
+    const [movida] = filas.splice(desde, 1);
+    filas.splice(destino, 0, movida);
+    return true;
+  },
+
+  async exportar(){
     const r = JSON.parse(JSON.stringify(this.rutina));
     // Limpieza para exportar: filas completas y patrón compatible con la plantilla
     r.dias.forEach(d => {
@@ -277,9 +605,12 @@ const Planner = {
       return;
     }
     const c = clienteActivo();
+    // Solo viajan los ejercicios personalizados de este cliente y los usados
+    // en la rutina; no se filtra la biblioteca de otros clientes.
+    r.biblioteca = this.bibliotecaParaExcel(r, c?.datos);
     const nombre = c ? '_' + c.nombre.trim().replace(/\s+/g, '_') : '';
     try {
-      XLSX.descargar(r, `mi_rutina_truelift${nombre}.xlsx`);
+      await XLSX.descargar(r, `mi_rutina_truelift${nombre}.xlsx`);
     } catch (err){
       abrirModal(`<h2>Error al exportar</h2><p>${esc(err.message)}</p>
         <div class="mod-acciones"><button class="btn pri" onclick="cerrarModal()">Entendido</button></div>`);
@@ -292,7 +623,10 @@ const Planner = {
   },
 
   _filaEditor(f, d, i, sistema, ctxEj){
-    const lista = CAT_LISTAS[f.patron] || Object.keys(CAT_GRUPO_DE).sort((a, b) => a.localeCompare(b, 'es'));
+    const listaCat = CAT_LISTAS[f.patron] || Object.keys(CAT_GRUPO_DE).sort((a, b) => a.localeCompare(b, 'es'));
+    // Añadir los ejercicios de la biblioteca del entrenador del patrón elegido
+    const listaCoach = this.ejerciciosCoachDePatron(f.patron).filter(n => !listaCat.includes(n));
+    const lista = [...listaCat, ...listaCoach];
     // El ejercicio actual siempre debe aparecer aunque no esté en la lista del patrón
     const opciones = (f.ejercicio && !lista.includes(f.ejercicio)) ? [f.ejercicio, ...lista] : lista;
     const grupo = f.ejercicio ? this.grupoDe(f.ejercicio, f.patron, datosActivos()) : '';
@@ -309,8 +643,9 @@ const Planner = {
       `<input type="number" class="pln-campo" data-d="${d}" data-f="${i}" data-k="${k}"
         value="${v ?? ''}" min="${min}" max="${max}" step="${step}" style="width:${ancho}px" title="${title}">`;
 
-    return `<div class="pln-fila">
+    return `<div class="pln-fila" data-d="${d}" data-f="${i}">
       <div class="pln-fila-linea">
+        <span class="pln-drag" title="Pulsa y arrastra para cambiar el orden" aria-label="Arrastrar ejercicio ${i + 1}">⠿</span>
         <span class="muted pln-num">${i + 1}</span>
         <select class="pln-campo" data-d="${d}" data-f="${i}" data-k="patron" title="Patrón">
           ${CAT_PATRONES.map(p => `<option value="${esc(p === '(Ninguno)' ? '' : p)}" ${p === (f.patron || '(Ninguno)') ? 'selected' : ''}>${esc(p)}</option>`).join('')}
@@ -335,8 +670,6 @@ const Planner = {
         </label>
         ${f.topBack ? `<span class="pln-x">−</span>${numIn('backoffPct', f.backoffPct, 5, 30, 5, 48, '% de peso menos en los back-offs')}<span class="pln-x">% @RIR</span>${numIn('rirBack', f.rirBack, 0, 6, 1, 44, 'RIR de los back-offs')}` : ''}
         <span class="pln-acciones">
-          <button class="btn-mini pln-mover" data-d="${d}" data-f="${i}" data-dir="-1" title="Subir">▲</button>
-          <button class="btn-mini pln-mover" data-d="${d}" data-f="${i}" data-dir="1" title="Bajar">▼</button>
           <button class="btn-mini peligro pln-del-fila" data-d="${d}" data-f="${i}" title="Eliminar fila">✕</button>
         </span>
       </div>
@@ -365,15 +698,16 @@ const Planner = {
           </div>
           <div class="pln-cab-botones">
             ${c ? '<button class="btn sec" id="plnCargarPlan" title="Parte de la rutina activa del JSON importado">Cargar rutina del cliente</button>' : ''}
-            <button class="btn sec" id="plnAbrirExcel">Abrir Excel…</button>
+            <button class="btn sec" id="plnAbrirExcel">Importar rutina</button>
             <input type="file" id="plnFile" accept=".xlsx" style="display:none">
             <button class="btn sec" id="plnBlanco">En blanco</button>
+            <button class="btn sec" id="plnNuevoEj" title="Crea un ejercicio y guárdalo en tu biblioteca del entrenador">+ Nuevo ejercicio</button>
             <label class="pln-sistema">Sistema
               <select id="plnSistema">
                 ${CAT_SISTEMAS.map(s => `<option value="${s}" ${s === rutina.sistema ? 'selected' : ''}>${s}</option>`).join('')}
               </select>
             </label>
-            <button class="btn pri" id="plnExportar" title="Descarga el Excel que el cliente importa en TrueLift (Rutina → Importar)">⬇ Exportar Excel para TrueLift</button>
+            <button class="btn pri" id="plnExportar" title="Descarga la rutina para importarla en la app TrueLift del smartphone">Exportar rutina para App smartphone TrueLift</button>
           </div>
         </div>
       </div>`;
@@ -404,7 +738,7 @@ const Planner = {
       } else if (ejec) dif = '<span class="muted">—</span>';
       return `<tr>
         <td>${esc(f.grupo)}<div class="muted" style="font-size:11px">${f.nEj} ejercicio${f.nEj === 1 ? '' : 's'}</div></td>
-        <td class="num"><span class="chip ${f.estadoSeries}">${f.series}</span> <span class="muted" style="font-size:11px">obj. ${objTxt}</span></td>
+        <td class="num"><span class="chip ${f.estadoSeries}">${Number.isInteger(f.series) ? f.series : fmtNum(f.series, 1)}</span> <span class="muted" style="font-size:11px">obj. ${objTxt}</span></td>
         <td class="num"><span class="chip ${f.estadoFrec}">${f.frec}×/sem</span> <span class="muted" style="font-size:11px">${frecTxt}</span></td>
         ${ejec ? `<td class="num">${dif}</td>` : ''}
       </tr>`;
@@ -417,6 +751,7 @@ const Planner = {
         </div>
         <div class="muted" style="font-size:12px;margin-bottom:8px">
           Series planificadas por grupo y días/semana que se estimula, asumiendo una pasada semanal por los ${rutina.dias.length} días.
+          El grupo secundario y el terciario de un ejercicio cuentan como media serie cada uno.
           Verde dentro del objetivo, ámbar hasta un 25% fuera, rojo más allá.
           ${ejec && ctx ? `La columna "Ejec. media" es la media semanal ejecutada en el periodo seleccionado arriba (${fmtFechaCorta(ctx.desde)} — ${fmtFechaCorta(ctx.hasta)}, ${fmtNum(ejec.nSem, 1)} sem).` : ''}
         </div>
@@ -461,7 +796,16 @@ const Planner = {
           const nuevo = window.prompt(
             'Nombre exacto del ejercicio (tal como existe en la app del cliente):',
             fila.ejercicio || '');
-          if (nuevo != null && nuevo.trim()) fila.ejercicio = nuevo.trim();
+          if (nuevo != null && nuevo.trim()){
+            fila.ejercicio = nuevo.trim();
+            this._fusionarBiblioteca([{
+              nombre: fila.ejercicio,
+              patron: fila.patron,
+              grupo: CAT_PATRON_GRUPO[fila.patron] || 'Otros',
+              prioridad: 'Añadido por el coach',
+              fuente: 'manual',
+            }]);
+          }
         } else fila.ejercicio = el.value;
       }
       else fila[k] = num(el.value);
@@ -481,13 +825,99 @@ const Planner = {
       r.dias[+el.dataset.d].filas.splice(+el.dataset.f, 1);
       this.guardar(); render();
     }));
-    cont.querySelectorAll('.pln-mover').forEach(el => el.addEventListener('click', () => {
-      const filas = r.dias[+el.dataset.d].filas;
-      const i = +el.dataset.f, j = i + (+el.dataset.dir);
-      if (j < 0 || j >= filas.length) return;
-      [filas[i], filas[j]] = [filas[j], filas[i]];
-      this.guardar(); render();
-    }));
+    const filasEditor = [...cont.querySelectorAll('.pln-fila')];
+    const limpiarDestinos = () => filasEditor.forEach(fila => {
+      fila.classList.remove('pln-drop-antes', 'pln-drop-despues');
+    });
+    const limpiarArrastre = () => filasEditor.forEach(fila => {
+      fila.classList.remove('arrastrando', 'pln-drop-antes', 'pln-drop-despues');
+    });
+    const destinoEnPunto = (x, y, dia) => {
+      const fila = document.elementFromPoint(x, y)?.closest('.pln-fila');
+      if (!fila || +fila.dataset.d !== dia) return null;
+      const rect = fila.getBoundingClientRect();
+      return { fila, objetivo: +fila.dataset.f, despues: y >= rect.top + rect.height / 2 };
+    };
+    filasEditor.forEach(fila => {
+      const asa = fila.querySelector('.pln-drag');
+      const iniciar = id => {
+        if (this._dragFila) return false;
+        this._dragFila = { d: +fila.dataset.d, f: +fila.dataset.f, pointerId: id };
+        this._dragDestino = null;
+        fila.classList.add('arrastrando');
+        return true;
+      };
+      const mover = (x, y, id) => {
+        if (!this._dragFila || this._dragFila.pointerId !== id) return;
+        const destino = destinoEnPunto(x, y, this._dragFila.d);
+        this._dragDestino = destino;
+        limpiarDestinos();
+        if (destino)
+          destino.fila.classList.add(destino.despues ? 'pln-drop-despues' : 'pln-drop-antes');
+      };
+      const soltar = (x, y, id) => {
+        if (!this._dragFila || this._dragFila.pointerId !== id) return;
+        const origen = this._dragFila.f;
+        const dia = this._dragFila.d;
+        const objetivo = destinoEnPunto(x, y, dia) || this._dragDestino;
+        this._dragFila = null;
+        this._dragDestino = null;
+        limpiarArrastre();
+        if (!objetivo) return;
+        let destino = objetivo.objetivo + (objetivo.despues ? 1 : 0);
+        if (origen < destino) destino--;
+        if (this._reordenarEnDia(dia, origen, destino)){
+          this.guardar();
+          render();
+        }
+      };
+      asa.addEventListener('pointerdown', ev => {
+        if (ev.button != null && ev.button !== 0) return;
+        const id = `p:${ev.pointerId}`;
+        if (!iniciar(id)) return;
+        ev.preventDefault();
+        const alMoverPointer = e => mover(e.clientX, e.clientY, id);
+        const alMoverMouse = e => mover(e.clientX, e.clientY, id);
+        const quitar = () => {
+          document.removeEventListener('pointermove', alMoverPointer);
+          document.removeEventListener('mousemove', alMoverMouse);
+          document.removeEventListener('pointerup', alSoltar);
+          document.removeEventListener('mouseup', alSoltar);
+          document.removeEventListener('pointercancel', alCancelar);
+        };
+        const alSoltar = e => {
+          quitar();
+          soltar(e.clientX, e.clientY, id);
+        };
+        const alCancelar = () => {
+          quitar();
+          if (this._dragFila?.pointerId === id){
+            this._dragFila = null;
+            this._dragDestino = null;
+            limpiarArrastre();
+          }
+        };
+        document.addEventListener('pointermove', alMoverPointer);
+        document.addEventListener('mousemove', alMoverMouse);
+        document.addEventListener('pointerup', alSoltar);
+        document.addEventListener('mouseup', alSoltar);
+        document.addEventListener('pointercancel', alCancelar);
+      });
+
+      // Respaldo de ratón para navegadores/entornos que no emiten Pointer Events.
+      asa.addEventListener('mousedown', ev => {
+        if (ev.button !== 0 || !iniciar('mouse')) return;
+        ev.preventDefault();
+        const alMover = e => mover(e.clientX, e.clientY, 'mouse');
+        const alSoltar = e => {
+          document.removeEventListener('mousemove', alMover);
+          document.removeEventListener('mouseup', alSoltar);
+          soltar(e.clientX, e.clientY, 'mouse');
+        };
+        document.addEventListener('mousemove', alMover);
+        document.addEventListener('mouseup', alSoltar);
+      });
+    });
 
     const addDia = cont.querySelector('#plnAddDia');
     if (addDia) addDia.addEventListener('click', () => {
@@ -515,6 +945,8 @@ const Planner = {
     if (file) file.addEventListener('change', ev => { this.abrirExcel(ev.target.files[0]); ev.target.value = ''; });
     const blanco = cont.querySelector('#plnBlanco');
     if (blanco) blanco.addEventListener('click', () => this.enBlanco());
+    const nuevoEj = cont.querySelector('#plnNuevoEj');
+    if (nuevoEj) nuevoEj.addEventListener('click', () => this.modalNuevoEjercicio());
     const exp = cont.querySelector('#plnExportar');
     if (exp) exp.addEventListener('click', () => this.exportar());
     const obj = cont.querySelector('#plnObjetivos');

@@ -74,8 +74,9 @@ function zonaTag(z){
 /* Gráfica combinada rendimiento (líneas bruto y neto, baseline 100 y
    umbrales bueno/bajo de la app) + readiness (barras de fondo).
    Compartida por Resumen, Readiness e Informe. */
-function graficaRendReadiness(ctx){
+function graficaRendReadiness(ctx, opts = {}){
   const { fuerzaR, readinessR } = ctx;
+  const { readinessArea = false, tercera = null } = opts;
   const barras = readinessR.map(r => {
     const c = r.estadoDia || bandaEstado(r.estadoEntrenar);
     const z = zonaSenales(r);
@@ -97,13 +98,129 @@ function graficaRendReadiness(ctx){
   const media = conPct.length ? conPct.reduce((a,b) => a + b.y, 0) / conPct.length : null;
   return `
     <div class="chart-caja">${Charts.combinada({
-      barras, lineas, baseline: 100,
+      barras, lineas, baseline: 100, readinessArea, tercera,
       umbrales: [
         { y: 100 + tol, label: `bueno (≥ ${fmtNum(100 + tol,1)})`, color: '#4caf7d' },
         { y: 100 - tol, label: `bajo (≤ ${fmtNum(100 - tol,1)})`, color: '#e0a63c' },
       ],
     })}</div>
     ${media != null ? `<div class="muted" style="font-size:12px">Media ${hayNeto ? 'neta' : ''} del periodo: <b style="color:var(--texto)">${fmtNum(media,1)}%</b></div>` : ''}`;
+}
+
+/* Paleta para las series por tipo de sesión */
+const COLORES_SESION = ['#e0985c','#5cc9c0','#d06e9a','#9ec25a','#6a8ff0','#e0c94c','#c0705a','#7ad0e0','#b58cff','#8fd06a'];
+
+/* Catálogo de todas las series representables en el rango actual.
+   Cada serie: { id, label, color, puntos:[{x,y}], grupo, unidad?, min?, max?,
+                 baseline?, umbrales?:[{y,label,color}] } */
+function catalogoSeries(ctx){
+  const { datos, perfil, fuerzaR, readinessR } = ctx;
+  const cat = [];
+
+  // --- Rendimiento (bruto / neto) con baseline 100 y umbrales bueno/bajo ---
+  const bruto = fuerzaR.map(s => ({ x: s.fecha, y: Metricas.pctBruto(s) }));
+  const neto  = fuerzaR.map(s => ({ x: s.fecha, y: Metricas.pctNeto(s) }));
+  const hayNeto = neto.some(p => p.y != null);
+  const tols = fuerzaR.map(s => s.tolPct).filter(v => v != null);
+  const tol = tols.length ? VFC._mediana(tols) : 2.5;
+  const umbralRend = [
+    { y: 100 + tol, label: `bueno (≥ ${fmtNum(100 + tol,1)})`, color: '#4caf7d' },
+    { y: 100 - tol, label: `bajo (≤ ${fmtNum(100 - tol,1)})`, color: '#e0a63c' },
+  ];
+  const G_REND = 'Rendimiento global';
+  if (hayNeto){
+    cat.push({ id: 'rend_bruto', label: 'Rendimiento bruto', color: '#5aa9e6', puntos: bruto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
+    cat.push({ id: 'rend_neto',  label: 'Rendimiento neto diario', color: '#a8d020', puntos: neto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
+  } else if (bruto.some(p => p.y != null)){
+    cat.push({ id: 'rend_sesion', label: 'Rendimiento de sesión', color: '#5aa9e6', puntos: bruto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
+  }
+
+  // --- Rendimiento por cada tipo de sesión de entrenamiento (agrupado por 'dia') ---
+  const tipos = [...new Set(fuerzaR.map(s => s.dia).filter(d => d && d !== '—'))].sort((a,b) => a.localeCompare(b));
+  tipos.forEach((tipo, i) => {
+    const pts = fuerzaR
+      .filter(s => s.dia === tipo)
+      .map(s => ({ x: s.fecha, y: Metricas.pctBruto(s) }))  // bruto: alcanza tanto histórico como el rendimiento bruto global
+      .filter(p => p.y != null);
+    if (pts.length)
+      cat.push({ id: 'rend_dia::' + tipo, label: 'Rend. · ' + tipo, color: COLORES_SESION[i % COLORES_SESION.length],
+                 puntos: pts, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: 'Rendimiento por sesión' });
+  });
+
+  // --- Readiness (0-100) ---
+  const rdPts = readinessR.map(r => ({ x: r.fecha, y: r.estadoEntrenar })).filter(p => p.y != null);
+  if (rdPts.length)
+    cat.push({ id: 'readiness', label: 'Readiness', color: '#4caf7d', puntos: rdPts, unidad: '', min: 0, max: 100, grupo: 'Estado / recuperación' });
+
+  // --- VFC (HRV) con umbral bajo si existe ---
+  const vfcPts = readinessR.filter(r => r.vfc != null && !r.vfcDescartada).map(r => ({ x: r.fecha, y: r.vfc }));
+  if (vfcPts.length){
+    const uVfc = VFC.umbrales(datos.readiness, perfil);
+    const umbrales = (uVfc && uVfc.baja != null) ? [{ y: uVfc.baja, label: `VFC baja (${fmtNum(uVfc.baja,1)})`, color: '#e0a63c' }] : [];
+    cat.push({ id: 'vfc', label: 'VFC (HRV)', color: '#c792ea', puntos: vfcPts, unidad: 'ms', umbrales, grupo: 'Estado / recuperación' });
+  }
+
+  // --- Frecuencia cardiaca en reposo (campo fcReposo de readinessDiario) ---
+  const fcReposoPts = readinessR.filter(r => r.fcReposo != null && !r.vfcDescartada)
+    .map(r => ({ x: r.fecha, y: r.fcReposo }));
+  if (fcReposoPts.length){
+    const bandaFc = FCReposo.banda(datos.readiness);
+    const umbrales = bandaFc
+      ? [{ y: bandaFc.alta, label: `FC alta (${fmtNum(bandaFc.alta,1)})`, color: '#ff5252' }]
+      : [];
+    cat.push({ id: 'fc_reposo', label: 'FC en reposo', color: '#ff7a70', puntos: fcReposoPts,
+               unidad: 'ppm', umbrales, grupo: 'Estado / recuperación' });
+  }
+
+  // --- 1RM estimado por ejercicio ---
+  const nombresEj = [...new Set(fuerzaR.flatMap(s => s.entradas.map(e => e.ejercicio)))].sort((a,b) => a.localeCompare(b));
+  nombresEj.forEach(n => {
+    const pts = Metricas.historicoEjercicio(datos, n)
+      .filter(p => enRango(p.fecha, ctx.desde, ctx.hasta) && p.e1rm != null)
+      .map(p => ({ x: p.fecha, y: p.e1rm }));
+    if (pts.length) cat.push({ id: 'e1rm::' + n, label: '1RM · ' + n, color: '#8a7dff', puntos: pts, unidad: 'kg', grupo: '1RM estimado' });
+  });
+
+  return cat;
+}
+
+/* Construye <option>/<optgroup> a partir del catálogo, marcando el seleccionado. */
+function opcionesSeries(cat, curId, incluirNinguna){
+  let html = incluirNinguna ? `<option value=""${!curId ? ' selected' : ''}>— ninguna —</option>` : '';
+  const grupos = [...new Set(cat.map(s => s.grupo || ''))];
+  grupos.forEach(g => {
+    const inner = cat.filter(s => (s.grupo || '') === g)
+      .map(s => `<option value="${esc(s.id)}"${s.id === curId ? ' selected' : ''}>${esc(s.label)}</option>`).join('');
+    html += g ? `<optgroup label="${esc(g)}">${inner}</optgroup>` : inner;
+  });
+  return html;
+}
+
+/* Gráfica comparadora con 2 selectores (Serie 1 y Serie 2) sobre el catálogo. */
+function graficaDobleSerie(ctx){
+  const cat = catalogoSeries(ctx);
+  if (!cat.length) return `<div class="muted" style="padding:14px 4px">Sin datos para representar en el rango.</div>`;
+
+  const s1 = State.serie1 != null ? State.serie1 : cat[0].id;
+  const s2 = State.serie2 != null ? State.serie2
+           : (cat.some(s => s.id === 'readiness') ? 'readiness' : (cat[1] ? cat[1].id : ''));
+  const d1 = cat.find(s => s.id === s1) || cat[0];
+  const d2 = s2 ? cat.find(s => s.id === s2) : null;
+
+  const opciones1 = opcionesSeries(cat, d1.id, false);
+  const opciones2 = opcionesSeries(cat, d2 ? d2.id : '', true);
+
+  const series = [{ ...d1, eje: 'izq' }];
+  if (d2 && d2.id !== d1.id) series.push({ ...d2, eje: 'der' });
+
+  return `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">
+      <label class="muted" style="font-size:12px;display:flex;align-items:center;gap:6px">Serie 1
+        <select id="selSerie1" class="sel-tercera">${opciones1}</select></label>
+      <label class="muted" style="font-size:12px;display:flex;align-items:center;gap:6px">Serie 2
+        <select id="selSerie2" class="sel-tercera">${opciones2}</select></label>
+    </div>
+    <div class="chart-caja">${Charts.dobleEje({ series })}</div>`;
 }
 
 /* Chip de frescura de los datos importados */
@@ -211,10 +328,10 @@ const Vistas = {
         ${nDias > 56 ? ' Mostrando las últimas 8 semanas del rango.' : ''}</div>
       </div>`;
 
-    // Rendimiento vs readiness (protagonista, ancho completo)
+    // Comparador de series (protagonista, ancho completo): 2 selectores
     const rendimiento = `
-      <div class="card" style="grid-column:1/-1"><h3>Rendimiento vs readiness</h3>
-        ${graficaRendReadiness(ctx)}
+      <div class="card" style="grid-column:1/-1"><h3>Comparador de series</h3>
+        ${graficaDobleSerie(ctx)}
       </div>`;
 
     // Alertas
@@ -483,6 +600,21 @@ const Vistas = {
     const semanas = [...new Set(fuerzaR.map(s => s.semana).filter(v => v != null))].sort((a,b) => a-b);
     let htmlVol = '';
     if (semanas.length){
+      // Rango lunes→domingo (ambos incluidos) de cada semana, según la fecha
+      // más temprana registrada en esa semana.
+      const semInicio = new Map(); // semana → Date más temprana
+      fuerzaR.forEach(s => {
+        if (s.semana == null || !s.fecha) return;
+        const cur = semInicio.get(s.semana);
+        if (!cur || s.fecha < cur) semInicio.set(s.semana, s.fecha);
+      });
+      const rangoSemana = w => {
+        const d = semInicio.get(w);
+        if (!d) return '';
+        const lunes = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+        const domingo = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 6);
+        return `${fmtFechaCorta(lunes)} – ${fmtFechaCorta(domingo)}`;
+      };
       const vol = new Map(); // grupo → Map(semana → series)
       fuerzaR.forEach(s => {
         if (s.semana == null) return;
@@ -496,7 +628,7 @@ const Vistas = {
       const gruposV = [...vol.keys()].sort((a,b) => (a === 'Otros') - (b === 'Otros') || a.localeCompare(b, 'es'));
       htmlVol = `<div class="card"><h3>Volumen semanal (series ejecutadas por grupo)</h3>
         <table>
-          <thead><tr><th>Grupo</th>${semanas.map(w => `<th class="num">Sem ${w}</th>`).join('')}</tr></thead>
+          <thead><tr><th>Grupo</th>${semanas.map(w => `<th class="num">Sem ${w}<div class="muted" style="font-size:11px;font-weight:400;white-space:nowrap">${rangoSemana(w)}</div></th>`).join('')}</tr></thead>
           <tbody>${gruposV.map(g => `<tr><td>${esc(g)}</td>${semanas.map(w =>
             `<td class="num">${vol.get(g).get(w) ?? '<span class="muted">—</span>'}</td>`).join('')}</tr>`).join('')}
           </tbody>
@@ -538,26 +670,56 @@ const Vistas = {
     const noches = readinessR.filter(r => r.vfc != null && !r.vfcDescartada)
       .map(r => ({ x: r.fecha, y: r.vfc,
                    c: (umbrales.baja != null && r.vfc < umbrales.baja) ? '#e0a63c' : '#5aa9e6' }));
+    const fcReposo = readinessR.filter(r => r.fcReposo != null && !r.vfcDescartada)
+      .map(r => ({ x: r.fecha, y: r.fcReposo }));
+    const bandaFc = FCReposo.banda(datos.readiness);
+    const nochesFcValidas = FCReposo.validas(datos.readiness).length;
+    const mostrarFcReposo = State.mostrarFcReposo === true;
     const media7 = [], umbral7 = [];
     readinessR.forEach(r => {
       const t = serieVfc.get(fmtISO(r.fecha));
       if (t){ media7.push({ x: r.fecha, y: t.media7 }); umbral7.push({ x: r.fecha, y: t.umbral }); }
     });
     let htmlVfc = '';
-    if (perfil.vfcActiva || noches.length){
+    if (perfil.vfcActiva || noches.length || fcReposo.length){
+      const seriesVfc = [
+        { nombre: 'VFC nocturna', color: '#5aa9e6', puntos: noches, unidad: 'ms' },
+        { nombre: 'Media 7 días', color: '#4caf7d', puntos: media7, sinPuntos: true, grosor: 2.5, unidad: 'ms' },
+        { nombre: 'Umbral de tendencia', color: '#e0a63c', puntos: umbral7, dash: '6 4', sinPuntos: true, unidad: 'ms' },
+      ];
+      if (mostrarFcReposo && fcReposo.length){
+        seriesVfc.push({ nombre: 'FC en reposo', color: '#ff7a70', puntos: fcReposo,
+                         grosor: 2.5, eje: 'der', unidad: 'ppm' });
+        if (bandaFc){
+          seriesVfc.push({
+            nombre: `FC alta (${fmtNum(bandaFc.alta,1)} ppm)`, color: '#ff5252',
+            puntos: [
+              { x: readinessR[0].fecha, y: bandaFc.alta },
+              { x: readinessR[readinessR.length - 1].fecha, y: bandaFc.alta },
+            ],
+            dash: '6 4', sinPuntos: true, grosor: 2, eje: 'der', unidad: 'ppm',
+          });
+        }
+      }
       const grafica = Charts.lineas({
-        series: [
-          { nombre: 'VFC nocturna', color: '#5aa9e6', puntos: noches, soloPuntos: true },
-          { nombre: 'Media 7 días', color: '#4caf7d', puntos: media7, sinPuntos: true, grosor: 2.5 },
-          { nombre: 'Umbral de tendencia', color: '#e0a63c', puntos: umbral7, dash: '6 4', sinPuntos: true },
-        ],
+        series: seriesVfc,
       });
+      const botonFcReposo = fcReposo.length
+        ? `<button class="btn sec" id="btnToggleFcReposo" type="button" aria-pressed="${mostrarFcReposo}">${mostrarFcReposo ? 'Ocultar' : 'Mostrar'} FC en reposo</button>`
+        : '';
       htmlVfc = `
-      <div class="card" style="margin-bottom:14px"><h3>VFC (HRV)</h3>
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <h3 style="margin:0">VFC (HRV)</h3>
+          ${botonFcReposo}
+        </div>
         <div class="chart-caja">${grafica}</div>
         <div class="muted" style="font-size:12px">
           Puntos: VFC nocturna (<span style="color:#e0a63c">amarillo</span> = por debajo del umbral${umbrales.baja != null ? `, ${fmtNum(umbrales.baja,1)}` : ''}).
           Línea <span style="color:#4caf7d">verde</span>: media 7 días · línea discontinua <span style="color:#e0a63c">amarilla</span>: umbral.
+          ${mostrarFcReposo && fcReposo.length ? ' Línea <span style="color:#ff7a70">coral</span>: FC en reposo (ppm, eje derecho).' : ''}
+          ${mostrarFcReposo && bandaFc ? ` Línea discontinua <span style="color:#ff5252">roja</span>: FC alta (${fmtNum(bandaFc.alta,1)} ppm = mediana + MAD, ${bandaFc.noches} noches válidas).` : ''}
+          ${mostrarFcReposo && fcReposo.length && !bandaFc ? ` FC alta aún no disponible: requiere ≥14 noches válidas (${nochesFcValidas}/14).` : ''}
           ${media7.length ? '' : ' Aún no hay media de 7 días: requiere ≥7 noches válidas y ≥7 previas.'}
         </div>
       </div>`;
@@ -587,6 +749,7 @@ const Vistas = {
           ? (vfcBaja ? `<span class="chip ambar" title="Por debajo del umbral nocturno">${fmtNum(r.vfc,0)}</span>` : fmtNum(r.vfc,0))
             + (r.vfcDescartada ? ' <span class="muted">(desc.)</span>' : '')
           : '—'}</td>
+        <td class="num">${r.fcReposo != null ? fmtNum(r.fcReposo,0) : '—'}</td>
       </tr>`;
     }).join('');
 
@@ -604,7 +767,7 @@ const Vistas = {
           en agujetas, dolor y estrés lo mejor es el 1. Fatiga = días con señales en la ventana de 7 días.
         </div>
         <div style="overflow-x:auto"><table>
-          <thead><tr><th>Fecha</th><th>Estado</th><th>Sueño</th><th>Ánimo/energía</th><th>Agujetas</th><th>Dolor</th><th>Estrés</th><th>Fatiga</th><th>Enfermo</th><th class="num">VFC</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Estado</th><th>Sueño</th><th>Ánimo/energía</th><th>Agujetas</th><th>Dolor</th><th>Estrés</th><th>Fatiga</th><th>Enfermo</th><th class="num">VFC</th><th class="num">FC reposo (ppm)</th></tr></thead>
           <tbody>${filas}</tbody>
         </table></div>
       </div>`;
