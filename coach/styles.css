@@ -37,6 +37,14 @@ a{color:var(--acento)}
 #tabs button.activa{color:var(--texto);border-bottom-color:var(--lima)}
 #tabs button:hover{color:var(--texto)}
 
+.privacy-notice{
+  max-width:1250px;margin:14px auto 0;padding:11px 16px;
+  border:1px solid rgba(168,208,32,.4);border-radius:8px;
+  background:rgba(168,208,32,.08);color:var(--muted);font-size:13px;
+}
+.privacy-notice strong{color:var(--texto)}
+.privacy-notice a{margin-left:4px;font-weight:700}
+
 #contenido{padding:18px 16px 60px;max-width:1250px;margin:0 auto}
 
 /* Tarjetas y grids */
