@@ -140,7 +140,8 @@ a {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.language-switch button {
+.language-switch button,
+.language-switch a {
   min-width: 38px;
   min-height: 34px;
   padding: 0 9px;
@@ -152,15 +153,20 @@ a {
   font: inherit;
   font-size: 0.78rem;
   font-weight: 900;
+  line-height: 34px;
+  text-align: center;
+  text-decoration: none;
   transition: background 180ms ease, color 180ms ease;
 }
 
-.language-switch button[aria-pressed="true"] {
+.language-switch button[aria-pressed="true"],
+.language-switch a[aria-current="page"] {
   background: var(--lime);
   color: #101608;
 }
 
-.language-switch button:focus-visible {
+.language-switch button:focus-visible,
+.language-switch a:focus-visible {
   outline: 2px solid var(--lime-strong);
   outline-offset: 2px;
 }
@@ -283,6 +289,31 @@ h3 {
   margin: -11px;
 }
 
+.store-badge-label {
+  display: grid;
+  min-width: 166px;
+  height: 50px;
+  align-content: center;
+  padding: 6px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 9px;
+  background: #050505;
+  color: #fff;
+  line-height: 1;
+  text-align: left;
+}
+
+.store-badge-label span {
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.store-badge-label strong {
+  margin-top: 4px;
+  font-size: 1.18rem;
+}
+
 .store-block {
   display: grid;
   gap: 2px;
@@ -329,7 +360,9 @@ h3 {
 }
 
 .store-badge:hover img,
-.store-badge:focus-visible img {
+.store-badge:focus-visible img,
+.store-badge:hover .store-badge-label,
+.store-badge:focus-visible .store-badge-label {
   transform: translateY(-1px);
 }
 
@@ -1281,7 +1314,8 @@ h3 {
     padding: 0 12px;
   }
 
-  .language-switch button {
+  .language-switch button,
+  .language-switch a {
     min-width: 34px;
     padding: 0 7px;
   }

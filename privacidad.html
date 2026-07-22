@@ -6,18 +6,18 @@
     <title>Política de privacidad y aviso legal | TrueLift</title>
     <meta
       name="description"
-      content="Política de privacidad y aviso legal de TrueLift. La app no muestra publicidad, no requiere registro y todos tus datos se guardan únicamente en tu dispositivo."
+      content="Política de privacidad y aviso legal de TrueLift: datos locales, compras, copias de seguridad, servicios externos y derechos de las personas usuarias."
     >
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#080b08">
     <link rel="icon" type="image/png" href="Icono%20PRO.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="alternate" hreflang="es" href="https://truelift.es/privacidad.html">
+    <link rel="alternate" hreflang="en" href="https://truelift.es/privacy.html">
+    <link rel="alternate" hreflang="pt-BR" href="https://truelift.es/privacidade.html">
     <link rel="stylesheet" href="styles.css">
     <style>
       .legal-page {
-        width: min(820px, calc(100% - 48px));
+        width: min(880px, calc(100% - 48px));
         margin: 0 auto;
         padding: 140px 0 90px;
       }
@@ -47,16 +47,26 @@
         color: var(--dim);
         font-size: 0.9rem;
       }
-      .legal-highlight {
+      .legal-highlight,
+      .legal-notice {
         margin: 28px 0;
         padding: 20px 24px;
         border: 1px solid rgba(168, 238, 25, 0.3);
         border-radius: var(--radius);
         background: rgba(134, 198, 23, 0.06);
       }
-      .legal-highlight p {
+      .legal-highlight p,
+      .legal-notice p {
         margin: 0;
         color: #e5eadf;
+      }
+      .legal-page a {
+        color: var(--lime-strong);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .legal-page a:hover {
+        color: var(--text);
       }
     </style>
   </head>
@@ -69,9 +79,9 @@
       <span></span>
       <div class="header-tools">
         <div class="language-switch" role="group" aria-label="Seleccionar idioma">
-          <button type="button" data-language="es" aria-pressed="true">ES</button>
-          <button type="button" data-language="en" aria-pressed="false">EN</button>
-          <button type="button" data-language="pt-BR" aria-pressed="false">PT-BR</button>
+          <a href="privacidad.html" lang="es" aria-current="page">ES</a>
+          <a href="privacy.html" lang="en">EN</a>
+          <a href="privacidade.html" lang="pt-BR">PT-BR</a>
         </div>
         <a class="header-cta" href="index.html">Volver a la web</a>
       </div>
@@ -79,158 +89,230 @@
 
     <main class="legal-page">
       <h1>Política de privacidad y aviso legal</h1>
-      <p class="legal-updated">Última actualización: 12 de julio de 2026</p>
+      <p class="legal-updated">Última actualización: 22 de julio de 2026</p>
 
       <div class="legal-highlight">
         <p>
-          <strong>Resumen en una frase:</strong> TrueLift no muestra publicidad, no requiere registro,
-          no recopila datos personales y todo tu historial de entrenamiento se guarda únicamente
-          en tu dispositivo, bajo tu control.
+          <strong>Resumen:</strong> TrueLift no muestra publicidad ni exige crear una cuenta. Tu rutina,
+          historial y datos de bienestar se procesan principalmente en tu dispositivo y el desarrollador
+          no puede consultarlos. Determinados datos técnicos y de compra sí son tratados por los servicios
+          necesarios que se explican en esta política.
         </p>
       </div>
 
-      <h2>1. Responsable</h2>
+      <h2>1. Identidad del responsable</h2>
       <p>
-        <strong>Titular y responsable:</strong> Rubén Soro (desarrollador independiente de TrueLift).<br>
-        <strong>Contacto:</strong> <a href="mailto:rsoroesteban@gmail.com">rsoroesteban@gmail.com</a><br>
-        <strong>Ámbito:</strong> esta política se aplica a la aplicación móvil TrueLift (Android e iOS)
-        y a este sitio web.
+        <strong>Titular y responsable:</strong> Rubén Soro Esteban, desarrollador independiente de TrueLift.<br>
+        <strong>NIF:</strong> 50750388Z<br>
+        <strong>Domicilio profesional:</strong> Avenida de la carrera 5 Portal 1 2ºA 28223 Pozuelo de Alarcón Madrid<br>
+        <strong>Contacto de privacidad y soporte:</strong>
+        <a href="mailto:rsoroesteban@gmail.com">rsoroesteban@gmail.com</a><br>
+        <strong>Ámbito:</strong> esta política se aplica a la aplicación móvil TrueLift, al sitio
+        <a href="https://www.truelift.es">truelift.es</a> y a la herramienta web TrueLift Coach.
       </p>
       <p>
         Esta política se redacta conforme al Reglamento (UE) 2016/679, General de Protección de Datos
-        (RGPD), a la Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos
-        digitales (LOPDGDD), y a la Ley 34/2002, de Servicios de la Sociedad de la Información y de
-        Comercio Electrónico (LSSI-CE).
+        (RGPD), a la Ley Orgánica 3/2018 (LOPDGDD) y a la Ley 34/2002 (LSSI-CE).
       </p>
 
-      <h2>2. Privacidad en la aplicación TrueLift</h2>
+      <h2>2. Datos tratados en la aplicación TrueLift</h2>
 
-      <h3>2.1 No recopilamos tus datos</h3>
+      <h3>2.1 Datos que permanecen bajo tu control</h3>
       <p>
-        TrueLift funciona sin cuenta de usuario y sin registro. La aplicación no solicita tu nombre,
-        tu email ni ningún otro dato identificativo, y el desarrollador <strong>no recibe, no almacena
-        y no puede acceder</strong> a ninguna información tuya.
-      </p>
-
-      <h3>2.2 Tus datos viven en tu dispositivo</h3>
-      <p>
-        Toda la información que introduces en la app se guarda exclusivamente en el almacenamiento
-        local de tu dispositivo. Esto incluye:
+        TrueLift funciona sin cuenta de usuario. La aplicación no pide tu nombre ni tu correo electrónico
+        para entrenar. Guarda localmente la información que introduces o que genera a partir de ella:
       </p>
       <ul>
-        <li>Tu rutina, sesiones de entrenamiento, cargas, repeticiones y RIR.</li>
-        <li>Los cuestionarios diarios de bienestar (sueño, energía, estrés, molestias) si decides usarlos.</li>
-        <li>Los valores de variabilidad de la frecuencia cardiaca (VFC) que introduzcas manualmente, si decides usarlos.</li>
-        <li>Los ajustes de la app y tu configuración de material.</li>
+        <li>Rutina, ejercicios, material disponible, sesiones, cargas, repeticiones, RIR, RPE, cardio, marcas y progreso.</li>
+        <li>Sexo seleccionado, peso corporal, fase nutricional y preferencias de entrenamiento.</li>
+        <li>Datos opcionales de bienestar y salud: sueño, energía o ánimo, estrés, agujetas, dolor y zona afectada, enfermedad o fiebre, VFC y frecuencia cardiaca en reposo.</li>
+        <li>Ajustes, prueba PRO, borradores y demás configuración necesaria para que la app funcione.</li>
       </ul>
       <p>
-        Estos datos no se envían a ningún servidor. Si desinstalas la aplicación sin exportar una copia
-        de seguridad, se eliminan de forma permanente.
+        El desarrollador no recibe ni puede consultar esa información. Se utiliza para registrar y planificar
+        tu entrenamiento, calcular progresiones, adaptar recomendaciones y mostrar tu evolución. La base
+        jurídica general es la ejecución de la funcionalidad que solicitas (art. 6.1.b RGPD). Los datos de
+        bienestar y salud son opcionales; cuando decides introducirlos tras recibir esta información, su
+        tratamiento local se basa en tu consentimiento explícito (art. 9.2.a RGPD), que puedes retirar dejando
+        de usarlos y borrando el historial correspondiente.
+      </p>
+      <p>
+        Los datos locales se conservan hasta que los eliminas desde la aplicación, borras el almacenamiento
+        de la app o la desinstalas, sin perjuicio de las copias de seguridad descritas a continuación.
       </p>
 
-      <h3>2.3 Copias de seguridad y datos compartidos</h3>
+      <h3>2.2 Copias de seguridad y funciones de compartir</h3>
       <p>
-        La exportación de copias de seguridad y la función de compartir entrenamientos generan archivos
-        que se guardan o comparten <strong>únicamente donde tú decidas</strong> (tu almacenamiento, tu
-        nube personal o la app con la que compartas). El desarrollador no interviene ni tiene acceso a
-        esos archivos.
+        Cuando exportas una copia o compartes un entrenamiento, eliges la aplicación, carpeta o servicio de
+        destino. Desde ese momento se aplican también las condiciones y la política del destinatario que hayas
+        elegido. El desarrollador no recibe esos archivos.
+      </p>
+      <p>
+        Además, el sistema operativo puede incluir datos de TrueLift en copias automáticas del dispositivo o
+        de la cuenta si tienes esa función activada. En Android, Auto Backup puede guardar datos en la cuenta
+        de Google y facilitar su restauración o transferencia entre dispositivos. Estas copias son gestionadas
+        por Google o Apple conforme a la configuración de tu cuenta; el desarrollador no puede acceder a ellas.
+        Consulta la información de
+        <a href="https://developer.android.com/identity/data/autobackup" target="_blank" rel="noopener">Android Auto Backup</a>,
+        la <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacidad de Google</a>
+        y la <a href="https://www.apple.com/legal/privacy/es/" target="_blank" rel="noopener">privacidad de Apple</a>.
       </p>
 
-      <h3>2.4 Sin publicidad ni rastreadores</h3>
+      <h3>2.3 Compras y suscripciones de TrueLift PRO</h3>
       <p>
-        La aplicación no muestra publicidad de ningún tipo y no incorpora SDK de publicidad,
-        analítica de terceros ni rastreadores.
+        Los pagos se tramitan mediante Google Play o App Store. TrueLift utiliza RevenueCat, Inc. para mostrar
+        ofertas, verificar, administrar y restaurar compras. Para ello, RevenueCat procesa un identificador
+        seudónimo o anónimo de la instalación, información técnica básica —como tipo de dispositivo y sistema
+        operativo—, última utilización e información de la transacción, que puede incluir el producto, estado
+        de la suscripción, recibo de Apple o token de compra de Google.
+      </p>
+      <p>
+        El desarrollador no recibe datos de tarjeta o cuenta bancaria, aunque puede consultar en RevenueCat el
+        estado y el historial de compra asociados al identificador seudónimo. La finalidad y base jurídica son
+        ejecutar la compra, desbloquear PRO, prevenir errores y restaurar derechos adquiridos (art. 6.1.b RGPD).
+        Google y Apple actúan como responsables de sus respectivos procesos de pago. RevenueCat trata la
+        información de usuario final por cuenta del desarrollador y puede realizar tratamientos en Estados
+        Unidos con las garantías previstas en su acuerdo de tratamiento y cláusulas contractuales tipo.
+      </p>
+      <p>
+        Consulta la <a href="https://www.revenuecat.com/privacy" target="_blank" rel="noopener">política de RevenueCat</a>,
+        su <a href="https://www.revenuecat.com/dpa" target="_blank" rel="noopener">acuerdo de tratamiento de datos</a>,
+        la <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacidad de Google</a>
+        y la <a href="https://www.apple.com/legal/privacy/es/" target="_blank" rel="noopener">privacidad de Apple</a>.
+        La información se conserva durante el tiempo necesario para gestionar la compra y durante los plazos
+        contractuales o legales aplicables.
       </p>
 
-      <h3>2.5 Compras (TrueLift PRO)</h3>
+      <h3>2.4 Descargas de contenido y tipografías</h3>
       <p>
-        Las compras y suscripciones de TrueLift PRO se procesan íntegramente a través de
-        <strong>Google Play</strong> (Google Ireland Ltd.) o del <strong>App Store</strong> (Apple
-        Distribution International Ltd.), que actúan como responsables del tratamiento de tus datos de
-        pago conforme a sus propias políticas de privacidad. El desarrollador no accede en ningún caso
-        a tus datos de pago; únicamente recibe de la plataforma la confirmación anónima de la compra
-        para desbloquear las funciones PRO en tu dispositivo.
+        Cuando solicitas el catálogo o una rutina PRO, la app conecta con GitHub para descargar archivos
+        públicos. GitHub recibe los datos técnicos normales de una conexión web, como dirección IP, fecha,
+        agente de usuario y recurso solicitado. No se envían tu historial ni tus datos de bienestar. Esta
+        conexión es necesaria para entregar el contenido solicitado (art. 6.1.b RGPD). Consulta la
+        <a href="https://docs.github.com/es/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">privacidad de GitHub</a>.
+      </p>
+      <p>
+        La versión actual también puede solicitar a Google Fonts las tipografías visuales de la app. Google
+        recibe los datos técnicos necesarios para servirlas, como la dirección IP y los datos de la petición.
+        La finalidad es presentar la interfaz y la base jurídica es el interés legítimo en prestar una experiencia
+        visual coherente (art. 6.1.f RGPD). Consulta la
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacidad de Google</a>.
       </p>
 
-      <h3>2.6 Datos de salud</h3>
+      <h3>2.5 Sin publicidad ni analítica de entrenamiento</h3>
       <p>
-        Los valores opcionales relacionados con tu bienestar (sueño, molestias, VFC) podrían tener la
-        consideración de datos de categoría especial según el art. 9 RGPD. En TrueLift estos datos
-        <strong>solo se procesan localmente en tu dispositivo</strong> para modular tu entrenamiento y
-        nunca se comunican al desarrollador ni a terceros. TrueLift es una herramienta de apoyo al
-        entrenamiento: no realiza diagnósticos ni sustituye la valoración de un profesional sanitario.
+        La aplicación no muestra publicidad y no incorpora SDK de publicidad, analítica de comportamiento ni
+        rastreadores comerciales. RevenueCat se utiliza exclusivamente para compras y suscripciones; GitHub,
+        para descargar contenido solicitado; y Google Fonts, para presentar las tipografías.
       </p>
 
-      <h2>3. Privacidad en este sitio web</h2>
+      <h3>2.6 Datos de salud y limitación médica</h3>
       <p>
-        Este sitio es una página estática alojada en GitHub Pages (GitHub, Inc.). No utiliza cookies
-        propias, ni analítica, ni formularios: no recogemos ningún dato de los visitantes. Como en
-        cualquier alojamiento web, GitHub puede registrar datos técnicos de conexión (como la dirección
-        IP) en sus registros de servidor conforme a su
+        Los indicadores de bienestar y salud se procesan localmente para modular recomendaciones de entrenamiento.
+        No se envían a RevenueCat, GitHub, Google Fonts, Google Play, App Store ni al desarrollador. No se utilizan
+        para publicidad ni para decisiones con efectos jurídicos. TrueLift es una herramienta de apoyo al
+        entrenamiento, no es un dispositivo médico y no diagnostica, trata, cura ni previene enfermedades.
+        Consulta a un profesional sanitario para obtener asesoramiento, diagnóstico o tratamiento médico.
+      </p>
+
+      <h2 id="coach">3. TrueLift Coach y datos de clientes</h2>
+      <p>
+        TrueLift Coach permite que un entrenador importe copias que un cliente le haya facilitado. Puede tratar
+        nombre o alias, historial de entrenamiento, observaciones, lesiones o molestias, disponibilidad, VFC y
+        otros indicadores incluidos en el archivo. Los datos se leen y guardan en el almacenamiento local del
+        navegador del entrenador; no se suben al servidor de TrueLift y el desarrollador no puede acceder a ellos.
+      </p>
+      <p>
+        El entrenador o entidad que decide importar y utilizar esos datos es responsable de su propio tratamiento.
+        Antes de importarlos debe informar al cliente, disponer de una base jurídica válida y, cuando contengan
+        datos de salud, de una condición aplicable del art. 9 RGPD —habitualmente consentimiento explícito—.
+        También debe limitar el acceso al dispositivo, mantener copias seguras, no conservar información
+        innecesaria y eliminarla cuando deje de necesitarla. TrueLift Coach permite exportar la cartera y eliminar
+        cada cliente y sus datos.
+      </p>
+      <p>
+        El almacenamiento local es imprescindible para proporcionar esta herramienta sin servidor. Se conserva
+        hasta que el entrenador elimina los clientes o borra los datos del sitio en el navegador. Los archivos
+        exportados quedan bajo el control y responsabilidad de quien los descarga y comparte.
+      </p>
+
+      <h2>4. Privacidad del sitio web</h2>
+      <p>
+        El sitio es estático y está alojado en GitHub Pages. TrueLift no utiliza analítica web, publicidad ni
+        cookies de seguimiento. El selector de idioma guarda únicamente la preferencia de idioma en el
+        almacenamiento local del navegador; este almacenamiento técnico es necesario para recordar la opción
+        solicitada y no se usa para identificarte ni seguir tu actividad.
+      </p>
+      <p>
+        GitHub puede registrar datos técnicos de conexión, como dirección IP, fecha, recurso solicitado y agente
+        de usuario, para alojar y proteger el sitio conforme a su
         <a href="https://docs.github.com/es/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">política de privacidad</a>.
-        Las tipografías se cargan desde Google Fonts, lo que implica una petición técnica a servidores
-        de Google al visitar la página.
+        Si utilizas un enlace de correo, tu dirección, el contenido del mensaje y los datos que decidas incluir se
+        tratarán para responder y prestar soporte (art. 6.1.b o 6.1.f RGPD). Se conservarán mientras resulte
+        necesario para resolver la consulta y, después, bloqueados cuando proceda durante los plazos legales.
       </p>
 
-      <h2>4. Tus derechos</h2>
+      <h2>5. Destinatarios, transferencias y seguridad</h2>
       <p>
-        Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y
-        portabilidad reconocidos por el RGPD escribiendo a
-        <a href="mailto:rsoroesteban@gmail.com">rsoroesteban@gmail.com</a>. Ten en cuenta que, dado que
-        el desarrollador no dispone de datos personales tuyos (todos permanecen en tu dispositivo), el
-        ejercicio efectivo de estos derechos se materializa directamente en la app: puedes consultar,
-        editar, exportar o borrar tus datos en cualquier momento desde la propia aplicación.
+        Fuera de las acciones iniciadas por ti y de los proveedores descritos, no se venden ni ceden datos. Las
+        conexiones de la app y del sitio utilizan HTTPS. Algunos proveedores están establecidos o utilizan
+        infraestructura fuera del Espacio Económico Europeo; sus políticas y, cuando actúan por cuenta del
+        desarrollador, sus acuerdos de tratamiento recogen los mecanismos aplicables a esas transferencias.
       </p>
       <p>
-        Si consideras que el tratamiento no se ajusta a la normativa, puedes presentar una reclamación
-        ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener">www.aepd.es</a>).
-      </p>
-
-      <h2>5. Menores de edad</h2>
-      <p>
-        TrueLift no está dirigida a menores de 14 años. Al no existir registro ni recogida de datos,
-        no se tratan datos personales de menores en ningún caso.
+        Protege el dispositivo con bloqueo de pantalla, mantén el sistema actualizado y guarda las copias exportadas
+        en ubicaciones seguras. Ningún sistema puede garantizar seguridad absoluta, pero se aplican medidas
+        proporcionadas al carácter local y limitado del tratamiento.
       </p>
 
-      <h2>6. Aviso legal y condiciones de uso</h2>
+      <h2>6. Tus derechos</h2>
       <p>
-        <strong>Titular del sitio y de la app:</strong> Rubén Soro ·
+        Puedes consultar, corregir, exportar y eliminar desde la app los datos que solo existen en tu dispositivo.
+        Como el desarrollador no dispone de ellos, no puede entregarlos ni borrarlos remotamente. También puedes
+        borrar el almacenamiento de la aplicación o desinstalarla, teniendo en cuenta las copias del sistema operativo.
+      </p>
+      <p>
+        Para ejercer acceso, rectificación, supresión, oposición, limitación o portabilidad respecto de datos de
+        compra, soporte u otra información que sí haya sido recibida, escribe a
+        <a href="mailto:rsoroesteban@gmail.com">rsoroesteban@gmail.com</a>. Podrá solicitarse información razonable
+        para localizar el identificador de compra y verificar la solicitud. Los datos conservados por Google Play
+        o App Store deben gestionarse también ante esas plataformas conforme a sus políticas.
+      </p>
+      <p>
+        Puedes retirar un consentimiento en cualquier momento, sin afectar a la licitud del tratamiento anterior.
+        Si consideras que el tratamiento incumple la normativa, puedes reclamar ante la
+        <a href="https://www.aepd.es" target="_blank" rel="noopener">Agencia Española de Protección de Datos</a>.
+      </p>
+
+      <h2>7. Menores</h2>
+      <p>
+        TrueLift no está dirigida a menores de 14 años. Las personas menores de esa edad deben utilizarla únicamente
+        con autorización y supervisión de su padre, madre o representante legal. Las compras están sujetas además
+        a los controles familiares y condiciones de la tienda correspondiente. Si el desarrollador recibe por soporte
+        datos de un menor sin autorización válida, adoptará medidas razonables para eliminarlos.
+      </p>
+
+      <h2>8. Aviso legal y contratación de TrueLift PRO</h2>
+      <p>
+        <strong>Titular:</strong> Rubén Soro Esteban · <strong>NIF:</strong> 50750388Z ·
+        <strong>Domicilio profesional:</strong> Avenida de la carrera 5 Portal 1 2ºA 28223 Pozuelo de Alarcón Madrid ·
         <a href="mailto:rsoroesteban@gmail.com">rsoroesteban@gmail.com</a>
       </p>
       <ul>
-        <li>
-          <strong>Propiedad intelectual:</strong> el contenido de este sitio, la marca TrueLift, su
-          logotipo, las capturas y el manual son propiedad de su titular. No está permitida su
-          reproducción con fines comerciales sin autorización.
-        </li>
-        <li>
-          <strong>Uso de la aplicación:</strong> TrueLift es una herramienta de planificación y registro
-          de entrenamiento. Sus recomendaciones son orientativas y no constituyen consejo médico.
-          Consulta a un profesional sanitario antes de iniciar un programa de ejercicio, especialmente
-          si tienes alguna patología o lesión.
-        </li>
-        <li>
-          <strong>Responsabilidad:</strong> el titular no se hace responsable del mal uso de la
-          aplicación ni de decisiones tomadas exclusivamente en base a sus recomendaciones.
-        </li>
-        <li>
-          <strong>Enlaces externos:</strong> este sitio contiene enlaces a Google Play, App Store y
-          otros sitios de terceros, cuyas políticas de privacidad son ajenas a este sitio.
-        </li>
+        <li><strong>Propiedad intelectual:</strong> la aplicación, marca, logotipo, textos, capturas, manuales y contenido propio pertenecen a su titular o se utilizan con licencia. No se autoriza su explotación comercial sin permiso, salvo los usos permitidos por la ley.</li>
+        <li><strong>Condiciones económicas:</strong> los planes, duración, precio final, impuestos, renovación y condiciones aplicables se muestran en Google Play o App Store antes de confirmar la compra. Las suscripciones pueden gestionarse o cancelarse desde la tienda o desde las opciones habilitadas en la app. La cancelación evita futuras renovaciones, sin perjuicio del acceso ya pagado y de los derechos imperativos del consumidor.</li>
+        <li><strong>Uso de la aplicación:</strong> las recomendaciones son orientativas y no sustituyen el criterio de un entrenador cualificado o profesional sanitario. El usuario es responsable de adaptar el ejercicio a su capacidad, técnica, entorno y estado de salud.</li>
+        <li><strong>Responsabilidad:</strong> el titular responde en los términos exigidos por la normativa aplicable. Nada en estas condiciones excluye o limita derechos irrenunciables de consumidores ni responsabilidades que legalmente no puedan excluirse.</li>
+        <li><strong>Enlaces y servicios externos:</strong> los sitios y servicios de terceros se rigen por sus propias condiciones y políticas.</li>
       </ul>
 
-      <h2>7. Cambios en esta política</h2>
+      <h2>9. Cambios y legislación aplicable</h2>
       <p>
-        Cualquier cambio en esta política se publicará en esta misma página, indicando la fecha de la
-        última actualización. Si un cambio futuro implicara un tratamiento de datos distinto al aquí
-        descrito, se informará de forma destacada y, cuando proceda, se solicitará consentimiento.
-      </p>
-
-      <h2>8. Legislación aplicable</h2>
-      <p>
-        Estas condiciones se rigen por la legislación española. Para cualquier controversia serán
-        competentes los juzgados y tribunales que correspondan conforme a la normativa aplicable en
-        materia de consumidores y usuarios.
+        Los cambios se publicarán en esta página indicando la fecha de actualización. Si introducen un tratamiento
+        nuevo que requiera consentimiento, se solicitará antes de aplicarlo. La política y las condiciones se rigen
+        por la legislación española y europea. En controversias con consumidores serán competentes los juzgados que
+        correspondan conforme a las normas imperativas de protección de consumidores, incluido, cuando proceda, el
+        domicilio del consumidor.
       </p>
     </main>
 
@@ -245,7 +327,5 @@
         </div>
       </div>
     </footer>
-    <script src="translations-pt-br.js?v=20260713-2"></script>
-    <script src="script-20260713-3.js"></script>
   </body>
 </html>

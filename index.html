@@ -19,13 +19,7 @@
     <meta property="og:url" content="https://diodocup.github.io/Truelift/">
     <meta property="og:image" content="https://diodocup.github.io/Truelift/Banner.png">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <!-- Analítica (opcional): crea una cuenta en https://plausible.io y descomenta la línea siguiente.
-    <script defer data-domain="diodocup.github.io" src="https://plausible.io/js/script.js"></script>
-    -->
   </head>
   <body>
     <header class="site-header" data-header>
@@ -76,7 +70,7 @@
               <div class="store-badges">
                 <!-- TODO: sustituir por los enlaces exactos de las fichas cuando estén publicadas -->
                 <a class="store-badge" href="https://play.google.com/store/search?q=TrueLift&c=apps" target="_blank" rel="noopener" aria-label="Disponible en Google Play">
-                  <img src="https://play.google.com/intl/es_es/badges/static/images/badges/es_badge_web_generic.png" alt="Disponible en Google Play" loading="lazy" decoding="async">
+                  <span class="store-badge-label"><span>Disponible en</span><strong>Google Play</strong></span>
                 </a>
                 <!-- TODO: sustituir por el badge oficial de Apple cuando esté publicada la ficha en el App Store -->
                 <a class="store-badge ios" href="https://www.apple.com/es/app-store/" target="_blank" rel="noopener" aria-label="Disponible en el App Store">
@@ -99,7 +93,7 @@
               </div>
               <div class="proof-item">
                 <h3>Sin anuncios ni registro</h3>
-                <p>Cero publicidad, cero cuentas. Todos tus datos viven en tu dispositivo.</p>
+                <p>Cero publicidad, cero cuentas. Tu historial se procesa en tu dispositivo y el desarrollador no puede consultarlo.</p>
               </div>
             </div>
             <div class="proof-panel pro">
@@ -145,7 +139,7 @@
           </div>
           <div>
             <h3>Tus datos, en tu móvil</h3>
-            <p>Todo tu historial vive en tu dispositivo. Tú decides con las copias de seguridad.</p>
+            <p>Tu historial se guarda localmente. Tú eliges las exportaciones y el sistema puede hacer copias automáticas si las activas.</p>
           </div>
         </div>
       </section>
@@ -386,8 +380,8 @@
               </span>
               <h3>Datos bajo tu control</h3>
               <p>
-                Tu rutina y tu historial viven en tu móvil. Puedes exportar y restaurar copias de seguridad
-                para no perder tu progreso si cambias de dispositivo.
+                Tu rutina y tu historial se procesan en tu móvil y el desarrollador no puede consultarlos.
+                Puedes exportar copias; el sistema operativo también puede respaldarlas si activas esa función.
               </p>
             </article>
           </div>
@@ -745,9 +739,9 @@
             <details>
               <summary>¿Tiene publicidad o necesito crear una cuenta?</summary>
               <p>
-                No y no. TrueLift no muestra ningún tipo de publicidad y no requiere registro:
-                no pedimos tu email ni ningún dato personal. Todos tus datos de entrenamiento
-                se guardan únicamente en tu dispositivo.
+                No y no. TrueLift no muestra publicidad y no requiere registro: no pedimos tu nombre
+                ni tu email para entrenar. Tu historial se procesa localmente y el desarrollador no puede
+                consultarlo; los servicios de compra y descarga tratan solo los datos descritos en la política.
               </p>
             </details>
             <details>
@@ -825,7 +819,7 @@
             <div class="store-block">
               <div class="store-badges">
                 <a class="store-badge" href="https://play.google.com/store/search?q=TrueLift&c=apps" target="_blank" rel="noopener" aria-label="Disponible en Google Play">
-                  <img src="https://play.google.com/intl/es_es/badges/static/images/badges/es_badge_web_generic.png" alt="Disponible en Google Play" loading="lazy" decoding="async">
+                  <span class="store-badge-label"><span>Disponible en</span><strong>Google Play</strong></span>
                 </a>
                 <a class="store-badge ios" href="https://www.apple.com/es/app-store/" target="_blank" rel="noopener" aria-label="Disponible en el App Store">
                   <img src="app-store-badge.svg" alt="Disponible en el App Store" loading="lazy" decoding="async">
@@ -848,7 +842,7 @@
       <div class="section-inner footer-inner">
         <p>TrueLift - Un entrenador en tu bolsillo.</p>
         <div>
-          <a href="privacidad.html">Privacidad y aviso legal</a>
+          <a href="privacidad.html" data-privacy-link>Privacidad y aviso legal</a>
           <a href="Manual_TrueLift.pdf" download data-manual-download>Manual (PDF)</a>
           <a href="https://www.truelift.es" target="_blank" rel="noopener">truelift.es</a>
           <a href="https://www.rubensoro.es" target="_blank" rel="noopener">rubensoro.es</a>

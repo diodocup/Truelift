@@ -18,6 +18,7 @@ const englishTranslations = {
   "Un entrenador en tu bolsillo.": "A coach in your pocket.",
   "Las demás apps registran lo que haces. TrueLift planifica lo que haces después: analiza tu rendimiento y tu recuperación y decide cuándo subir peso, cuánto subir, cuándo mantener y cuándo descargar. Y te explica el porqué de cada decisión.": "Other apps record what you do. TrueLift plans what comes next: it analyses your performance and recovery to decide when to add weight, how much to add, when to hold steady and when to deload. And it explains every decision.",
   "Disponible en Google Play": "Get it on Google Play",
+  "Disponible en": "Available on",
   "Disponible en el App Store": "Download on the App Store",
   "Disponible muy pronto": "Coming very soon",
   "Descargar manual (PDF)": "Download manual (English PDF)",
@@ -25,7 +26,7 @@ const englishTranslations = {
   "Gratis para siempre": "Free forever",
   "Rutina, registro, progresión automática y herramientas esenciales. Sin trucos.": "A training plan, workout log, automatic progression and essential tools. No catches.",
   "Sin anuncios ni registro": "No ads or sign-up",
-  "Cero publicidad, cero cuentas. Todos tus datos viven en tu dispositivo.": "No ads, no accounts. All your data stays on your device.",
+  "Cero publicidad, cero cuentas. Tu historial se procesa en tu dispositivo y el desarrollador no puede consultarlo.": "No ads, no accounts. Your training history is processed on your device and cannot be viewed by the developer.",
   "Elige tu plan": "Choose your plan",
   "Personalización total, autorregulación, VFC, fase de dieta, deload inteligente y rutinas descargables. Mensual, anual o pago único.": "Full customisation, autoregulation, HRV, nutrition phases, smart deloads and downloadable programmes. Pay monthly, annually or once for life.",
   "28 días de prueba completa": "Full 28-day trial",
@@ -39,7 +40,7 @@ const englishTranslations = {
   "Sin registro ni cuenta": "No sign-up or account",
   "Instala y entrena. No pedimos tu email, ni tu nombre, ni nada de ti.": "Install it and train. We do not ask for your email, your name or any personal details.",
   "Tus datos, en tu móvil": "Your data stays on your phone",
-  "Todo tu historial vive en tu dispositivo. Tú decides con las copias de seguridad.": "Your entire history stays on your device. You decide where your backups go.",
+  "Tu historial se guarda localmente. Tú eliges las exportaciones y el sistema puede hacer copias automáticas si las activas.": "Your history is stored locally. You choose where to export it, and the operating system may make automatic backups if you enable them.",
   "Planificación adaptativa · el corazón de TrueLift": "Adaptive planning · the heart of TrueLift",
   "Más de 15 señales para planificar cada sesión. No solo tus kilos.": "Over 15 signals shape every workout — not just the weight on the bar.",
   "Cada vez que abres una sesión, TrueLift ya ha hecho el trabajo de un entrenador: ha cruzado tu ejecución real, tu rendimiento reciente y tu recuperación para decidir qué te toca hoy. Ninguna app de registro hace esto por ti.": "Whenever you open a workout, TrueLift has already done the planning: it combines what you actually lifted, your recent performance and your recovery to decide what you should do today. An ordinary workout tracker cannot do that for you.",
@@ -114,7 +115,7 @@ const englishTranslations = {
   "Herramientas de apoyo": "Useful training tools",
   "Calculadora de discos, series de calentamiento, cronómetro de descanso, registro de cardio y opción de compartir tus entrenamientos y marcas de forma sencilla.": "Plate calculator, warm-up sets, rest timer, cardio log and simple tools for sharing workouts and personal bests.",
   "Datos bajo tu control": "Your data, under your control",
-  "Tu rutina y tu historial viven en tu móvil. Puedes exportar y restaurar copias de seguridad para no perder tu progreso si cambias de dispositivo.": "Your programme and history stay on your phone. You can export and restore backups so your progress is safe when you change devices.",
+  "Tu rutina y tu historial se procesan en tu móvil y el desarrollador no puede consultarlos. Puedes exportar copias; el sistema operativo también puede respaldarlas si activas esa función.": "Your programme and history are processed on your phone and cannot be viewed by the developer. You can export backups, and the operating system may also back them up if you enable that feature.",
   "Pantalla de volumen semanal por grupo muscular": "Weekly volume screen by muscle group",
   "Pantalla de registro con estado para entrenar y subida de carga recomendada y explicada": "Workout log showing readiness and an explained load recommendation",
   "Abre el registro de la app y empieza tu entrenamiento sin demoras.": "Open your workout and get straight to training.",
@@ -218,7 +219,7 @@ const englishTranslations = {
   "¿Para quién es TrueLift PRO?": "Who is TrueLift PRO for?",
   "La versión PRO es para ti si quieres personalizar completamente tu rutina, usar autorregulación para ajustar la progresión y acceder a herramientas específicas como creación de ejercicios, importación desde Excel, fase de dieta, descarga guiada, descarga automática y la biblioteca de rutinas descargables: express, especialización en tren superior o inferior, solo peso libre y más.": "PRO is for you if you want to fully customise your programme, use autoregulation to adjust progression and access advanced tools such as custom exercises, Excel imports, nutrition phases, guided and automatic deloads, and a library of downloadable programmes including express sessions, upper- or lower-body specialisation, free-weights-only plans and more.",
   "¿Tiene publicidad o necesito crear una cuenta?": "Does it have ads, or do I need an account?",
-  "No y no. TrueLift no muestra ningún tipo de publicidad y no requiere registro: no pedimos tu email ni ningún dato personal. Todos tus datos de entrenamiento se guardan únicamente en tu dispositivo.": "No to both. TrueLift has no advertising and requires no sign-up: we do not ask for your email or any personal details. All your training data is stored only on your device.",
+  "No y no. TrueLift no muestra publicidad y no requiere registro: no pedimos tu nombre ni tu email para entrenar. Tu historial se procesa localmente y el desarrollador no puede consultarlo; los servicios de compra y descarga tratan solo los datos descritos en la política.": "No to both. TrueLift has no advertising and requires no sign-up: we do not ask for your name or email to train. Your history is processed locally and cannot be viewed by the developer; purchase and download services process only the data described in the policy.",
   "¿Cómo se paga TrueLift PRO?": "How do I pay for TrueLift PRO?",
   "Como prefieras: suscripción mensual, suscripción anual o un pago único que desbloquea PRO para siempre. Las suscripciones no tienen permanencia y puedes cancelarlas cuando quieras. La compra queda asociada a tu cuenta de Google y puedes restaurarla si cambias de móvil o reinstalas la app.": "Choose a monthly subscription, an annual subscription or a one-time purchase that unlocks PRO for life. Subscriptions can be cancelled at any time. Your purchase is linked to your Google account and can be restored if you change phones or reinstall the app.",
   "¿Qué pasa cuando terminan los 28 días de prueba PRO?": "What happens when the 28-day PRO trial ends?",
@@ -389,6 +390,15 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
   document.documentElement.lang = selectedLanguage;
   document.querySelectorAll("[data-language]").forEach((button) => {
     button.setAttribute("aria-pressed", String(button.getAttribute("data-language") === selectedLanguage));
+  });
+
+  const privacyPages = {
+    es: "privacidad.html",
+    en: "privacy.html",
+    "pt-BR": "privacidade.html"
+  };
+  document.querySelectorAll("[data-privacy-link]").forEach((link) => {
+    link.setAttribute("href", privacyPages[selectedLanguage]);
   });
 
   document.querySelectorAll('img[src*="play.google.com/intl/"]').forEach((badge) => {
