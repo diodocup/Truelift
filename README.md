@@ -11,12 +11,13 @@ La web puede publicarse directamente con GitHub Pages:
 3. Selecciona la rama `main` y la carpeta `/root`.
 4. Guarda los cambios.
 
-## Enlace de Google Play
+## Enlaces de las tiendas
 
-Los botones apuntan ahora a una búsqueda de TrueLift en Google Play:
+Mientras se publican las fichas definitivas, los botones apuntan a Google Play y a la página del App Store:
 
 ```text
 https://play.google.com/store/search?q=TrueLift&c=apps
+https://www.apple.com/es/app-store/
 ```
 
-Cuando tengas el enlace exacto de la ficha, reemplázalo en `index.html`.
+Cuando estén disponibles los enlaces exactos de ambas fichas, reemplázalos en `index.html`.

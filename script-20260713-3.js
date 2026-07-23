@@ -22,6 +22,8 @@ const englishTranslations = {
   "Disponible en el App Store": "Download on the App Store",
   "Disponible muy pronto": "Coming very soon",
   "Descargar manual (PDF)": "Download manual (English PDF)",
+  "Abrir TrueLift Coach": "Open TrueLift Coach",
+  "App de escritorio para entrenadores y visualización de métricas para usuarios.": "Desktop app for coaches and metric insights for users.",
   "Resumen de TrueLift": "TrueLift overview",
   "Gratis para siempre": "Free forever",
   "Rutina, registro, progresión automática y herramientas esenciales. Sin trucos.": "A training plan, workout log, automatic progression and essential tools. No catches.",
@@ -138,6 +140,9 @@ const englishTranslations = {
   "Sin permanencia: cancela cuando quieras": "No commitment: cancel whenever you like",
   "Si no eliges plan, sigues con la versión gratis": "If you do not choose a plan, you keep the free version",
   "Probar PRO gratis 28 días": "Try PRO free for 28 days",
+  "Probar TrueLift PRO": "Try TrueLift PRO",
+  "Probar PRO en Google Play": "Try PRO on Google Play",
+  "Probar PRO en App Store": "Try PRO on the App Store",
   "Funciones PRO": "PRO features",
   "Rutina totalmente configurable": "Fully customisable programme",
   "Elige tu distribución, patrones de movimiento y ejercicios; ajusta series, RIR, repeticiones y descansos.": "Choose your split, movement patterns and exercises, then set your sets, RIR, reps and rest periods.",
@@ -164,6 +169,9 @@ const englishTranslations = {
   "Cambiar un ejercicio por otro": "Swap one exercise for another",
   "Informe mensual, compartir y copias de seguridad": "Monthly report, sharing and backups",
   "Descargar gratis": "Download free",
+  "Descargar TrueLift gratis": "Download TrueLift for free",
+  "Descargar en Google Play": "Download on Google Play",
+  "Descargar en App Store": "Download on the App Store",
   "mensual · anual · de por vida": "monthly · annual · lifetime",
   "Todo lo de Gratis, más:": "Everything in Free, plus:",
   "Modalidades de pago de PRO": "PRO payment options",
@@ -221,7 +229,7 @@ const englishTranslations = {
   "¿Tiene publicidad o necesito crear una cuenta?": "Does it have ads, or do I need an account?",
   "No y no. TrueLift no muestra publicidad y no requiere registro: no pedimos tu nombre ni tu email para entrenar. Tu historial se procesa localmente y el desarrollador no puede consultarlo; los servicios de compra y descarga tratan solo los datos descritos en la política.": "No to both. TrueLift has no advertising and requires no sign-up: we do not ask for your name or email to train. Your history is processed locally and cannot be viewed by the developer; purchase and download services process only the data described in the policy.",
   "¿Cómo se paga TrueLift PRO?": "How do I pay for TrueLift PRO?",
-  "Como prefieras: suscripción mensual, suscripción anual o un pago único que desbloquea PRO para siempre. Las suscripciones no tienen permanencia y puedes cancelarlas cuando quieras. La compra queda asociada a tu cuenta de Google y puedes restaurarla si cambias de móvil o reinstalas la app.": "Choose a monthly subscription, an annual subscription or a one-time purchase that unlocks PRO for life. Subscriptions can be cancelled at any time. Your purchase is linked to your Google account and can be restored if you change phones or reinstall the app.",
+  "Como prefieras: suscripción mensual, suscripción anual o un pago único que desbloquea PRO para siempre. Las suscripciones no tienen permanencia y puedes cancelarlas cuando quieras. La compra queda asociada a la cuenta de Google o Apple con la que la realizaste y puedes restaurarla si cambias de dispositivo o reinstalas la app.": "Choose a monthly subscription, an annual subscription or a one-time purchase that unlocks PRO for life. Subscriptions can be cancelled at any time. Your purchase is linked to the Google or Apple account used for the transaction and can be restored if you change devices or reinstall the app.",
   "¿Qué pasa cuando terminan los 28 días de prueba PRO?": "What happens when the 28-day PRO trial ends?",
   "Nada malo: la prueba no genera cargos automáticos. Si no eliges ningún plan, sigues usando la versión gratuita con tu rutina y tu historial intactos.": "Nothing disruptive: the trial does not trigger an automatic charge. If you do not choose a plan, you continue with the free version and keep your programme and history intact.",
   "¿Dónde puedo consultar el manual de la app?": "Where can I read the app manual?",
@@ -410,7 +418,7 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
     badge.setAttribute("src", badgeSources[selectedLanguage] || badge.dataset.spanishSrc);
   });
 
-  document.querySelectorAll('a.store-badge.ios').forEach((link) => {
+  document.querySelectorAll("a[data-app-store-link]").forEach((link) => {
     if (!link.dataset.spanishHref) link.dataset.spanishHref = link.getAttribute("href") || "";
     const appStoreLinks = {
       en: "https://www.apple.com/app-store/",
