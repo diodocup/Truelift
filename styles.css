@@ -333,6 +333,16 @@ h3 {
   border-radius: 9px;
 }
 
+.store-badge.is-coming-soon {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.store-badge.is-coming-soon .store-badge-label {
+  border-color: rgba(255, 255, 255, 0.34);
+  color: var(--muted);
+}
+
 .store-note {
   margin: 0;
   color: var(--lime-strong);
@@ -415,6 +425,22 @@ h3 {
 .header-cta:hover,
 .header-cta:focus-visible {
   transform: translateY(-1px);
+}
+
+.button.is-disabled {
+  border-color: rgba(244, 247, 240, 0.14);
+  background: rgba(244, 247, 240, 0.03);
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.button.is-disabled:hover {
+  transform: none;
+}
+
+.store-badge.is-coming-soon:hover .store-badge-label {
+  transform: none;
 }
 
 .hero-proof {

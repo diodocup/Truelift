@@ -13,11 +13,11 @@ La web puede publicarse directamente con GitHub Pages:
 
 ## Enlaces de las tiendas
 
-Mientras se publican las fichas definitivas, los botones apuntan a Google Play y a la página del App Store:
+La versión de Android ya está publicada en Google Play:
 
 ```text
-https://play.google.com/store/search?q=TrueLift&c=apps
-https://www.apple.com/es/app-store/
+https://play.google.com/store/apps/details?id=es.rubensoro.truelift&pcampaignid=web_share
 ```
 
-Cuando estén disponibles los enlaces exactos de ambas fichas, reemplázalos en `index.html`.
+La versión de iOS estará disponible próximamente. Cuando se publique su ficha, sustituye
+el estado «iOS disponible pronto» por el enlace exacto del App Store en `index.html`.
