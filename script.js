@@ -1,8 +1,8 @@
 document.documentElement.classList.add("js");
 
 const englishTranslations = {
-  "TrueLift | El entrenador que planifica tu progresión, no solo la registra": "TrueLift | The coach that plans your progression, not just tracks it",
-  "TrueLift no es otra app de registro: planifica tu entrenamiento y tu sobrecarga progresiva con más de 15 señales de rendimiento y recuperación. Gratis con progresión automática incluida; PRO con autorregulación, VFC y deload inteligente. Plan mensual, anual o pago único de por vida.": "TrueLift is more than a workout tracker: it plans your training and progressive overload using over 15 performance and recovery signals. Free with automatic progression; PRO adds autoregulation, HRV and smart deloads. Choose monthly, annual or lifetime access.",
+  "TrueLift | Entrenamiento de fuerza y progresión automática": "TrueLift | Strength training and automatic progression",
+  "App de fuerza e hipertrofia que decide cuándo y cuánto subir peso. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android.": "Strength and hypertrophy app that decides when and how much weight to add. Automatic progression, no ads, no account and offline. Free on Android.",
   "TrueLift | El entrenador que planifica tu progresión": "TrueLift | The coach that plans your progression",
   "TrueLift planifica tu entrenamiento y tu sobrecarga progresiva según tu rendimiento y tu recuperación. Pruébala gratis; PRO en plan mensual, anual o pago único de por vida.": "TrueLift plans your training and progressive overload around your performance and recovery. Try it free; PRO is available monthly, annually or as a one-time lifetime purchase.",
   "TrueLift inicio": "TrueLift home",
