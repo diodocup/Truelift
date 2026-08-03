@@ -1287,6 +1287,18 @@ h3 {
   padding: 0 22px 22px;
 }
 
+.faq-list details p:not(:last-child) {
+  padding-bottom: 14px;
+}
+
+.faq-list details ul {
+  margin: 0;
+  padding: 0 22px 18px 40px;
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+}
+
 .closing-cta {
   text-align: center;
   background:
