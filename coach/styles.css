@@ -125,6 +125,25 @@ svg [data-tt]{cursor:pointer}
   background:var(--bg);border:1px solid var(--borde);color:var(--texto);
   font-size:12px;padding:4px 8px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
 
+/* Nutrición: pista de bandas del selector de ritmo y barra de tope */
+.pista{position:relative;display:flex;height:12px;border-radius:999px;overflow:visible;margin:12px 0 2px;background:var(--panel2)}
+.pista-seg{display:block;height:12px}
+.pista-seg:first-child{border-radius:999px 0 0 999px}
+.pista-seg:last-child{border-radius:0 999px 999px 0}
+.pista-seg.verde{background:var(--verde)}
+.pista-seg.ambar{background:var(--ambar)}
+.pista-seg.rojo{background:var(--rojo)}
+.pista-seg.gris{background:#3a4552}
+.pista-marca{position:absolute;top:-6px;width:0;height:0;transform:translateX(-5px)}
+.pista-marca.obj{border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--texto)}
+.pista-marca.real{top:12px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:7px solid var(--acento)}
+.pista-pie{display:flex;justify-content:space-between;gap:8px;font-size:11px;margin:9px 0 1px}
+.barra{height:8px;border-radius:999px;background:var(--panel2);overflow:hidden;margin-bottom:4px}
+.barra i{display:block;height:8px;border-radius:999px}
+.barra i.verde{background:var(--verde)}
+.barra i.ambar{background:var(--ambar)}
+.barra i.rojo{background:var(--rojo)}
+
 /* Escala de puntos 1-4 con color semáforo */
 .esc{letter-spacing:2px;font-size:12px;white-space:nowrap}
 .esc .off{color:#3a4552}

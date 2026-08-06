@@ -4,12 +4,13 @@
    IMPORTANTE: al publicar cambios en la app, sube el número de VERSION
    para que los navegadores de los entrenadores se actualicen. */
 
-const VERSION = 'tlcoach-v1';
+const VERSION = 'tlcoach-v2';
 const ARCHIVOS = [
   './',
   'index.html',
   'styles.css',
   'data.js',
+  'nutricion.js',
   'charts.js',
   'views.js',
   'catalogo.js',

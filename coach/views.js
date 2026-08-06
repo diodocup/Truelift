@@ -181,6 +181,57 @@ function catalogoSeries(ctx){
     if (pts.length) cat.push({ id: 'e1rm::' + n, label: '1RM · ' + n, color: '#8a7dff', puntos: pts, unidad: 'kg', grupo: '1RM estimado' });
   });
 
+  /* --- Nutrición ---
+     Cruzarlas con el rendimiento neto o el readiness es justo la pregunta que
+     el discriminador de la app resuelve por dentro (§7.5) y que el entrenador
+     quiere ver con sus ojos: ¿la caída de rendimiento va con el ritmo de
+     pérdida, o va por su cuenta? */
+  const nut = datos.nut;
+  if (nut){
+    const G_NUT = 'Nutrición';
+    const tendencia = serieNutEnRango(nut, 'tendenciaKg', ctx.desde, ctx.hasta);
+    if (tendencia.length)
+      cat.push({ id: 'nut_tendencia', label: 'Peso tendencia', color: '#a8d020', puntos: tendencia,
+                 unidad: 'kg', grupo: G_NUT,
+                 umbrales: (nut.fase && nut.fase.pesoObjetivoKg >= NUT.pesoMinKg)
+                   ? [{ y: nut.fase.pesoObjetivoKg, label: `objetivo (${fmtNum(nut.fase.pesoObjetivoKg,1)} kg)`, color: '#94a1b0' }] : [] });
+
+    const pesajes = nut.pesajes.filter(p => enRango(p.fecha, ctx.desde, ctx.hasta))
+      .map(p => ({ x: p.fecha, y: p.pesoKg }));
+    if (pesajes.length)
+      cat.push({ id: 'nut_pesajes', label: 'Pesajes (crudos)', color: '#6fb3d9', puntos: pesajes, unidad: 'kg', grupo: G_NUT });
+
+    const ritmo = serieNutEnRango(nut, 'tasaPctSemana', ctx.desde, ctx.hasta);
+    if (ritmo.length){
+      const obj = nut.fase ? nut.fase.tasaObjetivoPctSemana : null;
+      const umbrales = obj != null ? [
+        { y: obj + NUT.bandaMuertaPctSemana, label: 'banda muerta', color: '#4caf7d' },
+        { y: obj - NUT.bandaMuertaPctSemana, label: '', color: '#4caf7d' },
+      ] : [];
+      cat.push({ id: 'nut_ritmo', label: 'Ritmo de peso', color: '#e0985c', puntos: ritmo,
+                 unidad: '%/sem', baseline: obj ?? undefined, umbrales, grupo: G_NUT });
+    }
+
+    if (nut.curvaGrasa){
+      const g = nut.curvaGrasa.puntos.filter(p => enRango(p.fecha, ctx.desde, ctx.hasta))
+        .map(p => ({ x: p.fecha, y: p.porcentajePct }));
+      if (g.length)
+        cat.push({ id: 'nut_grasa', label: '% graso (curva teórica)', color: '#d06e9a', puntos: g,
+                   unidad: '%', grupo: G_NUT,
+                   umbrales: nut.sueloPct != null
+                     ? [{ y: nut.sueloPct, label: `suelo fisiológico (${fmtNum(nut.sueloPct,0)} %)`, color: '#e05c5c' }] : [] });
+      const magra = nut.curvaGrasa.puntos.filter(p => enRango(p.fecha, ctx.desde, ctx.hasta))
+        .map(p => ({ x: p.fecha, y: p.pesoKg * (1 - p.porcentajePct / 100) }));
+      if (magra.length)
+        cat.push({ id: 'nut_magra', label: 'Masa magra estimada', color: '#5cc9c0', puntos: magra, unidad: 'kg', grupo: G_NUT });
+    }
+
+    const acum = acumuladoNut(nut).filter(p => enRango(p.x, ctx.desde, ctx.hasta));
+    if (acum.length)
+      cat.push({ id: 'nut_acumulado', label: 'Ajuste acumulado del lazo', color: '#c792ea',
+                 puntos: acum.map(p => ({ x: p.x, y: p.y })), unidad: 'kcal/d', baseline: 0, grupo: G_NUT });
+  }
+
   return cat;
 }
 
@@ -223,6 +274,99 @@ function graficaDobleSerie(ctx){
     <div class="chart-caja">${Charts.dobleEje({ series })}</div>`;
 }
 
+/* ================================================================
+   Piezas de la capa de nutrición
+
+   Criterio de lectura para el entrenador: la app móvil YA gobierna la
+   dieta con un lazo cerrado (pesaje diario → tendencia → ritmo →
+   ajuste semanal en kcal). Aquí no se re-decide nada; se enseña lo
+   que el lazo está haciendo y, sobre todo, lo que solo un humano
+   puede juzgar: si el cliente le está dando datos, si el ritmo real
+   se corresponde con lo pactado, si el peso perdido sale de la grasa
+   y si la dieta está recortando el entrenamiento.
+   ================================================================ */
+
+const NUT_COLOR = { verde:'#4caf7d', ambar:'#e0a63c', rojo:'#e05c5c', neutro:'#94a1b0' };
+
+/* Ritmo con signo explícito: el signo ES la información (baja o sube). */
+function fmtTasa(v, dec = 2){
+  if (v == null || isNaN(v)) return '—';
+  const s = v > 0 ? '+' : v < 0 ? '−' : '';
+  return `${s}${fmtNum(Math.abs(v), dec)} %/sem`;
+}
+function fmtKcal(v){
+  if (v == null || isNaN(v)) return '—';
+  const s = v > 0 ? '+' : v < 0 ? '−' : '';
+  return `${s}${fmtNum(Math.abs(v), 0)} kcal/d`;
+}
+function claseBanda(b){ return b === 'neutro' ? 'gris' : (b || 'gris'); }
+function chipBandaNut(banda, texto){
+  if (!banda) return '';
+  return `<span class="chip ${claseBanda(banda)}">${esc(texto ?? NUT_TXT.banda[banda] ?? banda)}</span>`;
+}
+
+/* Pista de bandas del selector de ritmo de la app (§5.3–§5.4), con la marca
+   del objetivo pactado y la del ritmo real. De un vistazo dice si el cliente
+   está corriendo por encima de lo que su composición corporal aconseja. */
+function pistaBandasHtml(pista, { objetivo = null, real = null } = {}){
+  if (!pista || !pista.length) return '';
+  const min = pista[0].desde, max = pista[pista.length - 1].hasta;
+  const span = max - min;
+  if (!(span > 0)) return '';
+  const segs = pista.map(t =>
+    `<i class="pista-seg ${claseBanda(t.banda)}" style="flex:${((t.hasta - t.desde) / span).toFixed(4)}"
+        title="${esc(NUT_TXT.banda[t.banda] || t.banda)}: ${fmtNum(t.desde,2)}–${fmtNum(t.hasta,2)} %/sem"></i>`).join('');
+  const marca = (v, cls, txt) => {
+    if (v == null) return '';
+    const x = nutClamp((Math.abs(v) - min) / span, 0, 1) * 100;
+    return `<span class="pista-marca ${cls}" style="left:${x.toFixed(2)}%" title="${esc(txt)}: ${fmtNum(Math.abs(v),2)} %/sem"></span>`;
+  };
+  return `<div class="pista" title="verde = recomendado · ámbar = razonable · rojo = agresivo">
+      ${segs}${marca(objetivo, 'obj', 'Objetivo')}${marca(real, 'real', 'Ritmo real')}
+    </div>
+    <div class="pista-pie muted"><span>${fmtNum(min,2)}</span><span>${fmtNum(max,2)} %/sem</span></div>
+    <div class="muted" style="font-size:11px">▲ objetivo · ▼ ritmo real · verde recomendado, ámbar razonable, rojo agresivo</div>`;
+}
+
+/* Barra de consumo del tope de ajuste acumulado (§6.1): cuando llega al 100 %
+   la fase se cierra sola, así que es una cuenta atrás que conviene ver venir. */
+function barraTope(tope){
+  if (!tope || !(tope.topeKcal > 0)) return '';
+  const pct = tope.pct ?? 0;
+  const col = pct >= 100 ? 'rojo' : pct >= 75 ? 'ambar' : 'verde';
+  return `<div class="barra"><i class="${col}" style="width:${nutClamp(pct,0,100)}%"></i></div>
+    <div class="muted" style="font-size:12px">
+      ${fmtNum(tope.usadoKcal,0)} de ${fmtNum(tope.topeKcal,0)} kcal/día del tope de la fase (${pct}%)
+      ${tope.declarada ? ' · suelo desde la ingesta base declarada'
+        : tope.ingestaEstimadaKcal ? ' · suelo estimado desde la composición corporal' : ''}
+    </div>`;
+}
+
+/* Serie diaria del filtro recortada al rango, para las gráficas. */
+function serieNutEnRango(nut, campo, desde, hasta){
+  if (!nut || nut.serie.vacia) return [];
+  return nut.serie.puntos
+    .filter(p => enRango(p.fecha, desde, hasta))
+    .map(p => ({ x: p.fecha, y: p[campo] }))
+    .filter(p => p.y != null && isFinite(p.y));
+}
+
+/* Ajuste acumulado del lazo, semana a semana, dentro de la fase vigente.
+   El JSON guarda el ajuste de cada tarjeta y el acumulado final; la curva
+   intermedia se reconstruye sumando en orden. */
+function acumuladoNut(nut){
+  if (!nut || !nut.fase) return [];
+  const out = [];
+  let suma = 0;
+  nut.nut.recomendaciones
+    .filter(r => r.faseId === nut.fase.id)
+    .forEach(r => {
+      if (r.ajusteKcalDia) suma += r.ajusteKcalDia;   // los refeeds no suman (§6.1)
+      out.push({ x: r.fecha, y: suma, rec: r });
+    });
+  return out;
+}
+
 /* Chip de frescura de los datos importados */
 function chipFrescura(dias){
   if (dias == null) return '<span class="muted">—</span>';
@@ -240,15 +384,28 @@ const Vistas = {
       return tarjetaVacia('Importa el JSON de un cliente para empezar.');
 
     const filasHtml = filas.map(f => {
+      // "Molestia" dejó de valer como etiqueta cuando las alertas rojas también
+      // pueden venir de la dieta (lazo parado, reparto rojo…).
       const alertas = [
-        f.rojas ? `<span class="chip rojo">${f.rojas} molestia${f.rojas > 1 ? 's' : ''}</span>` : '',
+        f.rojas ? `<span class="chip rojo">${f.rojas} urgente${f.rojas > 1 ? 's' : ''}</span>` : '',
         f.ambar ? `<span class="chip ambar">${f.ambar} aviso${f.ambar > 1 ? 's' : ''}</span>` : '',
         !f.rojas && !f.ambar ? '<span class="chip verde">sin alertas</span>' : '',
       ].join(' ');
+      // Dieta: la fase que gobierna el lazo y el ritmo real, con el color de su
+      // banda. Es el dato que decide si hay que abrir la pestaña Nutrición.
+      const n = f.nut;
+      const nFase = (n && n.fase && n.fase.estado !== 'CLOSED') ? n.fase : null;
+      const dieta = !n || !n.nut.presente ? '<span class="muted">—</span>'
+        : !nFase ? '<span class="muted">sin fase</span>'
+        : `<span class="chip ${claseBanda(n.bandaReal || n.bandaObjetivo)}">${esc(NUT_TXT.fase[nFase.tipo] || nFase.tipo)}</span>
+           <div class="muted" style="font-size:12px">${fmtTasa(n.tasaPctSemana)}${
+             n.diasSinPesarse != null && n.diasSinPesarse >= NUT.diasSinPesajeAviso
+               ? ` · <span style="color:var(--ambar)">${n.diasSinPesarse} d sin pesarse</span>` : ''}</div>`;
       return `<tr class="fila-cli" data-abrir="${esc(f.id)}" title="Abrir a ${esc(f.nombre)}">
         <td><span class="punto ${f.estado}"></span></td>
         <td><b>${esc(f.nombre)}</b>${f.notas ? `<div class="muted" style="font-size:12px">${esc(f.notas.length > 90 ? f.notas.slice(0,90) + '…' : f.notas)}</div>` : ''}</td>
         <td>${f.ultimaSesion ? fmtFecha(f.ultimaSesion) : '<span class="muted">—</span>'}</td>
+        <td>${dieta}</td>
         <td>${chipFrescura(f.diasImport)}</td>
         <td class="num">${f.ad.pct != null
           ? `<span class="chip ${f.ad.pct >= 85 ? 'verde' : f.ad.pct >= 60 ? 'ambar' : 'rojo'}">${f.ad.pct}%</span> <span class="muted">${f.ad.hechas}/${f.ad.esperadas}</span>`
@@ -266,7 +423,7 @@ const Vistas = {
           Recuerda pedir una copia nueva cuando los datos pasen de una semana.
         </div>
         <div style="overflow-x:auto"><table>
-          <thead><tr><th></th><th>Cliente</th><th>Última sesión</th><th>Datos importados</th><th class="num">Adherencia</th><th>Alertas</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Cliente</th><th>Última sesión</th><th>Dieta</th><th>Datos importados</th><th class="num">Adherencia</th><th>Alertas</th><th></th></tr></thead>
           <tbody>${filasHtml}</tbody>
         </table></div>
       </div>`;
@@ -277,18 +434,49 @@ const Vistas = {
     const { perfil, fuerzaR, cardioR, readinessR, desde, hasta } = ctx;
     const P = perfil;
 
-    // Ficha
+    // Ficha. Con el lazo de nutrición activo, la fase de dieta y el peso los
+    // gobierna el lazo, así que la ficha muestra esos valores y no los manuales.
+    const nut = ctx.datos.nut;
+    const nutFase = (nut && nut.fase && nut.fase.estado !== 'CLOSED') ? nut.fase : null;
     const diasFase = P.faseInicio ? diasEntre(P.faseInicio, new Date()) : null;
-    const fase = P.fasePeso ? `${P.fasePeso}${diasFase != null ? ` · día ${diasFase}` : ''}` : '—';
+    const fase = nutFase
+      ? `${NUT_TXT.fase[nutFase.tipo] || nutFase.tipo} · ${fmtTasa(nutFase.tasaObjetivoPctSemana)}`
+      : (P.fasePeso ? `${P.fasePeso}${diasFase != null ? ` · día ${diasFase}` : ''}` : '—');
+    const peso = (nut && nut.tendenciaKg != null)
+      ? `${fmtNum(nut.tendenciaKg,1)} kg <span class="muted">tendencia</span>`
+      : `${fmtNum(P.pesoCorporal,1)} ${esc(P.unidadPeso)}`;
     const ficha = `
       <div class="card"><h3>Ficha</h3>
         <div class="kv"><span class="muted">Cliente</span><b>${esc(ctx.nombreCliente)}</b></div>
-        <div class="kv"><span class="muted">Sexo / peso</span><b>${esc(P.sexo ?? '—')} · ${fmtNum(P.pesoCorporal,1)} ${esc(P.unidadPeso)}</b></div>
-        <div class="kv"><span class="muted">Fase</span><b>${esc(fase)}</b></div>
+        <div class="kv"><span class="muted">Sexo / peso</span><b>${esc(P.sexo ?? '—')} · ${peso}</b></div>
+        <div class="kv"><span class="muted">Fase</span><b>${esc(fase)} ${nutFase ? chipBandaNut(nut.bandaObjetivo) : ''}</b></div>
+        ${nutFase ? `<div class="kv"><span class="muted">Dieta desde</span><b>${fmtFecha(nutFase.inicio)}${
+          nut.diasEnFase != null ? ` · ${fmtNum(nut.diasEnFase / 7,1)} sem` : ''} <span class="muted">(lazo de nutrición)</span></b></div>` : ''}
         <div class="kv"><span class="muted">Sistema</span><b>${esc(P.sistema ?? '—')} · ${P.diasSemana ?? '—'} días/sem</b></div>
         <div class="kv"><span class="muted">Bloque desde</span><b>${fmtFecha(P.bloqueInicio)}</b></div>
         <div class="kv"><span class="muted">Descarga</span><b>${P.modoDescarga ? '<span class="chip ambar">EN DESCARGA</span>' : 'no'}</b></div>
       </div>`;
+
+    // Resumen de dieta: los tres números que deciden si hay que abrir la pestaña.
+    const adPeso = nut ? Nutricion.adherenciaPesaje(nut.pesajes, desde, hasta) : null;
+    const tarjetaNut = (nut && nut.nut.presente && (nutFase || nut.pesajes.length)) ? `
+      <div class="card"><h3>Dieta (lazo de nutrición)</h3>
+        <div class="big" style="color:${NUT_COLOR[nut.bandaReal] || 'var(--texto)'}">${fmtTasa(nut.tasaPctSemana)}
+          <span class="muted" style="font-size:15px;font-weight:400">ritmo real</span></div>
+        <div>${nut.bandaReal ? chipBandaNut(nut.bandaReal) : ''}
+          ${nut.dentroBandaMuerta === true ? '<span class="chip verde">en banda muerta</span>'
+            : nut.dentroBandaMuerta === false ? `<span class="chip ambar">${fmtTasa(nut.desvioPctSemana)} del objetivo</span>` : ''}</div>
+        <div class="kv" style="margin-top:8px"><span class="muted">Pesajes del periodo</span><b>${adPeso.hechos}/${adPeso.dias} <span class="muted">(${fmtNum(adPeso.porSemana,1)}/sem)</span></b></div>
+        <div class="kv"><span class="muted">% graso estimado</span><b>${
+          nut.grasaVigentePct != null ? `${fmtNum(nut.grasaVigentePct,1)} %${nut.grasaCaducada ? ' <span class="chip ambar">caducado</span>' : ''}` : '—'}</b></div>
+        <div class="kv"><span class="muted">Reparto último tramo</span><b>${
+          nut.reparto && nut.reparto.banda
+            ? `${fmtNum(nut.reparto.fraccionGrasaObservada * 100,0)} % grasa ${chipBandaNut(nut.reparto.banda)}`
+            : '<span class="muted">sin valorar</span>'}</b></div>
+        ${nut.trinquete && nut.trinquete.trinqueteNivel > 0
+          ? `<div class="kv"><span class="muted">Volumen</span><b><span class="chip ${nut.trinquete.trinqueteNivel >= 2 ? 'rojo' : 'ambar'}">recortado por la dieta</span></b></div>` : ''}
+        <div class="muted" style="font-size:12px;margin-top:6px">El detalle está en la pestaña <b>Nutrición</b>.</div>
+      </div>` : '';
 
     // Adherencia
     const ad = Metricas.adherencia(fuerzaR, desde, hasta, P.diasSemana);
@@ -345,7 +533,7 @@ const Vistas = {
       <div class="muted" style="margin-bottom:12px">Periodo: <b style="color:var(--texto)">${fmtFecha(desde)} — ${fmtFecha(hasta)}</b>
       · ${fuerzaR.length} sesiones de fuerza · ${cardioR.length} de cardio · ${readinessR.length} cuestionarios</div>`;
 
-    return cabecera + `<div class="grid cols3">${ficha}${adherencia}${disponibilidad}${rendimiento}${htmlAlertas}</div>`;
+    return cabecera + `<div class="grid cols3">${ficha}${adherencia}${tarjetaNut}${disponibilidad}${rendimiento}${htmlAlertas}</div>`;
   },
 
   /* Devuelve [{nivel:'rojo'|'ambar'|'azul', html}] para poder contarlas por nivel. */
@@ -383,6 +571,11 @@ const Vistas = {
     fuerzaR.filter(s => s.volumenBajo).forEach(s => {
       add('azul', 'Volumen', `${fmtFecha(s.fecha)} · ${esc(s.dia)}: sesión marcada con volumen bajo.`);
     });
+
+    // 5. Capa de nutrición. Entran aquí a propósito: así el triaje de la Cartera
+    //    ordena por atención requerida contando también la dieta, y el entrenador
+    //    no tiene que abrir cliente por cliente para enterarse.
+    this._alertasNutricion(ctx, add);
 
     return out;
   },
@@ -773,6 +966,525 @@ const Vistas = {
       </div>`;
   },
 
+  // ================= NUTRICIÓN =================
+  /* Orden de lectura pensado para una revisión de cliente:
+       1. ¿Va al ritmo pactado?      → estado de la fase + ritmo real vs objetivo
+       2. ¿El lazo tiene datos?      → adherencia al pesaje (lo primero accionable)
+       3. ¿De dónde sale el peso?    → composición corporal y reparto
+       4. ¿Qué le ha dicho la app?   → historial de tarjetas semanales
+       5. ¿Afecta al entrenamiento?  → trinquete, refeeds y descargas coordinadas
+       6. ¿Dónde está en la temporada? → plan de bloques */
+  nutricion(ctx){
+    const { datos, desde, hasta } = ctx;
+    const nut = datos.nut;
+    const N = datos.nutricion;
+
+    if (!nut || !N || !N.presente)
+      return tarjetaVacia('Esta copia de seguridad no incluye la capa de nutrición: se hizo con una versión de TrueLift anterior al lazo de nutrición. Pídele al cliente una copia nueva.');
+    if (!N.activo && !nut.fase && !nut.pesajes.length)
+      return tarjetaVacia('El cliente tiene la capa de nutrición disponible pero no la ha activado (Ajustes → Nutrición en TrueLift). Sin activarla, la app funciona exactamente igual que antes y la fase de dieta la elige él a mano.');
+
+    const F = nut.fase;
+    const tipoFase = F ? (NUT_TXT.fase[F.tipo] || F.tipo) : null;
+
+    // Aviso cuando el rango elegido deja fuera parte de la fase.
+    const avisoRango = (F && F.inicio && diasEntre(F.inicio, desde) > 0)
+      ? `<div class="alerta azul" style="margin-bottom:14px"><span class="tag">Rango</span>
+         <span>La fase empezó el <b>${fmtFecha(F.inicio)}</b>, antes del periodo mostrado.
+         Cambia el rango a «Todo» para ver la fase completa.</span></div>` : '';
+
+    // ---------- 1. Estado de la dieta ----------
+    const asent = nut.asentamiento;
+    const calibrando = F && (F.estado === 'SETTLING' || (asent && !asent.asentado));
+    const estadoFase = F ? `<span class="chip ${
+        F.estado === 'ACTIVE' ? 'verde' : F.estado === 'PAUSED' ? 'rojo'
+        : F.estado === 'END_RECOMMENDED' ? 'ambar' : 'gris'
+      }">${esc(NUT_TXT.estadoFase[F.estado] || F.estado)}</span>` : '';
+
+    const tarjetaFase = `
+      <div class="card"><h3>Fase de dieta</h3>
+        ${F ? `
+        <div class="big">${esc(tipoFase)} ${estadoFase}</div>
+        <div class="kv"><span class="muted">Desde</span><b>${fmtFecha(F.inicio)}${
+          nut.diasEnFase != null ? ` · ${fmtNum(nut.diasEnFase / 7, 1)} semanas` : ''}</b></div>
+        <div class="kv"><span class="muted">Ritmo objetivo</span><b>${fmtTasa(F.tasaObjetivoPctSemana)} ${chipBandaNut(nut.bandaObjetivo)}</b></div>
+        <div class="kv"><span class="muted">Peso objetivo</span><b>${fmtNum(F.pesoObjetivoKg,1)} kg</b></div>
+        <div class="kv"><span class="muted">Tope duro del ritmo</span><b>${fmtNum(nut.topeTasa,2)} %/sem${
+          nut.topeAmpliadoActivo ? ' <span class="chip ambar">ampliado</span>' : ''}</b></div>
+        <div class="kv"><span class="muted">Proteína recomendada</span><b>${fmtNum(F.objetivoProteinaGDia,0)} g/día <span class="muted">(${fmtNum(F.proteinaGPorKg,1)} g/kg sobre peso objetivo)</span></b></div>
+        ${F.modoCiclo ? `<div class="kv"><span class="muted">Modo ciclo</span><b>activo · ventana ${nut.ciclo.dias} días${
+          nut.ciclo.ciclosMedidos ? ` (${nut.ciclo.ciclosMedidos} ciclos medidos)` : ' (nominal)'}</b></div>` : ''}
+        ${F.refeeds ? `<div class="kv"><span class="muted">Refeeds de la fase</span><b>${F.refeeds} de ${NUT.refeedsAntesDeBajarObjetivo}</b></div>` : ''}
+        ${nut.pista.length ? pistaBandasHtml(nut.pista, { objetivo: F.tasaObjetivoPctSemana, real: nut.tasaPctSemana }) : ''}
+        <div style="margin-top:10px">${barraTope(nut.topeAjuste)}</div>
+        ${calibrando && asent ? `<div class="muted" style="font-size:12px;margin-top:8px">
+          <b style="color:var(--ambar)">Calibrando</b>: el lazo aún no emite ajustes.
+          Días ${asent.diasTranscurridos}/${asent.diasRequeridos} ·
+          pesajes ${asent.pesajesContados}/${asent.pesajesRequeridos} ·
+          varianza de la pendiente ${asent.varianzaOk ? 'dentro' : 'fuera'} del criterio.
+          Primera recomendación posible a partir del ${fmtFecha(asent.fechaMinima)}.
+        </div>` : ''}
+        ` : `<div class="muted">Sin fase de dieta abierta. ${
+          N.fasesCerradas.length ? `El cliente ha cerrado ${N.fasesCerradas.length} fase${N.fasesCerradas.length > 1 ? 's' : ''}.` : ''}</div>`}
+      </div>`;
+
+    // ---------- 2. Ritmo real vs objetivo ----------
+    const desvio = nut.desvioPctSemana;
+    const tarjetaRitmo = `
+      <div class="card"><h3>Ritmo real</h3>
+        <div class="big" style="color:${NUT_COLOR[nut.bandaReal] || 'var(--texto)'}">${fmtTasa(nut.tasaPctSemana)}</div>
+        ${nut.bandaReal ? `<div>${chipBandaNut(nut.bandaReal)}</div>` : ''}
+        ${desvio != null ? `<div class="kv" style="margin-top:6px"><span class="muted">Desvío del objetivo</span><b>${
+          nut.dentroBandaMuerta
+            ? `<span class="chip verde">en banda muerta</span>`
+            : `<span class="chip ambar">${fmtTasa(desvio)}</span>`}</b></div>` : ''}
+        <div class="kv"><span class="muted">Peso tendencia</span><b>${fmtNum(nut.tendenciaKg,2)} kg</b></div>
+        <div class="kv"><span class="muted">Último pesaje</span><b>${
+          nut.ultimoPesaje ? `${fmtNum(nut.ultimoPesaje.pesoKg,1)} kg · ${fmtFecha(nut.ultimoPesaje.fecha)}` : '—'}</b></div>
+        ${nut.imc != null ? `<div class="kv"><span class="muted">IMC</span><b>${fmtNum(nut.imc,1)}</b></div>` : ''}
+        <div class="muted" style="font-size:12px;margin-top:8px">
+          Tendencia y ritmo salen del filtro de la app sobre los pesajes diarios, no del pesaje del día.
+          La cifra es la del ${nut.fechaTendencia ? fmtFecha(nut.fechaTendencia) : '—'}: la serie no se extrapola más allá del último pesaje.
+          Dentro de la banda muerta (±${fmtNum(NUT.bandaMuertaPctSemana,1)} pp) el lazo no toca nada.
+        </div>
+      </div>`;
+
+    // ---------- 3. Adherencia al pesaje ----------
+    const ad = Nutricion.adherenciaPesaje(nut.pesajes, desde, hasta);
+    const colAd = ad.porSemana >= 5 ? 'verde' : ad.porSemana >= 3 ? 'ambar' : 'rojo';
+    const tarjetaPesaje = `
+      <div class="card"><h3>Adherencia al pesaje</h3>
+        <div class="big">${ad.hechos} <span class="muted" style="font-size:15px;font-weight:400">de ${ad.dias} días</span></div>
+        <div><span class="chip ${colAd}">${fmtNum(ad.porSemana,1)} pesajes/semana</span></div>
+        <div class="kv" style="margin-top:8px"><span class="muted">Hueco más largo</span><b>${
+          ad.huecoMax > 1 ? `${ad.huecoMax} días${ad.huecoDesde ? ` (desde ${fmtFechaCorta(ad.huecoDesde)})` : ''}` : 'sin huecos'}</b></div>
+        <div class="kv"><span class="muted">Sin pesarse</span><b>${
+          nut.diasSinPesarse == null ? '—'
+          : nut.diasSinPesarse >= NUT.diasSinPesajeOfrecerPausa ? `<span class="chip rojo">${nut.diasSinPesarse} días</span>`
+          : nut.diasSinPesarse >= NUT.diasSinPesajeAviso ? `<span class="chip ambar">${nut.diasSinPesarse} días</span>`
+          : `${nut.diasSinPesarse} día${nut.diasSinPesarse === 1 ? '' : 's'}`}</b></div>
+        <div class="muted" style="font-size:12px;margin-top:8px">
+          Es lo primero que se puede accionar: sin pesajes el lazo no corrige nada y todo lo demás
+          de esta pantalla envejece. A partir de ${NUT.diasSinPesajeAviso} días la app avisa;
+          a partir de ${NUT.diasSinPesajeOfrecerPausa} ofrece pausar la fase.
+        </div>
+      </div>`;
+
+    // ---------- Gráfica de peso ----------
+    const ptsTendencia = serieNutEnRango(nut, 'tendenciaKg', desde, hasta);
+    const ptsPesaje = nut.pesajes.filter(p => enRango(p.fecha, desde, hasta))
+      .map(p => ({ x: p.fecha, y: p.pesoKg, c: p.enmascarado ? '#e0a63c' : '#6fb3d9' }));
+    const hayEnmascarado = ptsPesaje.some(p => p.c === '#e0a63c');
+    const graficaPeso = (ptsTendencia.length || ptsPesaje.length) ? `
+      <div class="card" style="grid-column:1/-1"><h3>Peso y tendencia</h3>
+        <div class="chart-caja">${Charts.lineas({
+          series: [
+            { nombre: 'Pesajes', color: '#6fb3d9', puntos: ptsPesaje, soloPuntos: true, unidad: 'kg' },
+            { nombre: 'Tendencia', color: '#a8d020', puntos: ptsTendencia, sinPuntos: true, grosor: 2.6, unidad: 'kg' },
+          ],
+          lineaBase: (F && F.pesoObjetivoKg >= NUT.pesoMinKg)
+            ? { y: F.pesoObjetivoKg, label: `objetivo ${fmtNum(F.pesoObjetivoKg,1)} kg`, color: '#94a1b0' } : null,
+          h: 260,
+        })}</div>
+        <div class="muted" style="font-size:12px">
+          Puntos: pesajes tal cual los introdujo el cliente. Línea: peso-tendencia del filtro, que es
+          lo que gobierna el lazo${hayEnmascarado ? ' · <span style="color:#e0a63c">ámbar</span> = pesaje en ventana de refeed o vuelta de pausa (cuenta, pero pesa menos en la pendiente)' : ''}.
+        </div>
+      </div>` : '';
+
+    // ---------- Gráfica de ritmo ----------
+    const ptsRitmo = serieNutEnRango(nut, 'tasaPctSemana', desde, hasta);
+    const obj = F ? F.tasaObjetivoPctSemana : null;
+    const graficaRitmo = ptsRitmo.length ? `
+      <div class="card" style="grid-column:1/-1"><h3>Ritmo semanal frente al objetivo</h3>
+        <div class="chart-caja">${Charts.lineas({
+          series: [{ nombre: 'Ritmo real', color: '#e0985c', puntos: ptsRitmo, sinPuntos: true, grosor: 2.4, unidad: '%/sem' }],
+          banda: obj != null ? { min: obj - NUT.bandaMuertaPctSemana, max: obj + NUT.bandaMuertaPctSemana } : null,
+          lineaBase: obj != null ? { y: obj, label: `objetivo ${fmtTasa(obj)}`, color: '#94a1b0' } : null,
+          h: 220,
+        })}</div>
+        <div class="muted" style="font-size:12px">
+          Franja verde: banda muerta de ±${fmtNum(NUT.bandaMuertaPctSemana,1)} pp alrededor del objetivo.
+          Dentro de ella la app emite «mantener»; fuera, corrige las calorías el día de evaluación semanal.
+          Las primeras semanas de fase el ritmo es ruido de agua y glucógeno: por eso existe el asentamiento.
+        </div>
+      </div>` : '';
+
+    // ---------- 4. Composición corporal ----------
+    const composicion = this._nutComposicion(nut, ctx);
+
+    // ---------- 5. Tarjetas semanales ----------
+    const tarjetas = this._nutTarjetas(nut, ctx);
+
+    // ---------- 6. Efecto sobre el entrenamiento ----------
+    const entrenamiento = this._nutEntrenamiento(nut, ctx);
+
+    // ---------- 7. Plan de temporada ----------
+    const plan = this._nutPlan(nut);
+
+    // ---------- 8. Biblioteca de alimentos ----------
+    const biblioteca = N.biblioteca.length ? `
+      <div class="card"><h3>Biblioteca de alimentos del cliente</h3>
+        <div class="muted" style="font-size:12px;margin-bottom:8px">
+          TrueLift no registra comidas: esta lista es solo el material con el que la app convierte
+          un ajuste en kcal en gramos concretos. Si está vacía o es muy corta, las prescripciones
+          se apoyan en alimentos básicos genéricos y pierden precisión.
+        </div>
+        <table><thead><tr><th>Alimento</th><th class="num">kcal/100 g</th><th>Macro</th><th>Referencia</th><th class="num">Paso</th></tr></thead>
+        <tbody>${N.biblioteca.map(a => `<tr>
+          <td>${esc(a.nombre)}</td>
+          <td class="num">${fmtNum(a.kcalPor100g,0)}</td>
+          <td>${esc(NUT_TXT.macro[a.macro] || a.macro)}</td>
+          <td>${esc(NUT_TXT.referencia[a.estadoReferencia] || a.estadoReferencia)}</td>
+          <td class="num">${a.pasoGramos != null ? a.pasoGramos + ' g' : '—'}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>` : `
+      <div class="card"><h3>Biblioteca de alimentos del cliente</h3>
+        <div class="muted">Vacía. La app prescribe con alimentos básicos genéricos; dar de alta
+        6–8 alimentos reales del cliente mejora bastante la utilidad de las tarjetas semanales.</div>
+      </div>`;
+
+    const cabecera = `
+      <div class="muted" style="margin-bottom:12px">Periodo: <b style="color:var(--texto)">${fmtFecha(desde)} — ${fmtFecha(hasta)}</b>
+      · ${nut.pesajes.length} pesajes en total · ${N.recomendaciones.length} tarjetas semanales
+      · ${N.medicionesGrasa.length} estimaciones de % graso</div>`;
+
+    return cabecera + avisoRango +
+      `<div class="grid cols3">${tarjetaFase}${tarjetaRitmo}${tarjetaPesaje}${graficaPeso}${graficaRitmo}</div>` +
+      composicion + tarjetas +
+      `<div class="grid cols2" style="margin-top:14px">${entrenamiento}${plan}</div>` +
+      `<div class="grid cols2" style="margin-top:14px">${biblioteca}${this._nutVentanas(nut)}</div>`;
+  },
+
+  /* Composición corporal: curva teórica de % graso, mediciones y reparto. */
+  _nutComposicion(nut, ctx){
+    const { desde, hasta } = ctx;
+    const N = nut.nut;
+    if (!N.medicionesGrasa.length)
+      return `<div class="card" style="margin-top:14px"><h3>Composición corporal</h3>
+        <div class="muted">El cliente no ha estimado su % graso. Sin ese punto de partida la app no puede
+        decir si el peso que se mueve es grasa o masa magra, ni afinar las bandas de ritmo: se comporta
+        como si estuviera en el tramo medio. Merece la pena pedírselo (TrueLift → Nutrición → % graso).</div></div>`;
+
+    const g = nut.grasaVigente;
+    const curva = nut.curvaGrasa;
+    const ptsCurva = curva ? curva.puntos.filter(p => enRango(p.fecha, desde, hasta))
+      .map(p => ({ x: p.fecha, y: p.porcentajePct })) : [];
+    const ptsMed = N.medicionesGrasa.filter(m => enRango(m.fecha, desde, hasta))
+      .map(m => ({ x: m.fecha, y: m.porcentajePct }));
+
+    const grafica = (ptsCurva.length || ptsMed.length) ? `
+      <div class="chart-caja">${Charts.lineas({
+        series: [
+          { nombre: 'Curva teórica', color: '#d06e9a', puntos: ptsCurva, sinPuntos: true, grosor: 2.2, unidad: '%' },
+          { nombre: 'Estimaciones', color: '#e8ecf1', puntos: ptsMed, soloPuntos: true, unidad: '%' },
+        ],
+        lineaBase: nut.sueloPct != null
+          ? { y: nut.sueloPct, label: `suelo fisiológico ${fmtNum(nut.sueloPct,0)} %`, color: '#e05c5c' } : null,
+        h: 220,
+      })}</div>
+      <div class="muted" style="font-size:12px">
+        La curva reparte cada kilo que se mueve entre grasa y masa magra con la proporción esperable
+        para este % graso y este ritmo; cada estimación nueva la recalibra, y el salto entre la línea
+        y el punto es información, no un error. Todo es estimación:
+        ±${NUT.grasaMargenPpMin}–${NUT.grasaMargenPpMax} pp de margen declarado.
+        ${curva && curva.algunRecorteAlSuelo ? ' <b style="color:var(--ambar)">La proyección toca el suelo fisiológico: a este ritmo el objetivo no es realista.</b>' : ''}
+      </div>` : '';
+
+    const cifras = `
+      <div class="inf-2col" style="margin-top:10px">
+        <div>
+          <div class="kv"><span class="muted">% graso vigente</span><b>${fmtNum(g.porcentajePct,1)} %
+            ${nut.grasaCaducada ? `<span class="chip ambar" title="Pasados ${NUT.grasaAvisoAmbarDias} días deja de habilitar el tope ampliado de déficit">caducado</span>` : ''}</b></div>
+          <div class="kv"><span class="muted">Medido</span><b>${fmtFecha(g.fecha)}${
+            nut.diasDesdeMedicion != null ? ` · hace ${nut.diasDesdeMedicion} días` : ''} · ${esc(NUT_TXT.metodoGrasa[g.metodo] || g.metodo)}</b></div>
+          <div class="kv"><span class="muted">Masa grasa</span><b>${fmtNum(g.grasaKg,1)} kg</b></div>
+          <div class="kv"><span class="muted">Masa magra estimada</span><b>${fmtNum(g.magraKg,1)} kg</b></div>
+        </div>
+        <div>
+          ${nut.grasaInicial && nut.grasaInicial !== g ? `
+          <div class="kv"><span class="muted">Punto de partida</span><b>${fmtNum(nut.grasaInicial.porcentajePct,1)} % · ${fmtFecha(nut.grasaInicial.fecha)}</b></div>
+          <div class="kv"><span class="muted">Cambio de grasa</span><b>${fmtNum(g.grasaKg - nut.grasaInicial.grasaKg,1)} kg</b></div>
+          <div class="kv"><span class="muted">Cambio de masa magra</span><b>${fmtNum(g.magraKg - nut.grasaInicial.magraKg,1)} kg</b></div>` : ''}
+          <div class="kv"><span class="muted">Sexo / experiencia</span><b>${
+            esc(NUT_TXT.sexo[nut.perfil?.sexo] || '—')} · ${
+            esc(NUT_TXT.experiencia[nut.perfil?.experienciaFuerza] || 'sin declarar')}</b></div>
+          <div class="kv"><span class="muted">Altura</span><b>${nut.perfil?.alturaCm ? fmtNum(nut.perfil.alturaCm,0) + ' cm' : '—'}</b></div>
+        </div>
+      </div>`;
+
+    // Reparto del último tramo: la pregunta de "¿esto sale de la grasa?"
+    const r = nut.reparto;
+    let reparto = '';
+    if (r && r.banda){
+      const pObs = r.fraccionGrasaObservada * 100, pEsp = r.fraccionGrasaEsperada * 100;
+      const consejo = r.banda === 'verde' ? 'Reparto consistente con el ritmo. Sin cambios.'
+        : r.banda === 'ambar' ? 'Proteína hacia el extremo alto del rango, revisar sueño y volumen de entrenamiento, y valorar bajar un escalón el ritmo.'
+        : 'El reparto se aleja bastante de lo esperable a este ritmo: conviene bajar el ritmo, subir proteína y revisar la carga de entrenamiento.';
+      reparto = `<div class="alerta ${r.banda === 'verde' ? 'azul' : r.banda}" style="margin-top:12px">
+        <span class="tag">Reparto</span>
+        <span><b>${fmtNum(pObs,0)} % del peso movido fue grasa</b>, frente al ${fmtNum(pEsp,0)} % esperable
+        ${chipBandaNut(r.banda)}. Tramo de ${r.dias} días: ${fmtNum(r.deltaPesoKg,1)} kg de peso =
+        ${fmtNum(r.deltaGrasaKg,1)} kg de grasa y ${fmtNum(r.deltaMagraKg,1)} kg de masa magra.
+        ${esc(consejo)}
+        <br><span class="muted">A corto plazo la masa magra incluye agua y glucógeno, no solo músculo.</span></span></div>`;
+    } else if (r){
+      reparto = `<div class="alerta azul" style="margin-top:12px"><span class="tag">Reparto</span>
+        <span>Tramo de ${r.dias} días: ${fmtNum(r.deltaPesoKg,1)} kg de peso = ${fmtNum(r.deltaGrasaKg,1)} kg de grasa
+        y ${fmtNum(r.deltaMagraKg,1)} kg de masa magra. <b>Sin valoración</b>: ${esc(Reparto.MOTIVOS[r.motivo] || '')}.</span></div>`;
+    } else {
+      reparto = `<div class="muted" style="margin-top:12px;font-size:13px">Con una sola estimación no hay tramo que valorar.
+        La app pide re-estimar cada ${NUT.grasaAvisoDias} días.</div>`;
+    }
+
+    const tabla = `<table style="margin-top:12px"><thead><tr>
+        <th>Fecha</th><th class="num">% graso</th><th>Método</th><th class="num">Peso ancla</th>
+        <th class="num">Grasa</th><th class="num">Masa magra</th></tr></thead><tbody>
+      ${[...N.medicionesGrasa].reverse().map(m => `<tr>
+        <td>${fmtFecha(m.fecha)}</td>
+        <td class="num">${fmtNum(m.porcentajePct,1)} %</td>
+        <td>${esc(NUT_TXT.metodoGrasa[m.metodo] || m.metodo)}</td>
+        <td class="num">${fmtNum(m.pesoAnclaKg,1)} kg</td>
+        <td class="num">${fmtNum(m.grasaKg,1)} kg</td>
+        <td class="num">${fmtNum(m.magraKg,1)} kg</td>
+      </tr>`).join('')}</tbody></table>`;
+
+    return `<div class="card" style="margin-top:14px"><h3>Composición corporal</h3>
+      ${grafica}${cifras}${reparto}${tabla}</div>`;
+  },
+
+  /* Historial de tarjetas semanales: es lo que la app le ha dicho al cliente. */
+  _nutTarjetas(nut, ctx){
+    const recs = nut.nut.recomendaciones.filter(r => enRango(r.fecha, ctx.desde, ctx.hasta));
+    if (!recs.length)
+      return `<div class="card" style="margin-top:14px"><h3>Tarjetas semanales del lazo</h3>
+        <div class="muted">Ninguna en el periodo.${nut.nut.recomendaciones.length
+          ? ` El cliente tiene ${nut.nut.recomendaciones.length} en total: cambia el rango para verlas.`
+          : ' El lazo aún no ha emitido ninguna (fase en calibración o recién abierta).'}</div></div>`;
+
+    const acumPorFecha = new Map(acumuladoNut(nut).map(p => [fmtISO(p.x), p.y]));
+    const colTipo = { ADJUST: 'azul', HOLD: 'gris', REFEED: 'ambar', LOWER_TARGET: 'ambar', END_PHASE: 'rojo' };
+
+    const filas = [...recs].reverse().map(r => {
+      // El signo de los gramos es la instrucción: negativo = recortar.
+      const opciones = r.opciones.map(o => {
+        const lineas = o.componentes.length ? o.componentes : [o];
+        return lineas.map(l =>
+          `${l.gramos < 0 ? '−' : '+'}${fmtNum(Math.abs(l.gramos),0)} g ${esc(l.nombre)}`).join(' + ');
+      }).join(' &nbsp;<span class="muted">o</span>&nbsp; ');
+      const pendiente = r.tipo === 'LOWER_TARGET' && !r.objetivoAplicado;
+      const acum = acumPorFecha.get(fmtISO(r.fecha));
+      return `<tr>
+        <td>${fmtFecha(r.fecha)}</td>
+        <td><span class="chip ${colTipo[r.tipo] || 'gris'}">${esc(NUT_TXT.recomendacion[r.tipo] || r.tipo)}</span>
+          ${r.porRendimiento ? ' <span class="chip ambar" title="Disparada por caída de rendimiento, no por el peso">por rendimiento</span>' : ''}
+          ${pendiente ? ' <span class="chip rojo" title="El cliente aún no ha aceptado la propuesta">sin aceptar</span>' : ''}</td>
+        <td class="num">${fmtTasa(r.tasaRealPctSemana)}</td>
+        <td class="num">${r.errorKcalDia != null ? fmtKcal(r.errorKcalDia) : '—'}</td>
+        <td class="num"><b>${r.ajusteKcalDia ? fmtKcal(r.ajusteKcalDia) : '—'}</b></td>
+        <td class="num">${acum != null ? fmtKcal(acum) : '—'}</td>
+        <td>${r.nuevaTasaObjetivoPctSemana != null ? `nuevo objetivo ${fmtTasa(r.nuevaTasaObjetivoPctSemana)}<br>` : ''}
+          ${opciones ? `<span class="muted" style="font-size:12px">${opciones}</span>` : ''}
+          ${r.pasosExtraDia ? `<div class="muted" style="font-size:12px">alternativa: ${fmtNum(r.pasosExtraDia,0)} pasos/día</div>` : ''}
+          ${r.limitadaPorBiblioteca ? '<div class="muted" style="font-size:12px">limitada por la biblioteca de alimentos</div>' : ''}
+          ${r.usaBasicos ? '<div class="muted" style="font-size:12px">apoyada en alimentos básicos</div>' : ''}</td>
+        <td class="num">${r.proteinaObjetivoGDia != null ? fmtNum(r.proteinaObjetivoGDia,0) + ' g' : '—'}${
+          r.proteinaRecalculada ? ' <span class="chip azul" title="Recalculada porque la tendencia se alejó más de un 3 % del último cálculo">rev.</span>' : ''}</td>
+        <td>${r.accionEntrenamiento
+          ? `<span class="chip ambar">${esc(NUT_TXT.accion[r.accionEntrenamiento] || r.accionEntrenamiento)}</span>` : ''}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="card" style="margin-top:14px"><h3>Tarjetas semanales del lazo</h3>
+      <div class="muted" style="font-size:12px;margin-bottom:8px">
+        Una tarjeta por semana como máximo, el día de evaluación de la fase. «Error» es la diferencia
+        energética que explica el desvío de ritmo; «Ajuste» es lo que la app aplicó tras ganancia,
+        clamp de ±${fmtNum(NUT.maxPasoKcal,0)} kcal y el tope acumulado. Los refeeds son un pulso fijo
+        de ${fmtNum(NUT.refeedKcal,0)} kcal y NO suman al acumulado.
+      </div>
+      <div style="overflow-x:auto"><table><thead><tr>
+        <th>Fecha</th><th>Tipo</th><th class="num">Ritmo real</th><th class="num">Error</th>
+        <th class="num">Ajuste</th><th class="num">Acumulado</th><th>Prescripción</th>
+        <th class="num">Proteína</th><th>Entrenamiento</th></tr></thead>
+      <tbody>${filas}</tbody></table></div></div>`;
+  },
+
+  /* Puente nutrición → entrenamiento: lo que solo se ve cruzando ambos mundos. */
+  _nutEntrenamiento(nut, ctx){
+    const t = nut.trinquete;
+    if (!t)
+      return `<div class="card"><h3>Efecto sobre el entrenamiento</h3>
+        <div class="muted">Sin fase abierta: el detector de rendimiento y el trinquete de volumen
+        pertenecen a la fase y se reinician con cada una.</div></div>`;
+
+    const topes = Object.entries(t.topesSeriesPorLinea || {});
+    const nivel = t.trinqueteNivel || 0;
+    const escalonTxt = ['sin respuesta todavía', 'refeed o bajada de objetivo aplicados',
+                        `recorte de volumen del ${fmtNum(NUT.trinqueteCorte1Pct,0)} %`,
+                        `segundo recorte, del ${fmtNum(NUT.trinqueteCorte2Pct,0)} % adicional`][nutClamp(t.escalon || 0, 0, 3)];
+
+    return `<div class="card"><h3>Efecto sobre el entrenamiento</h3>
+      <div class="kv"><span class="muted">Trinquete de volumen</span><b>${
+        nivel === 0 ? '<span class="chip verde">sin recortes</span>'
+        : `<span class="chip ${nivel >= 2 ? 'rojo' : 'ambar'}">nivel ${nivel}</span>`}</b></div>
+      <div class="kv"><span class="muted">Escalón de respuesta</span><b>${esc(escalonTxt)}</b></div>
+      <div class="kv"><span class="muted">Último disparo del detector</span><b>${
+        t.ultimoDisparo ? fmtFecha(t.ultimoDisparo) : 'nunca'}</b></div>
+      <div class="kv"><span class="muted">Caída agregada medida</span><b>${
+        t.ultimaCaidaAgregadaPct != null ? fmtNum(t.ultimaCaidaAgregadaPct,1) + ' %' : '—'}</b></div>
+      <div class="kv"><span class="muted">Levantamientos vigilados</span><b>${
+        t.vigilados.length ? esc(t.vigilados.join(', ')) : 'selección automática'}</b></div>
+      ${topes.length ? `<div style="margin-top:8px">
+        <div class="muted" style="font-size:12px;margin-bottom:4px">Topes de series aplicados por el trinquete:</div>
+        <table><thead><tr><th>Línea de la rutina</th><th class="num">Tope de series</th></tr></thead>
+        <tbody>${topes.map(([k,v]) => `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join('')}</tbody></table>
+      </div>` : ''}
+      <div class="muted" style="font-size:12px;margin-top:8px">
+        ${nivel > 0
+          ? '<b style="color:var(--ambar)">La capa de nutrición ha recortado volumen de entrenamiento.</b> Si vas a tocar la rutina, hazlo sabiendo que estos topes siguen vigentes hasta que se cierre la fase: el trinquete no devuelve series solo.'
+          : 'El detector vigila la caída de rendimiento en déficit y, si dispara, primero prueba un refeed o baja el objetivo antes de tocar el volumen. Nunca sube series por su cuenta.'}
+      </div>
+    </div>`;
+  },
+
+  /* Refeeds y vueltas de pausa: explican mesetas que si no parecen estancamiento. */
+  _nutVentanas(nut){
+    const v = Nutricion.ventanas(nut.nut);
+    if (!v.length)
+      return `<div class="card"><h3>Refeeds y pausas</h3>
+        <div class="muted">Ninguno registrado. Son los eventos que enmascaran el peso durante unos días:
+        cuando los haya, aparecerán aquí para explicar mesetas que si no parecen estancamiento.</div></div>`;
+    return `<div class="card"><h3>Refeeds y pausas</h3>
+      <table><thead><tr><th>Evento</th><th>Inicio</th><th>Duración</th><th>Peso enmascarado hasta</th></tr></thead>
+      <tbody>${[...v].reverse().map(x => `<tr>
+        <td>${x.tipo === 'refeed'
+          ? `<span class="chip ambar">Refeed</span>` : `<span class="chip azul">Vuelta de pausa</span>`}</td>
+        <td>${fmtFecha(x.inicio)}</td>
+        <td>${x.tipo === 'refeed' ? `${x.dias} días` : '—'}</td>
+        <td>${fmtFecha(x.finEnmascarado)}</td></tr>`).join('')}</tbody></table>
+      <div class="muted" style="font-size:12px;margin-top:8px">
+        Durante estos días el peso sube por agua y glucógeno. Los pesajes se conservan pero pesan menos
+        en la pendiente, y la evaluación semanal se pospone si cae dentro: nunca se corrige sobre agua.
+      </div></div>`;
+  },
+
+  /* Plan de temporada: dónde está el cliente dentro del ciclo largo. */
+  _nutPlan(nut){
+    const plan = nut.plan;
+    if (!plan || !plan.bloques.length)
+      return `<div class="card"><h3>Plan de temporada</h3>
+        <div class="muted">Sin plan. El cliente gestiona las fases una a una. Un plan encadena bloques
+        de volumen, puente y definición y propone el cambio de fase cuando toca.</div></div>`;
+
+    const estadoTxt = {
+      enCurso: '<span class="chip verde">en curso</span>',
+      transicionPendiente: '<span class="chip ambar">cambio de bloque pendiente de confirmar</span>',
+      desfasado: '<span class="chip rojo">desfasado: la propuesta lleva días sin aceptarse</span>',
+      terminado: '<span class="chip gris">terminado</span>',
+      sinPlan: '',
+    }[nut.planEstado] || '';
+    const bloqueHoy = nut.bloqueActual
+      ? `Hoy: <b>${esc(NUT_TXT.bloque[nut.bloqueActual.tipo] || nut.bloqueActual.tipo)}</b>,
+         hasta el ${fmtFecha(nut.bloqueActual.fin)}.`
+      : 'Hoy no cae dentro de ningún bloque del plan.';
+
+    const proy = nut.proyeccionPlan;
+    const porId = new Map((proy?.bloques || []).map(b => [b.bloque.id, b]));
+
+    const filas = plan.bloques.map(b => {
+      const p = porId.get(b.id);
+      const actual = nut.bloqueActual && nut.bloqueActual.id === b.id;
+      const colDur = PlanTemporada.colorDuracion(b);
+      return `<tr${actual ? ' style="background:var(--verde-suave)"' : ''}>
+        <td>${actual ? '<span class="punto verde" title="Bloque actual"></span> ' : ''}<b>${esc(NUT_TXT.bloque[b.tipo] || b.tipo)}</b></td>
+        <td>${fmtFechaCorta(b.inicio)} → ${fmtFechaCorta(b.fin)}</td>
+        <td class="num"><span class="chip ${claseBanda(colDur)}">${fmtNum(b.semanas,0)} sem</span></td>
+        <td class="num">${b.tasaPctSemana ? fmtTasa(b.tasaPctSemana) : '0'}${
+          p ? ` <span class="punto ${claseBanda(p.colores.tasa)}" title="Ritmo: ${esc(NUT_TXT.banda[p.colores.tasa] || p.colores.tasa)}"></span>` : ''}</td>
+        <td class="num">${p ? `${fmtNum(p.pesoInicioKg,1)} → ${fmtNum(p.pesoFinKg,1)} kg` : '—'}</td>
+        <td class="num">${p ? `<span class="chip ${claseBanda(p.colores.grasaFinal)}">${fmtNum(p.grasaFinPct,1)} %</span>` : '—'}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="card"><h3>Plan de temporada</h3>
+      <div style="margin-bottom:8px">${estadoTxt} <span class="muted" style="font-size:13px">${bloqueHoy}</span></div>
+      <div style="overflow-x:auto"><table><thead><tr>
+        <th>Bloque</th><th>Fechas</th><th class="num">Duración</th><th class="num">Ritmo</th>
+        <th class="num">Peso proyectado</th><th class="num">% graso al final</th></tr></thead>
+      <tbody>${filas}</tbody></table></div>
+      <div class="muted" style="font-size:12px;margin-top:8px">
+        Proyección encadenada: el final de un bloque es el punto de partida del siguiente, con el
+        reparto grasa/magra esperable en cada tramo. Los colores marcan duración, ritmo y % graso
+        final fuera de lo recomendable. ${proy ? '' : 'Sin peso o % graso vigente no hay proyección.'}
+        ${nut.planEstado === 'transicionPendiente' || nut.planEstado === 'desfasado'
+          ? '<b style="color:var(--ambar)"> El plan propone cambiar de bloque y el cliente aún no lo ha confirmado en la app.</b>' : ''}
+      </div></div>`;
+  },
+
+  /* Alertas de nutrición, en el mismo formato que las de entrenamiento para que
+     entren en el triaje de la Cartera sin tocar nada más. */
+  _alertasNutricion(ctx, add){
+    const nut = ctx.datos.nut;
+    if (!nut || !nut.nut.presente) return;
+    const N = nut.nut, F = nut.fase;
+
+    // 1. Sin pesajes: el lazo está ciego y todo lo demás envejece.
+    if (F && F.estado !== 'CLOSED' && nut.diasSinPesarse != null){
+      if (nut.diasSinPesarse >= NUT.diasSinPesajeOfrecerPausa)
+        add('rojo', 'Dieta', `<b>${nut.diasSinPesarse} días sin pesarse.</b> El lazo de nutrición está parado: no corrige calorías ni valora el ritmo. La app ya le ofrece pausar la fase.`);
+      else if (nut.diasSinPesarse >= NUT.diasSinPesajeAviso)
+        add('ambar', 'Dieta', `${nut.diasSinPesarse} días sin pesarse: la evaluación semanal se pospone hasta que vuelva a haber datos.`);
+    }
+
+    // 2. Fase pausada.
+    if (F && F.estado === 'PAUSED')
+      add('ambar', 'Dieta', `Fase de <b>${esc(NUT_TXT.fase[F.tipo] || F.tipo)}</b> pausada. Al reanudar, la app exige ${NUT.pesajesMinTrasPausa} pesajes antes de volver a evaluar.`);
+
+    // 3. Ritmo real en banda ámbar o roja: va más rápido de lo que aconseja su composición.
+    if (nut.bandaReal === 'rojo')
+      add('rojo', 'Ritmo', `Ritmo real <b>${fmtTasa(nut.tasaPctSemana)}</b> (objetivo ${fmtTasa(F ? F.tasaObjetivoPctSemana : null)}): banda roja para su % graso. A este ritmo el reparto empeora.`);
+    else if (nut.bandaReal === 'ambar')
+      add('ambar', 'Ritmo', `Ritmo real <b>${fmtTasa(nut.tasaPctSemana)}</b> en banda ámbar (objetivo ${fmtTasa(F ? F.tasaObjetivoPctSemana : null)}).`);
+
+    // 4. Reparto: la pregunta de si el peso sale de la grasa.
+    const r = nut.reparto;
+    if (r && r.banda === 'rojo')
+      add('rojo', 'Reparto', `Solo el <b>${fmtNum(r.fraccionGrasaObservada * 100,0)} %</b> del peso movido fue grasa (esperable ${fmtNum(r.fraccionGrasaEsperada * 100,0)} %) en los últimos ${r.dias} días. Bajar ritmo, subir proteína y revisar carga.`);
+    else if (r && r.banda === 'ambar')
+      add('ambar', 'Reparto', `Reparto grasa/masa magra por debajo de lo esperable (${fmtNum(r.fraccionGrasaObservada * 100,0)} % frente a ${fmtNum(r.fraccionGrasaEsperada * 100,0)} %) en los últimos ${r.dias} días.`);
+
+    // 5. La dieta ha recortado volumen de entrenamiento.
+    if (nut.trinquete && nut.trinquete.trinqueteNivel > 0)
+      add('ambar', 'Dieta y volumen', `El trinquete de la capa de nutrición ha recortado series (<b>nivel ${nut.trinquete.trinqueteNivel}</b>)${
+        nut.trinquete.ultimoDisparo ? ` desde ${fmtFecha(nut.trinquete.ultimoDisparo)}` : ''}. Tenlo en cuenta antes de tocar la rutina.`);
+
+    // 6. Fin de fase recomendado o tope de ajuste agotado.
+    if (F && F.estado === 'END_RECOMMENDED')
+      add('ambar', 'Fin de fase', `La app recomienda cerrar la fase de ${esc(NUT_TXT.fase[F.tipo] || F.tipo)}. Toca decidir la siguiente etapa.`);
+    else if (nut.topeAjuste && nut.topeAjuste.agotado)
+      add('ambar', 'Fin de fase', `Tope de ajuste acumulado agotado (${fmtNum(nut.topeAjuste.topeKcal,0)} kcal/día). La próxima corrección del mismo signo cerrará la fase.`);
+
+    // 7. Propuesta de bajar objetivo sin aceptar.
+    const ult = Nutricion.ultimaRecomendacion(N);
+    if (ult && ult.tipo === 'LOWER_TARGET' && !ult.objetivoAplicado)
+      add('azul', 'Sin aceptar', `Propuesta de bajar el objetivo a ${fmtTasa(ult.nuevaTasaObjetivoPctSemana)} del ${fmtFecha(ult.fecha)}: el cliente todavía no la ha aceptado en la app.`);
+
+    // 8. % graso caducado: sin él, el tope ampliado se cae y el reparto no se valora.
+    if (F && F.estado !== 'CLOSED' && N.medicionesGrasa.length && nut.grasaCaducada)
+      add('ambar', '% graso', `Última estimación de % graso hace ${nut.diasDesdeMedicion} días. Caducada para los guardarraíles: conviene pedir una nueva.`);
+    else if (F && F.estado !== 'CLOSED' && !N.medicionesGrasa.length)
+      add('azul', '% graso', 'Sin ninguna estimación de % graso: la app usa el tramo medio por defecto y no puede valorar el reparto grasa/masa magra.');
+
+    // 9. Refeed reciente: explica una meseta que si no parece estancamiento.
+    const refeedReciente = [...N.refeeds].reverse().find(x => diasEntre(x.inicio, ctx.hasta) <= 14 && diasEntre(x.inicio, ctx.hasta) >= 0);
+    if (refeedReciente)
+      add('azul', 'Refeed', `Refeed de ${refeedReciente.dias} días desde el ${fmtFecha(refeedReciente.inicio)}: el peso de esos días y los ${NUT.maskExtraDays} siguientes está enmascarado.`);
+
+    // 10. Plan de temporada con transición sin confirmar.
+    if (nut.planEstado === 'desfasado')
+      add('ambar', 'Plan', 'El plan de temporada propuso cambiar de bloque hace más de una semana y sigue sin confirmarse. O se acepta o conviene replanificar.');
+  },
+
   // ================= INFORME (impresión) =================
   informe(ctx){
     const { datos, perfil, fuerzaR, cardioR, readinessR, desde, hasta } = ctx;
@@ -869,6 +1581,55 @@ const Vistas = {
     const htmlObs = obs.length
       ? `<div class="card"><h3>Observaciones del cliente</h3>${obs.reverse().join('')}</div>` : '';
 
-    return `<div class="informe">${cab}${ficha}${htmlAlertas}${htmlRend}${htmlEjercicios}${htmlReadiness}${htmlObs}</div>`;
+    // Dieta: solo si el cliente tiene el lazo de nutrición en marcha. Se imprime
+    // lo justo para una revisión —estado, ritmo, adherencia al pesaje,
+    // composición y últimas tarjetas—, no la pestaña entera.
+    const nut = datos.nut;
+    const nFase = (nut && nut.fase && nut.fase.estado !== 'CLOSED') ? nut.fase : null;
+    let htmlNutricion = '';
+    if (nut && nut.nut.presente && (nFase || nut.pesajes.length)){
+      const adPeso = Nutricion.adherenciaPesaje(nut.pesajes, desde, hasta);
+      const r = nut.reparto;
+      const ultimas = nut.nut.recomendaciones
+        .filter(x => enRango(x.fecha, desde, hasta)).slice(-6).reverse();
+      htmlNutricion = `<div class="card"><h3>Dieta (lazo de nutrición)</h3>
+        <div class="inf-2col">
+          <div>
+            <div class="kv"><span class="muted">Fase</span><b>${nFase
+              ? `${esc(NUT_TXT.fase[nFase.tipo] || nFase.tipo)} desde ${fmtFecha(nFase.inicio)} · objetivo ${fmtTasa(nFase.tasaObjetivoPctSemana)}`
+              : 'sin fase abierta'}</b></div>
+            <div class="kv"><span class="muted">Ritmo real</span><b>${fmtTasa(nut.tasaPctSemana)}${
+              nut.dentroBandaMuerta === true ? ' (en banda muerta)'
+              : nut.dentroBandaMuerta === false ? ` (${fmtTasa(nut.desvioPctSemana)} del objetivo)` : ''}</b></div>
+            <div class="kv"><span class="muted">Peso tendencia</span><b>${fmtNum(nut.tendenciaKg,1)} kg</b></div>
+            <div class="kv"><span class="muted">Pesajes del periodo</span><b>${adPeso.hechos}/${adPeso.dias} (${fmtNum(adPeso.porSemana,1)}/semana)</b></div>
+          </div>
+          <div>
+            <div class="kv"><span class="muted">% graso estimado</span><b>${
+              nut.grasaVigentePct != null ? `${fmtNum(nut.grasaVigentePct,1)} % (hace ${nut.diasDesdeMedicion} días)` : '—'}</b></div>
+            <div class="kv"><span class="muted">Masa magra estimada</span><b>${
+              nut.grasaVigente ? fmtNum(nut.grasaVigente.magraKg,1) + ' kg' : '—'}</b></div>
+            <div class="kv"><span class="muted">Reparto último tramo</span><b>${
+              r && r.banda ? `${fmtNum(r.fraccionGrasaObservada * 100,0)} % grasa (esperable ${fmtNum(r.fraccionGrasaEsperada * 100,0)} %)` : 'sin valorar'}</b></div>
+            <div class="kv"><span class="muted">Volumen recortado por la dieta</span><b>${
+              nut.trinquete && nut.trinquete.trinqueteNivel > 0 ? `sí, nivel ${nut.trinquete.trinqueteNivel}` : 'no'}</b></div>
+          </div>
+        </div>
+        ${ultimas.length ? `<table style="margin-top:10px"><thead><tr>
+          <th>Fecha</th><th>Tarjeta</th><th class="num">Ritmo real</th><th class="num">Ajuste</th><th>Entrenamiento</th></tr></thead>
+          <tbody>${ultimas.map(x => `<tr>
+            <td>${fmtFecha(x.fecha)}</td>
+            <td>${esc(NUT_TXT.recomendacion[x.tipo] || x.tipo)}</td>
+            <td class="num">${fmtTasa(x.tasaRealPctSemana)}</td>
+            <td class="num">${x.ajusteKcalDia ? fmtKcal(x.ajusteKcalDia) : '—'}</td>
+            <td>${x.accionEntrenamiento ? esc(NUT_TXT.accion[x.accionEntrenamiento] || x.accionEntrenamiento) : ''}</td>
+          </tr>`).join('')}</tbody></table>` : ''}
+        <div class="muted" style="font-size:11px;margin-top:6px">
+          El % graso y todo lo derivado de él son estimaciones con ±${NUT.grasaMargenPpMin}–${NUT.grasaMargenPpMax} pp de margen.
+          A corto plazo la masa magra incluye agua y glucógeno, no solo músculo.
+        </div></div>`;
+    }
+
+    return `<div class="informe">${cab}${ficha}${htmlAlertas}${htmlRend}${htmlEjercicios}${htmlReadiness}${htmlNutricion}${htmlObs}</div>`;
   },
 };

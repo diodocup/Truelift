@@ -38,10 +38,20 @@ function calcularRango(datos){
 }
 function calcularRangoDe(datos, modo, desdeCustomStr = null, hastaCustomStr = null){
   const hoy = soloDia(new Date());
+  // La extensión de los datos incluye la capa de nutrición: un cliente puede
+  // llevar semanas pesándose sin entrenar (o al revés), y "Todo" tiene que
+  // abarcar las dos cosas o las gráficas de dieta saldrían vacías.
+  const N = datos.nutricion;
   const fechas = [
     ...datos.fuerza.map(s => s.fecha),
     ...datos.cardio.map(s => s.fecha),
     ...datos.readiness.map(r => r.fecha),
+    ...(N && N.presente ? [
+      ...N.pesajes.map(p => p.fecha),
+      ...N.medicionesGrasa.map(m => m.fecha),
+      ...N.recomendaciones.map(r => r.fecha),
+      ...(N.fase && N.fase.inicio ? [N.fase.inicio] : []),
+    ] : []),
   ];
   const minDato = fechas.length ? soloDia(new Date(Math.min(...fechas))) : hoy;
   const maxDato = fechas.length ? soloDia(new Date(Math.max(...fechas))) : hoy;
@@ -89,7 +99,8 @@ function renderCartera(){
     const estado = (rojas || (dImp ?? 0) > 14) ? 'rojo'
                  : (ambar || (dImp ?? 0) > 7) ? 'ambar' : 'verde';
     return { id: c.id, nombre: c.nombre, notas: c.notas, estado,
-             ultimaSesion: ultima, diasImport: dImp, ad, rojas, ambar };
+             ultimaSesion: ultima, diasImport: dImp, ad, rojas, ambar,
+             nut: datos.nut };
   });
   // Primero quien más atención necesita
   const score = f => f.rojas * 100 + f.ambar * 10 + ((f.diasImport ?? 0) > 7 ? 50 : 0);

@@ -146,7 +146,16 @@ function normalizar(raw){
     .filter(r => r.fecha)
     .sort((a,b) => a.fecha - b.fecha);
 
-  return { perfil, plan, fuerza, cardio, readiness, grupoDe };
+  // Capa de nutrición (clave `nutricion`, aditiva desde la versión con lazo de
+  // nutrición). Las copias anteriores no la traen: `presente` queda en false y
+  // todas las vistas degradan a su estado vacío.
+  // `nut` reconstruye aquí lo que el JSON no guarda (peso-tendencia, ritmo,
+  // bandas, reparto…) para no recalcular el filtro en cada render: como el
+  // resto de lo normalizado, vive en normCache hasta que se reimporta.
+  const nutricion = normalizarNutricion(raw);
+  const nut = Nutricion.contexto(nutricion);
+
+  return { perfil, plan, fuerza, cardio, readiness, grupoDe, nutricion, nut };
 }
 
 // ---------- Métricas ----------

@@ -19,6 +19,13 @@ const Charts = {
     return out;
   },
 
+  /* Decimales del rótulo del eje según lo estrecho que sea su recorrido.
+     Sin esto, un eje de %/semana entre 0 y −1 rotula "0, -0, -0, -1, -1". */
+  _decEje(min, max){
+    const rango = Math.abs(max - min);
+    return rango < 2 ? 2 : rango < 10 ? 1 : 0;
+  },
+
   _ejeX(pts, X, h, w){
     const fechasU = [...new Set(pts.map(p => +soloDia(p.x)))].sort((a,b) => a-b);
     const paso = Math.max(1, Math.ceil(fechasU.length / 6));
@@ -65,10 +72,11 @@ const Charts = {
       svg += `<rect x="${padL}" y="${YIzq(banda.max)}" width="${w-padL-padR}" height="${YIzq(banda.min)-YIzq(banda.max)}" fill="rgba(76,175,125,.10)"/>`;
     }
 
+    const decIzq = this._decEje(yMin, yMax);
     svg += '<g data-eje-y="izq">';
     this._ticksY(yMin, yMax).forEach(t => {
       svg += `<line x1="${padL}" x2="${w-padR}" y1="${YIzq(t)}" y2="${YIzq(t)}" stroke="#2e3743" stroke-width="1"/>`;
-      svg += `<text x="${padL-6}" y="${YIzq(t)+4}" text-anchor="end">${fmtNum(t,0)}</text>`;
+      svg += `<text x="${padL-6}" y="${YIzq(t)+4}" text-anchor="end">${fmtNum(t,decIzq)}</text>`;
     });
     const unidadIzq = series.find(s => s.eje !== 'der' && s.puntos.some(p => p.y != null))?.unidad;
     if (unidadIzq) svg += `<text x="${padL-6}" y="11" text-anchor="end" style="font-size:10px">${esc(unidadIzq)}</text>`;
@@ -76,9 +84,10 @@ const Charts = {
 
     if (hayEjeDer){
       const serieDer = series.find(s => s.eje === 'der' && s.puntos.some(p => p.y != null));
+      const decDer = this._decEje(yDerMin, yDerMax);
       svg += '<g data-eje-y="der">';
       this._ticksY(yDerMin, yDerMax).forEach(t => {
-        svg += `<text x="${w-padR+6}" y="${YDer(t)+4}" text-anchor="start" fill="${serieDer.color}">${fmtNum(t,0)}</text>`;
+        svg += `<text x="${w-padR+6}" y="${YDer(t)+4}" text-anchor="start" fill="${serieDer.color}">${fmtNum(t,decDer)}</text>`;
       });
       if (serieDer.unidad)
         svg += `<text x="${w-4}" y="11" text-anchor="end" fill="${serieDer.color}" style="font-size:10px">${esc(serieDer.unidad)}</text>`;
@@ -213,9 +222,10 @@ const Charts = {
     }
 
     // Rejilla y eje izquierdo
+    const decL = this._decEje(lMin, lMax);
     this._ticksY(lMin, lMax).forEach(t => {
       svg += `<line x1="${padL}" x2="${w-padR}" y1="${YL(t)}" y2="${YL(t)}" stroke="#2e3743"/>`;
-      svg += `<text x="${padL-6}" y="${YL(t)+4}" text-anchor="end">${fmtNum(t,0)}</text>`;
+      svg += `<text x="${padL-6}" y="${YL(t)+4}" text-anchor="end">${fmtNum(t,decL)}</text>`;
     });
     // Eje derecho (readiness)
     [0, 40, 70, 100].forEach(t => {
@@ -310,14 +320,16 @@ const Charts = {
     let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
 
     // Rejilla + eje izquierdo (color de la serie izquierda)
+    const decIzq = this._decEje(izq._a, izq._b);
     this._ticksY(izq._a, izq._b).forEach(t => {
       svg += `<line x1="${padL}" x2="${w-padR}" y1="${izq._Y(t).toFixed(1)}" y2="${izq._Y(t).toFixed(1)}" stroke="#2e3743"/>`;
-      svg += `<text x="${padL-6}" y="${izq._Y(t)+4}" text-anchor="end" fill="${izq.color}">${fmtNum(t,0)}</text>`;
+      svg += `<text x="${padL-6}" y="${izq._Y(t)+4}" text-anchor="end" fill="${izq.color}">${fmtNum(t,decIzq)}</text>`;
     });
     // Eje derecho (color de la serie derecha)
     if (der){
+      const decDer = this._decEje(der._a, der._b);
       this._ticksY(der._a, der._b).forEach(t => {
-        svg += `<text x="${w-padR+6}" y="${der._Y(t)+4}" text-anchor="start" fill="${der.color}">${fmtNum(t,0)}</text>`;
+        svg += `<text x="${w-padR+6}" y="${der._Y(t)+4}" text-anchor="start" fill="${der.color}">${fmtNum(t,decDer)}</text>`;
       });
     }
 

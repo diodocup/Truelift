@@ -23,6 +23,7 @@ function cargarCoach(mostrarFcReposo = false) {
   };
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(new URL('data.js', appDir), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(new URL('nutricion.js', appDir), 'utf8'), sandbox);
   vm.runInContext(
     `${fs.readFileSync(new URL('views.js', appDir), 'utf8')}
      ;globalThis.__normalizar = normalizar;
@@ -45,6 +46,7 @@ function cargarCharts() {
   const sandbox = { console };
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(new URL('data.js', appDir), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(new URL('nutricion.js', appDir), 'utf8'), sandbox);
   vm.runInContext(
     `${fs.readFileSync(new URL('charts.js', appDir), 'utf8')}
      ;globalThis.__Charts = Charts;`,
