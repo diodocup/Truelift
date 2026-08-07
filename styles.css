@@ -610,6 +610,11 @@ h3 {
   grid-template-columns: minmax(320px, 480px) minmax(0, 1fr);
 }
 
+/* Capturas de la capa de nutrición, bajo el panel de su sección */
+.nutrition-preview {
+  margin-top: 64px;
+}
+
 .copy-block {
   max-width: 640px;
 }
