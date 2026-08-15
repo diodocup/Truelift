@@ -25,6 +25,8 @@ const portugueseTranslations = {
   "Disponible pronto en": "Disponível em breve na",
   "Descargar manual (PDF)": "Baixar manual (PDF em português)",
   "Abrir TrueLift Coach": "Abrir TrueLift Coach",
+  "Abrir aplicación web": "Abrir aplicativo web",
+  "Descarga este archivo de entrenamiento de ejemplo para probar TrueLift Coach": "Baixe este arquivo de treino de exemplo para testar o TrueLift Coach",
   "App de escritorio para entrenadores y visualización de métricas para usuarios.": "App para computador voltado a treinadores e visualização de métricas para usuários.",
   "Resumen de TrueLift": "Resumo da TrueLift",
   "Gratis para siempre": "Grátis para sempre",
