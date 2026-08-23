@@ -1014,6 +1014,18 @@ h3 {
   padding: 0 22px 22px;
 }
 
+.faq-list details p:not(:last-child) {
+  padding-bottom: 12px;
+}
+
+.faq-list details ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 22px 16px 42px;
+  color: var(--muted);
+}
+
 .faq-list details a {
   color: var(--lime-strong);
   text-decoration: underline;
