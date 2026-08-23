@@ -2,380 +2,176 @@ document.documentElement.classList.add("js");
 
 const englishTranslations = {
   "TrueLift | Entrenamiento de fuerza y progresión automática": "TrueLift | Strength training and automatic progression",
-  "App de fuerza e hipertrofia que decide cuándo y cuánto subir peso. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android.": "Strength and hypertrophy app that decides when and how much weight to add. Automatic progression, no ads, no account and offline. Free on Android.",
+  "App de fuerza e hipertrofia que decide cuánto peso cargar en cada serie y te explica por qué. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android.": "Strength and hypertrophy app that decides how much weight to load on every set and explains why. Automatic progression, no ads, no account and offline. Free on Android.",
   "TrueLift | El entrenador que planifica tu progresión": "TrueLift | The coach that plans your progression",
-  "TrueLift planifica tu entrenamiento y tu sobrecarga progresiva según tu rendimiento y tu recuperación. Pruébala gratis; PRO en plan mensual, anual o pago único de por vida.": "TrueLift plans your training and progressive overload around your performance and recovery. Try it free; PRO is available monthly, annually or as a one-time lifetime purchase.",
+  "TrueLift decide cuánto peso cargar en cada serie, te explica por qué y frena cuando acumulas fatiga. Gratis, sin anuncios y sin cuenta. 28 días de PRO incluidos.": "TrueLift decides how much weight to load on every set, explains why and holds back when fatigue builds up. Free, no ads, no account. 28 days of PRO included.",
+
   "TrueLift inicio": "TrueLift home",
   "Abrir menú": "Open menu",
-  "Por qué TrueLift": "Why TrueLift",
-  "Planificación": "Planning",
-  "Gratis": "Free",
-  "Nutrición": "Nutrition",
+  "Cómo funciona": "How it works",
+  "Progreso": "Progress",
   "Precios": "Pricing",
+  "Nutrición": "Nutrition",
   "Capturas": "Screenshots",
-  "Manual (PDF)": "Manual (English PDF)",
   "Seleccionar idioma": "Select language",
-  "App de entrenamiento de fuerza adaptativo": "Adaptive strength training app",
+  "Descargar gratis": "Download free",
+
+  "App de fuerza e hipertrofia · Android": "Strength and hypertrophy app · Android",
   "Un entrenador en tu bolsillo.": "A coach in your pocket.",
-  "Las demás apps registran lo que haces. TrueLift planifica lo que haces después: analiza tu rendimiento y tu recuperación y decide cuándo subir peso, cuánto subir, cuándo mantener y cuándo descargar. Y te explica el porqué de cada decisión.": "Other apps record what you do. TrueLift plans what comes next: it analyses your performance and recovery to decide when to add weight, how much to add, when to hold steady and when to deload. And it explains every decision.",
+  "Las apps de registro guardan lo que haces. TrueLift decide lo que haces después: cuánto peso cargar en cada serie, cuándo mantener y cuándo frenar. Y te explica el porqué.": "Workout loggers save what you did. TrueLift decides what you do next: how much weight to load on each set, when to hold and when to back off. And it explains why.",
   "Disponible en Google Play": "Get it on Google Play",
   "Disponible en": "Available on",
-  "Disponible en el App Store": "Download on the App Store",
-  "Disponible muy pronto": "Coming very soon",
-  "Android ya disponible": "Android available now",
   "iOS disponible pronto": "iOS coming soon",
   "Disponible pronto en": "Coming soon to",
-  "Descargar manual (PDF)": "Download manual (English PDF)",
-  "Abrir TrueLift Coach": "Open TrueLift Coach",
-  "Abrir aplicación web": "Open web app",
-  "Descarga este archivo de entrenamiento de ejemplo para probar TrueLift Coach": "Download this sample training file to try TrueLift Coach",
-  "App de escritorio para entrenadores y visualización de métricas para usuarios.": "Desktop app for coaches and metric insights for users.",
-  "Resumen de TrueLift": "TrueLift overview",
+  "Resumen de TrueLift": "TrueLift at a glance",
   "Gratis para siempre": "Free forever",
-  "Rutina, registro, progresión automática y herramientas esenciales. Sin trucos.": "A training plan, workout log, automatic progression and essential tools. No catches.",
-  "Sin anuncios ni registro": "No ads or sign-up",
-  "Cero publicidad, cero cuentas. Tu historial se procesa en tu dispositivo y el desarrollador no puede consultarlo.": "No ads, no accounts. Your training history is processed on your device and cannot be viewed by the developer.",
-  "Elige tu plan": "Choose your plan",
-  "Personalización total, autorregulación, VFC, fase de dieta, deload inteligente y rutinas descargables. Mensual, anual o pago único.": "Full customisation, autoregulation, HRV, nutrition phases, smart deloads and downloadable programmes. Pay monthly, annually or once for life.",
-  "28 días de prueba completa": "Full 28-day trial",
-  "Prueba todo PRO gratis. Si no lo compras, sigues con la versión gratuita.": "Try every PRO feature for free. If you do not upgrade, you simply keep the free version.",
-  "No es un registro. Es un entrenador.": "Not a tracker. A coach.",
-  "Las demás apps guardan lo que haces. TrueLift decide lo que haces después.": "Other apps save what you did. TrueLift decides what comes next.",
-  "Un cuaderno de gimnasio, aunque sea digital, solo acumula datos y te deja a ti la decisión difícil: ¿subo peso hoy o no? TrueLift evalúa tus datos como lo haría un entrenador: analiza cada sesión, compara tu rendimiento con tu propio histórico y programa la carga de la próxima. Menos incertidumbre y mejores decisiones de carga, en menos tiempo. Y esto no es una función de pago: la progresión automática está incluida en la versión gratuita.": "A training log, even a digital one, only collects data and leaves the hard decision to you: should you add weight today? TrueLift evaluates your data like a coach would. It analyses each workout, compares it with your own history and sets the load for the next one. Better loading decisions, less uncertainty and less time spent planning. Automatic progression is included in the free version.",
+  "Sin anuncios": "No ads",
+  "Sin cuenta ni email": "No account or email",
+  "28 días de PRO incluidos": "28 days of PRO included",
+  "Sesión en curso: objetivo de repeticiones y RIR, carga sugerida, cronómetro de descanso y explicación de por qué se mantiene la carga": "Session in progress: rep and RIR target, suggested load, rest timer and the reason the load is being held",
+
+  "Por qué TrueLift": "Why TrueLift",
+  "Deja de preguntarte si hoy toca subir peso.": "Stop wondering whether today is the day to add weight.",
+  "Cada vez que abres una sesión, TrueLift ya ha comparado tu última sesión con tu histórico y ha tomado la decisión por ti.": "Every time you open a session, TrueLift has already compared your last workout with your history and made the call for you.",
+  "Si cumples, subes": "Hit the target, move up",
+  "Cuando completas las repeticiones con el RIR previsto, calcula una subida proporcionada al ejercicio y cargable con tus discos.": "When you complete the reps at the planned RIR, it calculates an increase that fits the exercise and the plates you own.",
+  "Si no llegas, consolidas": "Miss it, consolidate",
+  "Si faltan repeticiones o el esfuerzo se dispara, mantiene la carga para que consolides antes de volver a subir.": "If reps are missing or the effort shoots up, it holds the load so you consolidate before moving up again.",
+  "Si acumulas fatiga, frena": "Fatigue builds up, it backs off",
+  "Tu sueño, estrés, molestias y VFC también cuentan: puede frenar subidas, bajar intensidad o proponer una descarga.": "Your sleep, stress, aches and HRV count too: it can block increases, lower intensity or suggest a deload.",
+  "Sin IA improvisando: un algoritmo estable y explicable. Mismos datos, misma decisión, y siempre con el motivo a la vista.": "No AI improvising: a stable, explainable algorithm. Same data, same decision, and the reason is always on screen.",
+
+  "Abre la app, entrena, guarda. El resto lo hace TrueLift.": "Open the app, train, save. TrueLift does the rest.",
+  "Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado": "Log tab with today's session and a breakdown of today's readiness to train",
+  "Abre la sesión que toca": "Open today's session",
+  "Rutina lista desde el primer día según tus días de entreno y tu nivel. Con PRO, un estado diario de 0 a 100 te dice cómo llegas.": "A routine ready from day one, based on your training days and level. With PRO, a daily 0–100 readiness score tells you how you are arriving.",
+  "Registro serie a serie con la carga sugerida, el objetivo de repeticiones y RIR y el cronómetro de descanso": "Set-by-set logging with the suggested load, the rep and RIR target and the rest timer",
+  "Registra serie a serie": "Log set by set",
+  "Carga sugerida, objetivo de repeticiones y RIR, cronómetro de descanso. Tú solo confirmas lo que has hecho.": "Suggested load, rep and RIR target, rest timer. You just confirm what you did.",
+  "Sesión guardada con el rendimiento frente a tu base, tonelaje, series, RPE y duración": "Saved session with performance against your baseline, tonnage, sets, RPE and duration",
+  "Guarda y recibe el veredicto": "Save and get the verdict",
+  "Rendimiento de la sesión frente a tu histórico y la carga ya programada para la próxima.": "Session performance against your history, and the load already set for the next one.",
+
+  "Mide lo que importa: si de verdad estás progresando.": "Measure what matters: whether you are really progressing.",
+  "Nada de gráficas de relleno. Cada dato responde a una pregunta concreta sobre tu entrenamiento.": "No filler charts. Every number answers a specific question about your training.",
+  "Rendimiento de cada sesión frente a tu propio histórico, no frente a una tabla.": "Each session's performance against your own history, not against a chart.",
+  "Nivel de fuerza por ejercicio según tu peso corporal, sexo y edad.": "Strength level per exercise, relative to your body weight, sex and age.",
+  "1RM estimado, tonelaje, marcas personales e informe mensual para compartir.": "Estimated 1RM, tonnage, personal bests and a monthly report to share.",
+  "Estado para entrenar y VFC día a día.": "Readiness to train and HRV, day by day.",
+  "Capturas de la pestaña Progreso": "Progress tab screenshots",
+  "Pestaña Progreso con el estado para entrenar, la valoración general y el rendimiento de sesión": "Progress tab with readiness to train, the overall assessment and session performance",
+  "Nivel de fuerza global y por ejercicio, con el progreso hacia el siguiente nivel": "Overall and per-exercise strength level, with progress towards the next level",
+
+  "Gratis vs PRO": "Free vs PRO",
+  "Empieza gratis. Pasa a PRO si quieres más control.": "Start free. Go PRO when you want more control.",
+  "Gratis": "Free",
+  "para siempre": "forever",
+  "Todo lo necesario para entrenar en serio.": "Everything you need to train seriously.",
+  "Rutina prefijada y progresión automática": "Preset routine and automatic progression",
+  "Registro de sesiones y cardio": "Session and cardio logging",
+  "Volumen semanal, progreso y marcas personales": "Weekly volume, progress and personal bests",
+  "Calculadora de discos, calentamiento y cronómetro": "Plate calculator, warm-up sets and rest timer",
+  "Informe mensual y copias de seguridad": "Monthly report and backups",
+  "Descargar en Google Play": "Download on Google Play",
+  "mensual · anual · pago único": "monthly · annual · one-time",
+  "Todo lo de Gratis, más:": "Everything in Free, plus:",
+  "Rutina totalmente configurable y rutinas descargables": "Fully configurable routine and downloadable programmes",
+  "Autorregulación por sueño, estrés, molestias y VFC": "Autoregulation by sleep, stress, aches and HRV",
+  "Descarga guiada y descarga automática por fatiga": "Guided deload and automatic deload on fatigue",
+  "Capa de nutrición: temporada por bloques y ajuste semanal": "Nutrition layer: season in blocks and weekly adjustment",
+  "Crear ejercicios e importar tu rutina desde Excel": "Create exercises and import your routine from Excel",
+  "Modalidades de pago de PRO": "PRO payment options",
+  "Mensual": "Monthly",
+  "sin permanencia": "cancel anytime",
+  "Anual": "Annual",
+  "Pago único": "One-time",
+  "Probar PRO gratis 28 días": "Try PRO free for 28 days",
+  "Al instalar tienes 28 días de PRO completo. Sin email, sin tarjeta, sin cargos automáticos. Si no eliges plan, sigues en la versión gratuita con tu historial intacto.": "When you install you get 28 days of full PRO. No email, no card, no automatic charges. If you do not pick a plan, you keep the free version with your history intact.",
+  "Ver la comparativa completa, función por función": "See the full comparison, feature by feature",
+  "Función": "Feature",
+  "Registrar sesiones y cardio": "Log sessions and cardio",
+  "Volumen y frecuencia semanal": "Weekly volume and frequency",
+  "Progreso, marcas personales y rendimiento": "Progress, personal bests and performance",
+  "Compartir entrenamiento e informe mensual": "Share workouts and monthly report",
+  "Copias de seguridad": "Backups",
+  "Cambiar un ejercicio por otro": "Swap one exercise for another",
+  "Configurar series, RIR, reps y descanso": "Configure sets, RIR, reps and rest",
+  "Cambiar el patrón de un ejercicio y renombrar sesiones": "Change an exercise's movement pattern and rename sessions",
+  "Crear ejercicios e importar rutina desde Excel": "Create exercises and import a routine from Excel",
+  "Rutinas descargables: express, especialización, peso libre…": "Downloadable programmes: express, specialisation, free weights…",
+  "Progresión ajustada a déficit, mantenimiento o superávit": "Progression adjusted to deficit, maintenance or surplus",
+  "Plan de nutrición: temporada y ajuste semanal": "Nutrition plan: season and weekly adjustment",
+  "Incluido": "Included",
+  "No incluido": "Not included",
+
+  "Captura de la pestaña Nutrición": "Nutrition tab screenshot",
+  "Pestaña Nutrición con el peso-tendencia, el estado de la fase de déficit y la temporada por bloques": "Nutrition tab with trend weight, the deficit phase status and the season in blocks",
+  "Capa de nutrición · opcional": "Nutrition layer · optional",
+  "Planifica tu temporada. Pésate. Sin contar calorías.": "Plan your season. Weigh yourself. No calorie counting.",
+  "Defines tus bloques de volumen, mantenimiento y definición. Cada día anotas solo tu peso. Una vez por semana, la app compara tu ritmo real con el previsto y, si hace falta, te propone el ajuste en gramos de tus propios alimentos.": "You define your bulking, maintenance and cutting blocks. Each day you log one thing: your weight. Once a week the app compares your real rate with the planned one and, if needed, suggests the adjustment in grams of your own foods.",
+  "Trabaja con tu peso-tendencia, no con el número de un día suelto.": "It works with your trend weight, not with a single day's reading.",
+  "Un semáforo te avisa si el ritmo elegido es sensato para tu punto de partida.": "A traffic light warns you if the chosen rate is sensible for your starting point.",
+  "La fase de dieta gobierna la progresión: entrenamiento y nutrición van de la mano.": "The diet phase drives progression: training and nutrition go hand in hand.",
+
   "Privacidad y sin publicidad": "Privacy and no advertising",
   "Cero publicidad": "Zero advertising",
   "Ni banners, ni vídeos, ni rastreadores. Nada interrumpe tu entrenamiento.": "No banners, videos or trackers. Nothing interrupts your training.",
-  "Sin registro ni cuenta": "No sign-up or account",
-  "Instala y entrena. No pedimos tu email, ni tu nombre, ni nada de ti.": "Install it and train. We do not ask for your email, your name or any personal details.",
+  "Instala y entrena. No pedimos tu nombre, tu email ni nada de ti.": "Install it and train. We do not ask for your name, your email or anything about you.",
   "Tus datos, en tu móvil": "Your data stays on your phone",
-  "Tu historial se guarda localmente. Tú eliges las exportaciones y el sistema puede hacer copias automáticas si las activas.": "Your history is stored locally. You choose where to export it, and the operating system may make automatic backups if you enable them.",
-  "Planificación adaptativa · el corazón de TrueLift": "Adaptive planning · the heart of TrueLift",
-  "Más de 15 señales para planificar cada sesión. No solo tus kilos.": "Over 15 signals shape every workout — not just the weight on the bar.",
-  "Cada vez que abres una sesión, TrueLift ya ha hecho el trabajo de un entrenador: ha cruzado tu ejecución real, tu rendimiento reciente y tu recuperación para decidir qué te toca hoy. Ninguna app de registro hace esto por ti.": "Whenever you open a workout, TrueLift has already done the planning: it combines what you actually lifted, your recent performance and your recovery to decide what you should do today. An ordinary workout tracker cannot do that for you.",
-  "Lo que TrueLift decide por ti": "What TrueLift works out for you",
-  "Cuándo subir peso y cuánto subir, con un salto proporcionado al ejercicio.": "When to add weight and by how much, with an increment suited to the exercise.",
-  "Cuándo mantener la carga para consolidar antes de volver a subir.": "When to hold the load steady and consolidate before progressing again.",
-  "Cuándo frenar, modular la intensidad o proponer una descarga.": "When to ease off, adjust intensity or suggest a deload.",
-  "Qué peso montar exactamente con tus discos, microcargas y mancuernas.": "The exact load you can build with your plates, microplates and dumbbells.",
-  "Y siempre con el motivo explicado: sabrás por qué te propone cada cosa.": "And the reasoning is always clear, so you know why each change is suggested.",
-  "Señales que TrueLift tiene en cuenta": "Signals TrueLift takes into account",
-  "Tu ejecución real": "What you actually did",
-  "Carga": "Load",
-  "Repeticiones": "Repetitions",
-  "RIR serie a serie": "RIR for every set",
+  "Tu rutina y tu historial se procesan en tu dispositivo y el desarrollador no puede consultarlos.": "Your routine and history are processed on your device and the developer cannot access them.",
+
+  "Así se ve TrueLift.": "This is what TrueLift looks like.",
+  "Registro": "Log",
+  "Sesión en curso": "Session in progress",
+  "Sesión guardada": "Saved session",
+  "Valoración general": "Overall assessment",
+  "Estado para entrenar y rendimiento de una sesión concreta frente a su histórico": "Readiness to train and the performance of one session against its history",
+  "Rendimiento por sesión": "Performance per session",
+  "Nivel de fuerza": "Strength level",
+  "1RM estimado de un ejercicio con la evolución de la carga y del e1RM por sesión": "Estimated 1RM for an exercise with the load and e1RM trend per session",
   "1RM estimado": "Estimated 1RM",
-  "Estancamientos": "Plateaus",
-  "Parones y vueltas": "Training breaks and returns",
-  "Tu rendimiento": "Your performance",
-  "Comparación con tu histórico": "Comparison with your training history",
-  "Tendencia por ejercicio y sesión": "Trends by exercise and workout",
-  "Material disponible": "Available equipment",
-  "Tu recuperación": "Your recovery",
-  "Sueño": "Sleep",
-  "Energía y ánimo": "Energy and mood",
-  "Estrés": "Stress",
-  "Agujetas y molestias": "Soreness and discomfort",
-  "VFC": "HRV",
-  "Esfuerzo de sesión (RPE)": "Session effort (RPE)",
-  "Carga de cardio": "Cardio load",
-  "Fatiga acumulada": "Accumulated fatigue",
-  "Tu contexto": "Your circumstances",
-  "Fase de dieta: déficit, mantenimiento o superávit": "Nutrition phase: calorie deficit, maintenance or surplus",
-  "Molestias por zona: un tren no frena al otro": "Area-specific discomfort: one half of the body does not hold back the other",
-  "Progresión automática incluida": "Automatic progression included",
-  "Sube el peso solo cuando estés preparado para ello.": "Add weight only when you are ready for it.",
-  "TrueLift no sube kilos por calendario ni por intuición. Analiza si has cumplido las repeticiones objetivo, el RIR previsto y tu rendimiento reciente. Si toca progresar, calcula un salto proporcionado al ejercicio y factible con tu material. Si no toca, mantiene la carga para que consolides antes de volver a subir.": "TrueLift does not add weight on a fixed schedule or a hunch. It checks whether you hit the target reps and RIR, along with your recent performance. When it is time to progress, it calculates an exercise-appropriate increment that works with your equipment. Otherwise, it holds the load steady so you can consolidate first.",
-  "Lineal simple si estás empezando a entrenar, para avanzar con repeticiones fijas.": "Simple linear progression for beginners, using fixed repetition targets.",
-  "Doble progresión si ya tienes experiencia, para acumular reps dentro de un rango antes de subir carga.": "Double progression for experienced lifters, building reps within a range before adding weight.",
-  "Pesos adecuados a los discos, microcargas y mancuernas que tienes disponibles.": "Loads matched to the plates, microplates and dumbbells you have available.",
-  "Progresión independiente por cada tipo de sesión.": "Independent progression for each workout type.",
-  "Captura de progreso de TrueLift": "TrueLift progress screenshot",
-  "Pantalla de progreso con disponibilidad reciente, estado para entrenar y rendimiento por sesión": "Progress screen showing recent readiness, training status and workout performance",
-  "Algoritmo base incluido": "Core algorithm included",
-  "Cada recomendación tiene un motivo.": "Every recommendation has a reason.",
-  "En la versión gratuita, TrueLift ya decide cuándo subir, mantener o consolidar. En PRO, añade una segunda capa de control con recuperación, molestias, VFC, fase de dieta y rendimiento reciente.": "Even in the free version, TrueLift decides when to progress, hold or consolidate. PRO adds another layer of control based on recovery, discomfort, HRV, nutrition phase and recent performance.",
-  "Si cumples, progresas": "Hit the target, then progress",
-  "Cuando completas el objetivo con margen suficiente, la app calcula una subida adecuada.": "When you complete the target with enough reps in reserve, the app calculates a suitable increase.",
-  "Si no llegas, consolidas": "Miss the target, then consolidate",
-  "Si faltan repeticiones o el RIR no acompaña, mantiene la carga para no forzar una progresión innecesariamente agresiva.": "If you miss reps or your RIR is off target, the load stays the same rather than forcing an overly aggressive increase.",
-  "Si acumulas fatiga, frena": "When fatigue builds, ease off",
-  "Con autorregulación activa en PRO, TrueLift puede bloquear subidas, bajar intensidad o anticipar una descarga para gestionar mejor la fatiga.": "With PRO autoregulation enabled, TrueLift can pause load increases, reduce intensity or bring a deload forward to manage fatigue.",
-  "Todas las versiones · algoritmo sin caja negra": "Every version · no black-box algorithm",
-  "Sin IA improvisando. Con un algoritmo estable, explicable y reproducible.": "No AI guesswork. A stable, explainable and repeatable algorithm.",
-  "TrueLift no genera tu entrenamiento con un modelo opaco y variable. Usa un algoritmo de progresión ajustado, testeado y validado por usuarios experimentados y entrenadores: mismas entradas, misma lógica, misma decisión.": "TrueLift does not generate your training with an opaque, unpredictable model. It uses a carefully tuned progression algorithm tested and validated by experienced lifters and coaches: the same inputs produce the same reasoning and decision.",
-  "Estable": "Consistent",
-  "La lógica de progresión no cambia de criterio entre sesiones.": "The progression logic does not change its criteria from one workout to the next.",
-  "Explicable y validado": "Explainable and validated",
-  "Cada decisión se basa en señales medibles: rendimiento y RIR; en PRO, también recuperación y fase de dieta.": "Every decision is based on measurable signals: performance and RIR, plus recovery and nutrition phase in PRO.",
-  "Reproducible": "Repeatable",
-  "Con los mismos datos, TrueLift aplica la misma lógica. Sin improvisación.": "Given the same data, TrueLift applies the same logic. No guesswork.",
-  "Versión gratuita incluida": "Included in the free version",
-  "Todo lo esencial para empezar a entrenar y progresar con criterio.": "Everything you need to train and make sensible progress.",
-  "La versión gratuita no es una demo vacía: incluye rutina base, registro, progresión automática, análisis de volumen, progreso, herramientas y copias de seguridad.": "The free version is not a stripped-down demo. It includes a complete starter programme, workout logging, automatic progression, volume analysis, progress tracking, useful tools and backups.",
-  "Rutina prefijada": "Ready-made training plan",
-  "Parte de una rutina estructurada según seas hombre o mujer y los días que entrenas (de 2 a 5). Elige el sistema de progresión en función de tu nivel y sustituye cada ejercicio según el material disponible, tus preferencias o tus necesidades.": "Start with a structured plan tailored to your sex and training frequency (two to five days per week). Choose a progression system for your experience level and swap any exercise to suit your equipment, preferences or needs.",
-  "Registro de sesión": "Workout logging",
-  "Elige la carga de tu primera serie y TrueLift ajusta las siguientes referencias de trabajo. Después compara la sesión actual con tu rendimiento anterior y programa la carga de la próxima sesión.": "Choose the load for your first set and TrueLift adjusts the following work sets. It then compares the workout with your previous performance and plans the load for next time.",
-  "Volumen semanal": "Weekly volume",
-  "Visualiza series efectivas por grupo muscular y frecuencia semanal con una interfaz clara para detectar si te quedas corto o te estás pasando.": "See effective sets by muscle group and weekly frequency at a glance, so you can spot whether you are doing too little or too much.",
-  "Progreso y marcas": "Progress and personal bests",
-  "En la pestaña Progreso podrás consultar tonelaje de sesión, e1RM estimado, rendimiento, marcas personales e informe mensual listo para guardar o compartir.": "The Progress tab shows workout tonnage, estimated 1RM, performance, personal bests and a monthly report ready to save or share.",
-  "Herramientas de apoyo": "Useful training tools",
-  "Calculadora de discos, series de calentamiento, cronómetro de descanso, registro de cardio y opción de compartir tus entrenamientos y marcas de forma sencilla.": "Plate calculator, warm-up sets, rest timer, cardio log and simple tools for sharing workouts and personal bests.",
-  "Datos bajo tu control": "Your data, under your control",
-  "Tu rutina y tu historial se procesan en tu móvil y el desarrollador no puede consultarlos. Puedes exportar copias; el sistema operativo también puede respaldarlas si activas esa función.": "Your programme and history are processed on your phone and cannot be viewed by the developer. You can export backups, and the operating system may also back them up if you enable that feature.",
-  "Pantalla de volumen semanal por grupo muscular": "Weekly volume screen by muscle group",
-  "Pantalla de registro con estado para entrenar y subida de carga recomendada y explicada": "Workout log showing readiness and an explained load recommendation",
-  "Abre el registro de la app y empieza tu entrenamiento sin demoras.": "Open your workout and get straight to training.",
-  "TrueLift abre el registro con la sesión que toca, el objetivo de series, repeticiones y RIR, lo que hiciste la vez anterior y la carga indicada para cada ejercicio. Llegas al gimnasio, abres la app y te centras en lo importante: tu entrenamiento.": "TrueLift opens the workout that is due, with target sets, reps and RIR, your previous performance and the planned load for every exercise. At the gym, simply open the app and focus on what matters: your training.",
-  "Abre la pestaña Registro y empieza por la sesión que toca.": "Open the Log tab and start the workout that is due.",
-  "Confirma carga y RIR, e introduce reps serie a serie mientras entrenas.": "Confirm the load and RIR, then enter reps set by set as you train.",
-  "Guarda la sesión y recibe feedback sobre el entrenamiento de hoy.": "Save the workout and get feedback on today's performance.",
-  "Personalización y autorregulación": "Customisation and autoregulation",
-  "Convierte tu rutina en un sistema de progresión autorregulado.": "Turn your programme into an autoregulated progression system.",
-  "Hasta aquí, la versión gratuita. PRO desbloquea la personalización completa de tu rutina y añade una segunda capa de control: estado diario, sueño, estrés, molestias, VFC, fase de dieta, rendimiento reciente, descarga guiada y descarga automática.": "That is what the free version offers. PRO unlocks complete programme customisation and adds another layer of control: daily readiness, sleep, stress, discomfort, HRV, nutrition phase, recent performance, guided deloads and automatic deloads.",
-  "No solo registra tu entrenamiento: ajusta la progresión a cómo estás rindiendo y recuperando.": "It does more than log your training: it adjusts progression to how you are performing and recovering.",
-  "Opciones de pago de PRO": "PRO payment options",
-  "Mensual": "Monthly",
-  "Anual": "Annual",
-  "sin permanencia": "cancel any time",
-  "Pago único": "One-time purchase",
-  "tuyo para siempre": "yours for life",
-  "Condiciones de la prueba PRO": "PRO trial terms",
-  "28 días de prueba PRO completa": "Full 28-day PRO trial",
-  "Sin permanencia: cancela cuando quieras": "No commitment: cancel whenever you like",
-  "Si no eliges plan, sigues con la versión gratis": "If you do not choose a plan, you keep the free version",
-  "Probar PRO gratis 28 días": "Try PRO free for 28 days",
-  "Probar TrueLift PRO": "Try TrueLift PRO",
-  "Probar PRO en Google Play": "Try PRO on Google Play",
-  "Probar PRO en App Store": "Try PRO on the App Store",
-  "Funciones PRO": "PRO features",
-  "Rutina totalmente configurable": "Fully customisable programme",
-  "Elige tu distribución, patrones de movimiento y ejercicios; ajusta series, RIR, repeticiones y descansos.": "Choose your split, movement patterns and exercises, then set your sets, RIR, reps and rest periods.",
-  "Autorregulación real": "Genuine autoregulation",
-  "La app tiene en cuenta tu descanso nocturno, estrés, molestias, energía, VFC y rendimiento reciente para decidir el próximo paso.": "The app considers your sleep, stress, discomfort, energy, HRV and recent performance before deciding the next step.",
-  "Rutinas personalizadas descargables": "Downloadable training programmes",
-  "Biblioteca de rutinas listas para importar: express para días con poco tiempo, especialización en tren superior o inferior, solo peso libre para material limitado… y más en camino.": "A library of ready-to-import programmes: express sessions for busy days, upper- or lower-body specialisation, free-weights-only plans for limited equipment, and more on the way.",
-  "Fase de dieta": "Nutrition phase",
-  "Modula la respuesta de la progresión en función de tu nutrición: déficit, mantenimiento o superávit.": "Adjust progression to match your nutrition: calorie deficit, maintenance or surplus.",
-  "Deload inteligente": "Smart deloads",
-  "Activa una descarga guiada cuando lo necesites o deja que TrueLift la proponga al detectar fatiga acumulada o bajón de rendimiento.": "Start a guided deload when you need one, or let TrueLift suggest it when it detects accumulated fatigue or declining performance.",
-  "Crea e importa a tu medida": "Create and import your own",
-  "Crea tus propios ejercicios e importa tu rutina desde Excel para empezar donde lo dejaste.": "Create your own exercises and import your programme from Excel to pick up where you left off.",
-  "Capa de nutrición · complemento opcional": "Nutrition layer · optional add-on",
-  "Planifica tu temporada y ajusta lo que ya comes. Sin contar calorías.": "Plan your season and adjust what you already eat. No calorie counting.",
-  "TrueLift es y seguirá siendo una app de entrenamiento: la nutrición es una capa opcional que lo acompaña. No registras comidas ni cuentas calorías a diario. Planificas tu temporada por bloques y, una vez por semana, la app ajusta lo que ya sueles comer para que tu peso se mueva al ritmo previsto.": "TrueLift is, and will remain, a training app: nutrition is an optional layer alongside it. You do not log meals or count calories every day. You plan your season in blocks and, once a week, the app adjusts what you already eat so your weight moves at the planned rate.",
-  "Cómo funciona, semana a semana": "How it works, week by week",
-  "Planificas tu temporada por bloques: volumen, mantenimiento y definición, con sus fechas y su ritmo.": "You plan your season in blocks — bulk, maintenance and cut — with their dates and their rate.",
-  "Cada día anotas un solo dato: tu peso. Y si un día se te olvida, no pasa nada.": "Each day you enter a single number: your weight. And if you forget one day, nothing breaks.",
-  "La app filtra el ruido de la báscula y trabaja con tu peso-tendencia, no con el número de un día suelto.": "The app filters out scale noise and works with your trend weight, not with a single day's reading.",
-  "Una vez por semana compara tu ritmo real con el planificado y, si hace falta, propone un ajuste.": "Once a week it compares your actual rate with the planned one and, if needed, proposes an adjustment.",
-  "El ajuste llega en gramos de tus propios alimentos, no en calorías abstractas: 60 g menos de arroz en seco en lugar de un difuso come 200 kcal menos.": "The adjustment comes in grams of your own foods, not in abstract calories: 60 g less dry rice instead of a vague eat 200 kcal less.",
-  "Qué incluye la capa de nutrición": "What the nutrition layer includes",
-  "Tu plan de temporada": "Your season plan",
-  "Mantenimiento": "Maintenance",
-  "Definición": "Cut",
-  "Fechas de inicio y fin": "Start and end dates",
-  "Ritmo en % de peso por semana": "Rate as % of body weight per week",
-  "Proyección de peso, masa magra y % de grasa": "Projected weight, lean mass and body fat",
-  "Ritmo bajo control": "Rate kept in check",
-  "Semáforo verde, ámbar o rojo": "Green, amber or red rating",
-  "Límites según tu % de grasa y tu nivel": "Limits based on your body fat and training level",
-  "Calibración inicial antes de tocar nada": "Initial calibration before anything changes",
-  "Respiro guiado cuando llevas mucho tiempo apretando": "A guided break when you have been pushing for a long time",
-  "Tus alimentos": "Your foods",
-  "Kcal por 100 g del etiquetado": "Kcal per 100 g from the label",
-  "En seco o cocinado": "Weighed dry or cooked",
-  "Ajustes en gramos, no en kcal": "Adjustments in grams, not in kcal",
-  "Siete alimentos básicos si no añades los tuyos": "Seven basic foods if you do not add your own",
-  "Conectado al entrenamiento": "Connected to your training",
-  "La fase gobierna la progresión": "Your phase governs progression",
-  "Déficit, mantenimiento o superávit": "Deficit, maintenance or surplus",
-  "Sin duplicar datos: usa tu peso y tu histórico": "No duplicated data: it uses your weight and your history",
-  "Tu temporada, de un vistazo": "Your season at a glance",
-  "Encadenas los bloques que quieras y la app te enseña dónde te dejan antes de empezar: peso, masa magra y porcentaje graso al final de cada uno. Puedes planificar el año entero o solo la próxima fase, y replanificar cuando quieras.": "You chain as many blocks as you like and the app shows you where they leave you before you start: weight, lean mass and body fat at the end of each one. You can plan the whole year or just the next phase, and replan whenever you want.",
-  "Cada bloque avisa con un color si el ritmo elegido es sensato para tu punto de partida.": "Each block uses a colour to tell you whether the rate you chose is sensible for your starting point.",
-  "Al terminar un bloque, la app pasa sola al siguiente y ajusta la fase de tu entrenamiento.": "When a block ends, the app moves to the next one on its own and adjusts your training phase.",
-  "Y si te vas de viaje o se te tuerce la semana, puedes pausar la fase sin perder el plan.": "And if you travel or the week goes sideways, you can pause the phase without losing the plan.",
-  "Pestaña de nutrición con el peso-tendencia, el ritmo semanal y la evolución del porcentaje graso": "Nutrition tab showing trend weight, weekly rate and body fat progression",
-  "Planificador de temporada con la proyección de peso, masa magra y porcentaje graso a lo largo de los bloques": "Season planner with projected weight, lean mass and body fat across the blocks",
-  "Editor de un bloque de definición con fechas, ritmo semanal recomendado y reparto estimado entre grasa y masa magra": "Cut block editor with dates, recommended weekly rate and the estimated split between fat and lean mass",
-  "Estado actual de la fase de nutrición con la tasa objetivo, el peso previsto y los ajustes de la fase": "Current nutrition phase status with the target rate, projected weight and phase settings",
-  "Gratis vs PRO · precios": "Free vs PRO · pricing",
-  "Empieza gratis. Pasa a PRO cuando quieras más control.": "Start free. Upgrade to PRO when you want more control.",
-  "La versión gratuita ya permite entrenar en serio. PRO está pensado para quien quiere personalizarlo todo y ajustar la progresión a su recuperación real. Tú eliges cómo pagarlo: mensual, anual o una sola vez para siempre.": "The free version gives you everything needed for serious training. PRO is for people who want to customise every detail and match progression to real recovery. Choose monthly, annual or one-time lifetime access.",
-  "para siempre": "forever",
-  "Entrena en serio desde el primer día.": "Train seriously from day one.",
-  "Rutina prefijada y progresión automática": "Ready-made programme and automatic progression",
-  "Registro de sesiones y cardio": "Workout and cardio logging",
-  "Volumen y frecuencia semanal": "Weekly volume and frequency",
-  "Progreso, marcas personales y rendimiento": "Progress, personal bests and performance",
-  "Calculadora de discos, calentamiento y cronómetro": "Plate calculator, warm-ups and rest timer",
-  "Cambiar un ejercicio por otro": "Swap one exercise for another",
-  "Informe mensual, compartir y copias de seguridad": "Monthly report, sharing and backups",
-  "Descargar gratis": "Download free",
-  "Descargar TrueLift gratis": "Download TrueLift for free",
-  "Descargar en Google Play": "Download on Google Play",
-  "Descargar en App Store": "Download on the App Store",
-  "mensual · anual · de por vida": "monthly · annual · lifetime",
-  "Todo lo de Gratis, más:": "Everything in Free, plus:",
-  "Modalidades de pago de PRO": "PRO payment options",
-  "Rutina totalmente configurable: series, RIR, reps y descansos": "Fully customisable programme: sets, RIR, reps and rest",
-  "Rutinas descargables: express, especialización en tren superior o inferior, solo peso libre…": "Downloadable programmes: express, upper- or lower-body specialisation, free weights only…",
-  "Autorregulación por sueño, estrés, molestias y VFC": "Autoregulation using sleep, stress, discomfort and HRV",
-  "Progresión ajustada a déficit, mantenimiento o superávit": "Progression adjusted for a calorie deficit, maintenance or surplus",
-  "Plan de nutrición: temporada por bloques y ajuste semanal de calorías": "Nutrition plan: season in blocks and weekly calorie adjustment",
-  "Descarga guiada y descarga automática por fatiga": "Guided and automatic fatigue-based deloads",
-  "Cambiar el patrón de un ejercicio y renombrar sesiones": "Change an exercise pattern and rename workouts",
-  "Crear ejercicios e importar rutina desde Excel": "Create exercises and import a programme from Excel",
-  "Ver la comparativa completa, función por función": "See the full feature-by-feature comparison",
-  "Función": "Feature",
-  "Incluido": "Included",
-  "No incluido": "Not included",
-  "Registrar sesiones y cardio": "Log workouts and cardio",
-  "Calculadora de discos y calentamiento": "Plate calculator and warm-ups",
-  "Cronómetro de descanso con alarma": "Rest timer with alarm",
-  "Compartir entrenamiento e informe mensual": "Share workouts and monthly reports",
-  "Copias de seguridad": "Backups",
-  "Descarga guiada manual (deload)": "Manual guided deload",
-  "Configurar series, RIR, reps y descanso": "Configure sets, RIR, reps and rest",
-  "Cambiar el patrón de un ejercicio": "Change an exercise's movement pattern",
-  "Renombrar las sesiones de la rutina": "Rename programme workouts",
-  "Rutinas descargables: express, especialización, peso libre…": "Downloadable programmes: express, specialisation, free weights…",
-  "Descarga automática por fatiga o caída de rendimiento": "Automatic deload for fatigue or declining performance",
-  "Plan de nutrición: temporada y ajuste semanal de calorías": "Nutrition plan: season planning and weekly calorie adjustment",
-  "En la versión gratuita la fase de la dieta queda fijada en normocalórica y la autorregulación, la VFC y la descarga guiada están desactivadas. Todo lo demás funciona con normalidad.": "In the free version, the nutrition phase is fixed at maintenance and autoregulation, HRV and guided deloads are disabled. Everything else works as normal.",
-  "Capturas de pantalla · gratis y PRO": "Screenshots · Free and PRO",
-  "Así se ve TrueLift: visualización clara y eficiente.": "A look inside TrueLift: clear, efficient and easy to read.",
-  "Pantallas de la app: volumen, registro, progreso, historial y funciones PRO.": "Explore the app's volume, workout log, progress, history and PRO screens.",
-  "Registro de rutina con estado para entrenar y subida de carga recomendada y explicada": "Workout log with readiness status and an explained load recommendation",
-  "Seleccionar captura": "Select screenshot",
-  "Registro": "Workout log",
-  "Registro · RIR": "Workout log · RIR",
-  "Autorregulación": "Autoregulation",
-  "Progreso · Estado": "Progress · Readiness",
-  "Progreso · VFC": "Progress · HRV",
-  "Progreso · Tonelaje": "Progress · Tonnage",
-  "Progreso · e1RM": "Progress · e1RM",
-  "Volumen": "Volume",
-  "Rutina PRO": "PRO programme",
-  "Temporada · Bloque": "Season · Block",
-  "Nutrición · Fase": "Nutrition · Phase",
-  "Registro de rutina con consolidación de carga por RIR inferior al objetivo": "Workout log holding the load because RIR was below target",
-  "Formulario de autorregulación diaria con sueño, energía, estrés, dolor articular y VFC": "Daily autoregulation form with sleep, energy, stress, joint discomfort and HRV",
-  "Pantalla de progreso con disponibilidad reciente, estado para entrenar y rendimiento de sesión": "Progress screen with recent readiness, training status and workout performance",
-  "Pantalla de progreso con rendimiento neto diario, VFC por día y marcas personales": "Progress screen with daily net performance, HRV and personal bests",
-  "Pantalla de progreso con tonelaje por sesión, 1RM estimado y evolución de la carga": "Progress screen with workout tonnage, estimated 1RM and load trend",
-  "Pantalla de progreso con evolución del e1RM estimado y repeticiones totales por sesión": "Progress screen with estimated 1RM trend and total reps per workout",
-  "Pantalla de volumen semanal con series efectivas y frecuencia por grupo muscular": "Weekly volume screen with effective sets and frequency by muscle group",
-  "Pantalla de rutina PRO con edición de patrón, ejercicio, series, RIR, repeticiones y descanso": "PRO programme screen for editing movement pattern, exercise, sets, RIR, reps and rest",
+  "VFC y frecuencia cardíaca en reposo por día, con tu banda de referencia y marcas personales": "Daily HRV and resting heart rate with your reference range, and personal bests",
+  "VFC · PRO": "HRV · PRO",
+  "Nutrición · PRO": "Nutrition · PRO",
+  "Ajuste semanal de nutrición expresado en calorías y en gramos de tus propios alimentos": "Weekly nutrition adjustment in calories and in grams of your own foods",
+  "Ajuste semanal · PRO": "Weekly adjustment · PRO",
+  "Ajustes de la app: rutina, material disponible, autorregulación y VFC, nutrición y modo descarga": "App settings: routine, available equipment, autoregulation and HRV, nutrition and deload mode",
+  "Ajustes": "Settings",
+  "Desliza para ver más →": "Swipe to see more →",
+
   "Preguntas frecuentes": "Frequently asked questions",
-  "Lo que conviene saber antes de empezar.": "What you need to know before you start.",
+  "Lo que conviene saber antes de instalar.": "What you should know before installing.",
   "¿Qué incluye la versión gratuita?": "What does the free version include?",
-  "Incluye rutina prefijada, sustitución de ejercicios, registro de sesiones y cardio, progresión automática, visualización de volumen, progreso y marcas, compartir entrenamientos y copias de seguridad.": "It includes a ready-made programme, exercise substitutions, workout and cardio logging, automatic progression, volume and progress tracking, personal bests, workout sharing and backups.",
-  "¿Para quién es TrueLift PRO?": "Who is TrueLift PRO for?",
-  "La versión PRO es para ti si quieres personalizar completamente tu rutina, usar autorregulación para ajustar la progresión y acceder a herramientas específicas como creación de ejercicios, importación desde Excel, fase de dieta, descarga guiada, descarga automática y la biblioteca de rutinas descargables: express, especialización en tren superior o inferior, solo peso libre y más.": "PRO is for you if you want to fully customise your programme, use autoregulation to adjust progression and access advanced tools such as custom exercises, Excel imports, nutrition phases, guided and automatic deloads, and a library of downloadable programmes including express sessions, upper- or lower-body specialisation, free-weights-only plans and more.",
-  "¿La capa de nutrición me obliga a contar calorías?": "Does the nutrition layer force me to count calories?",
-  "No. No se registran comidas ni se cuentan calorías a diario. Tú te pesas cada día y la app hace el resto: sigue tu peso-tendencia y, una vez por semana, te dice si conviene ajustar algo. Cuando toca ajustar, el cambio se expresa en gramos de tus propios alimentos. Es una función PRO y totalmente opcional: si no la activas, TrueLift funciona exactamente igual que ahora.": "No. There is no meal logging and no daily calorie counting. You weigh yourself each day and the app does the rest: it follows your trend weight and, once a week, tells you whether anything should change. When an adjustment is due, the change is expressed in grams of your own foods. It is a PRO feature and entirely optional: if you do not turn it on, TrueLift works exactly as it does now.",
-  "¿Tiene publicidad o necesito crear una cuenta?": "Does it have ads, or do I need an account?",
-  "No y no. TrueLift no muestra publicidad y no requiere registro: no pedimos tu nombre ni tu email para entrenar. Tu historial se procesa localmente y el desarrollador no puede consultarlo; los servicios de compra y descarga tratan solo los datos descritos en la política.": "No to both. TrueLift has no advertising and requires no sign-up: we do not ask for your name or email to train. Your history is processed locally and cannot be viewed by the developer; purchase and download services process only the data described in the policy.",
+  "Rutina prefijada según tus días de entreno, cambio de ejercicios, registro de sesiones y cardio, progresión automática, volumen semanal, progreso, marcas personales, informe mensual y copias de seguridad. No es una demo: puedes entrenar con ella para siempre.": "A preset routine based on your training days, exercise swaps, session and cardio logging, automatic progression, weekly volume, progress, personal bests, monthly report and backups. It is not a demo: you can train with it forever.",
+  "¿Qué pasa cuando terminan los 28 días de PRO?": "What happens when the 28 days of PRO end?",
+  "Nada malo: la prueba no pide tarjeta ni genera cargos. Si no eliges ningún plan, sigues con la versión gratuita y tu rutina e historial intactos.": "Nothing bad: the trial asks for no card and creates no charges. If you do not choose a plan, you keep the free version with your routine and history intact.",
   "¿Cómo se paga TrueLift PRO?": "How do I pay for TrueLift PRO?",
-  "Como prefieras: suscripción mensual, suscripción anual o un pago único que desbloquea PRO para siempre. Las suscripciones no tienen permanencia y puedes cancelarlas cuando quieras. La compra queda asociada a la cuenta de Google o Apple con la que la realizaste y puedes restaurarla si cambias de dispositivo o reinstalas la app.": "Choose a monthly subscription, an annual subscription or a one-time purchase that unlocks PRO for life. Subscriptions can be cancelled at any time. Your purchase is linked to the Google or Apple account used for the transaction and can be restored if you change devices or reinstall the app.",
-  "¿Qué pasa cuando terminan los 28 días de prueba PRO?": "What happens when the 28-day PRO trial ends?",
-  "Nada malo: la prueba no genera cargos automáticos. Si no eliges ningún plan, sigues usando la versión gratuita con tu rutina y tu historial intactos.": "Nothing disruptive: the trial does not trigger an automatic charge. If you do not choose a plan, you continue with the free version and keep your programme and history intact.",
+  "Como prefieras: suscripción mensual, suscripción anual o un pago único que desbloquea PRO para siempre. Las suscripciones no tienen permanencia. La compra queda asociada a tu cuenta de Google o Apple y puedes restaurarla si cambias de dispositivo.": "However you prefer: a monthly subscription, an annual subscription or a one-time payment that unlocks PRO forever. Subscriptions have no lock-in. The purchase is tied to your Google or Apple account and can be restored if you change device.",
+  "¿Tiene publicidad o necesito crear una cuenta?": "Are there ads, or do I need an account?",
+  "No y no. TrueLift no muestra publicidad y no requiere registro. Tu historial se procesa en tu móvil y el desarrollador no puede consultarlo; los servicios de compra y descarga tratan solo los datos descritos en la política de privacidad.": "No and no. TrueLift shows no ads and requires no sign-up. Your history is processed on your phone and the developer cannot access it; the purchase and download services only handle the data described in the privacy policy.",
+  "¿Necesito medir la VFC para usar la autorregulación?": "Do I need to measure HRV to use autoregulation?",
+  "No. La VFC (variabilidad de la frecuencia cardíaca) es una señal opcional que dan relojes y bandas de pulso y que suele avisar de la fatiga antes que el rendimiento. Si la mides, la app la integra con el resto de señales; si no, la autorregulación funciona con tu descanso, tu estrés, tus molestias y tu rendimiento reciente.": "No. HRV (heart rate variability) is an optional signal from watches and chest straps that usually flags fatigue before performance does. If you measure it, the app blends it with the other signals; if not, autoregulation works from your sleep, stress, aches and recent performance.",
+  "¿Sirve para hipertrofia o solo para fuerza?": "Is it for hypertrophy or only for strength?",
+  "Las rutinas de la versión gratuita están orientadas a hipertrofia. En PRO puedes configurar series, repeticiones, RIR y descansos para priorizar fuerza si ese es tu objetivo.": "The free routines are geared towards hypertrophy. In PRO you can configure sets, reps, RIR and rest to prioritise strength if that is your goal.",
+  "¿Puedo usarla si entreno con mancuernas o máquinas?": "Can I use it if I train with dumbbells or machines?",
+  "Sí. Indicas el material que tienes y TrueLift propone cargas que realmente puedas montar con tus discos, microcargas y mancuernas.": "Yes. You tell it the equipment you have and TrueLift suggests loads you can actually set up with your plates, microplates and dumbbells.",
   "¿Dónde puedo consultar el manual de la app?": "Where can I read the app manual?",
   "Puedes": "You can",
-  "descargar el manual de TrueLift en PDF": "download the TrueLift manual as a PDF (in English)",
-  "con la explicación de todas las pantallas y funciones, tanto gratuitas como PRO.": "for an explanation of every screen and feature in both Free and PRO.",
-  "¿Qué es el RIR y por qué importa?": "What is RIR, and why does it matter?",
-  "RIR significa repeticiones en reserva. Un RIR 2 indica que podrías haber hecho dos repeticiones más antes de fallar. Es una señal clave porque no solo mide lo ejecutado, sino también el margen real que te quedaba.": "RIR means reps in reserve. An RIR of 2 means you could have completed two more reps before failure. It matters because it captures not only what you did, but how much genuine capacity you had left.",
-  "¿Qué es la VFC y cómo la usa TrueLift?": "What is HRV, and how does TrueLift use it?",
-  "La VFC (variabilidad de la frecuencia cardíaca) mide la variación entre los intervalos de tus latidos en reposo. Es un reflejo indirecto del equilibrio de tu sistema nervioso autónomo: cuando estás recuperado suele moverse dentro de tu rango habitual y, cuando acumulas fatiga, estrés, mal descanso o estás incubando algo, tiende a caer. La miden relojes, pulseras y bandas de pulso, normalmente al despertar o durante el sueño.": "HRV (heart rate variability) measures the variation between your heartbeats at rest. It is an indirect reflection of how balanced your autonomic nervous system is: when you are recovered it tends to stay within your usual range, and when fatigue, stress, poor sleep or an oncoming illness build up, it tends to fall. Watches, bands and chest straps measure it, usually on waking or during sleep.",
-  "En TrueLift es una señal opcional de la autorregulación (PRO). Cada día puedes introducir el valor que te da tu dispositivo y la app lo integra con el resto de señales:": "In TrueLift it is an optional autoregulation signal (PRO). Each day you can enter the value your device gives you and the app combines it with the rest of the signals:",
-  "La compara con tu banda de referencia: puedes fijarla a mano y, con el tiempo, la app aprende tu banda personal a partir de tus propias mediciones.": "It compares it with your reference band: you can set that band manually and, over time, the app learns your personal band from your own measurements.",
-  "Alimenta el indicador Estado para entrenar (0-100). Al tocarlo ves el desglose de qué señales suman y cuáles restan ese día, incluida la VFC.": "It feeds the Training readiness indicator (0-100). Tap it to see the breakdown of which signals are adding to or subtracting from your readiness that day, HRV included.",
-  "Modula la decisión de la sesión: si tu estado cae, la app puede frenar la subida de carga, bajar la intensidad o adelantar una descarga en lugar de esperar a que se hunda tu rendimiento.": "It shapes the session decision: if your readiness drops, the app can hold back a load increase, lower the intensity or bring a deload forward instead of waiting for your performance to collapse.",
-  "Queda registrada en Progreso · VFC por día, para que veas la tendencia junto a tu rendimiento.": "It is logged under Progress · HRV by day, so you can follow the trend alongside your performance.",
-  "Ahí está su utilidad: la VFC suele avisar antes que el rendimiento. Una caída sostenida por debajo de tu banda habitual es una de las primeras pistas de fatiga acumulada, y permite ajustar el entrenamiento para adelantarte al sobreentrenamiento en vez de reaccionar cuando ya has perdido semanas. Un dato aislado dice poco; lo que importa es la tendencia de varios días.": "That is where it earns its place: HRV usually warns you before your performance does. A sustained drop below your usual band is one of the first clues of accumulated fatigue, and it lets you adjust training to stay ahead of overtraining instead of reacting once you have already lost weeks. A single reading says little; what matters is the trend across several days.",
-  "Es totalmente opcional: si no mides tu VFC, déjala desactivada y la autorregulación seguirá funcionando con tu descanso, tu estrés, tus molestias y tu rendimiento reciente. Los valores que introduzcas se guardan solo en tu dispositivo y no constituyen un diagnóstico médico.": "It is entirely optional: if you do not measure your HRV, leave it disabled and autoregulation will keep working from your sleep, stress, discomfort and recent performance. Any values you enter are stored only on your device and are not a medical diagnosis.",
-  "¿Tengo que medir VFC para utilizar la autorregulación?": "Do I need to measure HRV to use autoregulation?",
-  "No. Es una variable más. Si no tienes VFC, la autorregulación funcionará en base a tu estado de recuperación, tus molestias y tu rendimiento reciente.": "No. It is one optional input. Without HRV, autoregulation still works from your recovery, discomfort and recent performance.",
-  "¿En qué se diferencia TrueLift de una app normal de registro de gimnasio?": "How is TrueLift different from a standard workout tracker?",
-  "Una app de registro guarda lo que haces. TrueLift usa ese registro para calcular tu progresión. En PRO, además, puede modular la intensidad, ajustar la carga y sugerir descargas según tu estado.": "A tracker saves what you do. TrueLift uses that log to calculate your progression. PRO can also adjust intensity and load and suggest deloads based on your readiness.",
-  "¿Sirve para hipertrofia o solo para fuerza?": "Is it for hypertrophy, or strength only?",
-  "Las rutinas de la versión gratuita tienen un enfoque más orientado a hipertrofia que a fuerza pura. En PRO puedes configurar tu rutina para priorizar adaptaciones de fuerza si ese es tu objetivo.": "The free programmes lean more towards hypertrophy than pure strength. With PRO, you can configure your programme to prioritise strength adaptations if that is your goal.",
-  "¿Puedo usarla si entreno con mancuernas o máquinas?": "Can I use it if I train with dumbbells or machines?",
-  "Sí. TrueLift calcula pesos cargables según tus discos, microcargas, mancuernas y material disponible.": "Yes. TrueLift calculates achievable loads from the plates, microplates, dumbbells and other equipment available to you.",
-  "Deja de improvisar y asegura tu progresión.": "Stop guessing. Start progressing with confidence.",
-  "Una app hecha por y para gente que entrena de verdad: todo lo necesario para progresar con criterio, sin publicidad, sin registro y sin funciones de relleno que te distraigan de tu objetivo.": "Built by and for people who train seriously: everything you need to make well-judged progress, with no ads, no sign-up and no filler features getting between you and your goal.",
-  "Web del autor": "Developer's website",
-  "TrueLift - Un entrenador en tu bolsillo.": "TrueLift — A coach in your pocket.",
+  "descargar el manual de TrueLift en PDF": "download the TrueLift manual as a PDF",
+  "con la explicación de todas las pantallas y funciones, gratuitas y PRO.": "with an explanation of every screen and feature, free and PRO.",
+
+  "Deja de improvisar. Empieza a progresar.": "Stop improvising. Start progressing.",
+  "Gratis, sin anuncios y sin cuenta. Instala, abre la sesión que toca y deja que TrueLift decida la carga.": "Free, no ads, no account. Install it, open today's session and let TrueLift decide the load.",
+  "¿Eres entrenador?": "Are you a coach?",
+  "TrueLift Coach es la app web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "TrueLift Coach is the web app for following your athletes from the desktop, using the file they export from the app.",
+  "Abrir TrueLift Coach": "Open TrueLift Coach",
+  "Archivo de ejemplo para probarla": "Sample file to try it out",
+
+  "TrueLift - Un entrenador en tu bolsillo.": "TrueLift - A coach in your pocket.",
   "Privacidad y aviso legal": "Privacy and legal notice",
-  "Política de privacidad y aviso legal | TrueLift": "Privacy policy and legal notice | TrueLift",
-  "Política de privacidad y aviso legal de TrueLift. La app no muestra publicidad, no requiere registro y todos tus datos se guardan únicamente en tu dispositivo.": "TrueLift privacy policy and legal notice. The app has no advertising, requires no account and stores all your data only on your device.",
-  "Volver a la web": "Back to the website",
-  "Política de privacidad y aviso legal": "Privacy policy and legal notice",
-  "Última actualización: 12 de julio de 2026": "Last updated: 12 July 2026",
-  "Resumen en una frase:": "In one sentence:",
-  "TrueLift no muestra publicidad, no requiere registro, no recopila datos personales y todo tu historial de entrenamiento se guarda únicamente en tu dispositivo, bajo tu control.": "TrueLift has no advertising, requires no account, collects no personal data and stores your entire training history only on your device, under your control.",
-  "1. Responsable": "1. Data controller",
-  "Titular y responsable:": "Owner and data controller:",
-  "Rubén Soro (desarrollador independiente de TrueLift).": "Rubén Soro (independent developer of TrueLift).",
-  "Contacto:": "Contact:",
-  "Ámbito:": "Scope:",
-  "esta política se aplica a la aplicación móvil TrueLift (Android e iOS) y a este sitio web.": "this policy applies to the TrueLift mobile app (Android and iOS) and this website.",
-  "Esta política se redacta conforme al Reglamento (UE) 2016/679, General de Protección de Datos (RGPD), a la Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD), y a la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE).": "This policy has been drafted in accordance with Regulation (EU) 2016/679, the General Data Protection Regulation (GDPR); Spanish Organic Law 3/2018 on Personal Data Protection and the guarantee of digital rights (LOPDGDD); and Spanish Law 34/2002 on Information Society Services and Electronic Commerce (LSSI-CE).",
-  "2. Privacidad en la aplicación TrueLift": "2. Privacy in the TrueLift app",
-  "2.1 No recopilamos tus datos": "2.1 We do not collect your data",
-  "TrueLift funciona sin cuenta de usuario y sin registro. La aplicación no solicita tu nombre, tu email ni ningún otro dato identificativo, y el desarrollador": "TrueLift works without an account or sign-up. The app does not ask for your name, email or any other identifying information, and the developer",
-  "no recibe, no almacena y no puede acceder": "does not receive, store or have access",
-  "a ninguna información tuya.": "to any information about you.",
-  "2.2 Tus datos viven en tu dispositivo": "2.2 Your data stays on your device",
-  "Toda la información que introduces en la app se guarda exclusivamente en el almacenamiento local de tu dispositivo. Esto incluye:": "All information you enter in the app is stored exclusively in your device's local storage. This includes:",
-  "Tu rutina, sesiones de entrenamiento, cargas, repeticiones y RIR.": "Your programme, workouts, loads, repetitions and RIR.",
-  "Los cuestionarios diarios de bienestar (sueño, energía, estrés, molestias) si decides usarlos.": "Daily wellbeing questionnaires (sleep, energy, stress and discomfort), if you choose to use them.",
-  "Los valores de variabilidad de la frecuencia cardiaca (VFC) que introduzcas manualmente, si decides usarlos.": "Any heart rate variability (HRV) values you enter manually, if you choose to use them.",
-  "Los ajustes de la app y tu configuración de material.": "App settings and your equipment configuration.",
-  "Estos datos no se envían a ningún servidor. Si desinstalas la aplicación sin exportar una copia de seguridad, se eliminan de forma permanente.": "This data is not sent to any server. If you uninstall the app without exporting a backup, it is permanently deleted.",
-  "2.3 Copias de seguridad y datos compartidos": "2.3 Backups and shared data",
-  "La exportación de copias de seguridad y la función de compartir entrenamientos generan archivos que se guardan o comparten": "Exporting backups and sharing workouts creates files that are stored or shared",
-  "únicamente donde tú decidas": "only where you choose",
-  "(tu almacenamiento, tu nube personal o la app con la que compartas). El desarrollador no interviene ni tiene acceso a esos archivos.": "(your storage, personal cloud or the app you share them with). The developer is not involved and has no access to those files.",
-  "2.4 Sin publicidad ni rastreadores": "2.4 No advertising or trackers",
-  "La aplicación no muestra publicidad de ningún tipo y no incorpora SDK de publicidad, analítica de terceros ni rastreadores.": "The app shows no advertising of any kind and contains no advertising SDKs, third-party analytics or trackers.",
-  "2.5 Compras (TrueLift PRO)": "2.5 Purchases (TrueLift PRO)",
-  "Las compras y suscripciones de TrueLift PRO se procesan íntegramente a través de": "TrueLift PRO purchases and subscriptions are processed entirely through",
-  "(Google Ireland Ltd.) o del": "(Google Ireland Ltd.) or the",
-  "(Apple Distribution International Ltd.), que actúan como responsables del tratamiento de tus datos de pago conforme a sus propias políticas de privacidad. El desarrollador no accede en ningún caso a tus datos de pago; únicamente recibe de la plataforma la confirmación anónima de la compra para desbloquear las funciones PRO en tu dispositivo.": "(Apple Distribution International Ltd.). They act as data controllers for your payment data under their own privacy policies. The developer never has access to your payment details and receives only an anonymous purchase confirmation from the platform to unlock PRO features on your device.",
-  "2.6 Datos de salud": "2.6 Health data",
-  "Los valores opcionales relacionados con tu bienestar (sueño, molestias, VFC) podrían tener la consideración de datos de categoría especial según el art. 9 RGPD. En TrueLift estos datos": "Optional wellbeing information (sleep, discomfort and HRV) may constitute special category data under Article 9 of the GDPR. In TrueLift, this data",
-  "solo se procesan localmente en tu dispositivo": "is processed only locally on your device",
-  "para modular tu entrenamiento y nunca se comunican al desarrollador ni a terceros. TrueLift es una herramienta de apoyo al entrenamiento: no realiza diagnósticos ni sustituye la valoración de un profesional sanitario.": "to adjust your training and is never disclosed to the developer or third parties. TrueLift is a training support tool: it does not provide diagnoses or replace assessment by a healthcare professional.",
-  "3. Privacidad en este sitio web": "3. Privacy on this website",
-  "Este sitio es una página estática alojada en GitHub Pages (GitHub, Inc.). No utiliza cookies propias, ni analítica, ni formularios: no recogemos ningún dato de los visitantes. Como en cualquier alojamiento web, GitHub puede registrar datos técnicos de conexión (como la dirección IP) en sus registros de servidor conforme a su": "This is a static website hosted on GitHub Pages (GitHub, Inc.). It uses no first-party cookies, analytics or forms, and we collect no visitor data. As with any web host, GitHub may record technical connection data, such as IP addresses, in its server logs in accordance with its",
-  "política de privacidad": "privacy statement",
-  ". Las tipografías se cargan desde Google Fonts, lo que implica una petición técnica a servidores de Google al visitar la página.": ". Fonts are loaded from Google Fonts, which involves a technical request to Google's servers when you visit the website.",
-  "4. Tus derechos": "4. Your rights",
-  "Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad reconocidos por el RGPD escribiendo a": "You may exercise your rights of access, rectification, erasure, objection, restriction and portability under the GDPR by writing to",
-  ". Ten en cuenta que, dado que el desarrollador no dispone de datos personales tuyos (todos permanecen en tu dispositivo), el ejercicio efectivo de estos derechos se materializa directamente en la app: puedes consultar, editar, exportar o borrar tus datos en cualquier momento desde la propia aplicación.": ". Please note that because the developer holds none of your personal data — it all remains on your device — these rights can be exercised directly in the app: you can view, edit, export or delete your data at any time.",
-  "Si consideras que el tratamiento no se ajusta a la normativa, puedes presentar una reclamación ante la Agencia Española de Protección de Datos (": "If you believe that data processing does not comply with the law, you may lodge a complaint with the Spanish Data Protection Agency (",
-  "5. Menores de edad": "5. Children",
-  "TrueLift no está dirigida a menores de 14 años. Al no existir registro ni recogida de datos, no se tratan datos personales de menores en ningún caso.": "TrueLift is not intended for children under 14. As there is no registration or data collection, no children's personal data is processed.",
-  "6. Aviso legal y condiciones de uso": "6. Legal notice and terms of use",
-  "Titular del sitio y de la app:": "Website and app owner:",
-  "Propiedad intelectual:": "Intellectual property:",
-  "el contenido de este sitio, la marca TrueLift, su logotipo, las capturas y el manual son propiedad de su titular. No está permitida su reproducción con fines comerciales sin autorización.": "the content of this website, the TrueLift brand, its logo, screenshots and manual belong to the owner. They may not be reproduced for commercial purposes without permission.",
-  "Uso de la aplicación:": "Use of the app:",
-  "TrueLift es una herramienta de planificación y registro de entrenamiento. Sus recomendaciones son orientativas y no constituyen consejo médico. Consulta a un profesional sanitario antes de iniciar un programa de ejercicio, especialmente si tienes alguna patología o lesión.": "TrueLift is a workout planning and logging tool. Its recommendations are for guidance only and do not constitute medical advice. Consult a healthcare professional before starting an exercise programme, particularly if you have a medical condition or injury.",
-  "Responsabilidad:": "Liability:",
-  "el titular no se hace responsable del mal uso de la aplicación ni de decisiones tomadas exclusivamente en base a sus recomendaciones.": "the owner is not liable for misuse of the app or for decisions made solely on the basis of its recommendations.",
-  "Enlaces externos:": "External links:",
-  "este sitio contiene enlaces a Google Play, App Store y otros sitios de terceros, cuyas políticas de privacidad son ajenas a este sitio.": "this website contains links to Google Play, the App Store and other third-party websites whose privacy policies are independent of this website.",
-  "7. Cambios en esta política": "7. Changes to this policy",
-  "Cualquier cambio en esta política se publicará en esta misma página, indicando la fecha de la última actualización. Si un cambio futuro implicara un tratamiento de datos distinto al aquí descrito, se informará de forma destacada y, cuando proceda, se solicitará consentimiento.": "Any changes to this policy will be published on this page with the date of the latest update. If a future change involves data processing beyond what is described here, it will be clearly announced and consent will be requested where required.",
-  "8. Legislación aplicable": "8. Governing law",
-  "Estas condiciones se rigen por la legislación española. Para cualquier controversia serán competentes los juzgados y tribunales que correspondan conforme a la normativa aplicable en materia de consumidores y usuarios.": "These terms are governed by Spanish law. Any dispute will be subject to the courts with jurisdiction under the applicable consumer and user protection legislation.",
-  "Inicio": "Home"
+  "Manual (PDF)": "Manual (PDF)",
+  "Web del autor": "Author's website",
+  "Descargar gratis en Google Play": "Download free on Google Play"
 };
 
 const normaliseTranslationKey = (value) => value.replace(/\s+/g, " ").trim();
@@ -392,7 +188,7 @@ function translatedValue(value, language) {
   const translations = language === "en"
     ? englishTranslations
     : language === "pt-BR"
-      ? portugueseTranslations
+      ? (typeof portugueseTranslations !== "undefined" ? portugueseTranslations : null)
       : null;
   return translations?.[normaliseTranslationKey(value)] || value;
 }
@@ -402,6 +198,28 @@ function normaliseLanguage(language) {
   if (value === "en" || value.startsWith("en-")) return "en";
   if (value === "pt" || value.startsWith("pt-")) return "pt-BR";
   return "es";
+}
+
+// Las capturas viven en capturas/<idioma>/<nombre>.jpg. Si una captura solo existe
+// en algunos idiomas (data-shot-langs en la figura), se oculta en los demás.
+const screenshotFolders = {
+  es: "capturas/es",
+  en: "capturas/en",
+  "pt-BR": "capturas/pt-BR"
+};
+
+function setScreenshotLanguage(language) {
+  document.querySelectorAll("img[data-shot]").forEach((image) => {
+    const figure = image.closest("figure");
+    const restricted = figure?.dataset.shotLangs;
+    if (restricted) {
+      const hasLanguage = restricted.split(/\s+/).includes(language);
+      figure.hidden = !hasLanguage;
+      if (!hasLanguage) return;
+    }
+    const source = `${screenshotFolders[language]}/${image.dataset.shot}.jpg`;
+    if (image.getAttribute("src") !== source) image.setAttribute("src", source);
+  });
 }
 
 function setPageLanguage(language, { updateUrl = false } = {}) {
@@ -430,10 +248,10 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
     textNode = walker.nextNode();
   }
 
-  document.querySelectorAll("[aria-label], [alt], [data-alt], [data-label]").forEach((element) => {
+  document.querySelectorAll("[aria-label], [alt], [data-label]").forEach((element) => {
     if (!originalAttributes.has(element)) {
       const values = {};
-      ["aria-label", "alt", "data-alt", "data-label"].forEach((name) => {
+      ["aria-label", "alt", "data-label"].forEach((name) => {
         if (element.hasAttribute(name)) values[name] = element.getAttribute(name) || "";
       });
       originalAttributes.set(element, values);
@@ -469,24 +287,6 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
     link.setAttribute("href", privacyPages[selectedLanguage]);
   });
 
-  document.querySelectorAll('img[src*="play.google.com/intl/"]').forEach((badge) => {
-    if (!badge.dataset.spanishSrc) badge.dataset.spanishSrc = badge.getAttribute("src") || "";
-    const badgeSources = {
-      en: "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png",
-      "pt-BR": "https://play.google.com/intl/pt_br/badges/static/images/badges/pt-br_badge_web_generic.png"
-    };
-    badge.setAttribute("src", badgeSources[selectedLanguage] || badge.dataset.spanishSrc);
-  });
-
-  document.querySelectorAll("a[data-app-store-link]").forEach((link) => {
-    if (!link.dataset.spanishHref) link.dataset.spanishHref = link.getAttribute("href") || "";
-    const appStoreLinks = {
-      en: "https://www.apple.com/app-store/",
-      "pt-BR": "https://www.apple.com/br/app-store/"
-    };
-    link.setAttribute("href", appStoreLinks[selectedLanguage] || link.dataset.spanishHref);
-  });
-
   const manualFiles = {
     es: "Manual_TrueLift.pdf",
     en: "Manual_TrueLift_EN.pdf",
@@ -498,10 +298,12 @@ function setPageLanguage(language, { updateUrl = false } = {}) {
     link.setAttribute("download", manualFile);
   });
 
+  setScreenshotLanguage(selectedLanguage);
+
   try {
     localStorage.setItem("truelift-language", selectedLanguage);
   } catch (_) {
-    // The selector still works when storage is unavailable.
+    // El selector funciona igual aunque no haya almacenamiento.
   }
 
   if (updateUrl && window.history?.replaceState) {
@@ -528,6 +330,7 @@ try {
 const browserLanguage = navigator.languages?.find((language) => language.toLowerCase().startsWith("pt")) || "";
 setPageLanguage(requestedLanguage || storedLanguage || browserLanguage || "es");
 
+// Menú en móvil
 const navToggle = document.querySelector("[data-nav-toggle]");
 const nav = document.querySelector("[data-nav]");
 
@@ -545,22 +348,20 @@ if (navToggle && nav) {
   });
 }
 
-const gallery = document.querySelector("[data-gallery]");
-
-if (gallery) {
-  const image = gallery.querySelector("[data-gallery-image]");
-  const buttons = gallery.querySelectorAll("[data-src]");
-
-  buttons.forEach((button) => {
-    button.addEventListener("click", () => {
-      if (!(image instanceof HTMLImageElement)) return;
-
-      buttons.forEach((item) => item.classList.remove("is-active"));
-      button.classList.add("is-active");
-      image.src = button.dataset.src || image.src;
-      image.alt = button.dataset.alt || image.alt;
-    });
-  });
+// CTA fija en móvil: aparece al dejar atrás el hero
+const hero = document.querySelector("[data-hero]");
+if (hero && "IntersectionObserver" in window) {
+  const heroObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        document.body.classList.toggle("past-hero", !entry.isIntersecting);
+      });
+    },
+    { threshold: 0.05 }
+  );
+  heroObserver.observe(hero);
+} else {
+  document.body.classList.add("past-hero");
 }
 
 // Aparición suave al hacer scroll
