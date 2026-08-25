@@ -23,6 +23,7 @@ const englishTranslations = {
   "Disponible en": "Available on",
   "iOS disponible pronto": "iOS coming soon",
   "Disponible pronto en": "Coming soon to",
+  "Abrir aplicación web": "Open web app",
   "Resumen de TrueLift": "TrueLift at a glance",
   "Gratis para siempre": "Free forever",
   "Sin anuncios": "No ads",

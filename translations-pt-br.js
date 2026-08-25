@@ -21,6 +21,7 @@ const portugueseTranslations = {
   "Disponible en": "Disponível no",
   "iOS disponible pronto": "iOS em breve",
   "Disponible pronto en": "Em breve na",
+  "Abrir aplicación web": "Abrir aplicativo web",
   "Resumen de TrueLift": "Resumo da TrueLift",
   "Gratis para siempre": "Grátis para sempre",
   "Sin anuncios": "Sem anúncios",
