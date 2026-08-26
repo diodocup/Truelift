@@ -3,9 +3,63 @@
    TrueLift Coach — charts.js
    Gráficas SVG generadas en JS, sin dependencias externas.
    Todas devuelven un string SVG listo para innerHTML.
+
+   Reglas de gráfica del rediseño (handoff §4):
+     · retícula SOLO horizontal y muy tenue;
+     · ejes en mono, apagados (lo pone styles.css sobre `svg text`);
+     · sin relleno de área bajo la curva;
+     · trazo 2.2-2.4 con extremos redondeados;
+     · puntos con borde del color del fondo de la caja;
+     · ningún rótulo suelto dentro del lienzo: baselines y umbrales se
+       nombran en la leyenda, debajo.
+
+   El color se pinta con `style="fill:…"` / `style="stroke:…"` y no con el
+   atributo de presentación, por dos razones: `svg text{fill:…}` de la hoja
+   de estilos gana a los atributos y aplastaba los rótulos de eje de color,
+   y los colores del sistema se emiten como `var(--x)` (ver `_c`) para que
+   la hoja invierta la gráfica al imprimir. Los tonos de serie que no están
+   en el sistema van literales.
    ================================================================ */
 
+/* Paleta del sistema. Es la del handoff; la usan también views.js y el
+   informe. "verde" es lima y el negativo de rendimiento es naranja: el rojo
+   queda para lo destructivo. */
+const TL = {
+  lima:    '#a8ee19',
+  ambar:   '#E0A92E',
+  naranja: '#F0872D',
+  rojo:    '#D4483B',
+  azul:    '#6FA8DC',
+  txt:     '#F4F6F4',
+  txt2:    '#C9CFC9',
+  txt3:    '#8E948F',
+  txt4:    '#6B7370',
+  vacio:   '#4E5551',
+};
+
+/* Hex del sistema → variable CSS, para que el informe impreso los cambie por
+   sus equivalentes sobre papel. */
+const TL_VAR = {
+  [TL.lima]:    '--lima',
+  [TL.ambar]:   '--ambar',
+  [TL.naranja]: '--naranja',
+  [TL.rojo]:    '--rojo',
+  [TL.azul]:    '--azul',
+  [TL.txt]:     '--txt',
+  [TL.txt2]:    '--txt2',
+  [TL.txt3]:    '--txt3',
+  [TL.txt4]:    '--txt4',
+  [TL.vacio]:   '--vacio',
+};
+
 const Charts = {
+
+  /* Color listo para meter en un `style`. */
+  _c(color){
+    if (!color) return 'currentColor';
+    const v = TL_VAR[color] || TL_VAR[String(color).toLowerCase()] || TL_VAR[String(color).toUpperCase()];
+    return v ? `var(${v})` : color;
+  },
 
   _escala(min, max){
     if (min === max){ min -= 1; max += 1; }
@@ -26,6 +80,31 @@ const Charts = {
     return rango < 2 ? 2 : rango < 10 ? 1 : 0;
   },
 
+  /* Línea de retícula horizontal. Único trazo estructural del lienzo. */
+  _reticula(x1, x2, y){
+    return `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" style="stroke:var(--reticula)" stroke-width="1"/>`;
+  },
+
+  /* Línea de referencia (baseline o umbral): siempre discontinua y sin
+     rótulo dentro del lienzo. */
+  _referencia(x1, x2, y, color, { dash = '6 5', grosor = 1.4, opacidad = 0.8 } = {}){
+    return `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" style="stroke:${this._c(color)}" `
+         + `stroke-dasharray="${dash}" stroke-width="${grosor}" opacity="${opacidad}"/>`;
+  },
+
+  /* Punto de serie con halo del fondo de la caja, para que no se coma la
+     línea al amontonarse. */
+  _punto(x, y, color, r, tt){
+    return `<circle cx="${x}" cy="${y}" r="${r}" stroke-width="1.5" `
+         + `style="fill:${this._c(color)};stroke:var(--sup2)" data-tt="${tt}"/>`;
+  },
+
+  /* Trazo de serie. */
+  _trazo(d, color, grosor, dash){
+    return `<path d="${d}" fill="none" style="stroke:${this._c(color)}" stroke-width="${grosor}" `
+         + `stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+  },
+
   _ejeX(pts, X, h, w){
     const fechasU = [...new Set(pts.map(p => +soloDia(p.x)))].sort((a,b) => a-b);
     const paso = Math.max(1, Math.ceil(fechasU.length / 6));
@@ -33,11 +112,20 @@ const Charts = {
       .map(t => `<text x="${X(t)}" y="${h-8}" text-anchor="middle">${fmtFechaCorta(new Date(t))}</text>`).join('');
   },
 
+  /* Entrada de leyenda. `tipo`: 'linea' | 'trazo' (discontinua). */
+  _ley(color, texto, tipo = 'linea', extra = '', opacidad = null){
+    const op = opacidad != null ? `;opacity:${opacidad}` : '';
+    const i = tipo === 'trazo'
+      ? `<i style="background:${this._c(color)};height:3px;margin-bottom:3px${op}"></i>`
+      : `<i style="background:${this._c(color)}${op}"></i>`;
+    return `<span>${i}${esc(texto)}${extra}</span>`;
+  },
+
   /* Gráfica de líneas temporales.
      series: [{nombre, color, puntos:[{x:Date, y:num, c?:colorPunto}],
                 dash?: '5 4', soloPuntos?: bool, grosor?: num,
                 eje?: 'der', unidad?: string}]
-     banda: {min, max} franja sombreada  ·  lineaBase: {y, label, color} */
+     banda: {min, max, label?} franja de referencia · lineaBase: {y, label, color} */
   lineas({ series, banda = null, lineaBase = null, w = 680, h = 240 }){
     const padL = 46, padT = 16, padB = 26;
     const pts = series.flatMap(s => s.puntos).filter(p => p.y != null);
@@ -68,18 +156,21 @@ const Charts = {
 
     let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
 
+    // La banda no es relleno bajo la curva: es una zona de referencia (la banda
+    // muerta del ritmo, la banda de VFC). Se queda, en lima muy tenue.
     if (banda && banda.min != null && banda.max != null){
-      svg += `<rect x="${padL}" y="${YIzq(banda.max)}" width="${w-padL-padR}" height="${YIzq(banda.min)-YIzq(banda.max)}" fill="rgba(76,175,125,.10)"/>`;
+      svg += `<rect x="${padL}" y="${YIzq(banda.max)}" width="${w-padL-padR}" `
+           + `height="${YIzq(banda.min)-YIzq(banda.max)}" style="fill:var(--lima)" opacity="0.09"/>`;
     }
 
     const decIzq = this._decEje(yMin, yMax);
     svg += '<g data-eje-y="izq">';
     this._ticksY(yMin, yMax).forEach(t => {
-      svg += `<line x1="${padL}" x2="${w-padR}" y1="${YIzq(t)}" y2="${YIzq(t)}" stroke="#2e3743" stroke-width="1"/>`;
+      svg += this._reticula(padL, w-padR, YIzq(t));
       svg += `<text x="${padL-6}" y="${YIzq(t)+4}" text-anchor="end">${fmtNum(t,decIzq)}</text>`;
     });
     const unidadIzq = series.find(s => s.eje !== 'der' && s.puntos.some(p => p.y != null))?.unidad;
-    if (unidadIzq) svg += `<text x="${padL-6}" y="11" text-anchor="end" style="font-size:10px">${esc(unidadIzq)}</text>`;
+    if (unidadIzq) svg += `<text x="${padL-6}" y="11" text-anchor="end">${esc(unidadIzq)}</text>`;
     svg += '</g>';
 
     if (hayEjeDer){
@@ -87,19 +178,16 @@ const Charts = {
       const decDer = this._decEje(yDerMin, yDerMax);
       svg += '<g data-eje-y="der">';
       this._ticksY(yDerMin, yDerMax).forEach(t => {
-        svg += `<text x="${w-padR+6}" y="${YDer(t)+4}" text-anchor="start" fill="${serieDer.color}">${fmtNum(t,decDer)}</text>`;
+        svg += `<text x="${w-padR+6}" y="${YDer(t)+4}" text-anchor="start" style="fill:${this._c(serieDer.color)}">${fmtNum(t,decDer)}</text>`;
       });
       if (serieDer.unidad)
-        svg += `<text x="${w-4}" y="11" text-anchor="end" fill="${serieDer.color}" style="font-size:10px">${esc(serieDer.unidad)}</text>`;
+        svg += `<text x="${w-4}" y="11" text-anchor="end" style="fill:${this._c(serieDer.color)}">${esc(serieDer.unidad)}</text>`;
       svg += '</g>';
     }
     svg += this._ejeX(pts, X, h, w);
 
-    if (lineaBase && lineaBase.y != null){
-      svg += `<line x1="${padL}" x2="${w-padR}" y1="${YIzq(lineaBase.y)}" y2="${YIzq(lineaBase.y)}" stroke="${lineaBase.color || '#94a1b0'}" stroke-dasharray="6 4" stroke-width="1.5"/>`;
-      if (lineaBase.label)
-        svg += `<text x="${w-padR-4}" y="${YIzq(lineaBase.y)-5}" text-anchor="end" fill="${lineaBase.color || '#94a1b0'}">${esc(lineaBase.label)}</text>`;
-    }
+    if (lineaBase && lineaBase.y != null)
+      svg += this._referencia(padL, w-padR, YIzq(lineaBase.y), lineaBase.color || TL.txt3);
 
     series.forEach(s => {
       const p = s.puntos.filter(q => q.y != null).sort((a,b) => a.x - b.x);
@@ -107,18 +195,25 @@ const Charts = {
       const Y = hayEjeDer && s.eje === 'der' ? YDer : YIzq;
       if (!s.soloPuntos){
         const d = p.map((q,i) => `${i ? 'L' : 'M'}${X(+q.x).toFixed(1)},${Y(q.y).toFixed(1)}`).join(' ');
-        svg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.grosor || 2}"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}/>`;
+        svg += this._trazo(d, s.color, s.grosor || 2.2, s.dash);
       }
       if (!s.sinPuntos){
         p.forEach(q => {
-          svg += `<circle cx="${X(+q.x).toFixed(1)}" cy="${Y(q.y).toFixed(1)}" r="${s.soloPuntos ? 4 : 3.2}" fill="${q.c || s.color}" data-tt="${esc(s.nombre)} · ${fmtFecha(q.x)} · ${fmtNum(q.y,1)}${s.unidad ? ' ' + esc(s.unidad) : ''}"/>`;
+          svg += this._punto(X(+q.x).toFixed(1), Y(q.y).toFixed(1), q.c || s.color,
+            s.soloPuntos ? 4 : 3.4,
+            `${esc(s.nombre)} · ${fmtFecha(q.x)} · ${fmtNum(q.y,1)}${s.unidad ? ' ' + esc(s.unidad) : ''}`);
         });
       }
     });
 
     svg += `</svg>`;
-    const ley = series.map(s => `<span><i style="background:${s.color}${s.dash ? ';height:3px;margin-bottom:3px' : ''}"></i>${esc(s.nombre)}${hayEjeDer && s.eje === 'der' ? ' <span class="muted">(eje der.)</span>' : ''}</span>`).join('');
-    return `${svg}<div class="leyenda">${ley}${lineaBase && lineaBase.label ? `<span><i style="background:${lineaBase.color || '#94a1b0'};height:3px;margin-bottom:3px"></i>${esc(lineaBase.label)}</span>` : ''}</div>`;
+    const ley = series.map(s => this._ley(s.color, s.nombre, s.dash ? 'trazo' : 'linea',
+      hayEjeDer && s.eje === 'der' ? ' <span class="muted">(eje der.)</span>' : '')).join('');
+    const leyBase = lineaBase && lineaBase.label
+      ? this._ley(lineaBase.color || TL.txt3, lineaBase.label, 'trazo') : '';
+    const leyBanda = (banda && banda.min != null && banda.max != null)
+      ? this._ley(TL.lima, banda.label || 'banda', 'linea', '', 0.35) : '';
+    return `${svg}<div class="leyenda">${ley}${leyBase}${leyBanda}</div>`;
   },
 
   /* Barras diarias coloreadas (estado para entrenar 0-100). */
@@ -135,14 +230,18 @@ const Charts = {
 
     let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
     [0, 40, 70, 100].forEach(t => {
-      svg += `<line x1="${padL}" x2="${w-padR}" y1="${Y(t)}" y2="${Y(t)}" stroke="#2e3743"/>`;
+      svg += this._reticula(padL, w-padR, Y(t));
       svg += `<text x="${padL-6}" y="${Y(t)+4}" text-anchor="end">${t}</text>`;
     });
     ds.forEach(d => {
       const x = X(+soloDia(d.x));
-      svg += `<rect x="${x.toFixed(1)}" y="${Y(d.y).toFixed(1)}" width="${bw.toFixed(1)}" height="${(Y(0)-Y(d.y)).toFixed(1)}" rx="2" fill="${d.color}" data-tt="${fmtFecha(d.x)} · ${d.y}${d.info ? ' · ' + esc(d.info) : ''}"/>`;
+      // Las barras van al 72 %: son mucha superficie, y el lima a plena
+      // saturación en bloques grandes es justo lo que el rediseño retira.
+      svg += `<rect x="${x.toFixed(1)}" y="${Y(d.y).toFixed(1)}" width="${bw.toFixed(1)}" `
+           + `height="${(Y(0)-Y(d.y)).toFixed(1)}" rx="2" style="fill:${this._c(d.color)}" opacity="0.72" `
+           + `data-tt="${fmtFecha(d.x)} · ${d.y}${d.info ? ' · ' + esc(d.info) : ''}"/>`;
       if (d.tag)
-        svg += `<text x="${(x + bw/2).toFixed(1)}" y="${(Y(d.y) - 4).toFixed(1)}" text-anchor="middle" style="font-size:9px" fill="${d.color}">${esc(d.tag)}</text>`;
+        svg += `<text x="${(x + bw/2).toFixed(1)}" y="${(Y(d.y) - 5).toFixed(1)}" text-anchor="middle" style="fill:${this._c(d.color)}">${esc(d.tag)}</text>`;
     });
     const paso = Math.max(1, Math.ceil(ds.length / 6));
     ds.filter((_, i) => i % paso === 0).forEach(d => {
@@ -193,71 +292,72 @@ const Charts = {
     let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
 
     if (readinessArea){
-      // Readiness como línea con área ligeramente sombreada por debajo
+      // Readiness como línea. Sin relleno de área: el handoff lo prohíbe y
+      // aquí, además, tapaba las líneas de rendimiento.
       if (bs.length){
         const linePts = bs.map(d => `${X(+soloDia(d.x)).toFixed(1)},${YR(d.y).toFixed(1)}`);
-        const x0 = X(+soloDia(bs[0].x)).toFixed(1);
-        const xN = X(+soloDia(bs[bs.length-1].x)).toFixed(1);
-        const area = `M${x0},${YR(0).toFixed(1)} L${linePts.join(' L')} L${xN},${YR(0).toFixed(1)} Z`;
-        svg += `<path d="${area}" fill="rgba(76,175,125,.12)" stroke="none"/>`;
-        svg += `<path d="M${linePts.join(' L')}" fill="none" stroke="#4caf7d" stroke-width="1.6" opacity="0.85"/>`;
+        svg += `<path d="M${linePts.join(' L')}" fill="none" style="stroke:var(--lima)" stroke-width="1.6" `
+             + `stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>`;
         bs.forEach(d => {
-          svg += `<circle cx="${X(+soloDia(d.x)).toFixed(1)}" cy="${YR(d.y).toFixed(1)}" r="3.2" fill="${d.color}" data-tt="Readiness · ${fmtFecha(d.x)} · ${d.y}${d.info ? ' · ' + esc(d.info) : ''}"/>`;
+          svg += this._punto(X(+soloDia(d.x)).toFixed(1), YR(d.y).toFixed(1), d.color, 3,
+            `Readiness · ${fmtFecha(d.x)} · ${d.y}${d.info ? ' · ' + esc(d.info) : ''}`);
         });
       }
     } else {
       // Barras readiness al fondo (con zona de señales en el rótulo)
       bs.forEach(d => {
-        svg += `<rect x="${(X(+soloDia(d.x)) - bw/2).toFixed(1)}" y="${YR(d.y).toFixed(1)}" width="${bw.toFixed(1)}" height="${(YR(0)-YR(d.y)).toFixed(1)}" rx="2" fill="${d.color}" opacity="0.38" data-tt="Readiness · ${fmtFecha(d.x)} · ${d.y}${d.info ? ' · ' + esc(d.info) : ''}"/>`;
+        svg += `<rect x="${(X(+soloDia(d.x)) - bw/2).toFixed(1)}" y="${YR(d.y).toFixed(1)}" width="${bw.toFixed(1)}" `
+             + `height="${(YR(0)-YR(d.y)).toFixed(1)}" rx="2" style="fill:${this._c(d.color)}" opacity="0.24" `
+             + `data-tt="Readiness · ${fmtFecha(d.x)} · ${d.y}${d.info ? ' · ' + esc(d.info) : ''}"/>`;
       });
     }
 
-    // Tercera serie: barras (1RM) al fondo, antes de la rejilla
+    // Tercera serie: barras (1RM) al fondo, antes de la retícula
     if (t3pts.length && tercera.tipo === 'barra'){
       const bw3 = Math.max(3, bw * 0.6);
       t3pts.forEach(p => {
         const x = X(+soloDia(p.x)) - bw3/2;
-        svg += `<rect x="${x.toFixed(1)}" y="${Y3(p.y).toFixed(1)}" width="${bw3.toFixed(1)}" height="${(Y3(t3min)-Y3(p.y)).toFixed(1)}" rx="2" fill="${tercera.color}" opacity="0.45" data-tt="${esc(tercera.nombre)} · ${fmtFecha(p.x)} · ${fmtNum(p.y,1)}"/>`;
+        svg += `<rect x="${x.toFixed(1)}" y="${Y3(p.y).toFixed(1)}" width="${bw3.toFixed(1)}" `
+             + `height="${(Y3(t3min)-Y3(p.y)).toFixed(1)}" rx="2" style="fill:${this._c(tercera.color)}" opacity="0.45" `
+             + `data-tt="${esc(tercera.nombre)} · ${fmtFecha(p.x)} · ${fmtNum(p.y,1)}"/>`;
       });
     }
 
-    // Rejilla y eje izquierdo
+    // Retícula y eje izquierdo
     const decL = this._decEje(lMin, lMax);
     this._ticksY(lMin, lMax).forEach(t => {
-      svg += `<line x1="${padL}" x2="${w-padR}" y1="${YL(t)}" y2="${YL(t)}" stroke="#2e3743"/>`;
+      svg += this._reticula(padL, w-padR, YL(t));
       svg += `<text x="${padL-6}" y="${YL(t)+4}" text-anchor="end">${fmtNum(t,decL)}</text>`;
     });
     // Eje derecho (readiness)
     [0, 40, 70, 100].forEach(t => {
-      svg += `<text x="${w-padR+6}" y="${YR(t)+4}" text-anchor="start" fill="#94a1b0">${t}</text>`;
+      svg += `<text x="${w-padR+6}" y="${YR(t)+4}" text-anchor="start">${t}</text>`;
     });
 
-    // Baseline 100
-    svg += `<line x1="${padL}" x2="${w-padR}" y1="${YL(baseline)}" y2="${YL(baseline)}" stroke="#94a1b0" stroke-dasharray="6 4" stroke-width="1.5"/>`;
-    svg += `<text x="${w-padR-4}" y="${YL(baseline)-5}" text-anchor="end">baseline ${baseline}</text>`;
-
-    // Umbrales de veredicto (bueno / bajo, como en la app)
+    // Baseline y umbrales, sin rótulo dentro del lienzo: van a la leyenda.
+    svg += this._referencia(padL, w-padR, YL(baseline), TL.lima, { opacidad: 0.35 });
     umbrales.forEach(u => {
-      svg += `<line x1="${padL}" x2="${w-padR}" y1="${YL(u.y)}" y2="${YL(u.y)}" stroke="${u.color}" stroke-dasharray="3 4" stroke-width="1.3"/>`;
-      svg += `<text x="${padL+4}" y="${YL(u.y) + (u.y >= baseline ? -4 : 11)}" text-anchor="start" fill="${u.color}">${esc(u.label)}</text>`;
+      svg += this._referencia(padL, w-padR, YL(u.y), u.color, { dash: '3 5', grosor: 1.2, opacidad: 0.55 });
     });
 
     // Líneas de rendimiento
     lss.forEach(l => {
       if (!l.pts.length) return;
       const d = l.pts.map((p,i) => `${i ? 'L' : 'M'}${X(+soloDia(p.x)).toFixed(1)},${YL(p.y).toFixed(1)}`).join(' ');
-      svg += `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="${l.grosor || 2.5}"/>`;
+      svg += this._trazo(d, l.color, l.grosor || 2.4);
       l.pts.forEach(p => {
-        svg += `<circle cx="${X(+soloDia(p.x)).toFixed(1)}" cy="${YL(p.y).toFixed(1)}" r="3.5" fill="${l.color}" stroke="#12151a" stroke-width="1" data-tt="${esc(l.nombre)} · ${fmtFecha(p.x)} · ${fmtNum(p.y,1)}%"/>`;
+        svg += this._punto(X(+soloDia(p.x)).toFixed(1), YL(p.y).toFixed(1), l.color, 3.6,
+          `${esc(l.nombre)} · ${fmtFecha(p.x)} · ${fmtNum(p.y,1)}%`);
       });
     });
 
     // Tercera serie: línea (VFC) en primer plano
     if (t3pts.length && tercera.tipo !== 'barra'){
       const d = t3pts.map((p,i) => `${i ? 'L' : 'M'}${X(+soloDia(p.x)).toFixed(1)},${Y3(p.y).toFixed(1)}`).join(' ');
-      svg += `<path d="${d}" fill="none" stroke="${tercera.color}" stroke-width="${tercera.grosor || 2}"${tercera.dash ? ` stroke-dasharray="${tercera.dash}"` : ''}/>`;
+      svg += this._trazo(d, tercera.color, tercera.grosor || 2.2, tercera.dash);
       t3pts.forEach(p => {
-        svg += `<circle cx="${X(+soloDia(p.x)).toFixed(1)}" cy="${Y3(p.y).toFixed(1)}" r="3" fill="${tercera.color}" stroke="#12151a" stroke-width="1" data-tt="${esc(tercera.nombre)} · ${fmtFecha(p.x)} · ${fmtNum(p.y,1)}"/>`;
+        svg += this._punto(X(+soloDia(p.x)).toFixed(1), Y3(p.y).toFixed(1), tercera.color, 3.2,
+          `${esc(tercera.nombre)} · ${fmtFecha(p.x)} · ${fmtNum(p.y,1)}`);
       });
     }
 
@@ -270,16 +370,19 @@ const Charts = {
 
     svg += `</svg>`;
     const legReadiness = readinessArea
-      ? `<span><i style="background:#4caf7d;opacity:.5"></i>Readiness (área, eje der.)</span>`
-      : `<span><i style="background:#4caf7d;opacity:.45"></i>Readiness (eje der.)</span>`;
+      ? this._ley(TL.lima, 'Readiness (eje der.)', 'linea', '', 0.5)
+      : this._ley(TL.lima, 'Readiness (eje der.)', 'linea', '', 0.4);
     const legTercera = t3pts.length
-      ? `<span><i style="background:${tercera.color}${tercera.tipo === 'barra' ? ';opacity:.6' : ''}"></i>${esc(tercera.nombre)} (${fmtNum(t3pts.length ? Math.min(...t3pts.map(p=>p.y)) : 0,0)}–${fmtNum(t3pts.length ? Math.max(...t3pts.map(p=>p.y)) : 0,0)})</span>`
+      ? this._ley(tercera.color,
+          `${tercera.nombre} (${fmtNum(Math.min(...t3pts.map(p=>p.y)),0)}–${fmtNum(Math.max(...t3pts.map(p=>p.y)),0)})`,
+          'linea', '', tercera.tipo === 'barra' ? 0.6 : null)
       : '';
     return `${svg}<div class="leyenda">
-      ${lss.map(l => `<span><i style="background:${l.color}"></i>${esc(l.nombre)}</span>`).join('')}
+      ${lss.map(l => this._ley(l.color, l.nombre)).join('')}
       ${legReadiness}
       ${legTercera}
-      ${umbrales.map(u => `<span><i style="background:${u.color};height:3px;margin-bottom:3px"></i>${esc(u.label)}</span>`).join('')}
+      ${this._ley(TL.lima, `baseline ${baseline}`, 'trazo')}
+      ${umbrales.filter(u => u.label).map(u => this._ley(u.color, u.label, 'trazo')).join('')}
     </div>`;
   },
 
@@ -319,40 +422,39 @@ const Charts = {
 
     let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
 
-    // Rejilla + eje izquierdo (color de la serie izquierda)
+    // Retícula + eje izquierdo (rotulado en el color de su serie)
     const decIzq = this._decEje(izq._a, izq._b);
     this._ticksY(izq._a, izq._b).forEach(t => {
-      svg += `<line x1="${padL}" x2="${w-padR}" y1="${izq._Y(t).toFixed(1)}" y2="${izq._Y(t).toFixed(1)}" stroke="#2e3743"/>`;
-      svg += `<text x="${padL-6}" y="${izq._Y(t)+4}" text-anchor="end" fill="${izq.color}">${fmtNum(t,decIzq)}</text>`;
+      svg += this._reticula(padL, w-padR, izq._Y(t).toFixed(1));
+      svg += `<text x="${padL-6}" y="${izq._Y(t)+4}" text-anchor="end" style="fill:${this._c(izq.color)}">${fmtNum(t,decIzq)}</text>`;
     });
-    // Eje derecho (color de la serie derecha)
+    // Eje derecho
     if (der){
       const decDer = this._decEje(der._a, der._b);
       this._ticksY(der._a, der._b).forEach(t => {
-        svg += `<text x="${w-padR+6}" y="${der._Y(t)+4}" text-anchor="start" fill="${der.color}">${fmtNum(t,decDer)}</text>`;
+        svg += `<text x="${w-padR+6}" y="${der._Y(t)+4}" text-anchor="start" style="fill:${this._c(der.color)}">${fmtNum(t,decDer)}</text>`;
       });
     }
 
-    // Umbrales / baseline por serie (línea discontinua en su color, sobre su eje)
+    // Umbrales / baseline por serie, sobre su eje. Sin rótulo dentro del
+    // lienzo: van nombrados en la leyenda.
     activos.forEach(s => {
-      if (s.baseline != null){
-        svg += `<line x1="${padL}" x2="${w-padR}" y1="${s._Y(s.baseline).toFixed(1)}" y2="${s._Y(s.baseline).toFixed(1)}" stroke="${s.color}" stroke-dasharray="6 4" stroke-width="1.3" opacity="0.7"/>`;
-        svg += `<text x="${(s === izq ? padL+4 : w-padR-4)}" y="${s._Y(s.baseline)-4}" text-anchor="${s === izq ? 'start' : 'end'}" fill="${s.color}">baseline ${fmtNum(s.baseline,0)}</text>`;
-      }
+      if (s.baseline != null)
+        svg += this._referencia(padL, w-padR, s._Y(s.baseline).toFixed(1), s.color, { grosor: 1.3, opacidad: 0.5 });
       (s.umbrales || []).forEach(u => {
-        svg += `<line x1="${padL}" x2="${w-padR}" y1="${s._Y(u.y).toFixed(1)}" y2="${s._Y(u.y).toFixed(1)}" stroke="${u.color}" stroke-dasharray="3 4" stroke-width="1.2" opacity="0.85"/>`;
-        svg += `<text x="${(s === izq ? padL+4 : w-padR-4)}" y="${s._Y(u.y) + (u.y >= (s.baseline ?? u.y) ? -4 : 11)}" text-anchor="${s === izq ? 'start' : 'end'}" fill="${u.color}">${esc(u.label)}</text>`;
+        svg += this._referencia(padL, w-padR, s._Y(u.y).toFixed(1), u.color, { dash: '3 5', grosor: 1.2, opacidad: 0.6 });
       });
     });
 
-    // Líneas + área tenue + puntos
+    // Líneas + puntos
     activos.forEach(s => {
       const p = s.puntos.filter(q => q.y != null).sort((a,b) => +soloDia(a.x) - +soloDia(b.x));
       if (!p.length) return;
       const linePts = p.map(q => `${X(+soloDia(q.x)).toFixed(1)},${s._Y(q.y).toFixed(1)}`);
-      svg += `<path d="M${linePts.join(' L')}" fill="none" stroke="${s.color}" stroke-width="2.4"/>`;
+      svg += this._trazo(`M${linePts.join(' L')}`, s.color, 2.4);
       p.forEach(q => {
-        svg += `<circle cx="${X(+soloDia(q.x)).toFixed(1)}" cy="${s._Y(q.y).toFixed(1)}" r="4" fill="${s.color}" stroke="#12151a" stroke-width="1" data-tt="${esc(s.label)} · ${fmtFecha(q.x)} · ${fmtNum(q.y,1)}${s.unidad ? ' ' + esc(s.unidad) : ''}"/>`;
+        svg += this._punto(X(+soloDia(q.x)).toFixed(1), s._Y(q.y).toFixed(1), s.color, 3.6,
+          `${esc(s.label)} · ${fmtFecha(q.x)} · ${fmtNum(q.y,1)}${s.unidad ? ' ' + esc(s.unidad) : ''}`);
       });
     });
 
@@ -364,24 +466,38 @@ const Charts = {
     });
 
     svg += `</svg>`;
+    // Leyenda: primero las series y después las referencias que se han sacado
+    // del lienzo (baseline y umbrales de cada una).
     const ley = activos.map(s =>
-      `<span><i style="background:${s.color}"></i>${esc(s.label)}${s.unidad ? ` <span class="muted">(${esc(s.unidad)}, eje ${s === izq ? 'izq.' : 'der.'})</span>` : ` <span class="muted">(eje ${s === izq ? 'izq.' : 'der.'})</span>`}</span>`).join('');
-    return `${svg}<div class="leyenda">${ley}</div>`;
+      this._ley(s.color, s.label, 'linea',
+        s.unidad ? ` <span class="muted">(${esc(s.unidad)}, eje ${s === izq ? 'izq.' : 'der.'})</span>`
+                 : ` <span class="muted">(eje ${s === izq ? 'izq.' : 'der.'})</span>`)).join('');
+    const leyRef = activos.flatMap(s => [
+      s.baseline != null ? this._ley(s.color, `baseline ${fmtNum(s.baseline,0)}`, 'trazo') : '',
+      ...(s.umbrales || []).filter(u => u.label).map(u => this._ley(u.color, u.label, 'trazo')),
+    ]).join('');
+    return `${svg}<div class="leyenda">${ley}${leyRef}</div>`;
   },
 
-  /* Mini-línea sin ejes para tarjetas del resumen */
-  sparkline(valores, w = 160, h = 40, color = '#5aa9e6'){
+  /* Mini-línea sin ejes para tarjetas del resumen. Punto final relleno, como
+     el sparkline del veredicto de la app. */
+  sparkline(valores, w = 160, h = 40, color = TL.lima){
     const vs = valores.filter(v => v != null);
     if (vs.length < 2) return '';
     const [mn, mx] = this._escala(Math.min(...vs), Math.max(...vs));
-    const X = i => 2 + i / (valores.length - 1) * (w - 4);
-    const Y = v => 2 + (mx - v) / (mx - mn) * (h - 4);
-    let d = '', started = false;
+    const X = i => 3 + i / (valores.length - 1) * (w - 6);
+    const Y = v => 3 + (mx - v) / (mx - mn) * (h - 6);
+    let d = '', started = false, ultimo = null;
     valores.forEach((v, i) => {
       if (v == null) return;
       d += `${started ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`;
       started = true;
+      ultimo = { x: X(i), y: Y(v) };
     });
-    return `<svg viewBox="0 0 ${w} ${h}" style="width:${w}px;height:${h}px"><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
+    const fin = ultimo
+      ? `<circle cx="${ultimo.x.toFixed(1)}" cy="${ultimo.y.toFixed(1)}" r="3" stroke-width="1.5" `
+        + `style="fill:${this._c(color)};stroke:var(--sup1)"/>` : '';
+    return `<svg viewBox="0 0 ${w} ${h}" style="width:${w}px;height:${h}px">`
+         + this._trazo(d, color, 2.4) + `${fin}</svg>`;
   },
 };

@@ -4,7 +4,7 @@
    IMPORTANTE: al publicar cambios en la app, sube el número de VERSION
    para que los navegadores de los entrenadores se actualicen. */
 
-const VERSION = 'tlcoach-v2';
+const VERSION = 'tlcoach-v3';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -18,10 +18,15 @@ const ARCHIVOS = [
   'xlsx.js',
   'planner.js',
   'app.js',
+  'canonico.js',
   'manifest.json',
   'media/icono.png',
   'media/icono-192.png',
   'media/banner.png',
+  '../fonts/archivo-latin.woff2',
+  '../fonts/archivo-latin-ext.woff2',
+  '../fonts/jetbrainsmono-latin.woff2',
+  '../fonts/jetbrainsmono-latin-ext.woff2',
 ];
 
 self.addEventListener('install', ev => {

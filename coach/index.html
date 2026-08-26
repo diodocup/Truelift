@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TrueLift Coach</title>
+<meta name="description" content="Herramienta para entrenadores: analiza los entrenamientos de tus clientes de TrueLift y crea o revisa sus rutinas.">
+<meta name="theme-color" content="#0A0C0B">
+<meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="media/icono.png">
+<link rel="apple-touch-icon" href="media/icono-192.png">
+<link rel="preload" href="../fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/jetbrainsmono-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,21 +18,31 @@
 <div id="cabecera" class="no-print">
 <header id="topbar">
   <div class="brand"><img src="media/icono.png" alt="" class="brand-icono">TrueLift <span>Coach</span></div>
-  <select id="selCliente" title="Cliente activo"></select>
-  <div id="ctrlRango">
-    <select id="selRango" title="Rango de fechas">
-      <option value="bloque">Bloque actual</option>
-      <option value="7">Última semana</option>
-      <option value="28">Últimas 4 semanas</option>
-      <option value="todo">Todo</option>
-      <option value="custom">Personalizado…</option>
-    </select>
-    <span id="rangoCustom" class="oculto">
-      <input type="date" id="fDesde"> <span class="muted">a</span> <input type="date" id="fHasta">
-    </span>
-    <span id="rangoTexto" class="muted"></span>
+
+  <label class="campo">
+    <span class="campo-etq">Cliente</span>
+    <select id="selCliente" title="Cliente activo"></select>
+  </label>
+
+  <div class="campo">
+    <span class="campo-etq">Rango</span>
+    <div id="ctrlRango">
+      <select id="selRango" title="Rango de fechas">
+        <option value="bloque">Bloque actual</option>
+        <option value="7">Última semana</option>
+        <option value="28">Últimas 4 semanas</option>
+        <option value="todo">Todo</option>
+        <option value="custom">Personalizado…</option>
+      </select>
+      <span id="rangoCustom" class="oculto">
+        <input type="date" id="fDesde"> <span class="muted">a</span> <input type="date" id="fHasta">
+      </span>
+      <span id="rangoTexto" class="muted"></span>
+    </div>
   </div>
+
   <div class="spacer"></div>
+
   <button id="btnImprimir" class="btn sec" title="Imprimir informe del resumen">Imprimir informe</button>
   <button id="btnClientes" class="btn sec">Clientes</button>
   <button id="btnImportar" class="btn pri">+ Importar JSON</button>
@@ -46,7 +62,7 @@
 </div>
 
 <aside class="privacy-notice no-print" aria-label="Aviso de privacidad">
-  <strong>Privacidad:</strong> los archivos importados y las notas se guardan solo en este navegador;
+  <strong>Privacidad</strong> los archivos importados y las notas se guardan solo en este navegador;
   TrueLift no los recibe. Como entrenador, debes contar con autorización y base jurídica para tratar
   los datos de cada cliente, especialmente los relativos a la salud, proteger el dispositivo y borrar
   la información cuando ya no sea necesaria.

@@ -8,9 +8,13 @@
    ================================================================ */
 
 // ---------- Piezas comunes ----------
+/* Chip de compuerta. Desde el rediseño dice la misma palabra que ve el cliente
+   en el chip de estado de su cabecera (listo / cautela / suave) y no el nombre
+   del color: el color ya lo lleva el punto, y «Verde» pintado en lima no se
+   sostenía. Las claves internas siguen siendo verde/ambar/rojo. */
 function chipCompuerta(c){
   if (!c) return '';
-  const lbl = { verde:'Verde', ambar:'Ámbar', rojo:'Rojo' }[c] || c;
+  const lbl = { verde:'Listo', ambar:'Cautela', rojo:'Suave' }[c] || c;
   return `<span class="chip ${esc(c)}"><span class="punto ${esc(c)}"></span> ${esc(lbl)}</span>`;
 }
 function textoRend(s){
@@ -34,9 +38,11 @@ function joinSeries(arr){
   if (!arr || !arr.length) return '—';
   return arr.map(v => v == null ? '—' : v).join(' · ');
 }
-/* Escala 1–4 con color semáforo.
+/* Escala 1–4 con color de gravedad.
    tipo 'buena' (sueño, ánimo): 4 = perfecto → 3-4 verde, 2 ámbar, 1 rojo.
-   tipo 'mala' (agujetas, dolor, estrés): 1 = perfecto → 1 verde, 2 ámbar, 3-4 rojo. */
+   tipo 'mala' (agujetas, dolor, estrés): 1 = perfecto → 1 verde, 2 ámbar, 3-4 rojo.
+   Los nombres de clase son los de siempre, pero desde el rediseño 'verde'
+   pinta lima y 'rojo' pinta naranja: el rojo se reserva para lo destructivo. */
 function escDots(v, tipo = 'buena'){
   if (v == null) return '<span class="muted">—</span>';
   const calidad = tipo === 'mala'
@@ -52,7 +58,7 @@ function tarjetaVacia(msg){
   return `<div class="card"><div class="muted" style="padding:14px 4px">${esc(msg)}</div></div>`;
 }
 
-const COLORES_SEM = { verde:'#4caf7d', ambar:'#e0a63c', rojo:'#e05c5c' };
+const COLORES_SEM = { verde:'#a8ee19', ambar:'#E0A92E', rojo:'#F0872D' };
 
 /* Zona de las señales del día (agujetas/dolor ≥2 con zona): null si no hay señales. */
 function zonaSenales(r){
@@ -80,7 +86,7 @@ function graficaRendReadiness(ctx, opts = {}){
   const barras = readinessR.map(r => {
     const c = r.estadoDia || bandaEstado(r.estadoEntrenar);
     const z = zonaSenales(r);
-    return { x: r.fecha, y: r.estadoEntrenar, color: COLORES_SEM[c] || '#3a4552',
+    return { x: r.fecha, y: r.estadoEntrenar, color: COLORES_SEM[c] || '#4E5551',
              info: z ? `señales: ${z}` : '' };
   });
   const bruto = fuerzaR.map(s => ({ x: s.fecha, y: Metricas.pctBruto(s) }));
@@ -90,9 +96,9 @@ function graficaRendReadiness(ctx, opts = {}){
   const tols = fuerzaR.map(s => s.tolPct).filter(v => v != null);
   const tol = tols.length ? VFC._mediana(tols) : 2.5;
   const lineas = hayNeto
-    ? [{ nombre: 'Rendimiento bruto', color: '#5aa9e6', puntos: bruto, grosor: 1.6 },
-       { nombre: 'Rendimiento neto diario', color: '#a8d020', puntos: neto, grosor: 2.5 }]
-    : [{ nombre: 'Rendimiento de sesión', color: '#5aa9e6', puntos: bruto, grosor: 2.5 }];
+    ? [{ nombre: 'Rendimiento bruto', color: '#6FA8DC', puntos: bruto, grosor: 1.6 },
+       { nombre: 'Rendimiento neto diario', color: '#a8ee19', puntos: neto, grosor: 2.5 }]
+    : [{ nombre: 'Rendimiento de sesión', color: '#6FA8DC', puntos: bruto, grosor: 2.5 }];
   const base = hayNeto ? neto : bruto;
   const conPct = base.filter(p => p.y != null);
   const media = conPct.length ? conPct.reduce((a,b) => a + b.y, 0) / conPct.length : null;
@@ -100,15 +106,17 @@ function graficaRendReadiness(ctx, opts = {}){
     <div class="chart-caja">${Charts.combinada({
       barras, lineas, baseline: 100, readinessArea, tercera,
       umbrales: [
-        { y: 100 + tol, label: `bueno (≥ ${fmtNum(100 + tol,1)})`, color: '#4caf7d' },
-        { y: 100 - tol, label: `bajo (≤ ${fmtNum(100 - tol,1)})`, color: '#e0a63c' },
+        { y: 100 + tol, label: `bueno (≥ ${fmtNum(100 + tol,1)})`, color: '#a8ee19' },
+        { y: 100 - tol, label: `bajo (≤ ${fmtNum(100 - tol,1)})`, color: '#E0A92E' },
       ],
     })}</div>
     ${media != null ? `<div class="muted" style="font-size:12px">Media ${hayNeto ? 'neta' : ''} del periodo: <b style="color:var(--texto)">${fmtNum(media,1)}%</b></div>` : ''}`;
 }
 
-/* Paleta para las series por tipo de sesión */
-const COLORES_SESION = ['#e0985c','#5cc9c0','#d06e9a','#9ec25a','#6a8ff0','#e0c94c','#c0705a','#7ad0e0','#b58cff','#8fd06a'];
+/* Paleta para las series por tipo de sesión. Diez tonos desaturados a una
+   luminosidad parecida, para que ninguno grite más que el lima ni se confunda
+   con el ámbar y el naranja, que aquí significan aviso. */
+const COLORES_SESION = ['#E0985C','#5FC6BE','#D678A6','#B7CF63','#7FB8E0','#E0C95C','#C97F6A','#7FD6C4','#C79BE8','#9BD07A'];
 
 /* Catálogo de todas las series representables en el rango actual.
    Cada serie: { id, label, color, puntos:[{x,y}], grupo, unidad?, min?, max?,
@@ -124,15 +132,15 @@ function catalogoSeries(ctx){
   const tols = fuerzaR.map(s => s.tolPct).filter(v => v != null);
   const tol = tols.length ? VFC._mediana(tols) : 2.5;
   const umbralRend = [
-    { y: 100 + tol, label: `bueno (≥ ${fmtNum(100 + tol,1)})`, color: '#4caf7d' },
-    { y: 100 - tol, label: `bajo (≤ ${fmtNum(100 - tol,1)})`, color: '#e0a63c' },
+    { y: 100 + tol, label: `bueno (≥ ${fmtNum(100 + tol,1)})`, color: '#a8ee19' },
+    { y: 100 - tol, label: `bajo (≤ ${fmtNum(100 - tol,1)})`, color: '#E0A92E' },
   ];
   const G_REND = 'Rendimiento global';
   if (hayNeto){
-    cat.push({ id: 'rend_bruto', label: 'Rendimiento bruto', color: '#5aa9e6', puntos: bruto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
-    cat.push({ id: 'rend_neto',  label: 'Rendimiento neto diario', color: '#a8d020', puntos: neto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
+    cat.push({ id: 'rend_bruto', label: 'Rendimiento bruto', color: '#6FA8DC', puntos: bruto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
+    cat.push({ id: 'rend_neto',  label: 'Rendimiento neto diario', color: '#a8ee19', puntos: neto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
   } else if (bruto.some(p => p.y != null)){
-    cat.push({ id: 'rend_sesion', label: 'Rendimiento de sesión', color: '#5aa9e6', puntos: bruto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
+    cat.push({ id: 'rend_sesion', label: 'Rendimiento de sesión', color: '#6FA8DC', puntos: bruto, unidad: '%', baseline: 100, umbrales: umbralRend, grupo: G_REND });
   }
 
   // --- Rendimiento por cada tipo de sesión de entrenamiento (agrupado por 'dia') ---
@@ -150,14 +158,14 @@ function catalogoSeries(ctx){
   // --- Readiness (0-100) ---
   const rdPts = readinessR.map(r => ({ x: r.fecha, y: r.estadoEntrenar })).filter(p => p.y != null);
   if (rdPts.length)
-    cat.push({ id: 'readiness', label: 'Readiness', color: '#4caf7d', puntos: rdPts, unidad: '', min: 0, max: 100, grupo: 'Estado / recuperación' });
+    cat.push({ id: 'readiness', label: 'Readiness', color: '#a8ee19', puntos: rdPts, unidad: '', min: 0, max: 100, grupo: 'Estado / recuperación' });
 
   // --- VFC (HRV) con umbral bajo si existe ---
   const vfcPts = readinessR.filter(r => r.vfc != null && !r.vfcDescartada).map(r => ({ x: r.fecha, y: r.vfc }));
   if (vfcPts.length){
     const uVfc = VFC.umbrales(datos.readiness, perfil);
-    const umbrales = (uVfc && uVfc.baja != null) ? [{ y: uVfc.baja, label: `VFC baja (${fmtNum(uVfc.baja,1)})`, color: '#e0a63c' }] : [];
-    cat.push({ id: 'vfc', label: 'VFC (HRV)', color: '#c792ea', puntos: vfcPts, unidad: 'ms', umbrales, grupo: 'Estado / recuperación' });
+    const umbrales = (uVfc && uVfc.baja != null) ? [{ y: uVfc.baja, label: `VFC baja (${fmtNum(uVfc.baja,1)})`, color: '#E0A92E' }] : [];
+    cat.push({ id: 'vfc', label: 'VFC (HRV)', color: '#B08CE8', puntos: vfcPts, unidad: 'ms', umbrales, grupo: 'Estado / recuperación' });
   }
 
   // --- Frecuencia cardiaca en reposo (campo fcReposo de readinessDiario) ---
@@ -166,9 +174,9 @@ function catalogoSeries(ctx){
   if (fcReposoPts.length){
     const bandaFc = FCReposo.banda(datos.readiness);
     const umbrales = bandaFc
-      ? [{ y: bandaFc.alta, label: `FC alta (${fmtNum(bandaFc.alta,1)})`, color: '#ff5252' }]
+      ? [{ y: bandaFc.alta, label: `FC alta (${fmtNum(bandaFc.alta,1)})`, color: '#F0872D' }]
       : [];
-    cat.push({ id: 'fc_reposo', label: 'FC en reposo', color: '#ff7a70', puntos: fcReposoPts,
+    cat.push({ id: 'fc_reposo', label: 'FC en reposo', color: '#E8776B', puntos: fcReposoPts,
                unidad: 'ppm', umbrales, grupo: 'Estado / recuperación' });
   }
 
@@ -178,7 +186,7 @@ function catalogoSeries(ctx){
     const pts = Metricas.historicoEjercicio(datos, n)
       .filter(p => enRango(p.fecha, ctx.desde, ctx.hasta) && p.e1rm != null)
       .map(p => ({ x: p.fecha, y: p.e1rm }));
-    if (pts.length) cat.push({ id: 'e1rm::' + n, label: '1RM · ' + n, color: '#8a7dff', puntos: pts, unidad: 'kg', grupo: '1RM estimado' });
+    if (pts.length) cat.push({ id: 'e1rm::' + n, label: '1RM · ' + n, color: '#8A93F0', puntos: pts, unidad: 'kg', grupo: '1RM estimado' });
   });
 
   /* --- Nutrición ---
@@ -191,22 +199,22 @@ function catalogoSeries(ctx){
     const G_NUT = 'Nutrición';
     const tendencia = serieNutEnRango(nut, 'tendenciaKg', ctx.desde, ctx.hasta);
     if (tendencia.length)
-      cat.push({ id: 'nut_tendencia', label: 'Peso tendencia', color: '#a8d020', puntos: tendencia,
+      cat.push({ id: 'nut_tendencia', label: 'Peso tendencia', color: '#a8ee19', puntos: tendencia,
                  unidad: 'kg', grupo: G_NUT,
                  umbrales: (nut.fase && nut.fase.pesoObjetivoKg >= NUT.pesoMinKg)
-                   ? [{ y: nut.fase.pesoObjetivoKg, label: `objetivo (${fmtNum(nut.fase.pesoObjetivoKg,1)} kg)`, color: '#94a1b0' }] : [] });
+                   ? [{ y: nut.fase.pesoObjetivoKg, label: `objetivo (${fmtNum(nut.fase.pesoObjetivoKg,1)} kg)`, color: '#8E948F' }] : [] });
 
     const pesajes = nut.pesajes.filter(p => enRango(p.fecha, ctx.desde, ctx.hasta))
       .map(p => ({ x: p.fecha, y: p.pesoKg }));
     if (pesajes.length)
-      cat.push({ id: 'nut_pesajes', label: 'Pesajes (crudos)', color: '#6fb3d9', puntos: pesajes, unidad: 'kg', grupo: G_NUT });
+      cat.push({ id: 'nut_pesajes', label: 'Pesajes (crudos)', color: '#7FB8E0', puntos: pesajes, unidad: 'kg', grupo: G_NUT });
 
     const ritmo = serieNutEnRango(nut, 'tasaPctSemana', ctx.desde, ctx.hasta);
     if (ritmo.length){
       const obj = nut.fase ? nut.fase.tasaObjetivoPctSemana : null;
       const umbrales = obj != null ? [
-        { y: obj + NUT.bandaMuertaPctSemana, label: 'banda muerta', color: '#4caf7d' },
-        { y: obj - NUT.bandaMuertaPctSemana, label: '', color: '#4caf7d' },
+        { y: obj + NUT.bandaMuertaPctSemana, label: 'banda muerta', color: '#a8ee19' },
+        { y: obj - NUT.bandaMuertaPctSemana, label: '', color: '#a8ee19' },
       ] : [];
       cat.push({ id: 'nut_ritmo', label: 'Ritmo de peso', color: '#e0985c', puntos: ritmo,
                  unidad: '%/sem', baseline: obj ?? undefined, umbrales, grupo: G_NUT });
@@ -216,19 +224,19 @@ function catalogoSeries(ctx){
       const g = nut.curvaGrasa.puntos.filter(p => enRango(p.fecha, ctx.desde, ctx.hasta))
         .map(p => ({ x: p.fecha, y: p.porcentajePct }));
       if (g.length)
-        cat.push({ id: 'nut_grasa', label: '% graso (curva teórica)', color: '#d06e9a', puntos: g,
+        cat.push({ id: 'nut_grasa', label: '% graso (curva teórica)', color: '#D678A6', puntos: g,
                    unidad: '%', grupo: G_NUT,
                    umbrales: nut.sueloPct != null
-                     ? [{ y: nut.sueloPct, label: `suelo fisiológico (${fmtNum(nut.sueloPct,0)} %)`, color: '#e05c5c' }] : [] });
+                     ? [{ y: nut.sueloPct, label: `suelo fisiológico (${fmtNum(nut.sueloPct,0)} %)`, color: '#F0872D' }] : [] });
       const magra = nut.curvaGrasa.puntos.filter(p => enRango(p.fecha, ctx.desde, ctx.hasta))
         .map(p => ({ x: p.fecha, y: p.pesoKg * (1 - p.porcentajePct / 100) }));
       if (magra.length)
-        cat.push({ id: 'nut_magra', label: 'Masa magra estimada', color: '#5cc9c0', puntos: magra, unidad: 'kg', grupo: G_NUT });
+        cat.push({ id: 'nut_magra', label: 'Masa magra estimada', color: '#5FC6BE', puntos: magra, unidad: 'kg', grupo: G_NUT });
     }
 
     const acum = acumuladoNut(nut).filter(p => enRango(p.x, ctx.desde, ctx.hasta));
     if (acum.length)
-      cat.push({ id: 'nut_acumulado', label: 'Ajuste acumulado del lazo', color: '#c792ea',
+      cat.push({ id: 'nut_acumulado', label: 'Ajuste acumulado del lazo', color: '#B08CE8',
                  puntos: acum.map(p => ({ x: p.x, y: p.y })), unidad: 'kcal/d', baseline: 0, grupo: G_NUT });
   }
 
@@ -286,7 +294,7 @@ function graficaDobleSerie(ctx){
    y si la dieta está recortando el entrenamiento.
    ================================================================ */
 
-const NUT_COLOR = { verde:'#4caf7d', ambar:'#e0a63c', rojo:'#e05c5c', neutro:'#94a1b0' };
+const NUT_COLOR = { verde:'#a8ee19', ambar:'#E0A92E', rojo:'#F0872D', neutro:'#8E948F' };
 
 /* Ritmo con signo explícito: el signo ES la información (baja o sube). */
 function fmtTasa(v, dec = 2){
@@ -321,11 +329,11 @@ function pistaBandasHtml(pista, { objetivo = null, real = null } = {}){
     const x = nutClamp((Math.abs(v) - min) / span, 0, 1) * 100;
     return `<span class="pista-marca ${cls}" style="left:${x.toFixed(2)}%" title="${esc(txt)}: ${fmtNum(Math.abs(v),2)} %/sem"></span>`;
   };
-  return `<div class="pista" title="verde = recomendado · ámbar = razonable · rojo = agresivo">
+  return `<div class="pista" title="lima = recomendado · ámbar = razonable · naranja = agresivo">
       ${segs}${marca(objetivo, 'obj', 'Objetivo')}${marca(real, 'real', 'Ritmo real')}
     </div>
     <div class="pista-pie muted"><span>${fmtNum(min,2)}</span><span>${fmtNum(max,2)} %/sem</span></div>
-    <div class="muted" style="font-size:11px">▲ objetivo · ▼ ritmo real · verde recomendado, ámbar razonable, rojo agresivo</div>`;
+    <div class="muted" style="font-size:11px">▲ objetivo · ▼ ritmo real · lima recomendado, ámbar razonable, naranja agresivo</div>`;
 }
 
 /* Barra de consumo del tope de ajuste acumulado (§6.1): cuando llega al 100 %
@@ -696,8 +704,8 @@ const Vistas = {
 
       const grafica = Charts.lineas({
         series: [
-          { nombre: 'Kg (mejor serie)', color: '#5aa9e6', puntos: hist.map(p => ({ x: p.fecha, y: p.kgR })) },
-          { nombre: 'e1RM estimado', color: '#4caf7d', puntos: hist.map(p => ({ x: p.fecha, y: p.e1rm })) },
+          { nombre: 'Kg (mejor serie)', color: '#6FA8DC', puntos: hist.map(p => ({ x: p.fecha, y: p.kgR })) },
+          { nombre: 'e1RM estimado', color: '#a8ee19', puntos: hist.map(p => ({ x: p.fecha, y: p.e1rm })) },
         ],
       });
 
@@ -854,7 +862,7 @@ const Vistas = {
       datos: readinessR.map(r => {
         const c = r.estadoDia || bandaEstado(r.estadoEntrenar);
         const z = zonaSenales(r);
-        return { x: r.fecha, y: r.estadoEntrenar, color: COLORES_SEM[c] || '#3a4552',
+        return { x: r.fecha, y: r.estadoEntrenar, color: COLORES_SEM[c] || '#4E5551',
                  tag: zonaTag(z), info: z ? `señales: ${z}` : 'sin señales' };
       }),
     });
@@ -862,7 +870,7 @@ const Vistas = {
     // --- VFC como en la app: noches + media 7 días + umbral de tendencia ---
     const noches = readinessR.filter(r => r.vfc != null && !r.vfcDescartada)
       .map(r => ({ x: r.fecha, y: r.vfc,
-                   c: (umbrales.baja != null && r.vfc < umbrales.baja) ? '#e0a63c' : '#5aa9e6' }));
+                   c: (umbrales.baja != null && r.vfc < umbrales.baja) ? '#E0A92E' : '#6FA8DC' }));
     const fcReposo = readinessR.filter(r => r.fcReposo != null && !r.vfcDescartada)
       .map(r => ({ x: r.fecha, y: r.fcReposo }));
     const bandaFc = FCReposo.banda(datos.readiness);
@@ -876,16 +884,16 @@ const Vistas = {
     let htmlVfc = '';
     if (perfil.vfcActiva || noches.length || fcReposo.length){
       const seriesVfc = [
-        { nombre: 'VFC nocturna', color: '#5aa9e6', puntos: noches, unidad: 'ms' },
-        { nombre: 'Media 7 días', color: '#4caf7d', puntos: media7, sinPuntos: true, grosor: 2.5, unidad: 'ms' },
-        { nombre: 'Umbral de tendencia', color: '#e0a63c', puntos: umbral7, dash: '6 4', sinPuntos: true, unidad: 'ms' },
+        { nombre: 'VFC nocturna', color: '#6FA8DC', puntos: noches, unidad: 'ms' },
+        { nombre: 'Media 7 días', color: '#a8ee19', puntos: media7, sinPuntos: true, grosor: 2.5, unidad: 'ms' },
+        { nombre: 'Umbral de tendencia', color: '#E0A92E', puntos: umbral7, dash: '6 4', sinPuntos: true, unidad: 'ms' },
       ];
       if (mostrarFcReposo && fcReposo.length){
-        seriesVfc.push({ nombre: 'FC en reposo', color: '#ff7a70', puntos: fcReposo,
+        seriesVfc.push({ nombre: 'FC en reposo', color: '#E8776B', puntos: fcReposo,
                          grosor: 2.5, eje: 'der', unidad: 'ppm' });
         if (bandaFc){
           seriesVfc.push({
-            nombre: `FC alta (${fmtNum(bandaFc.alta,1)} ppm)`, color: '#ff5252',
+            nombre: `FC alta (${fmtNum(bandaFc.alta,1)} ppm)`, color: '#F0872D',
             puntos: [
               { x: readinessR[0].fecha, y: bandaFc.alta },
               { x: readinessR[readinessR.length - 1].fecha, y: bandaFc.alta },
@@ -908,10 +916,9 @@ const Vistas = {
         </div>
         <div class="chart-caja">${grafica}</div>
         <div class="muted" style="font-size:12px">
-          Puntos: VFC nocturna (<span style="color:#e0a63c">amarillo</span> = por debajo del umbral${umbrales.baja != null ? `, ${fmtNum(umbrales.baja,1)}` : ''}).
-          Línea <span style="color:#4caf7d">verde</span>: media 7 días · línea discontinua <span style="color:#e0a63c">amarilla</span>: umbral.
-          ${mostrarFcReposo && fcReposo.length ? ' Línea <span style="color:#ff7a70">coral</span>: FC en reposo (ppm, eje derecho).' : ''}
-          ${mostrarFcReposo && bandaFc ? ` Línea discontinua <span style="color:#ff5252">roja</span>: FC alta (${fmtNum(bandaFc.alta,1)} ppm = mediana + MAD, ${bandaFc.noches} noches válidas).` : ''}
+          Cada punto es una noche${umbrales.baja != null ? `; en ámbar, las que caen por debajo del umbral (${fmtNum(umbrales.baja,1)} ms)` : ''}.
+          La media de 7 días es la que se lee; el umbral discontinuo marca dónde la VFC empieza a considerarse baja.
+          ${mostrarFcReposo && bandaFc ? ` FC alta = ${fmtNum(bandaFc.alta,1)} ppm (mediana + MAD sobre ${bandaFc.noches} noches válidas).` : ''}
           ${mostrarFcReposo && fcReposo.length && !bandaFc ? ` FC alta aún no disponible: requiere ≥14 noches válidas (${nochesFcValidas}/14).` : ''}
           ${media7.length ? '' : ' Aún no hay media de 7 días: requiere ≥7 noches válidas y ≥7 previas.'}
         </div>
@@ -950,13 +957,13 @@ const Vistas = {
       ${htmlCombinada}
       <div class="card" style="margin-bottom:14px"><h3>Estado para entrenar (0–100)</h3>
         <div class="chart-caja">${barras}</div>
-        <div class="muted" style="font-size:12px">0–39 rojo · 40–69 ámbar · 70–100 verde.
+        <div class="muted" style="font-size:12px">0–39 naranja · 40–69 ámbar · 70–100 lima.
           Letra sobre la barra = zona de las señales del día: G general · I tren inferior · S tren superior.</div>
       </div>
       ${htmlVfc}
       <div class="card"><h3>Detalle diario</h3>
         <div class="muted" style="font-size:12px;margin-bottom:8px">
-          Verde = perfecto, ámbar = atención, rojo = señal fuerte. En sueño y ánimo el 4 es lo mejor;
+          Lima = perfecto, ámbar = atención, naranja = señal fuerte. En sueño y ánimo el 4 es lo mejor;
           en agujetas, dolor y estrés lo mejor es el 1. Fatiga = días con señales en la ventana de 7 días.
         </div>
         <div style="overflow-x:auto"><table>
@@ -1073,22 +1080,22 @@ const Vistas = {
     // ---------- Gráfica de peso ----------
     const ptsTendencia = serieNutEnRango(nut, 'tendenciaKg', desde, hasta);
     const ptsPesaje = nut.pesajes.filter(p => enRango(p.fecha, desde, hasta))
-      .map(p => ({ x: p.fecha, y: p.pesoKg, c: p.enmascarado ? '#e0a63c' : '#6fb3d9' }));
-    const hayEnmascarado = ptsPesaje.some(p => p.c === '#e0a63c');
+      .map(p => ({ x: p.fecha, y: p.pesoKg, c: p.enmascarado ? '#E0A92E' : '#7FB8E0' }));
+    const hayEnmascarado = ptsPesaje.some(p => p.c === '#E0A92E');
     const graficaPeso = (ptsTendencia.length || ptsPesaje.length) ? `
       <div class="card" style="grid-column:1/-1"><h3>Peso y tendencia</h3>
         <div class="chart-caja">${Charts.lineas({
           series: [
-            { nombre: 'Pesajes', color: '#6fb3d9', puntos: ptsPesaje, soloPuntos: true, unidad: 'kg' },
-            { nombre: 'Tendencia', color: '#a8d020', puntos: ptsTendencia, sinPuntos: true, grosor: 2.6, unidad: 'kg' },
+            { nombre: 'Pesajes', color: '#7FB8E0', puntos: ptsPesaje, soloPuntos: true, unidad: 'kg' },
+            { nombre: 'Tendencia', color: '#a8ee19', puntos: ptsTendencia, sinPuntos: true, grosor: 2.6, unidad: 'kg' },
           ],
           lineaBase: (F && F.pesoObjetivoKg >= NUT.pesoMinKg)
-            ? { y: F.pesoObjetivoKg, label: `objetivo ${fmtNum(F.pesoObjetivoKg,1)} kg`, color: '#94a1b0' } : null,
+            ? { y: F.pesoObjetivoKg, label: `objetivo ${fmtNum(F.pesoObjetivoKg,1)} kg`, color: '#8E948F' } : null,
           h: 260,
         })}</div>
         <div class="muted" style="font-size:12px">
           Puntos: pesajes tal cual los introdujo el cliente. Línea: peso-tendencia del filtro, que es
-          lo que gobierna el lazo${hayEnmascarado ? ' · <span style="color:#e0a63c">ámbar</span> = pesaje en ventana de refeed o vuelta de pausa (cuenta, pero pesa menos en la pendiente)' : ''}.
+          lo que gobierna el lazo${hayEnmascarado ? ' · <span style="color:#E0A92E">ámbar</span> = pesaje en ventana de refeed o vuelta de pausa (cuenta, pero pesa menos en la pendiente)' : ''}.
         </div>
       </div>` : '';
 
@@ -1099,12 +1106,12 @@ const Vistas = {
       <div class="card" style="grid-column:1/-1"><h3>Ritmo semanal frente al objetivo</h3>
         <div class="chart-caja">${Charts.lineas({
           series: [{ nombre: 'Ritmo real', color: '#e0985c', puntos: ptsRitmo, sinPuntos: true, grosor: 2.4, unidad: '%/sem' }],
-          banda: obj != null ? { min: obj - NUT.bandaMuertaPctSemana, max: obj + NUT.bandaMuertaPctSemana } : null,
-          lineaBase: obj != null ? { y: obj, label: `objetivo ${fmtTasa(obj)}`, color: '#94a1b0' } : null,
+          banda: obj != null ? { min: obj - NUT.bandaMuertaPctSemana, max: obj + NUT.bandaMuertaPctSemana, label: 'banda muerta' } : null,
+          lineaBase: obj != null ? { y: obj, label: `objetivo ${fmtTasa(obj)}`, color: '#8E948F' } : null,
           h: 220,
         })}</div>
         <div class="muted" style="font-size:12px">
-          Franja verde: banda muerta de ±${fmtNum(NUT.bandaMuertaPctSemana,1)} pp alrededor del objetivo.
+          Franja lima: banda muerta de ±${fmtNum(NUT.bandaMuertaPctSemana,1)} pp alrededor del objetivo.
           Dentro de ella la app emite «mantener»; fuera, corrige las calorías el día de evaluación semanal.
           Las primeras semanas de fase el ritmo es ruido de agua y glucógeno: por eso existe el asentamiento.
         </div>
@@ -1176,11 +1183,11 @@ const Vistas = {
     const grafica = (ptsCurva.length || ptsMed.length) ? `
       <div class="chart-caja">${Charts.lineas({
         series: [
-          { nombre: 'Curva teórica', color: '#d06e9a', puntos: ptsCurva, sinPuntos: true, grosor: 2.2, unidad: '%' },
-          { nombre: 'Estimaciones', color: '#e8ecf1', puntos: ptsMed, soloPuntos: true, unidad: '%' },
+          { nombre: 'Curva teórica', color: '#D678A6', puntos: ptsCurva, sinPuntos: true, grosor: 2.2, unidad: '%' },
+          { nombre: 'Estimaciones', color: '#F4F6F4', puntos: ptsMed, soloPuntos: true, unidad: '%' },
         ],
         lineaBase: nut.sueloPct != null
-          ? { y: nut.sueloPct, label: `suelo fisiológico ${fmtNum(nut.sueloPct,0)} %`, color: '#e05c5c' } : null,
+          ? { y: nut.sueloPct, label: `suelo fisiológico ${fmtNum(nut.sueloPct,0)} %`, color: '#F0872D' } : null,
         h: 220,
       })}</div>
       <div class="muted" style="font-size:12px">
