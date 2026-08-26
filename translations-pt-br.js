@@ -174,5 +174,19 @@ const portugueseTranslations = {
   "Privacidad y aviso legal": "Privacidade e aviso legal",
   "Manual (PDF)": "Manual (PDF)",
   "Web del autor": "Site do autor",
-  "Descargar gratis en Google Play": "Baixar grátis no Google Play"
+  "Descargar gratis en Google Play": "Baixar grátis no Google Play",
+  "Decisión de hoy · Pierna 2": "Decisão de hoje · Perna 2",
+  "Serie 2/12": "Série 2/12",
+  "Mantenemos la carga y seguimos intentando lograr el objetivo.": "Mantemos a carga e seguimos tentando alcançar o objetivo.",
+  "iOS · pronto": "iOS · em breve",
+  "16 sesiones PRO incluidas": "16 sessões PRO incluídas",
+  "16 sesiones PRO": "16 sessões PRO",
+  "Sesión en curso · serie a serie": "Sessão em andamento · série a série",
+  "Rendimiento": "Desempenho",
+  "De cada sesión frente a tu propio histórico, no frente a una tabla.": "De cada sessão em relação ao seu próprio histórico, não a uma tabela.",
+  "Nivel": "Nível",
+  "De fuerza por ejercicio según tu peso corporal, sexo y edad.": "De força por exercício conforme seu peso corporal, sexo e idade.",
+  "Estado · PRO": "Estado · PRO",
+  "Para entrenadores": "Para treinadores",
+  "App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "App web para acompanhar seus atletas pelo computador, a partir do arquivo que eles exportam do app."
 };

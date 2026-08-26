@@ -20,7 +20,37 @@ https://play.google.com/store/apps/details?id=es.rubensoro.truelift&pcampaignid=
 ```
 
 La versión de iOS estará disponible próximamente. Cuando se publique su ficha, sustituye
-el estado «iOS disponible pronto» por el enlace exacto del App Store en `index.html`.
+los dos `<span class="button is-static">iOS · pronto</span>` de `index.html` (hero y cierre)
+por enlaces al App Store.
+
+## Diseño
+
+`styles.css` define el sistema: titulares en **Archivo** 900 y etiquetas, cifras y datos en
+**JetBrains Mono** con tracking amplio, que es el rasgo que amarra la web a la app. El lima
+`#a8ee19` se reserva para acción y afirmación; el oro `#e2ba4a` es exclusivo de PRO y no
+aparece en ningún otro contexto, de modo que el modelo de negocio se lee de un vistazo.
+
+Las dos fuentes van autoalojadas en `fonts/` (variables, subconjuntos latin y latin-ext, SIL
+Open Font License). No se cargan desde Google Fonts a propósito: la política de privacidad
+declara que el sitio es estático y sin terceros, y traer las fuentes de fuera enviaría la IP
+de quien visita la web a un servicio que no está descrito en esa política.
+
+## Precios
+
+**En la web no se publican precios.** La sección de planes indica solo las modalidades de pago
+(mensual, anual y pago único) y la comparativa de funciones; las cifras viven únicamente en la
+ficha de Google Play y en la propia app.
+
+## Idiomas
+
+El español de `index.html` **es la clave de traducción**: `script.js` recorre los nodos de texto y
+los atributos `aria-label`, `alt` y `data-label`, normaliza los espacios y busca esa frase exacta en
+`englishTranslations` (dentro de `script.js`) o en `portugueseTranslations` (en
+`translations-pt-br.js`). Si no la encuentra, deja el español.
+
+Por eso, **al retocar cualquier frase en español hay que actualizar su clave en los dos ficheros de
+traducción**, o esa frase se quedará en español en EN y PT-BR sin dar ningún error. Para comprobar
+qué falta, extrae los textos de `index.html` y busca cada uno como `"<frase>"` en los dos ficheros.
 
 ## Capturas de pantalla
 

@@ -10,7 +10,7 @@
       content="App de fuerza e hipertrofia que decide cuánto peso cargar en cada serie y te explica por qué. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android."
     >
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    <meta name="theme-color" content="#080b08">
+    <meta name="theme-color" content="#050705">
     <link rel="canonical" href="https://truelift.es/">
     <link rel="icon" type="image/png" href="Icono%20PRO.png">
     <meta property="og:title" content="TrueLift | El entrenador que planifica tu progresión">
@@ -77,20 +77,17 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20260825-1">
+    <link rel="preload" as="font" type="font/woff2" href="fonts/archivo-latin.woff2" crossorigin>
+    <link rel="preload" as="font" type="font/woff2" href="fonts/jetbrainsmono-latin.woff2" crossorigin>
+    <link rel="stylesheet" href="styles.css?v=20260826-1">
   </head>
   <body>
-    <header class="site-header" data-header>
+    <header class="site-header">
       <a class="brand" href="#inicio" aria-label="TrueLift inicio">
-        <img src="Icono%20PRO.png" alt="" width="36" height="36">
-        <span>TrueLift</span>
+        <img src="Icono%20PRO.png" alt="" width="34" height="34">
+        <span class="wordmark">TRUE<span>LIFT</span></span>
       </a>
-      <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <nav class="site-nav" data-nav>
+      <nav class="site-nav" aria-label="Secciones">
         <a href="#como-funciona">Cómo funciona</a>
         <a href="#progreso">Progreso</a>
         <a href="#planes">Planes</a>
@@ -102,7 +99,7 @@
         <div class="language-switch" role="group" aria-label="Seleccionar idioma">
           <button type="button" data-language="es" aria-pressed="true">ES</button>
           <button type="button" data-language="en" aria-pressed="false">EN</button>
-          <button type="button" data-language="pt-BR" aria-pressed="false">PT-BR</button>
+          <button type="button" data-language="pt-BR" aria-pressed="false">PT</button>
         </div>
         <a class="header-cta" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener">
           Descargar gratis
@@ -111,81 +108,106 @@
     </header>
 
     <main>
-      <section class="hero" id="inicio" aria-labelledby="hero-title" data-hero>
-        <div class="hero-media" aria-hidden="true"></div>
-        <div class="hero-overlay"></div>
-        <div class="hero-inner">
-          <div class="hero-content" data-reveal>
+      <section class="hero" id="inicio" aria-labelledby="hero-title">
+        <div class="section-inner hero-inner">
+          <div class="hero-copy" data-reveal>
             <p class="eyebrow">App de fuerza e hipertrofia · Android</p>
             <h1 id="hero-title">Un entrenador en tu bolsillo.</h1>
             <p class="hero-lede">
               Las apps de registro guardan lo que haces. TrueLift decide lo que haces después:
               cuánto peso cargar en cada serie, cuándo mantener y cuándo frenar. Y te explica el porqué.
             </p>
-            <div class="store-badges">
-              <a class="store-badge" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener" aria-label="Disponible en Google Play">
-                <span class="store-badge-label"><span>Disponible en</span><strong>Google Play</strong></span>
-              </a>
-              <span class="store-badge ios is-coming-soon" role="status" aria-label="iOS disponible pronto">
-                <span class="store-badge-label"><span>Disponible pronto en</span><strong>App Store</strong></span>
-              </span>
-              <a class="store-badge coach-badge" href="coach/" aria-label="Abrir TrueLift Coach">
-                <span class="store-badge-label"><span>Abrir aplicación web</span><strong>TrueLift Coach</strong></span>
-              </a>
+
+            <div class="decision-card">
+              <div class="decision-head">
+                <span>Decisión de hoy · Pierna 2</span>
+                <span class="set">Serie 2/12</span>
+              </div>
+              <div class="decision-body">
+                <div class="decision-metric">
+                  <div class="key">Carga</div>
+                  <div class="value">140<span>kg</span></div>
+                </div>
+                <div class="decision-metric is-target">
+                  <div class="key">Objetivo</div>
+                  <div class="value">6-8<span>RIR 2</span></div>
+                </div>
+                <p class="decision-verdict">Mantenemos la carga y seguimos intentando lograr el objetivo.</p>
+              </div>
             </div>
-            <a class="coach-download hero-coach-download" href="Ejemplo%20TrueLift%20Coach.json" download="Ejemplo TrueLift Coach.json">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-              <span>Archivo de ejemplo para probarla</span>
+
+            <div class="hero-actions">
+              <a class="button primary" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener">
+                Descargar en Google Play
+              </a>
+              <span class="button is-static">iOS · pronto</span>
+              <a class="link-mono" href="#coach">TrueLift Coach <span aria-hidden="true">↗</span></a>
+            </div>
+            <a class="link-mono hero-coach-file" href="Ejemplo%20TrueLift%20Coach.json" download="Ejemplo TrueLift Coach.json">
+              <span aria-hidden="true">↓</span> Archivo de ejemplo para probarla
             </a>
-            <ul class="trust-list" aria-label="Resumen de TrueLift">
+
+            <ul class="trust-line" aria-label="Resumen de TrueLift">
               <li>Gratis para siempre</li>
               <li>Sin anuncios</li>
               <li>Sin cuenta ni email</li>
-              <li>16 sesiones de entrenamiento con PRO incluidas</li>
+              <li>16 sesiones PRO incluidas</li>
             </ul>
           </div>
+
           <div class="hero-phone" data-reveal>
+            <span class="hero-badge">16 sesiones PRO</span>
             <div class="device">
               <img src="capturas/es/sesion.jpg" data-shot="sesion" alt="Sesión en curso: objetivo de repeticiones y RIR, carga sugerida, cronómetro de descanso y explicación de por qué se mantiene la carga" width="800" height="1715" fetchpriority="high" decoding="async">
             </div>
+            <p class="device-caption">Sesión en curso · serie a serie</p>
           </div>
         </div>
       </section>
 
-      <section class="section section-dark" id="por-que" aria-labelledby="why-title">
+      <section class="section is-band" id="por-que" aria-labelledby="why-title">
         <div class="section-inner" data-reveal>
-          <div class="section-heading compact">
-            <p class="eyebrow">Por qué TrueLift</p>
+          <div class="section-head">
+            <span class="num">01</span>
+            <span class="label">Por qué TrueLift</span>
+            <span class="rule" aria-hidden="true"></span>
+          </div>
+          <div class="heading-split">
             <h2 id="why-title">Deja de preguntarte si hoy toca subir peso.</h2>
             <p>
               Cada vez que abres una sesión, TrueLift ya ha comparado tu última sesión con tu histórico
               y ha tomado la decisión por ti.
             </p>
           </div>
-          <div class="feature-grid">
-            <article class="feature-card">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
-              </span>
+
+          <div class="cards">
+            <article class="card">
+              <div class="card-head">
+                <span class="num">01</span>
+                <span class="glyph" aria-hidden="true">↑</span>
+              </div>
               <h3>Si cumples, subes</h3>
               <p>Cuando completas las repeticiones con el RIR previsto, calcula una subida proporcionada al ejercicio y cargable con tus discos.</p>
             </article>
-            <article class="feature-card">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14"/><path d="M5 15h14"/></svg>
-              </span>
+            <article class="card">
+              <div class="card-head">
+                <span class="num">02</span>
+                <span class="glyph" aria-hidden="true">=</span>
+              </div>
               <h3>Si no llegas, consolidas</h3>
               <p>Si faltan repeticiones o el esfuerzo se dispara, mantiene la carga para que consolides antes de volver a subir.</p>
             </article>
-            <article class="feature-card is-pro">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
-              </span>
-              <h3>Si acumulas fatiga, frena <span class="tag-pro">PRO</span></h3>
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">03 <span class="tag-pro">PRO</span></span>
+                <span class="glyph" aria-hidden="true">↓</span>
+              </div>
+              <h3>Si acumulas fatiga, frena</h3>
               <p>Tu sueño, estrés, molestias y VFC también cuentan: puede frenar subidas, bajar intensidad o proponer una descarga.</p>
             </article>
           </div>
-          <p class="section-note">
+
+          <p class="note-lime">
             Sin IA improvisando: un algoritmo estable y explicable. Mismos datos, misma decisión, y siempre con el motivo a la vista.
           </p>
         </div>
@@ -193,32 +215,44 @@
 
       <section class="section" id="como-funciona" aria-labelledby="how-title">
         <div class="section-inner" data-reveal>
-          <div class="section-heading compact">
-            <p class="eyebrow">Cómo funciona</p>
-            <h2 id="how-title">Abre la app, entrena, guarda. El resto lo hace TrueLift.</h2>
+          <div class="section-head">
+            <span class="num">02</span>
+            <span class="label">Cómo funciona</span>
+            <span class="rule" aria-hidden="true"></span>
           </div>
-          <div class="steps-grid">
-            <article class="step-card">
+          <h2 id="how-title">Abre la app, entrena, guarda. El resto lo hace TrueLift.</h2>
+
+          <div class="steps">
+            <article class="step">
               <div class="device">
                 <img src="capturas/es/registro.jpg" data-shot="registro" alt="Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado" width="800" height="1715" loading="lazy" decoding="async">
               </div>
-              <span class="step-number">1</span>
+              <div class="step-mark">
+                <span class="num">1</span>
+                <span class="rule" aria-hidden="true"></span>
+              </div>
               <h3>Abre la sesión que toca</h3>
               <p>Rutina lista desde el primer día según tus días de entreno y tu nivel. Con PRO, un estado diario de 0 a 100 te dice cómo llegas.</p>
             </article>
-            <article class="step-card">
+            <article class="step">
               <div class="device">
                 <img src="capturas/es/sesion.jpg" data-shot="sesion" alt="Registro serie a serie con la carga sugerida, el objetivo de repeticiones y RIR y el cronómetro de descanso" width="800" height="1715" loading="lazy" decoding="async">
               </div>
-              <span class="step-number">2</span>
+              <div class="step-mark">
+                <span class="num">2</span>
+                <span class="rule" aria-hidden="true"></span>
+              </div>
               <h3>Registra serie a serie</h3>
               <p>Carga sugerida, objetivo de repeticiones y RIR, cronómetro de descanso. Tú solo confirmas lo que has hecho.</p>
             </article>
-            <article class="step-card">
+            <article class="step">
               <div class="device">
                 <img src="capturas/es/informe.jpg" data-shot="informe" alt="Sesión guardada con el rendimiento frente a tu base, tonelaje, series, RPE y duración" width="800" height="1715" loading="lazy" decoding="async">
               </div>
-              <span class="step-number">3</span>
+              <div class="step-mark">
+                <span class="num">3</span>
+                <span class="rule" aria-hidden="true"></span>
+              </div>
               <h3>Guarda y recibe el veredicto</h3>
               <p>Rendimiento de la sesión frente a tu histórico y la carga ya programada para la próxima.</p>
             </article>
@@ -226,41 +260,65 @@
         </div>
       </section>
 
-      <section class="section section-dark" id="progreso" aria-labelledby="progress-title">
-        <div class="section-inner split" data-reveal>
-          <div class="copy-block">
-            <p class="eyebrow">Progreso</p>
-            <h2 id="progress-title">Mide lo que importa: si de verdad estás progresando.</h2>
-            <p>
-              Nada de gráficas de relleno. Cada dato responde a una pregunta concreta sobre tu entrenamiento.
-            </p>
-            <ul class="check-list">
-              <li>Rendimiento de cada sesión frente a tu propio histórico, no frente a una tabla.</li>
-              <li>Nivel de fuerza por ejercicio según tu peso corporal, sexo y edad.</li>
-              <li>1RM estimado, tonelaje, marcas personales e informe mensual para compartir.</li>
-              <li>Estado para entrenar y VFC día a día. <span class="tag-pro">PRO</span></li>
-            </ul>
+      <section class="section is-band" id="progreso" aria-labelledby="progress-title">
+        <div class="section-inner" data-reveal>
+          <div class="section-head">
+            <span class="num">03</span>
+            <span class="label">Progreso</span>
+            <span class="rule" aria-hidden="true"></span>
           </div>
-          <div class="phone-stage multi" aria-label="Capturas de la pestaña Progreso">
-            <div class="device">
-              <img src="capturas/es/valoracion.jpg" data-shot="valoracion" alt="Pestaña Progreso con el estado para entrenar, la valoración general y el rendimiento de sesión" width="800" height="1715" loading="lazy" decoding="async">
+          <div class="split">
+            <div class="split-copy">
+              <h2 id="progress-title">Mide lo que importa: si de verdad estás progresando.</h2>
+              <p class="lede">
+                Nada de gráficas de relleno. Cada dato responde a una pregunta concreta sobre tu entrenamiento.
+              </p>
+              <ul class="data-list">
+                <li>
+                  <span class="key">Rendimiento</span>
+                  <span>De cada sesión frente a tu propio histórico, no frente a una tabla.</span>
+                </li>
+                <li>
+                  <span class="key">Nivel</span>
+                  <span>De fuerza por ejercicio según tu peso corporal, sexo y edad.</span>
+                </li>
+                <li>
+                  <span class="key">Marcas</span>
+                  <span>1RM estimado, tonelaje, marcas personales e informe mensual para compartir.</span>
+                </li>
+                <li>
+                  <span class="key is-pro">Estado · PRO</span>
+                  <span>Estado para entrenar y VFC día a día.</span>
+                </li>
+              </ul>
             </div>
-            <div class="device">
-              <img src="capturas/es/nivel.jpg" data-shot="nivel" alt="Nivel de fuerza global y por ejercicio, con el progreso hacia el siguiente nivel" width="800" height="1715" loading="lazy" decoding="async">
+            <div class="phone-duo" aria-label="Capturas de la pestaña Progreso">
+              <div class="device">
+                <img src="capturas/es/valoracion.jpg" data-shot="valoracion" alt="Pestaña Progreso con el estado para entrenar, la valoración general y el rendimiento de sesión" width="800" height="1715" loading="lazy" decoding="async">
+              </div>
+              <div class="device">
+                <img src="capturas/es/nivel.jpg" data-shot="nivel" alt="Nivel de fuerza global y por ejercicio, con el progreso hacia el siguiente nivel" width="800" height="1715" loading="lazy" decoding="async">
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="section compare-section" id="planes" aria-labelledby="plans-title">
+      <section class="section" id="planes" aria-labelledby="plans-title">
         <div class="section-inner" data-reveal>
-          <div class="section-heading compact">
-            <p class="eyebrow">Gratis vs PRO</p>
-            <h2 id="plans-title">Empieza gratis. Pasa a PRO si quieres más control.</h2>
+          <div class="section-head">
+            <span class="num">04</span>
+            <span class="label">Gratis vs PRO</span>
+            <span class="rule" aria-hidden="true"></span>
           </div>
-          <div class="plan-cards">
-            <article class="plan-card">
-              <h3>Gratis <span>para siempre</span></h3>
+          <h2 id="plans-title">Empieza gratis. Pasa a PRO si quieres más control.</h2>
+
+          <div class="plans">
+            <article class="plan">
+              <div class="plan-head">
+                <h3>Gratis</h3>
+                <span>para siempre</span>
+              </div>
               <p class="plan-tagline">Todo lo necesario para entrenar en serio.</p>
               <ul class="check-list">
                 <li>Rutina prefijada y progresión automática</li>
@@ -271,8 +329,13 @@
               </ul>
               <a class="button secondary" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener">Descargar en Google Play</a>
             </article>
-            <article class="plan-card is-pro">
-              <h3>PRO <span>mensual · anual · pago único</span></h3>
+
+            <!-- Los precios no se publican en la web: aquí solo van las modalidades de pago. -->
+            <article class="plan is-pro">
+              <div class="plan-head">
+                <h3>PRO</h3>
+                <span>mensual · anual · pago único</span>
+              </div>
               <p class="plan-tagline">Todo lo de Gratis, más:</p>
               <ul class="check-list gold">
                 <li>Rutina totalmente configurable y rutinas descargables</li>
@@ -281,19 +344,15 @@
                 <li>Capa de nutrición: temporada por bloques y ajuste semanal</li>
                 <li>Crear ejercicios e importar tu rutina desde Excel</li>
               </ul>
-              <!-- TODO: añadir los precios cuando estén decididos -->
-              <div class="plan-prices" aria-label="Modalidades de pago de PRO">
-                <div><strong>Mensual</strong><span>sin permanencia</span></div>
-                <div><strong>Anual</strong><span>sin permanencia</span></div>
-                <div class="is-featured"><strong>Pago único</strong><span>para siempre</span></div>
-              </div>
               <a class="button primary" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener">Probar PRO gratis durante 16 sesiones</a>
             </article>
           </div>
+
           <p class="trial-note">
             Al instalar tienes PRO completo durante tus primeras 16 sesiones de entrenamiento. Sin email, sin tarjeta, sin cargos automáticos.
             Si no eliges plan, sigues en la versión gratuita con tu historial intacto.
           </p>
+
           <details class="compare-details">
             <summary>Ver la comparativa completa, función por función</summary>
             <div class="compare-table-wrap">
@@ -308,83 +367,83 @@
                 <tbody>
                   <tr>
                     <th scope="row">Rutina prefijada y progresión automática</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Registrar sesiones y cardio</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Calculadora de discos, calentamiento y cronómetro</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Volumen y frecuencia semanal</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Progreso, marcas personales y rendimiento</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Compartir entrenamiento e informe mensual</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Copias de seguridad</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Cambiar un ejercicio por otro</th>
-                    <td data-label="Gratis"><span class="yes" aria-label="Incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Configurar series, RIR, reps y descanso</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Cambiar el patrón de un ejercicio y renombrar sesiones</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Crear ejercicios e importar rutina desde Excel</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Rutinas descargables: express, especialización, peso libre…</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Autorregulación por sueño, estrés, molestias y VFC</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Progresión ajustada a déficit, mantenimiento o superávit</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Descarga guiada y descarga automática por fatiga</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
                     <th scope="row">Plan de nutrición: temporada y ajuste semanal</th>
-                    <td data-label="Gratis"><span class="no" aria-label="No incluido"></span></td>
-                    <td data-label="PRO"><span class="yes" aria-label="Incluido"></span></td>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                 </tbody>
               </table>
@@ -393,53 +452,65 @@
         </div>
       </section>
 
-      <section class="section section-dark" id="nutricion" aria-labelledby="nutrition-title">
-        <div class="section-inner split reverse" data-reveal>
-          <div class="phone-stage" aria-label="Captura de la pestaña Nutrición">
-            <div class="device">
-              <img src="capturas/es/nutricion.jpg" data-shot="nutricion" alt="Pestaña Nutrición con el peso-tendencia, el estado de la fase de déficit y la temporada por bloques" width="800" height="1715" loading="lazy" decoding="async">
+      <section class="section is-band" id="nutricion" aria-labelledby="nutrition-title">
+        <div class="section-inner" data-reveal>
+          <div class="section-head is-pro">
+            <span class="num">05</span>
+            <span class="label">Capa de nutrición · opcional</span>
+            <span class="tag-pro">PRO</span>
+            <span class="rule" aria-hidden="true"></span>
+          </div>
+          <div class="split">
+            <div class="phone-single" aria-label="Captura de la pestaña Nutrición">
+              <div class="device is-pro">
+                <img src="capturas/es/nutricion.jpg" data-shot="nutricion" alt="Pestaña Nutrición con el peso-tendencia, el estado de la fase de déficit y la temporada por bloques" width="800" height="1715" loading="lazy" decoding="async">
+              </div>
+            </div>
+            <div class="split-copy">
+              <h2 id="nutrition-title">Planifica tu temporada. Pésate. Sin contar calorías.</h2>
+              <p class="lede">
+                Defines tus bloques de volumen, mantenimiento y definición. Cada día anotas solo tu peso.
+                Una vez por semana, la app compara tu ritmo real con el previsto y, si hace falta,
+                te propone el ajuste en gramos de tus propios alimentos.
+              </p>
+              <ul class="check-list gold is-loose">
+                <li>Trabaja con tu peso-tendencia, no con el número de un día suelto.</li>
+                <li>Un semáforo te avisa si el ritmo elegido es sensato para tu punto de partida.</li>
+                <li>La fase de dieta gobierna la progresión: entrenamiento y nutrición van de la mano.</li>
+              </ul>
             </div>
           </div>
-          <div class="copy-block">
-            <p class="eyebrow"><span class="tag-pro">PRO</span> Capa de nutrición · opcional</p>
-            <h2 id="nutrition-title">Planifica tu temporada. Pésate. Sin contar calorías.</h2>
-            <p>
-              Defines tus bloques de volumen, mantenimiento y definición. Cada día anotas solo tu peso.
-              Una vez por semana, la app compara tu ritmo real con el previsto y, si hace falta,
-              te propone el ajuste en gramos de tus propios alimentos.
-            </p>
-            <ul class="check-list gold">
-              <li>Trabaja con tu peso-tendencia, no con el número de un día suelto.</li>
-              <li>Un semáforo te avisa si el ritmo elegido es sensato para tu punto de partida.</li>
-              <li>La fase de dieta gobierna la progresión: entrenamiento y nutrición van de la mano.</li>
-            </ul>
-          </div>
         </div>
       </section>
 
-      <section class="section-band privacy-band" id="privacidad" aria-label="Privacidad y sin publicidad">
-        <div class="section-inner privacy-strip" data-reveal>
-          <div>
-            <h3>Cero publicidad</h3>
-            <p>Ni banners, ni vídeos, ni rastreadores. Nada interrumpe tu entrenamiento.</p>
-          </div>
-          <div>
-            <h3>Sin cuenta ni email</h3>
-            <p>Instala y entrena. No pedimos tu nombre, tu email ni nada de ti.</p>
-          </div>
-          <div>
-            <h3>Tus datos, en tu móvil</h3>
-            <p>Tu rutina y tu historial se procesan en tu dispositivo y el desarrollador no puede consultarlos.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="section gallery-section" id="capturas" aria-labelledby="screens-title">
+      <section class="section privacy-band" id="privacidad" aria-label="Privacidad y sin publicidad">
         <div class="section-inner" data-reveal>
-          <div class="section-heading compact">
-            <p class="eyebrow">Capturas</p>
-            <h2 id="screens-title">Así se ve TrueLift.</h2>
+          <div class="privacy-strip">
+            <div>
+              <h3>Cero publicidad</h3>
+              <p>Ni banners, ni vídeos, ni rastreadores. Nada interrumpe tu entrenamiento.</p>
+            </div>
+            <div>
+              <h3>Sin cuenta ni email</h3>
+              <p>Instala y entrena. No pedimos tu nombre, tu email ni nada de ti.</p>
+            </div>
+            <div>
+              <h3>Tus datos, en tu móvil</h3>
+              <p>Tu rutina y tu historial se procesan en tu dispositivo y el desarrollador no puede consultarlos.</p>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section class="section is-band" id="capturas" aria-labelledby="screens-title">
+        <div class="section-inner" data-reveal>
+          <div class="section-head">
+            <span class="num">06</span>
+            <span class="label">Capturas</span>
+            <span class="rule" aria-hidden="true"></span>
+            <span class="hint" aria-hidden="true">Desliza para ver más →</span>
+          </div>
+          <h2 id="screens-title">Así se ve TrueLift.</h2>
           <div class="shots-strip" data-shots>
             <figure>
               <div class="device"><img src="capturas/es/registro.jpg" data-shot="registro" alt="Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado" width="800" height="1715" loading="lazy" decoding="async"></div>
@@ -486,114 +557,116 @@
               <figcaption>Ajustes</figcaption>
             </figure>
           </div>
-          <p class="strip-hint" aria-hidden="true">Desliza para ver más →</p>
         </div>
       </section>
 
-      <section class="section faq-section" id="faq" aria-labelledby="faq-title">
-        <div class="section-inner faq-layout" data-reveal>
-          <div class="section-heading left">
-            <p class="eyebrow">Preguntas frecuentes</p>
-            <h2 id="faq-title">Lo que conviene saber antes de instalar.</h2>
+      <section class="section" id="faq" aria-labelledby="faq-title">
+        <div class="section-inner" data-reveal>
+          <div class="section-head">
+            <span class="num">07</span>
+            <span class="label">Preguntas frecuentes</span>
+            <span class="rule" aria-hidden="true"></span>
           </div>
-          <div class="faq-list">
-            <details>
-              <summary>¿Qué incluye la versión gratuita?</summary>
-              <p>
-                Rutina prefijada según tus días de entreno, cambio de ejercicios, registro de sesiones y cardio,
-                progresión automática, volumen semanal, progreso, marcas personales, informe mensual y copias de seguridad.
-                No es una demo: puedes entrenar con ella para siempre.
-              </p>
-            </details>
-            <details>
-              <summary>¿Qué pasa cuando completas las 16 sesiones de entrenamiento con PRO?</summary>
-              <p>
-                Ningún cargo: la prueba no pide tarjeta. Al terminar, la app pasa sola a la versión gratuita y eso implica:
-              </p>
-              <ul>
-                <li>Las funciones PRO que hubieras activado (autorregulación, VFC, fase de dieta, descarga guiada, nutrición…) quedan desactivadas.</li>
-                <li>Si personalizaste o importaste tu rutina, vuelves a la rutina estándar de la versión gratuita. Se conservan los cambios de ejercicio que la versión gratuita permite.</li>
-                <li>Tu historial de entrenamiento no se pierde y la progresión automática sigue funcionando.</li>
-              </ul>
-              <p>
-                La rutina personalizada no se borra: queda guardada y reaparece tal y como la dejaste si más adelante pasas a PRO.
-              </p>
-            </details>
-            <details>
-              <summary>¿Cómo se paga TrueLift PRO?</summary>
-              <p>
-                Como prefieras: suscripción mensual, suscripción anual o un pago único que desbloquea PRO
-                para siempre. Las suscripciones no tienen permanencia. La compra queda asociada a tu cuenta
-                de Google o Apple y puedes restaurarla si cambias de dispositivo.
-              </p>
-            </details>
-            <details>
-              <summary>¿Tiene publicidad o necesito crear una cuenta?</summary>
-              <p>
-                No y no. TrueLift no muestra publicidad y no requiere registro. Tu historial se procesa
-                en tu móvil y el desarrollador no puede consultarlo; los servicios de compra y descarga
-                tratan solo los datos descritos en la política de privacidad.
-              </p>
-            </details>
-            <details>
-              <summary>¿Necesito medir la VFC para usar la autorregulación?</summary>
-              <p>
-                No. La VFC (variabilidad de la frecuencia cardíaca) es una señal opcional que dan relojes y
-                bandas de pulso y que suele avisar de la fatiga antes que el rendimiento. Si la mides, la app
-                la integra con el resto de señales; si no, la autorregulación funciona con tu descanso,
-                tu estrés, tus molestias y tu rendimiento reciente.
-              </p>
-            </details>
-            <details>
-              <summary>¿Sirve para hipertrofia o solo para fuerza?</summary>
-              <p>
-                Las rutinas de la versión gratuita están orientadas a hipertrofia. En PRO puedes configurar
-                series, repeticiones, RIR y descansos para priorizar fuerza si ese es tu objetivo.
-              </p>
-            </details>
-            <details>
-              <summary>¿Puedo usarla si entreno con mancuernas o máquinas?</summary>
-              <p>
-                Sí. Indicas el material que tienes y TrueLift propone cargas que realmente puedas montar
-                con tus discos, microcargas y mancuernas.
-              </p>
-            </details>
-            <details>
-              <summary>¿Dónde puedo consultar el manual de la app?</summary>
-              <p>
-                Puedes <a href="Manual_TrueLift.pdf" download data-manual-download>descargar el manual de TrueLift en PDF</a>
-                con la explicación de todas las pantallas y funciones, gratuitas y PRO.
-              </p>
-            </details>
+          <div class="faq-layout">
+            <h2 id="faq-title">Lo que conviene saber antes de instalar.</h2>
+            <div class="faq-list">
+              <details>
+                <summary>¿Qué incluye la versión gratuita?</summary>
+                <p>
+                  Rutina prefijada según tus días de entreno, cambio de ejercicios, registro de sesiones y cardio,
+                  progresión automática, volumen semanal, progreso, marcas personales, informe mensual y copias de seguridad.
+                  No es una demo: puedes entrenar con ella para siempre.
+                </p>
+              </details>
+              <details>
+                <summary>¿Qué pasa cuando completas las 16 sesiones de entrenamiento con PRO?</summary>
+                <p>
+                  Ningún cargo: la prueba no pide tarjeta. Al terminar, la app pasa sola a la versión gratuita y eso implica:
+                </p>
+                <ul>
+                  <li>Las funciones PRO que hubieras activado (autorregulación, VFC, fase de dieta, descarga guiada, nutrición…) quedan desactivadas.</li>
+                  <li>Si personalizaste o importaste tu rutina, vuelves a la rutina estándar de la versión gratuita. Se conservan los cambios de ejercicio que la versión gratuita permite.</li>
+                  <li>Tu historial de entrenamiento no se pierde y la progresión automática sigue funcionando.</li>
+                </ul>
+                <p>
+                  La rutina personalizada no se borra: queda guardada y reaparece tal y como la dejaste si más adelante pasas a PRO.
+                </p>
+              </details>
+              <details>
+                <summary>¿Cómo se paga TrueLift PRO?</summary>
+                <p>
+                  Como prefieras: suscripción mensual, suscripción anual o un pago único que desbloquea PRO
+                  para siempre. Las suscripciones no tienen permanencia. La compra queda asociada a tu cuenta
+                  de Google o Apple y puedes restaurarla si cambias de dispositivo.
+                </p>
+              </details>
+              <details>
+                <summary>¿Tiene publicidad o necesito crear una cuenta?</summary>
+                <p>
+                  No y no. TrueLift no muestra publicidad y no requiere registro. Tu historial se procesa
+                  en tu móvil y el desarrollador no puede consultarlo; los servicios de compra y descarga
+                  tratan solo los datos descritos en la política de privacidad.
+                </p>
+              </details>
+              <details>
+                <summary>¿Necesito medir la VFC para usar la autorregulación?</summary>
+                <p>
+                  No. La VFC (variabilidad de la frecuencia cardíaca) es una señal opcional que dan relojes y
+                  bandas de pulso y que suele avisar de la fatiga antes que el rendimiento. Si la mides, la app
+                  la integra con el resto de señales; si no, la autorregulación funciona con tu descanso,
+                  tu estrés, tus molestias y tu rendimiento reciente.
+                </p>
+              </details>
+              <details>
+                <summary>¿Sirve para hipertrofia o solo para fuerza?</summary>
+                <p>
+                  Las rutinas de la versión gratuita están orientadas a hipertrofia. En PRO puedes configurar
+                  series, repeticiones, RIR y descansos para priorizar fuerza si ese es tu objetivo.
+                </p>
+              </details>
+              <details>
+                <summary>¿Puedo usarla si entreno con mancuernas o máquinas?</summary>
+                <p>
+                  Sí. Indicas el material que tienes y TrueLift propone cargas que realmente puedas montar
+                  con tus discos, microcargas y mancuernas.
+                </p>
+              </details>
+              <details>
+                <summary>¿Dónde puedo consultar el manual de la app?</summary>
+                <p>
+                  Puedes <a href="Manual_TrueLift.pdf" download data-manual-download>descargar el manual de TrueLift en PDF</a>
+                  con la explicación de todas las pantallas y funciones, gratuitas y PRO.
+                </p>
+              </details>
+            </div>
           </div>
         </div>
       </section>
 
       <section class="closing-cta" aria-labelledby="closing-title">
         <div class="section-inner closing-inner" data-reveal>
-          <img src="Icono%20PRO.png" alt="" width="72" height="72" loading="lazy" decoding="async">
+          <img src="Icono%20PRO.png" alt="" width="68" height="68" loading="lazy" decoding="async">
           <h2 id="closing-title">Deja de improvisar. Empieza a progresar.</h2>
           <p>
             Gratis, sin anuncios y sin cuenta. Instala, abre la sesión que toca y deja que TrueLift decida la carga.
           </p>
-          <div class="store-badges">
-            <a class="store-badge" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener" aria-label="Disponible en Google Play">
-              <span class="store-badge-label"><span>Disponible en</span><strong>Google Play</strong></span>
+          <div class="closing-actions">
+            <a class="button primary is-large" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener">
+              Descargar en Google Play
             </a>
-            <span class="store-badge ios is-coming-soon" role="status" aria-label="iOS disponible pronto">
-              <span class="store-badge-label"><span>Disponible pronto en</span><strong>App Store</strong></span>
-            </span>
+            <span class="button is-static is-large">iOS · pronto</span>
           </div>
-          <div class="coach-card">
+
+          <div class="coach-card" id="coach">
             <div>
-              <h3>¿Eres entrenador?</h3>
-              <p>TrueLift Coach es la app web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.</p>
+              <p class="eyebrow">Para entrenadores</p>
+              <h3>TrueLift Coach</h3>
+              <p>App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.</p>
             </div>
             <div class="coach-links">
-              <a class="button secondary" href="coach/" aria-label="Abrir TrueLift Coach">Abrir TrueLift Coach</a>
-              <a class="coach-download" href="Ejemplo%20TrueLift%20Coach.json" download="Ejemplo TrueLift Coach.json">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-                <span>Archivo de ejemplo para probarla</span>
+              <a class="button secondary" href="coach/">Abrir TrueLift Coach</a>
+              <a class="link-mono" href="Ejemplo%20TrueLift%20Coach.json" download="Ejemplo TrueLift Coach.json">
+                <span aria-hidden="true">↓</span> Archivo de ejemplo para probarla
               </a>
             </div>
           </div>
@@ -603,8 +676,11 @@
 
     <footer class="site-footer">
       <div class="section-inner footer-inner">
-        <p>TrueLift - Un entrenador en tu bolsillo.</p>
-        <div>
+        <p class="footer-brand">
+          <span class="wordmark">TRUE<span>LIFT</span></span>
+          <span class="footer-tag">Un entrenador en tu bolsillo.</span>
+        </p>
+        <div class="footer-links">
           <a href="privacidad.html" data-privacy-link>Privacidad y aviso legal</a>
           <a href="Manual_TrueLift.pdf" download data-manual-download>Manual (PDF)</a>
           <a href="coach/">TrueLift Coach</a>
@@ -613,11 +689,7 @@
       </div>
     </footer>
 
-    <a class="mobile-cta" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener" data-mobile-cta>
-      Descargar gratis en Google Play
-    </a>
-
-    <script src="translations-pt-br.js?v=20260825-1"></script>
-    <script src="script.js?v=20260825-1"></script>
+    <script src="translations-pt-br.js?v=20260826-1"></script>
+    <script src="script.js?v=20260826-1"></script>
   </body>
 </html>

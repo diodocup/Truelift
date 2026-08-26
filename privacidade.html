@@ -6,33 +6,90 @@
     <title>Política de privacidade e aviso legal | TrueLift</title>
     <meta name="description" content="Política de privacidade e aviso legal da TrueLift: dados locais, módulo de nutrição, compras, backups, serviços externos e direitos dos usuários.">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#080b08">
+    <meta name="theme-color" content="#050705">
     <link rel="canonical" href="https://truelift.es/privacidade.html">
     <link rel="icon" type="image/png" href="Icono%20PRO.png">
     <link rel="alternate" hreflang="es" href="https://truelift.es/privacidad.html">
     <link rel="alternate" hreflang="en" href="https://truelift.es/privacy.html">
     <link rel="alternate" hreflang="pt-BR" href="https://truelift.es/privacidade.html">
     <link rel="alternate" hreflang="x-default" href="https://truelift.es/privacidad.html">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="preload" as="font" type="font/woff2" href="fonts/archivo-latin.woff2" crossorigin>
+    <link rel="preload" as="font" type="font/woff2" href="fonts/jetbrainsmono-latin.woff2" crossorigin>
+    <link rel="stylesheet" href="styles.css?v=20260826-1">
     <style>
-      .legal-page { width: min(880px, calc(100% - 48px)); margin: 0 auto; padding: 140px 0 90px; }
-      .legal-page h1 { font-size: 2.6rem; line-height: 1.1; }
-      .legal-page h2 { margin-top: 48px; font-size: 1.6rem; }
-      .legal-page h3 { margin-top: 28px; font-size: 1.15rem; }
-      .legal-page p, .legal-page li { color: var(--muted); }
-      .legal-page strong { color: var(--text); }
-      .legal-page ul { padding-left: 22px; }
-      .legal-updated { color: var(--dim); font-size: 0.9rem; }
-      .legal-highlight, .legal-notice { margin: 28px 0; padding: 20px 24px; border: 1px solid rgba(168, 238, 25, 0.3); border-radius: var(--radius); background: rgba(134, 198, 23, 0.06); }
-      .legal-highlight p, .legal-notice p { margin: 0; color: #e5eadf; }
-      .legal-page a { color: var(--lime-strong); text-decoration: underline; text-underline-offset: 3px; }
-      .legal-page a:hover { color: var(--text); }
+      .legal-page {
+        width: min(820px, calc(100% - 48px));
+        margin: 0 auto;
+        padding: 64px 0 90px;
+      }
+      .legal-page h1 {
+        margin: 0 0 10px;
+        font: 900 clamp(32px, 4.4vw, 52px) var(--sans);
+        line-height: 1.02;
+        letter-spacing: -0.03em;
+      }
+      .legal-page h2 {
+        margin: 56px 0 18px;
+        font: 800 clamp(24px, 2.6vw, 30px) var(--sans);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+      .legal-page h3 {
+        margin: 34px 0 12px;
+        font: 700 19px var(--sans);
+        letter-spacing: -0.01em;
+        color: var(--bright);
+      }
+      .legal-page p,
+      .legal-page li {
+        color: var(--muted);
+        font-size: 16.5px;
+        line-height: 1.75;
+      }
+      .legal-page strong {
+        color: var(--text);
+      }
+      .legal-page ul,
+      .legal-page ol {
+        display: grid;
+        gap: 10px;
+        padding-left: 22px;
+      }
+      .legal-updated {
+        font: 700 11px var(--mono);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+      .legal-highlight,
+      .legal-notice {
+        margin: 28px 0 8px;
+        padding: 22px 26px;
+        border: 1px solid rgba(168, 238, 25, 0.28);
+        border-radius: var(--radius);
+        background: rgba(168, 238, 25, 0.05);
+      }
+      .legal-highlight p,
+      .legal-notice p {
+        margin: 0;
+        color: #e5eadf;
+      }
+      .legal-page a {
+        color: var(--lime-strong);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .legal-page a:hover {
+        color: var(--lime-hover);
+      }
     </style>
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="index.html?lang=pt-BR" aria-label="Início da TrueLift"><img src="Icono%20PRO.png" alt="" width="36" height="36"><span>TrueLift</span></a>
-      <span></span>
+      <a class="brand" href="index.html?lang=pt-BR" aria-label="Início da TrueLift">
+        <img src="Icono%20PRO.png" alt="" width="34" height="34">
+        <span class="wordmark">TRUE<span>LIFT</span></span>
+      </a>
       <div class="header-tools">
         <div class="language-switch" role="group" aria-label="Selecionar idioma">
           <a href="privacidad.html" lang="es">ES</a><a href="privacy.html" lang="en">EN</a><a href="privacidade.html" lang="pt-BR" aria-current="page">PT-BR</a>
@@ -163,7 +220,11 @@
       <p>As alterações serão publicadas nesta página com a data atualizada. Se introduzirem um novo tratamento que exija consentimento, ele será solicitado antes de sua aplicação. Esta política e as condições são regidas pela legislação espanhola e europeia. Litígios com consumidores serão submetidos aos tribunais determinados pelas normas obrigatórias de proteção do consumidor, incluindo o domicílio do consumidor quando aplicável.</p>
     </main>
 
-    <footer class="site-footer"><div class="section-inner footer-inner"><p>TrueLift - Um treinador no seu bolso.</p><div>
+    <footer class="site-footer"><div class="section-inner footer-inner"><p class="footer-brand">
+          <span class="wordmark">TRUE<span>LIFT</span></span>
+          <span class="footer-tag">Um treinador no seu bolso.</span>
+        </p>
+        <div class="footer-links">
       <a href="index.html?lang=pt-BR">Início</a><a href="Manual_TrueLift_PT-BR.pdf" download>Manual (PDF)</a>
       <a href="https://truelift.es" target="_blank" rel="noopener">truelift.es</a><a href="https://www.rubensoro.es" target="_blank" rel="noopener">rubensoro.es</a>
     </div></div></footer>

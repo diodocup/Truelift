@@ -176,7 +176,24 @@ const englishTranslations = {
   "Privacidad y aviso legal": "Privacy and legal notice",
   "Manual (PDF)": "Manual (PDF)",
   "Web del autor": "Author's website",
-  "Descargar gratis en Google Play": "Download free on Google Play"
+  "Descargar gratis en Google Play": "Download free on Google Play",
+  "Decisión de hoy · Pierna 2": "Today's call · Legs 2",
+  "Serie 2/12": "Set 2/12",
+  "Carga": "Load",
+  "Objetivo": "Target",
+  "Mantenemos la carga y seguimos intentando lograr el objetivo.": "We hold the load and keep going for the target.",
+  "iOS · pronto": "iOS · soon",
+  "16 sesiones PRO incluidas": "16 PRO sessions included",
+  "16 sesiones PRO": "16 PRO sessions",
+  "Sesión en curso · serie a serie": "Workout in progress · set by set",
+  "Rendimiento": "Performance",
+  "De cada sesión frente a tu propio histórico, no frente a una tabla.": "Of every session against your own history, not against a table.",
+  "Nivel": "Level",
+  "De fuerza por ejercicio según tu peso corporal, sexo y edad.": "Of strength per exercise, based on your bodyweight, sex and age.",
+  "Marcas": "Records",
+  "Estado · PRO": "Readiness · PRO",
+  "Para entrenadores": "For coaches",
+  "App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "A web app to follow your athletes from your desktop, using the file they export from the app."
 };
 
 const normaliseTranslationKey = (value) => value.replace(/\s+/g, " ").trim();
@@ -335,39 +352,8 @@ try {
 const browserLanguage = navigator.languages?.find((language) => language.toLowerCase().startsWith("pt")) || "";
 setPageLanguage(requestedLanguage || storedLanguage || browserLanguage || "es");
 
-// Menú en móvil
-const navToggle = document.querySelector("[data-nav-toggle]");
-const nav = document.querySelector("[data-nav]");
-
-if (navToggle && nav) {
-  navToggle.addEventListener("click", () => {
-    const isOpen = document.body.classList.toggle("nav-open");
-    navToggle.setAttribute("aria-expanded", String(isOpen));
-  });
-
-  nav.addEventListener("click", (event) => {
-    if (event.target instanceof HTMLAnchorElement) {
-      document.body.classList.remove("nav-open");
-      navToggle.setAttribute("aria-expanded", "false");
-    }
-  });
-}
-
-// CTA fija en móvil: aparece al dejar atrás el hero
-const hero = document.querySelector("[data-hero]");
-if (hero && "IntersectionObserver" in window) {
-  const heroObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        document.body.classList.toggle("past-hero", !entry.isIntersecting);
-      });
-    },
-    { threshold: 0.05 }
-  );
-  heroObserver.observe(hero);
-} else {
-  document.body.classList.add("past-hero");
-}
+// La cabecera es pegajosa y la navegación se desplaza en horizontal cuando no
+// cabe, así que no hace falta ni menú desplegable ni CTA fija en móvil.
 
 // Aparición suave al hacer scroll
 const revealTargets = document.querySelectorAll("[data-reveal]");
