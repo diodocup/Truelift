@@ -2,6 +2,15 @@
 
 Herramienta web para entrenadores: visualiza los entrenamientos de tus clientes de TrueLift y crea o revisa sus rutinas. Sin internet, sin instalación.
 
+## Archivos de ejemplo
+
+En esta carpeta hay cinco copias de prueba para ver el Coach con datos antes de
+importar a nadie: `Carlos_`, `Javi_`, `Laura_`, `Nuria_` y `Ruben_2026-08-26.json`.
+Cubren las combinaciones de sistema y días de la app (simple y doble, de 3 a 5
+días). **Los cinco clientes son ficticios**: nombres, fechas de nacimiento,
+entrenamientos, pesajes y cuestionarios están inventados y no pertenecen a
+ninguna persona.
+
 ## Uso
 
 1. Abre `index.html` con doble clic (Chrome o Edge recomendados).
