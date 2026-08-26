@@ -617,19 +617,39 @@ h3 {
   min-height: 54px;
 }
 
-/* El archivo de ejemplo de Coach, a un clic desde el hero. */
-.hero-coach-file {
-  margin-top: 10px;
-  font-size: 10px;
-  letter-spacing: 0.14em;
+/* Las cinco copias de ejemplo del Coach: etiqueta, fila de descargas y aviso.
+   Una por cliente, porque cada archivo cubre una combinación distinta de
+   sistema y días y el entrenador elige cuál quiere abrir. */
+.file-samples {
+  margin-top: 14px;
 }
 
-/* Los archivos de ejemplo llevan clientes inventados. Se dice aquí, junto a la
-   descarga, y no solo dentro del archivo: quien lo abra ve datos de salud con
-   nombre y fecha de nacimiento, y debe saber de entrada que no son de nadie. */
+.file-samples-label {
+  display: block;
+  margin-bottom: 7px;
+  font: 700 10px var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--quiet);
+}
+
+.file-samples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.file-samples-list .link-mono {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+/* Que los clientes son inventados se dice aquí, junto a la descarga, y no solo
+   dentro del archivo: quien abra uno ve datos de salud con nombre y fecha de
+   nacimiento, y debe saber de entrada que no son de nadie. */
 .file-note {
   display: block;
-  margin-top: 5px;
+  margin-top: 8px;
   font: 700 9px var(--mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1404,9 +1424,15 @@ h3 {
   letter-spacing: 0.14em;
 }
 
-.coach-links .file-note {
-  margin-top: -2px;
+/* En la tarjeta, la columna es estrecha y va centrada: la fila de descargas se
+   parte en dos líneas y se centra igual que el botón de arriba. */
+.coach-links .file-samples {
+  margin-top: 2px;
   text-align: center;
+}
+
+.coach-links .file-samples-list {
+  justify-content: center;
 }
 
 /* ---------- Pie ---------- */
