@@ -356,6 +356,26 @@ h3 {
   color: var(--lime);
 }
 
+/* La «T» del icono hace de primera letra de TRUELIFT. Va recortada a la marca
+   (sin la caja oscura), a la altura de caja alta de Archivo 900 y apoyada en la
+   línea base, así que se lee como letra y no como icono al lado de la palabra.
+   Los colores salen de las variables, no del SVG original: su lima es #A3E020 y
+   junto a «LIFT» en #a8ee19 se vería como dos verdes distintos en la misma línea. */
+.wordmark-t {
+  height: 0.72em;
+  width: auto;
+  margin-right: 0.05em;
+  vertical-align: baseline;
+}
+
+.wordmark-t .wm-brazo {
+  fill: var(--lime);
+}
+
+.wordmark-t .wm-pie {
+  fill: var(--text);
+}
+
 .site-nav {
   display: flex;
   flex: 1 1 auto;
@@ -1330,12 +1350,23 @@ h3 {
   pointer-events: none;
 }
 
+/* El cierre lleva de fondo la propia marca, grande y a muy baja opacidad, en vez
+   de la foto de gimnasio del diseño anterior. La filigrana va recortada a su caja
+   (marca-fondo.svg, sin el fondo del icono) y se sale por arriba y por abajo: la
+   sección tiene overflow:hidden, así que se lee como marca de agua y no como un
+   logotipo pegado en medio. */
 .closing-cta::before {
-  background: url("hero-bg.jpg") no-repeat center 40% / cover;
+  background: url("marca-fondo.svg") no-repeat center 52% / min(112%, 1240px) auto;
+  opacity: 0.055;
 }
 
+/* Viñeta que apaga solo los bordes: transparente en el centro para no comerse la
+   filigrana, y opaca en los extremos para que la marca se funda con el fondo en
+   vez de cortarse en seco contra el borde de la sección. La foto anterior iba
+   tapada al 88-97 %, así que esta sección ya era en la práctica el fondo de la
+   página: no lleva banda propia. */
 .closing-cta::after {
-  background: linear-gradient(180deg, rgba(5, 7, 5, 0.88), rgba(5, 7, 5, 0.97));
+  background: radial-gradient(118% 80% at 50% 48%, rgba(5, 7, 5, 0) 42%, rgba(5, 7, 5, 0.92) 100%);
 }
 
 .closing-inner {
@@ -1546,6 +1577,13 @@ h3 {
 @media (max-width: 700px) {
   .section-inner {
     width: calc(100% - 36px);
+  }
+
+  /* En móvil la sección es alta y estrecha: si la filigrana se midiera por el
+     ancho como en escritorio se quedaría pequeña y flotando en medio. Se agranda
+     para que siga saliéndose por los lados y leyéndose como marca de agua. */
+  .closing-cta::before {
+    background-size: min(165%, 620px) auto;
   }
 
   .section > .section-inner {

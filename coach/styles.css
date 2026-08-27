@@ -164,12 +164,23 @@ textarea{font-family:var(--sans);font-size:13px;line-height:1.5}
   font:900 18px/1 var(--sans);letter-spacing:-.02em;color:var(--txt);
   margin-right:4px;
 }
-.brand span{
-  margin-left:1px;align-self:center;
+/* Mismo logotipo que truelift.es: TRUE en texto y LIFT en lima, con la «T» del
+   icono haciendo de primera letra (recortada, a la altura de caja alta y sobre
+   la línea base). El lima sale de la variable y no del SVG original (#A3E020),
+   que junto a «LIFT» se leería como dos verdes distintos. */
+.brand .wordmark{letter-spacing:-.02em}
+.wordmark-t{height:.72em;width:auto;margin-right:.05em;vertical-align:baseline}
+.wordmark-t .wm-brazo{fill:var(--lima)}
+.wordmark-t .wm-pie{fill:var(--txt)}
+.brand .wm-lift{color:var(--lima)}
+/* «Coach» es la coletilla de la marca, no parte del logotipo: mismo tratamiento
+   que el .footer-tag de la web principal, en mono apagado, para que el lima siga
+   señalando solo el logotipo. */
+.brand-coach{
+  align-self:center;
   font:700 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--lima);
+  color:var(--txt3);
 }
-.brand-icono{width:28px;height:28px;border-radius:8px}
 
 /* Control con su etiqueta encima, como las columnas de la cabecera de la app:
    primero qué es, en mono diminuto, y debajo el valor. */

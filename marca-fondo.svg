@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="26.2 32 55.6 44">
+  <!-- La marca de TrueLift recortada a su caja, sin el fondo del icono, para usarla
+       como filigrana. Los colores son los del logotipo de la web (lima #a8ee19 y
+       texto #f4f7f0), no los del icono de la app (#A3E020 / #F4F6F4). -->
+  <path d="M28 32H44A2 2 0 0 1 46 34V42A2 2 0 0 1 44 44H32.2A2.8 2.8 0 0 1 29.7 42.5L26.2 35.5A2.4 2.4 0 0 1 28 32Z" fill="#a8ee19"/>
+  <path d="M80 32H64A2 2 0 0 0 62 34V42A2 2 0 0 0 64 44H75.8A2.8 2.8 0 0 0 78.3 42.5L81.8 35.5A2.4 2.4 0 0 0 80 32Z" fill="#a8ee19"/>
+  <path d="M50 32H58A2 2 0 0 1 60 34V71.2A3 3 0 0 1 59.1 73.3L56.4 75.6A2 2 0 0 1 55.1 76H50A2 2 0 0 1 48 74V34A2 2 0 0 1 50 32Z" fill="#f4f7f0"/>
+</svg>
