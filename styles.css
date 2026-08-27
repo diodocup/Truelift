@@ -622,7 +622,7 @@ h3 {
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   margin-top: 30px;
 }
@@ -633,8 +633,23 @@ h3 {
   font-size: 14px;
 }
 
-.hero-actions .link-mono {
-  min-height: 54px;
+/* El botón de Coach y su aclaración van juntos en columna: el texto explica ese
+   botón, no la fila entera, así que colgarlo del hero-actions completo lo habría
+   dejado leyéndose también como pie de Google Play y de iOS. */
+.hero-action-coach {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.hero-action-note {
+  max-width: 27ch;
+  color: var(--dim);
+  font: 500 12px var(--sans);
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Las cinco copias de ejemplo del Coach: etiqueta, fila de descargas y aviso.

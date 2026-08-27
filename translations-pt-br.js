@@ -168,6 +168,7 @@ const portugueseTranslations = {
   "¿Eres entrenador?": "Você é treinador?",
   "TrueLift Coach es la app web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "O TrueLift Coach é o aplicativo web para acompanhar seus atletas no computador, a partir do arquivo que eles exportam do app.",
   "Abrir TrueLift Coach": "Abrir TrueLift Coach",
+  "App de escritorio para entrenadores o usuarios que quieran ver sus métricas": "App de desktop para treinadores ou para quem quiser ver suas métricas",
   "Archivos de ejemplo para probarla": "Arquivos de exemplo para testar",
   "Solo para pruebas: los clientes son ficticios": "Apenas para testes: os clientes são fictícios",
 

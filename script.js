@@ -170,6 +170,7 @@ const englishTranslations = {
   "¿Eres entrenador?": "Are you a coach?",
   "TrueLift Coach es la app web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "TrueLift Coach is the web app for following your athletes from the desktop, using the file they export from the app.",
   "Abrir TrueLift Coach": "Open TrueLift Coach",
+  "App de escritorio para entrenadores o usuarios que quieran ver sus métricas": "Desktop app for coaches, or for anyone who wants to look at their own metrics",
   "Archivos de ejemplo para probarla": "Sample files to try it out",
   "Solo para pruebas: los clientes son ficticios": "For testing only: the clients are fictional",
 
