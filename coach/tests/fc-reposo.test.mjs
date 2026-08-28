@@ -86,7 +86,7 @@ test('normaliza fcReposo y la ofrece en el comparador de series', () => {
   assert.equal(serie.label, 'FC en reposo');
   assert.equal(serie.unidad, 'ppm');
   assert.deepEqual(Array.from(serie.puntos, p => p.y), [52, 51]);
-  assert.deepEqual(Array.from(serie.umbrales), []);
+  assert.deepEqual(serie.umbralesDia, []);
 });
 
 test('FC alta usa mediana y MAD robustos, descarta noches y exige un mínimo de 14', () => {
@@ -191,9 +191,10 @@ test('Readiness y el comparador pintan FC alta al alcanzar 14 noches válidas', 
   assert.equal(alta.unidad, 'ppm');
   assert.equal(alta.dash, '6 4');
   assert.equal(alta.sinPuntos, true);
-  assert.deepEqual(Array.from(alta.puntos, p => p.y), [51.5, 51.5]);
-  assert.match(html, /FC alta \(51,5 ppm = mediana \+ MAD, 14 noches válidas\)/);
+  // Solo la 14ª noche tiene banda: antes de ella no había con qué comparar.
+  assert.deepEqual(Array.from(alta.puntos, p => p.y), [51.5]);
+  assert.match(html, /FC alta de cada fecha \(mediana \+ MAD; la última, 51,5 ppm con 14 noches válidas\)/);
 
   const fcComparador = coach.catalogoSeries(ctx).find(s => s.id === 'fc_reposo');
-  assert.deepEqual(Array.from(fcComparador.umbrales, u => u.y), [51.5]);
+  assert.deepEqual(Array.from(fcComparador.umbralesDia[0].puntos, p => p.y), [51.5]);
 });

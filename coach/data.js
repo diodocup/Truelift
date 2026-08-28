@@ -404,23 +404,38 @@ const VFC = {
     return bajas;
   },
 
-  /* Umbrales nocturnos (baja, muyBaja) como AppState._vfcUmbrales:
+  /* Umbrales nocturnos (baja, muyBaja) POR FECHA, como AppState._vfcUmbrales
+     pero con las noches disponibles HASTA esa noche (incluida):
      con ≥30 noches → banda auto (mediana−MAD, mediana−2·MAD de las últimas 30);
-     si no, semilla manual (min, min·0,9); si nada, null. */
-  umbrales(readiness, perfil){
-    if (!perfil.vfcActiva && perfil.vfcBandaMin == null) return { baja: null, muyBaja: null, auto: false };
-    const v = this.validas(readiness).map(x => x.vfc);
-    if (v.length >= this.NOCHES_AUTO){
-      const ult = v.slice(-30);
-      const med = this._mediana(ult);
-      let mad = this._mediana(ult.map(x => Math.abs(x - med)));
-      const piso = med * this.MAD_PISO_FRAC;
-      if (mad < piso) mad = piso;
-      return { baja: med - mad, muyBaja: med - 2 * mad, auto: true };
+     si no, semilla manual (min, min·0,9); si nada, sin entrada.
+     Juzgar el histórico con la banda de hoy es un anacronismo: esa banda no
+     existía la noche que se midió. Map(claveISO → {baja, muyBaja, auto}). */
+  umbralesSerie(readiness, perfil){
+    const serie = new Map();
+    if (!perfil.vfcActiva && perfil.vfcBandaMin == null) return serie;
+    const v = this.validas(readiness);
+    for (let i = 0; i < v.length; i++){
+      const disponibles = i + 1;
+      if (disponibles >= this.NOCHES_AUTO){
+        const ult = v.slice(Math.max(0, disponibles - 30), disponibles).map(x => x.vfc);
+        const med = this._mediana(ult);
+        let mad = this._mediana(ult.map(x => Math.abs(x - med)));
+        const piso = med * this.MAD_PISO_FRAC;
+        if (mad < piso) mad = piso;
+        serie.set(v[i].clave, { baja: med - mad, muyBaja: med - 2 * mad, auto: true });
+      } else if (perfil.vfcBandaMin != null){
+        serie.set(v[i].clave, { baja: perfil.vfcBandaMin, muyBaja: perfil.vfcBandaMin * 0.9, auto: false });
+      }
     }
-    if (perfil.vfcBandaMin != null)
-      return { baja: perfil.vfcBandaMin, muyBaja: perfil.vfcBandaMin * 0.9, auto: false };
-    return { baja: null, muyBaja: null, auto: false };
+    return serie;
+  },
+
+  /* Umbrales de la última noche válida (los "de hoy" de la app). */
+  umbrales(readiness, perfil){
+    const v = this.validas(readiness);
+    const vacio = { baja: null, muyBaja: null, auto: false };
+    if (!v.length) return vacio;
+    return this.umbralesSerie(readiness, perfil).get(v[v.length - 1].clave) || vacio;
   },
 };
 
@@ -440,16 +455,31 @@ const FCReposo = {
       .sort((a,b) => a.fecha - b.fecha);
   },
 
-  /* FC alta = mediana + MAD sobre las últimas 30 noches válidas.
-     Requiere al menos 14 noches y aplica un suelo al MAD del 3% de la mediana. */
+  /* FC alta POR FECHA = mediana + MAD de las últimas 30 noches válidas hasta
+     esa noche (incluida), con un mínimo de 14 y suelo del MAD del 3% de la
+     mediana. Igual que en VFC, cada noche se juzga con su propia banda y no
+     con la de hoy. Map(claveISO → {alta, mediana, mad, noches}). */
+  bandaSerie(readiness){
+    const validas = this.validas(readiness);
+    const serie = new Map();
+    for (let i = 0; i < validas.length; i++){
+      const disponibles = i + 1;
+      if (disponibles < this.MIN_NOCHES_BANDA) continue;
+      const valores = validas.slice(Math.max(0, disponibles - this.NOCHES_BANDA), disponibles)
+        .map(r => r.fcReposo);
+      const mediana = VFC._mediana(valores);
+      const madBruto = VFC._mediana(valores.map(x => Math.abs(x - mediana)));
+      const mad = Math.max(madBruto, mediana * this.MAD_PISO_FRAC);
+      serie.set(validas[i].clave, { alta: mediana + mad, mediana, mad, noches: valores.length });
+    }
+    return serie;
+  },
+
+  /* Banda de la última noche válida (la "de hoy"). */
   banda(readiness){
     const validas = this.validas(readiness);
-    if (validas.length < this.MIN_NOCHES_BANDA) return null;
-    const valores = validas.slice(-this.NOCHES_BANDA).map(r => r.fcReposo);
-    const mediana = VFC._mediana(valores);
-    const madBruto = VFC._mediana(valores.map(x => Math.abs(x - mediana)));
-    const mad = Math.max(madBruto, mediana * this.MAD_PISO_FRAC);
-    return { alta: mediana + mad, mediana, mad, noches: valores.length };
+    if (!validas.length) return null;
+    return this.bandaSerie(readiness).get(validas[validas.length - 1].clave) || null;
   },
 };
 

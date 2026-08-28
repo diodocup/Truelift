@@ -388,7 +388,8 @@ const Charts = {
 
   /* Comparador de hasta 2 series, cada una con su propio eje (izq./der.).
      series: [{ label, color, puntos:[{x,y}], eje:'izq'|'der',
-                min?, max?, baseline?:num, umbrales?:[{y,label,color}], unidad? }] */
+                min?, max?, baseline?:num, umbrales?:[{y,label,color}],
+                umbralesDia?:[{label,color,puntos:[{x,y}]}], unidad? }] */
   dobleEje({ series, w = 960, h = 280 }){
     const padL = 52, padR = 52, padT = 16, padB = 28;
     const activos = (series || []).filter(s => s && s.puntos && s.puntos.some(p => p.y != null));
@@ -404,6 +405,7 @@ const Charts = {
     activos.forEach(s => {
       const vals = s.puntos.filter(p => p.y != null).map(p => p.y);
       (s.umbrales || []).forEach(u => vals.push(u.y));
+      (s.umbralesDia || []).forEach(u => u.puntos.forEach(p => { if (p.y != null) vals.push(p.y); }));
       if (s.baseline != null) vals.push(s.baseline);
       let a, b;
       if (s.min != null || s.max != null){
@@ -444,6 +446,15 @@ const Charts = {
       (s.umbrales || []).forEach(u => {
         svg += this._referencia(padL, w-padR, s._Y(u.y).toFixed(1), u.color, { dash: '3 5', grosor: 1.2, opacidad: 0.6 });
       });
+      /* Umbrales que se mueven con el tiempo (VFC baja, FC alta): línea
+         discontinua día a día, para leer cada punto contra el umbral que
+         regía ESA fecha y no contra el de hoy. */
+      (s.umbralesDia || []).forEach(u => {
+        const p = (u.puntos || []).filter(q => q.y != null).sort((a,b) => +soloDia(a.x) - +soloDia(b.x));
+        if (!p.length) return;
+        const d = p.map(q => `${X(+soloDia(q.x)).toFixed(1)},${s._Y(q.y).toFixed(1)}`).join(' L');
+        svg += this._trazo(`M${d}`, u.color, 1.2, '3 5');
+      });
     });
 
     // Líneas + puntos
@@ -475,6 +486,8 @@ const Charts = {
     const leyRef = activos.flatMap(s => [
       s.baseline != null ? this._ley(s.color, `baseline ${fmtNum(s.baseline,0)}`, 'trazo') : '',
       ...(s.umbrales || []).filter(u => u.label).map(u => this._ley(u.color, u.label, 'trazo')),
+      ...(s.umbralesDia || []).filter(u => u.label && u.puntos.some(p => p.y != null))
+        .map(u => this._ley(u.color, u.label, 'trazo')),
     ]).join('');
     return `${svg}<div class="leyenda">${ley}${leyRef}</div>`;
   },

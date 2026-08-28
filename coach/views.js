@@ -160,24 +160,28 @@ function catalogoSeries(ctx){
   if (rdPts.length)
     cat.push({ id: 'readiness', label: 'Readiness', color: '#a8ee19', puntos: rdPts, unidad: '', min: 0, max: 100, grupo: 'Estado / recuperación' });
 
-  // --- VFC (HRV) con umbral bajo si existe ---
+  // --- VFC (HRV) con el umbral bajo de cada noche (no el de hoy) ---
   const vfcPts = readinessR.filter(r => r.vfc != null && !r.vfcDescartada).map(r => ({ x: r.fecha, y: r.vfc }));
   if (vfcPts.length){
-    const uVfc = VFC.umbrales(datos.readiness, perfil);
-    const umbrales = (uVfc && uVfc.baja != null) ? [{ y: uVfc.baja, label: `VFC baja (${fmtNum(uVfc.baja,1)})`, color: '#E0A92E' }] : [];
-    cat.push({ id: 'vfc', label: 'VFC (HRV)', color: '#B08CE8', puntos: vfcPts, unidad: 'ms', umbrales, grupo: 'Estado / recuperación' });
+    const uSerie = VFC.umbralesSerie(datos.readiness, perfil);
+    const uPts = vfcPts.map(p => ({ x: p.x, y: uSerie.get(fmtISO(p.x))?.baja ?? null }))
+      .filter(p => p.y != null);
+    const umbralesDia = uPts.length
+      ? [{ label: 'VFC baja (umbral de cada noche)', color: '#E0A92E', puntos: uPts }] : [];
+    cat.push({ id: 'vfc', label: 'VFC (HRV)', color: '#B08CE8', puntos: vfcPts, unidad: 'ms', umbralesDia, grupo: 'Estado / recuperación' });
   }
 
   // --- Frecuencia cardiaca en reposo (campo fcReposo de readinessDiario) ---
   const fcReposoPts = readinessR.filter(r => r.fcReposo != null && !r.vfcDescartada)
     .map(r => ({ x: r.fecha, y: r.fcReposo }));
   if (fcReposoPts.length){
-    const bandaFc = FCReposo.banda(datos.readiness);
-    const umbrales = bandaFc
-      ? [{ y: bandaFc.alta, label: `FC alta (${fmtNum(bandaFc.alta,1)})`, color: '#F0872D' }]
-      : [];
+    const bandaSerie = FCReposo.bandaSerie(datos.readiness);
+    const altaPts = fcReposoPts.map(p => ({ x: p.x, y: bandaSerie.get(fmtISO(p.x))?.alta ?? null }))
+      .filter(p => p.y != null);
+    const umbralesDia = altaPts.length
+      ? [{ label: 'FC alta (mediana + MAD de cada fecha)', color: '#F0872D', puntos: altaPts }] : [];
     cat.push({ id: 'fc_reposo', label: 'FC en reposo', color: '#E8776B', puntos: fcReposoPts,
-               unidad: 'ppm', umbrales, grupo: 'Estado / recuperación' });
+               unidad: 'ppm', umbralesDia, grupo: 'Estado / recuperación' });
   }
 
   // --- 1RM estimado por ejercicio ---
@@ -847,7 +851,7 @@ const Vistas = {
 
     // Cálculos sobre TODO el histórico (la media 7d y la fatiga necesitan contexto previo)
     const serieVfc = VFC.tendenciaSerie(datos.readiness);
-    const umbrales = VFC.umbrales(datos.readiness, perfil);
+    const umbralesSerie = VFC.umbralesSerie(datos.readiness, perfil);
     const tendenciaBaja = VFC.tendenciaBajaFechas(datos.readiness);
     const fatigaMap = Fatiga.porDia(datos.readiness, tendenciaBaja);
 
@@ -868,13 +872,23 @@ const Vistas = {
     });
 
     // --- VFC como en la app: noches + media 7 días + umbral de tendencia ---
+    // Cada noche se juzga con SU umbral (el vigente esa fecha), no con el de hoy.
     const noches = readinessR.filter(r => r.vfc != null && !r.vfcDescartada)
-      .map(r => ({ x: r.fecha, y: r.vfc,
-                   c: (umbrales.baja != null && r.vfc < umbrales.baja) ? '#E0A92E' : '#6FA8DC' }));
+      .map(r => {
+        const u = umbralesSerie.get(fmtISO(r.fecha));
+        return { x: r.fecha, y: r.vfc,
+                 c: (u && u.baja != null && r.vfc < u.baja) ? '#E0A92E' : '#6FA8DC' };
+      });
+    const umbralUlt = noches.length ? umbralesSerie.get(fmtISO(noches[noches.length - 1].x)) : null;
     const fcReposo = readinessR.filter(r => r.fcReposo != null && !r.vfcDescartada)
       .map(r => ({ x: r.fecha, y: r.fcReposo }));
-    const bandaFc = FCReposo.banda(datos.readiness);
-    const nochesFcValidas = FCReposo.validas(datos.readiness).length;
+    const bandaFcSerie = FCReposo.bandaSerie(datos.readiness);
+    const fcAlta = fcReposo
+      .map(p => ({ x: p.x, y: bandaFcSerie.get(fmtISO(p.x))?.alta ?? null }))
+      .filter(p => p.y != null);
+    const bandaFcUlt = fcAlta.length ? bandaFcSerie.get(fmtISO(fcAlta[fcAlta.length - 1].x)) : null;
+    const finRango = +soloDia(readinessR[readinessR.length - 1].fecha);
+    const nochesFcValidas = FCReposo.validas(datos.readiness).filter(r => +r.fecha <= finRango).length;
     const mostrarFcReposo = State.mostrarFcReposo === true;
     const media7 = [], umbral7 = [];
     readinessR.forEach(r => {
@@ -891,13 +905,9 @@ const Vistas = {
       if (mostrarFcReposo && fcReposo.length){
         seriesVfc.push({ nombre: 'FC en reposo', color: '#E8776B', puntos: fcReposo,
                          grosor: 2.5, eje: 'der', unidad: 'ppm' });
-        if (bandaFc){
+        if (fcAlta.length){
           seriesVfc.push({
-            nombre: `FC alta (${fmtNum(bandaFc.alta,1)} ppm)`, color: '#F0872D',
-            puntos: [
-              { x: readinessR[0].fecha, y: bandaFc.alta },
-              { x: readinessR[readinessR.length - 1].fecha, y: bandaFc.alta },
-            ],
+            nombre: 'FC alta (mediana + MAD)', color: '#F0872D', puntos: fcAlta,
             dash: '6 4', sinPuntos: true, grosor: 2, eje: 'der', unidad: 'ppm',
           });
         }
@@ -916,10 +926,10 @@ const Vistas = {
         </div>
         <div class="chart-caja">${grafica}</div>
         <div class="muted" style="font-size:12px">
-          Cada punto es una noche${umbrales.baja != null ? `; en ámbar, las que caen por debajo del umbral (${fmtNum(umbrales.baja,1)} ms)` : ''}.
+          Cada punto es una noche${umbralUlt && umbralUlt.baja != null ? `; en ámbar, las que caen por debajo del umbral que regía esa fecha (el de la última noche, ${fmtNum(umbralUlt.baja,1)} ms)` : ''}.
           La media de 7 días es la que se lee; el umbral discontinuo marca dónde la VFC empieza a considerarse baja.
-          ${mostrarFcReposo && bandaFc ? ` FC alta = ${fmtNum(bandaFc.alta,1)} ppm (mediana + MAD sobre ${bandaFc.noches} noches válidas).` : ''}
-          ${mostrarFcReposo && fcReposo.length && !bandaFc ? ` FC alta aún no disponible: requiere ≥14 noches válidas (${nochesFcValidas}/14).` : ''}
+          ${mostrarFcReposo && bandaFcUlt ? ` FC alta = mediana + MAD de cada fecha (la última, ${fmtNum(bandaFcUlt.alta,1)} ppm sobre ${bandaFcUlt.noches} noches válidas).` : ''}
+          ${mostrarFcReposo && fcReposo.length && !bandaFcUlt ? ` FC alta aún no disponible: requiere ≥14 noches válidas (${nochesFcValidas}/14).` : ''}
           ${media7.length ? '' : ' Aún no hay media de 7 días: requiere ≥7 noches válidas y ≥7 previas.'}
         </div>
       </div>`;
@@ -934,7 +944,12 @@ const Vistas = {
         const col = f.cargados <= 1 ? 'verde' : f.cargados <= 3 ? 'ambar' : 'rojo';
         fatigaCelda = `<span class="chip ${col}" title="${f.cargados} de los últimos 7 días con señales de fatiga">${f.cargados}/7d</span>`;
       }
-      const vfcBaja = umbrales.baja != null && r.vfc != null && !r.vfcDescartada && r.vfc < umbrales.baja;
+      const uDia = umbralesSerie.get(fmtISO(r.fecha));
+      const vfcBaja = uDia != null && uDia.baja != null && r.vfc != null && !r.vfcDescartada && r.vfc < uDia.baja;
+      // La FC en reposo se marca igual que la VFC, con la banda de SU fecha:
+      // banda invertida, aquí lo malo es pasarse por arriba.
+      const bDia = bandaFcSerie.get(fmtISO(r.fecha));
+      const fcReposoAlta = bDia != null && r.fcReposo != null && !r.vfcDescartada && r.fcReposo > bDia.alta;
       return `<tr>
         <td>${fmtFecha(r.fecha)}</td>
         <td>${r.estadoEntrenar != null ? `<span class="chip ${c || 'gris'}">${r.estadoEntrenar}</span>` : (c ? chipCompuerta(c) : '<span class="muted">—</span>')}</td>
@@ -946,10 +961,12 @@ const Vistas = {
         <td>${fatigaCelda}</td>
         <td>${r.enfermo ? '<span class="chip rojo">sí</span>' : '<span class="muted">no</span>'}</td>
         <td class="num">${r.vfc != null
-          ? (vfcBaja ? `<span class="chip ambar" title="Por debajo del umbral nocturno">${fmtNum(r.vfc,0)}</span>` : fmtNum(r.vfc,0))
+          ? (vfcBaja ? `<span class="chip ambar" title="Por debajo del umbral nocturno de esa fecha">${fmtNum(r.vfc,0)}</span>` : fmtNum(r.vfc,0))
             + (r.vfcDescartada ? ' <span class="muted">(desc.)</span>' : '')
           : '—'}</td>
-        <td class="num">${r.fcReposo != null ? fmtNum(r.fcReposo,0) : '—'}</td>
+        <td class="num">${r.fcReposo != null
+          ? (fcReposoAlta ? `<span class="chip ambar" title="Por encima del umbral de FC en reposo de esa fecha">${fmtNum(r.fcReposo,0)}</span>` : fmtNum(r.fcReposo,0))
+          : '—'}</td>
       </tr>`;
     }).join('');
 
@@ -1562,9 +1579,10 @@ const Vistas = {
       return v.length ? v.reduce((a,b) => a+b, 0) / v.length : null;
     };
     const rojos = readinessR.filter(r => (r.estadoDia || bandaEstado(r.estadoEntrenar)) === 'rojo').length;
-    const umbrales = VFC.umbrales(datos.readiness, perfil);
-    const vfcBajas = umbrales.baja != null
-      ? readinessR.filter(r => r.vfc != null && !r.vfcDescartada && r.vfc < umbrales.baja).length : null;
+    const umbralesSerie = VFC.umbralesSerie(datos.readiness, perfil);
+    const conUmbral = readinessR.filter(r => umbralesSerie.has(fmtISO(r.fecha)));
+    const vfcBajas = conUmbral.length
+      ? conUmbral.filter(r => r.vfc < umbralesSerie.get(fmtISO(r.fecha)).baja).length : null;
     const htmlReadiness = `<div class="card"><h3>Readiness del periodo (medias)</h3>
       <div class="inf-2col">
         <div>
