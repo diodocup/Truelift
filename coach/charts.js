@@ -492,6 +492,73 @@ const Charts = {
     return `${svg}<div class="leyenda">${ley}${leyRef}</div>`;
   },
 
+  /* Barras de volumen real por periodo (semana o mes), con la zona objetivo
+     del grupo como franja y los cambios de rutina como línea de puntos
+     vertical. Es la misma gráfica que la sección «Volumen real» de la app.
+     buckets: [{x:Date, label, y, color}] contiguos y del mismo tamaño ·
+     banda: {min, max, label} | null · cambios: [índices de bucket] */
+  volumenReal({ buckets, banda = null, cambios = [], w = 960, h = 260, unidad = 'series/sem' }){
+    const padL = 42, padR = 14, padT = 12, padB = 26;
+    if (!buckets.length) return `<div class="muted" style="padding:20px">Sin sesiones registradas.</div>`;
+    const maxY = Math.max(...buckets.map(b => b.y), banda ? banda.max : 0, 1);
+    // Tope en múltiplo de 5 con algo de aire, para marcas de eje redondas.
+    const yMax = Math.ceil(maxY * 1.12 / 5) * 5;
+    const n = buckets.length;
+    const bw = (w - padL - padR) / n;
+    const Y = v => padT + (yMax - v) / yMax * (h - padT - padB);
+
+    let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
+
+    // Zona objetivo: franja tenue con guía de 1 px arriba y abajo, el mismo
+    // tratamiento que la banda de las barras de volumen de la app.
+    if (banda && banda.min != null && banda.max != null){
+      svg += `<rect x="${padL}" y="${Y(banda.max).toFixed(1)}" width="${w-padL-padR}" `
+           + `height="${(Y(banda.min)-Y(banda.max)).toFixed(1)}" style="fill:var(--lima)" opacity="0.09"/>`;
+      [banda.min, banda.max].forEach(v => {
+        svg += `<line x1="${padL}" x2="${w-padR}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" `
+             + `style="stroke:var(--lima)" stroke-width="1" opacity="0.35"/>`;
+      });
+    }
+
+    const paso = yMax <= 15 ? 5 : yMax <= 30 ? 10 : 20;
+    for (let t = 0; t <= yMax; t += paso){
+      svg += this._reticula(padL, w - padR, Y(t).toFixed(1));
+      svg += `<text x="${padL-6}" y="${(Y(t)+4).toFixed(1)}" text-anchor="end">${t}</text>`;
+    }
+    svg += `<text x="${padL-6}" y="11" text-anchor="end">${esc(unidad)}</text>`;
+
+    buckets.forEach((b, i) => {
+      if (b.y <= 0) return;
+      const m = Math.min(bw * 0.14, 6);
+      const x0 = padL + i * bw + m;
+      const wB = Math.max(bw - 2 * m, 1.2);
+      svg += `<rect x="${x0.toFixed(1)}" y="${Y(b.y).toFixed(1)}" width="${wB.toFixed(1)}" `
+           + `height="${(Y(0)-Y(b.y)).toFixed(1)}"${wB > 3 ? ' rx="2"' : ''} style="fill:${this._c(b.color)}" opacity="0.72" `
+           + `data-tt="${esc(b.label)} · ${fmtNum(b.y,1)} ${esc(unidad)}"/>`;
+    });
+
+    // Cambios de rutina: línea de puntos vertical al inicio del periodo que
+    // estrena la rutina nueva.
+    cambios.forEach(i => {
+      const x = (padL + i * bw).toFixed(1);
+      svg += `<line x1="${x}" x2="${x}" y1="${padT}" y2="${h-padB}" style="stroke:var(--txt3)" `
+           + `stroke-dasharray="2 4" stroke-width="1.2" opacity="0.8"/>`;
+    });
+
+    const pasoX = Math.max(1, Math.ceil(n / 6));
+    buckets.forEach((b, i) => {
+      if (i % pasoX !== 0) return;
+      svg += `<text x="${(padL + (i + 0.5) * bw).toFixed(1)}" y="${h-8}" text-anchor="middle">${fmtFechaCorta(b.x)}</text>`;
+    });
+
+    svg += `</svg>`;
+    const ley = [
+      banda ? this._ley(TL.lima, banda.label || 'zona objetivo', 'linea', '', 0.35) : '',
+      cambios.length ? this._ley(TL.txt3, 'cambio de rutina', 'trazo') : '',
+    ].join('');
+    return ley ? `${svg}<div class="leyenda">${ley}</div>` : svg;
+  },
+
   /* Mini-línea sin ejes para tarjetas del resumen. Punto final relleno, como
      el sparkline del veredicto de la app. */
   sparkline(valores, w = 160, h = 40, color = TL.lima){

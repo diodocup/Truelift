@@ -753,7 +753,12 @@ const Vistas = {
       <button class="btn pri" id="btnAbrirPlanificador">✎ Revisar / editar en el planificador</button>
       <span class="muted" style="font-size:12px">Edita la rutina, analiza volumen y frecuencia, y exporta el Excel para que el cliente lo importe en TrueLift.</span>
     </div>`;
-    if (!datos.plan.length) return btnPln + tarjetaVacia('El JSON no contiene rutina activa (planMod).');
+    if (!datos.plan.length){
+      // Sin rutina activa puede seguir habiendo historial: el volumen real
+      // ejecutado no depende del planMod.
+      return btnPln + tarjetaVacia('El JSON no contiene rutina activa (planMod).')
+           + this._cardVolumenHistorico(ctx);
+    }
 
     // Última ejecución de cada ejercicio dentro del rango
     const ultima = new Map();
@@ -841,7 +846,136 @@ const Vistas = {
       </div>`;
     }
 
-    return btnPln + bloques + htmlFuera + htmlVol;
+    return btnPln + bloques + htmlFuera + htmlVol + this._cardVolumenHistorico(ctx);
+  },
+
+  /* ---- Evolución del volumen real ----
+     Serie temporal de series efectivas por semana y grupo sobre TODO el
+     historial del cliente (no el rango seleccionado arriba): la pregunta que
+     responde es cómo ha evolucionado el volumen a lo largo de los años,
+     también a través de los cambios de rutina. Es la misma visualización que
+     la sección «Volumen real» de la pestaña Volumen de la app. */
+
+  /* Cubos temporales (semanas de lunes a domingo, o meses naturales si el
+     historial pasa de ~14 meses) con las series efectivas por grupo:
+     primario ×1 vía Planner.grupoDe y secundarios ×0,5 con la biblioteca del
+     entrenador. Solo cuentan las series CON dato anotado; los periodos sin
+     sesiones quedan a cero, que también es información. */
+  _volumenRealHistorico(datos){
+    const fuerza = datos.fuerza; // ya ordenado por fecha en normalizar()
+    if (!fuerza.length) return null;
+    const hoy = soloDia(new Date());
+    const primero = soloDia(fuerza[0].fecha);
+    const ultimo = soloDia(fuerza[fuerza.length - 1].fecha);
+    const fin = hoy > ultimo ? hoy : ultimo;
+    const mensual = diasEntre(primero, fin) > 60 * 7; // >60 semanas → meses
+    const iniCubo = d => mensual
+      ? new Date(d.getFullYear(), d.getMonth(), 1)
+      : new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+    const sigCubo = d => mensual
+      ? new Date(d.getFullYear(), d.getMonth() + 1, 1)
+      : new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7);
+
+    const cubos = [], idx = new Map();
+    const finEx = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate() + 1);
+    for (let d = iniCubo(primero); d <= fin; d = sigCubo(d)){
+      const f = sigCubo(d);
+      const desde = d < primero ? primero : d;
+      const hastaEx = f > finEx ? finEx : f;
+      idx.set(+d, cubos.length);
+      cubos.push({
+        inicio: d,
+        fin: new Date(+f - 86400000),
+        // Días del cubo dentro del historial: los cubos de los extremos son
+        // parciales y sin esto su media semanal saldría desinflada.
+        dias: Math.round((hastaEx - desde) / 86400000),
+        grupos: new Map(),
+        cambio: false,
+      });
+    }
+
+    let rutinaAnt = null;
+    fuerza.forEach(s => {
+      const clave = `${s.variante || ''}|${s.diasSem || ''}`;
+      const c = cubos[idx.get(+iniCubo(s.fecha))];
+      if (rutinaAnt != null && clave !== rutinaAnt && c) c.cambio = true;
+      rutinaAnt = clave;
+      if (!c) return;
+      s.entradas.forEach(e => {
+        const hechas = e.reps.length
+          ? e.reps.filter(r => r != null).length
+          : e.rir.filter(r => r != null).length;
+        if (!hechas) return;
+        const g = Planner.grupoDe(e.ejercicio, '', datos);
+        c.grupos.set(g, (c.grupos.get(g) || 0) + hechas);
+        Planner.gruposSecundariosDe(e.ejercicio).forEach(g2 =>
+          c.grupos.set(g2, (c.grupos.get(g2) || 0) + hechas * Planner.FACTOR_SECUNDARIO));
+      });
+    });
+    return { cubos, mensual };
+  },
+
+  _cardVolumenHistorico(ctx){
+    const hist = this._volumenRealHistorico(ctx.datos);
+    if (!hist) return '';
+    const { cubos, mensual } = hist;
+
+    const presentes = new Set();
+    cubos.forEach(c => c.grupos.forEach((v, g) => { if (v > 0) presentes.add(g); }));
+    if (!presentes.size) return '';
+    const grupos = [...new Set([...ORDEN_GRUPOS, ...presentes])].filter(g => presentes.has(g));
+    const sel = (State.volHistGrupo === 'total' || presentes.has(State.volHistGrupo))
+      ? State.volHistGrupo : 'total';
+
+    const obj = sel !== 'total' ? (Planner.objetivos()[sel] || null) : null;
+    const tasa = c => {
+      if (!c.dias) return 0;
+      const s = sel === 'total'
+        ? [...c.grupos.values()].reduce((a, b) => a + b, 0)
+        : (c.grupos.get(sel) || 0);
+      return s * 7 / c.dias;
+    };
+    // Color por tramo, con el mismo criterio que el semáforo del planificador:
+    // dentro del objetivo lima, hasta ±25 % ámbar y más lejos naranja. El
+    // total va en azul (serie de datos): no hay objetivo de volumen total.
+    const colorDe = v => {
+      if (sel === 'total') return TL.azul;
+      if (!obj) return TL.txt3;
+      if (v >= obj.min && v <= obj.max) return TL.lima;
+      if (v >= obj.min * 0.75 && v <= obj.max * 1.25) return TL.ambar;
+      return TL.naranja;
+    };
+    const buckets = cubos.map(c => {
+      const y = Math.round(tasa(c) * 10) / 10;
+      return {
+        x: c.inicio,
+        label: mensual
+          ? c.inicio.toLocaleDateString('es', { month: 'long', year: 'numeric' })
+          : `${fmtFechaCorta(c.inicio)} – ${fmtFechaCorta(c.fin)}`,
+        y,
+        color: y > 0 ? colorDe(y) : TL.vacio,
+      };
+    });
+    const cambios = cubos.map((c, i) => c.cambio ? i : -1).filter(i => i >= 0);
+
+    const opciones = ['total', ...grupos].map(g =>
+      `<option value="${esc(g)}"${g === sel ? ' selected' : ''}>${g === 'total' ? 'Total (todos los grupos)' : esc(g)}</option>`).join('');
+    const svg = Charts.volumenReal({
+      buckets,
+      banda: obj ? { min: obj.min, max: obj.max, label: `zona objetivo ${obj.min}–${obj.max}` } : null,
+      cambios,
+    });
+    return `<div class="card" style="margin-top:14px"><h3>Evolución del volumen real</h3>
+      <div class="muted" style="font-size:13px;margin-bottom:10px">Series efectivas por semana realmente registradas
+        (primario 1, secundario 0,5 con tu biblioteca), por ${mensual ? 'meses' : 'semanas'} y sobre <b>todo el
+        historial</b> del cliente — ignora el rango de arriba y atraviesa los cambios de rutina, marcados con línea
+        de puntos. Los periodos sin sesiones cuentan 0.</div>
+      <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+        <label class="muted" for="selGrupoVolHist" style="font-size:12px">Grupo</label>
+        <select id="selGrupoVolHist">${opciones}</select>
+      </div>
+      ${svg}
+    </div>`;
   },
 
   // ================= READINESS =================

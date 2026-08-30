@@ -109,6 +109,11 @@ function normalizar(raw){
     });
     fuerza.push({
       fecha, dia: l.dia ?? '—',
+      // Variante y días de la rutina con la que se ejecutó la sesión: es lo
+      // que permite marcar los CAMBIOS de rutina en el histórico de volumen
+      // (la `semana` no vale: se reinicia con cada bloque, no solo al cambiar).
+      variante: l.variante ?? null,
+      diasSem: l.dias ?? null,
       semana: (typeof l.semana === 'number') ? l.semana : null,
       compuerta: l.estadoCompuerta ?? null,           // verde | ambar | rojo | null
       descarga: l.descarga === true,

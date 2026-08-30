@@ -16,6 +16,7 @@ const State = {
   serie1: null, // id de serie o null (→ por defecto). Ver catalogoSeries()
   serie2: null, // id de serie, '' (ninguna) o null (→ por defecto)
   mostrarFcReposo: false,
+  volHistGrupo: 'total', // grupo del histórico de volumen real (Rutina)
 };
 // Migra copias antiguas y recupera ejercicios personalizados de los JSON que
 // ya estuvieran guardados en la cartera.
@@ -205,6 +206,12 @@ function render(){
   const selS2 = $('#selSerie2');
   if (selS2){
     selS2.addEventListener('change', () => { State.serie2 = selS2.value; render(); });
+  }
+
+  // Selector de grupo del histórico de volumen real (Rutina)
+  const selVolHist = $('#selGrupoVolHist');
+  if (selVolHist){
+    selVolHist.addEventListener('change', () => { State.volHistGrupo = selVolHist.value; render(); });
   }
 
   // Botón para superponer/ocultar la FC en reposo en la gráfica de VFC.

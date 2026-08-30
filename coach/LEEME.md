@@ -24,7 +24,7 @@ ninguna persona.
 - **Resumen**: ficha, adherencia, disponibilidad diaria (semáforo), rendimiento y alertas (molestias en observaciones, estancamientos, RIR alto, readiness/VFC).
 - **Sesiones**: cada sesión con kg/reps/RIR por serie, observaciones resaltadas y delta vs sesión anterior.
 - **Ejercicios**: progresión por ejercicio con gráfica de kg y e1RM estimado, y diagnóstico automático.
-- **Rutina**: plan activo vs última ejecución, ejercicios fuera de plan y volumen semanal por grupo. Desde aquí puedes abrir la rutina en el Planificador.
+- **Rutina**: plan activo vs última ejecución, ejercicios fuera de plan, volumen semanal por grupo y la **evolución del volumen real** — series efectivas/semana por grupo muscular sobre todo el historial del cliente, con la zona objetivo y los cambios de rutina marcados. Desde aquí puedes abrir la rutina en el Planificador.
 - **Planificador**: crea o revisa la rutina del cliente y expórtala al Excel que él importa en TrueLift.
 - **Readiness**: estado para entrenar (0–100), VFC con su banda y detalle diario.
 - **Nutrición**: la capa de dieta del cliente, si la tiene activada (ver abajo).
