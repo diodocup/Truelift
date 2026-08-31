@@ -16,7 +16,12 @@
    { sistema: 'simple'|'doble',
      dias: [ { nombre, filas: [ { patron, ejercicio, series, rir,
                repsMin, repsMax, descanso, topBack, backoffPct,
-               rirBack } ] } ] }
+               rirBack, dropSet, dropPct, superConAnterior } ] } ] }
+   Columnas de cada hoja Día (igual que rutina_excel.dart de la app):
+   A patrón · B ejercicio · C series · D RIR · E reps mín · F reps máx ·
+   G descanso · H top+back (sí/no) · I % back-off · J RIR back ·
+   K nº de superserie (filas consecutivas con el mismo número van
+   enlazadas) · L drop set (sí/no) · M % drop.
    ================================================================ */
 
 const XLSX = {
@@ -307,8 +312,20 @@ const XLSX = {
           // «sí» (es), «yes» (en), «sim» (pt) o 1; igual que la app (s/y/1)
           topBack: /^\s*(s|y|1)/i.test(String(g('H') ?? '')),
           backoffPct: num(g('I')), rirBack: num(g('J')),
+          // K: nº de superserie (se convierte a enlaces al cerrar el día).
+          _superserie: num(g('K')) || 0,
+          dropSet: /^\s*(s|y|1)/i.test(String(g('L') ?? '')),
+          dropPct: num(g('M')),
+          superConAnterior: false,
         });
       }
+      // Superserie: dos filas consecutivas con el mismo número de la columna
+      // K quedan enlazadas (mismo convenio que la app al importar).
+      const numsSS = filas.map(f => f._superserie);
+      filas.forEach((f, i) => {
+        f.superConAnterior = numsSS[i] !== 0 && i > 0 && numsSS[i - 1] === numsSS[i];
+        delete f._superserie;
+      });
       const nombreDia = `Día ${d}`;
       if (filas.length || celdas.get('B1'))
         dias.push({ nombre: this._canon(celdas.get('B1')) || nombreDia, filas });
@@ -348,10 +365,12 @@ const XLSX = {
   /* Regenera el <x:sheetData> de una hoja Día con el contenido dado. */
   _sheetDataDia(nombreDia, filas, sistema){
     const CAB = ['Patrón','Ejercicio','Series','RIR','Reps mín / objetivo',
-                 'Reps máx (solo doble)','Descanso (min)','Top+Back (sí/no)','% back-off','RIR back'];
-    const COLS = ['A','B','C','D','E','F','G','H','I','J'];
+                 'Reps máx (solo doble)','Descanso (min)','Top+Back (sí/no)','% back-off','RIR back',
+                 'Superserie (nº)','Drop set (sí/no)','% drop'];
+    const COLS = ['A','B','C','D','E','F','G','H','I','J','K','L','M'];
     let xml = `<x:row r="1">${this._celdaTexto('A1', 2, 'Nombre del día/sesión:')}${this._celdaTexto('B1', 3, nombreDia)}</x:row>`;
     xml += `<x:row r="3">${CAB.map((t, i) => this._celdaTexto(COLS[i] + 3, 4, t)).join('')}</x:row>`;
+    const numsSS = this._numerosSuperserie(filas);
     for (let i = 0; i < this.MAX_FILAS; i++){
       const r = 4 + i, f = filas[i];
       if (!f){ xml += `<x:row r="${r}" />`; continue; }
@@ -365,9 +384,35 @@ const XLSX = {
         c += this._celdaTexto('H' + r, 5, 'sí');
         n('I', f.backoffPct); n('J', f.rirBack);
       }
+      // K: nº de superserie del día (vacío = va sola). L/M: drop set y su %
+      // (excluyente con top+back: si ambos vinieran marcados, manda T+B y el
+      // drop no se escribe, igual que exporta la app).
+      if (numsSS[i]) n('K', numsSS[i]);
+      if (f.dropSet && !f.topBack){
+        c += this._celdaTexto('L' + r, 5, 'sí');
+        n('M', f.dropPct);
+      }
       xml += `<x:row r="${r}">${c}</x:row>`;
     }
     return xml;
+  },
+
+  /* Número de superserie (1, 2, …) por fila, 0 si va sola: cadenas contiguas
+     de filas con superConAnterior (el enlace de la primera fila se ignora).
+     Es el mismo derivado que usa el planificador y la app. */
+  _numerosSuperserie(filas){
+    const out = filas.map(() => 0);
+    let n = 0, k = 0;
+    while (k < filas.length){
+      let fin = k;
+      while (fin + 1 < filas.length && filas[fin + 1].superConAnterior) fin++;
+      if (fin > k){
+        n++;
+        for (let j = k; j <= fin; j++) out[j] = n;
+      }
+      k = fin + 1;
+    }
+    return out;
   },
 
   /* Celda de texto SIN estilo, tal y como escribe la app en el bloque de
@@ -570,6 +615,9 @@ const XLSX = {
               descanso: num(p.descansoMin),
               topBack: p.topBack === true,
               backoffPct: num(p.backoffPct), rirBack: num(p.rirBack),
+              dropSet: p.dropSet === true,
+              dropPct: num(p.dropPct),
+              superConAnterior: p.superConAnterior === true,
             };
           }),
       })),

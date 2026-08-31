@@ -21,13 +21,30 @@ ninguna persona.
 ## Pestañas
 
 - **Cartera**: pantalla inicial con todos los clientes — semáforo de atención, última sesión, antigüedad de los datos importados, adherencia del bloque y alertas. Clic para abrir un cliente. Ordenada por atención requerida.
-- **Resumen**: ficha, adherencia, disponibilidad diaria (semáforo), rendimiento y alertas (molestias en observaciones, estancamientos, RIR alto, readiness/VFC).
-- **Sesiones**: cada sesión con kg/reps/RIR por serie, observaciones resaltadas y delta vs sesión anterior.
+- **Resumen**: ficha, adherencia, disponibilidad diaria (semáforo), rendimiento y alertas (ejercicios marcados con molestias, molestias intuidas en observaciones, estancamientos, RIR alto, readiness/VFC).
+- **Sesiones**: cada sesión con kg/reps/RIR por serie, observaciones resaltadas, delta vs sesión anterior y el distintivo 🤒 de los ejercicios hechos con molestias.
 - **Ejercicios**: progresión por ejercicio con gráfica de kg y e1RM estimado, y diagnóstico automático.
 - **Rutina**: plan activo vs última ejecución, ejercicios fuera de plan, volumen semanal por grupo y la **evolución del volumen real** — series efectivas/semana por grupo muscular sobre todo el historial del cliente, con la zona objetivo y los cambios de rutina marcados. Desde aquí puedes abrir la rutina en el Planificador.
 - **Planificador**: crea o revisa la rutina del cliente y expórtala al Excel que él importa en TrueLift.
 - **Readiness**: estado para entrenar (0–100), VFC con su banda y detalle diario.
 - **Nutrición**: la capa de dieta del cliente, si la tiene activada (ver abajo).
+
+## Ejercicios hechos con molestias
+
+En TrueLift el cliente puede marcar un ejercicio como **realizado con molestias o limitaciones** (dolor, rango recortado, menos peso del que tocaba, técnica adaptada). Es lo que le permite entrenar suave mientras se recupera sin arruinar su progresión, y aparece marcado con 🤒 en todo el Coach.
+
+Esa sesión **se registra igual** —kg, repeticiones y volumen cuentan— pero la app **no la evalúa**: no mide su rendimiento, no gasta un intento de progresión, no sirve de referencia para las siguientes sesiones y no puede marcar un récord. Cuando el cliente vuelve a estar bien, la carga se retoma desde su última sesión buena.
+
+El Coach lee la marca con el mismo criterio, para que no aparezcan diagnósticos falsos:
+
+- **Diagnóstico de progresión** (Ejercicios y Planificador): esas sesiones no cuentan. Sin esto, tres semanas entrenando suave por una tendinitis se leían como un estancamiento.
+- **Mejor e1RM del rango**: las excluye, igual que los récords de la app.
+- **RIR alto sostenido**: tampoco las mira.
+- **Gráfica de progresión**: los puntos se pintan en ámbar. La curva sigue enseñando lo que se hizo, pero se ve de un vistazo que ese bajón es voluntario.
+- **Última carga de referencia** en el Planificador: es la de la última sesión *evaluable*, no la del día con molestias. Si no hay ninguna, se enseña la real avisando de que no sirve para planificar.
+- **Alertas**: cada ejercicio marcado genera una alerta roja, y si se repite en **3 o más sesiones** del periodo sube a *Molestias repetidas*. Eso último merece decisión tuya: la app protege esa progresión indefinidamente, así que conviene cambiar el ejercicio por una variante que no le moleste.
+
+Es una marca distinta de las **molestias intuidas en las observaciones**, que el Coach sigue detectando por palabras clave en el texto libre. Aquellas son una sospecha; esta es una declaración del cliente. Las copias de seguridad anteriores a esta versión se importan igual: simplemente no traen la marca.
 
 ## Nutrición
 
@@ -58,6 +75,11 @@ Flujo de revisión semanal/quincenal recomendado:
 
 Detalles:
 
+- Cada fila admite tres **modalidades de series**, las mismas que la app, y son **excluyentes entre sí**: una fila lleva T+B **o** Drop, y una superserie solo enlaza filas a **series rectas** (sin T+B ni Drop a ninguno de los dos lados). Al marcar una, las que no caben se apagan y sus casillas quedan deshabilitadas con el motivo en el rótulo.
+  - **T+B (top set + back-offs)**: la 1.ª serie fija la progresión; el resto se hace con un % menos de peso hasta su RIR objetivo.
+  - **Drop (drop set)**: la 1.ª serie fija la progresión; el resto son drops inmediatos, sin descanso, cada uno con un % menos que la serie **anterior** (en cascada). Excluyente con T+B y con SS. En la app los drops se guardan como consulta: cuentan para el volumen, pero no puntúan el rendimiento.
+  - **SS (superserie con el anterior)**: enlaza la fila con la de encima; en la app se alternan las series de los ejercicios del grupo (A1→B1→A2→B2…), con los descansos de siempre. Enlazando varias filas seguidas salen grupos de tres o más; la etiqueta (Superserie 1, 2…) aparece bajo la fila. La progresión de cada ejercicio no cambia. Solo con series rectas: excluyente con T+B y con Drop.
+- En el Excel estas opciones viajan en las columnas **H–J** (top+back), **K** (nº de superserie: filas consecutivas con el mismo número van juntas) y **L–M** (drop set y su %). Las plantillas antiguas, sin esas columnas, se importan igual.
 - También puedes **Abrir Excel…** (una plantilla `mi_rutina_truelift.xlsx` rellenada) o empezar **En blanco** (por ejemplo para un cliente nuevo, sin JSON todavía: el borrador general se guarda igualmente).
 - El Excel exportado es la plantilla oficial con tus datos: conserva desplegables y validaciones, así que también se puede retocar en Excel/LibreOffice antes de importarlo.
 - Los objetivos de series y frecuencia por grupo (el semáforo) se editan desde el botón **⚙ Objetivos** del panel de volumen; se guardan en la app y en tu copia del entrenador, con opción de restaurar los valores por defecto.

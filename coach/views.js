@@ -17,6 +17,15 @@ function chipCompuerta(c){
   const lbl = { verde:'Listo', ambar:'Cautela', rojo:'Suave' }[c] || c;
   return `<span class="chip ${esc(c)}"><span class="punto ${esc(c)}"></span> ${esc(lbl)}</span>`;
 }
+/* Distintivo de "hecho con molestias" de una entrada. La cara con termómetro es
+   el mismo icono que el cliente ve en su historial de TrueLift, así que los dos
+   están mirando la misma marca cuando hablan de ella. */
+function chipMolestias(e){
+  if (!e || !e.molestias) return '';
+  return ' <span class="chip ambar" title="El cliente lo hizo con molestias o limitaciones. '
+       + 'La sesión queda registrada pero no se evalúa: no gasta intento de progresión, '
+       + 'no fija su referencia y no puede marcar un récord.">🤒 molestias</span>';
+}
 function textoRend(s){
   const partes = [];
   if (s.rendimiento) partes.push(s.rendimiento);
@@ -555,7 +564,28 @@ const Vistas = {
     const add = (nivel, tag, cuerpo) => out.push({ nivel,
       html: `<div class="alerta ${nivel}"><span class="tag">${tag}</span><span>${cuerpo}</span></div>` });
 
-    // 1. Molestias en observaciones (máxima prioridad)
+    // 1. Molestias (máxima prioridad). Primero las que el cliente MARCÓ —son
+    // una declaración suya, no una sospecha leída en el texto— y, dentro de
+    // ellas, la recurrencia por delante de los casos sueltos: la app protege la
+    // progresión de ese ejercicio indefinidamente, así que la decisión de
+    // cambiarlo por una variante que no duela es del entrenador.
+    const repetidas = Metricas.molestiasRecurrentes(fuerzaR);
+    repetidas.forEach(r => {
+      add('rojo', 'Molestias repetidas',
+        `<b>${esc(r.ejercicio)}</b>: ${r.veces} sesiones marcadas con molestias en el periodo `
+        + `(la última, ${fmtFecha(r.ultima)}). Su progresión está congelada en ese ejercicio: `
+        + `valorar cambiarlo por una variante que no le moleste.`);
+    });
+    const recurrentes = new Set(repetidas.map(r => r.ejercicio));
+    Metricas.molestiasMarcadas(fuerzaR).forEach(m => {
+      if (recurrentes.has(m.ejercicio)) return; // ya va en la alerta de arriba
+      add('rojo', 'Molestias',
+        `${fmtFecha(m.fecha)} · <b>${esc(m.ejercicio)}</b>: marcado como hecho con molestias `
+        + `(no evaluado, no gasta intento de progresión)`
+        + (m.obs ? ` · <cite>“${esc(m.obs)}”</cite>` : '.'));
+    });
+
+    // Y después las que solo se intuyen en las observaciones.
     Metricas.molestias(fuerzaR).forEach(m => {
       add('rojo', 'Molestia', `${fmtFecha(m.fecha)} · <b>${esc(m.ejercicio)}</b>: <cite>“${esc(m.obs)}”</cite>`);
     });
@@ -637,7 +667,7 @@ const Vistas = {
         const idx = hist.findIndex(p => p.entrada === e);
         const d = idx >= 0 ? Metricas.delta(hist, idx) : null;
         return `<tr>
-          <td>${esc(e.ejercicio)}${e.modulada ? ' <span class="chip ambar" title="Carga modulada por autorregulación">mod.</span>' : ''}</td>
+          <td>${esc(e.ejercicio)}${e.modulada ? ' <span class="chip ambar" title="Carga modulada por autorregulación">mod.</span>' : ''}${chipMolestias(e)}</td>
           <td class="num">${celdaKg(e)}${d ? `<span class="delta ${d.tipo}">${d.texto}</span>` : ''}</td>
           <td class="num">${joinSeries(e.reps)}</td>
           <td class="num">${joinSeries(e.rir)}</td>
@@ -695,26 +725,33 @@ const Vistas = {
       const hist = Metricas.historicoEjercicio({ fuerza: fuerzaR }, ejercicioSel);
       const diag = Metricas.diagnostico(hist);
       const rirAlto = Metricas.rirAltoSostenido(hist);
-      const molest = hist.filter(p => p.entrada.obs &&
+      const conMolestias = hist.filter(p => p.entrada.molestias);
+      const molest = hist.filter(p => !p.entrada.molestias && p.entrada.obs &&
         Metricas.PALABRAS_MOLESTIA.some(w => sinTildes(p.entrada.obs).includes(w)));
 
       const chips = [
         diag.estado === 'progresando' ? `<span class="chip verde">${esc(diag.texto)}</span>` :
         diag.estado === 'estancado' ? `<span class="chip rojo">${esc(diag.texto)}</span>` :
+        diag.estado === 'molestias' ? `<span class="chip ambar" title="Todas sus sesiones de este ejercicio en el rango van marcadas con molestias, así que no hay ninguna con la que juzgar su progresión.">${esc(diag.texto)}</span>` :
         `<span class="chip gris">${esc(diag.texto)}</span>`,
         rirAlto ? '<span class="chip azul">RIR alto: puede subir carga</span>' : '',
+        conMolestias.length ? `<span class="chip ambar" title="Sesiones que el cliente marcó como hechas con molestias. No entran en el diagnóstico de progresión ni en el mejor e1RM.">🤒 Con molestias (${conMolestias.length})</span>` : '',
         molest.length ? `<span class="chip rojo">Molestias reportadas (${molest.length})</span>` : '',
       ].join(' ');
 
+      // Los puntos de las sesiones con molestias se pintan en ámbar: la curva
+      // sigue enseñando lo que se hizo, pero se lee de un vistazo que ese
+      // bajón es voluntario y no cuenta para la progresión.
+      const colorPunto = p => p.entrada.molestias ? '#E0A92E' : undefined;
       const grafica = Charts.lineas({
         series: [
-          { nombre: 'Kg (mejor serie)', color: '#6FA8DC', puntos: hist.map(p => ({ x: p.fecha, y: p.kgR })) },
-          { nombre: 'e1RM estimado', color: '#a8ee19', puntos: hist.map(p => ({ x: p.fecha, y: p.e1rm })) },
+          { nombre: 'Kg (mejor serie)', color: '#6FA8DC', puntos: hist.map(p => ({ x: p.fecha, y: p.kgR, c: colorPunto(p) })) },
+          { nombre: 'e1RM estimado', color: '#a8ee19', puntos: hist.map(p => ({ x: p.fecha, y: p.e1rm, c: colorPunto(p) })) },
         ],
       });
 
       const filas = hist.slice().reverse().map(p => `<tr>
-        <td>${fmtFecha(p.fecha)}<div class="muted" style="font-size:12px">${esc(p.dia)}${p.semana != null ? ` · sem ${p.semana}` : ''}</div></td>
+        <td>${fmtFecha(p.fecha)}${chipMolestias(p.entrada)}<div class="muted" style="font-size:12px">${esc(p.dia)}${p.semana != null ? ` · sem ${p.semana}` : ''}</div></td>
         <td class="num">${celdaKg(p.entrada)}</td>
         <td class="num">${joinSeries(p.entrada.reps)}</td>
         <td class="num">${joinSeries(p.entrada.rir)}</td>
@@ -723,7 +760,9 @@ const Vistas = {
         <td class="${p.entrada.obs ? 'obs-si' : ''}">${esc(p.entrada.obs) || '<span class="muted">—</span>'}</td>
       </tr>`).join('');
 
-      const mejor = Math.max(...hist.map(p => p.e1rm ?? -Infinity));
+      // Mismo criterio que los récords de la app: una sesión con molestias no
+      // fija marca, así que tampoco puede ser el mejor e1RM del rango.
+      const mejor = Math.max(...Metricas.evaluables(hist).map(p => p.e1rm ?? -Infinity));
       detalle = `<div class="card">
         <h3 style="font-size:16px;text-transform:none;letter-spacing:0;color:var(--texto)">${esc(ejercicioSel)}
           <span class="muted" style="font-weight:400">· ${esc(datos.grupoDe.get(ejercicioSel) || 'Otros')}</span></h3>
@@ -769,13 +808,28 @@ const Vistas = {
     datos.plan.forEach(p => { if (!dias.includes(p.dia)) dias.push(p.dia); });
 
     const bloques = dias.map(dia => {
-      const filas = datos.plan.filter(p => p.dia === dia).sort((a,b) => a.orden - b.orden).map(p => {
+      const lineas = datos.plan.filter(p => p.dia === dia).sort((a,b) => a.orden - b.orden);
+      // Superseries: cadenas contiguas de líneas con superConAnterior (el
+      // enlace de la primera línea del día se ignora). Mismo derivado que la
+      // app y el planificador.
+      const numSS = lineas.map(() => 0);
+      let nSS = 0, kSS = 0;
+      while (kSS < lineas.length){
+        let fin = kSS;
+        while (fin + 1 < lineas.length && lineas[fin + 1].superConAnterior) fin++;
+        if (fin > kSS){ nSS++; for (let j = kSS; j <= fin; j++) numSS[j] = nSS; }
+        kSS = fin + 1;
+      }
+      const filas = lineas.map((p, iSS) => {
         const u = ultima.get(p.ejercicio);
         let ejec = '<span class="muted">— sin registro en el rango</span>', avisos = '';
         if (u){
           const rirMed = Metricas.rirMedio(u.e);
           ejec = `${celdaKg(u.e)} kg · ${joinSeries(u.e.reps)} reps · RIR ${joinSeries(u.e.rir)}
                   <div class="muted" style="font-size:12px">${fmtFecha(u.s.fecha)}</div>`;
+          // Su última vez fue con molestias: la carga está bajada a propósito y
+          // no es la referencia desde la que planificar la siguiente.
+          if (u.e.molestias) avisos += chipMolestias(u.e);
           if (p.series != null && u.e.nSeries < p.series)
             avisos += ` <span class="chip ambar" title="Hizo menos series de las planificadas">${u.e.nSeries}/${p.series} series</span>`;
           const rirPlan = parseFloat(p.rir);
@@ -785,7 +839,7 @@ const Vistas = {
         return `<tr>
           <td class="num muted">${p.orden}</td>
           <td>${esc(p.ejercicio)}<div class="muted" style="font-size:12px">${esc(p.grupo)} · ${esc(p.patron)}</div></td>
-          <td class="num">${p.series ?? '—'} × ${esc(p.reps)} @RIR ${esc(p.rir)}${p.descansoMin != null ? `<div class="muted" style="font-size:12px">descanso ${fmtNum(p.descansoMin,1)} min</div>` : ''}</td>
+          <td class="num">${p.series ?? '—'} × ${esc(p.reps)} @RIR ${esc(p.rir)}${p.topBack ? ' <span class="chip azul" title="Top set + back-offs: la 1.ª serie fija la progresión">T+B</span>' : ''}${p.dropSet ? ` <span class="chip azul" title="Drop set: la 1.ª serie fija la progresión; el resto baja${p.dropPct != null ? ` un ${p.dropPct} %` : ''} en cascada sin descanso">Drop</span>` : ''}${numSS[iSS] ? ` <span class="chip azul" title="Superserie ${numSS[iSS]}: en la app se alternan las series con el resto del grupo">SS${numSS[iSS]}</span>` : ''}${p.descansoMin != null ? `<div class="muted" style="font-size:12px">descanso ${fmtNum(p.descansoMin,1)} min</div>` : ''}</td>
           <td>${ejec}${avisos}</td>
         </tr>`;
       }).join('');
@@ -1691,14 +1745,24 @@ const Vistas = {
     const filasEj = nombres.map(n => {
       const hist = Metricas.historicoEjercicio({ fuerza: fuerzaR }, n);
       if (!hist.length) return '';
-      const pri = hist[0], ult = hist[hist.length - 1];
+      // El "de dónde a dónde" se mide entre sesiones EVALUABLES: cerrar el
+      // recorrido en un día con molestias —carga bajada a propósito— enseñaría
+      // en el informe una caída que no ha existido. Sin ninguna evaluable se
+      // enseña lo que hay, avisando de que va con molestias.
+      const ev = Metricas.evaluables(hist);
+      const recorrido = ev.length ? ev : hist;
+      const pri = recorrido[0], ult = recorrido[recorrido.length - 1];
       const diag = Metricas.diagnostico(hist);
-      const mejor = Math.max(...hist.map(p => p.e1rm ?? -Infinity));
-      const cls = diag.estado === 'progresando' ? 'verde' : diag.estado === 'estancado' ? 'rojo' : 'gris';
+      // Mismo criterio que los récords de la app: una sesión con molestias no
+      // fija marca, así que tampoco puede ser el mejor e1RM del rango.
+      const mejor = Math.max(...ev.map(p => p.e1rm ?? -Infinity));
+      const cls = diag.estado === 'progresando' ? 'verde'
+                : diag.estado === 'estancado' ? 'rojo'
+                : diag.estado === 'molestias' ? 'ambar' : 'gris';
       return `<tr>
         <td>${esc(n)}<div class="muted" style="font-size:11px">${esc(datos.grupoDe.get(n) || 'Otros')}</div></td>
         <td class="num">${hist.length}</td>
-        <td class="num">${fmtNum(pri.kgR,2)} → ${fmtNum(ult.kgR,2)}</td>
+        <td class="num">${fmtNum(pri.kgR,2)} → ${fmtNum(ult.kgR,2)}${ev.length ? '' : ' 🤒'}</td>
         <td class="num">${isFinite(mejor) ? fmtNum(mejor,1) : '—'}</td>
         <td><span class="chip ${cls}">${esc(diag.texto)}</span>${Metricas.rirAltoSostenido(hist) ? ' <span class="chip azul">RIR alto</span>' : ''}</td>
       </tr>`;

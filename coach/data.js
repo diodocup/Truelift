@@ -77,6 +77,12 @@ function normalizar(raw){
     grupo: p.grupo ?? 'Otros', ejercicio: p.ejercicio ?? '—',
     series: p.series ?? null, reps: p.reps ?? '—', rir: p.rir ?? '—',
     descansoMin: (typeof p.descansoMin === 'number') ? p.descansoMin : null,
+    // Claves aditivas (las copias anteriores no las traen): modalidad de las
+    // series y superserie, para que la vista Rutina pueda señalarlas.
+    topBack: p.topBack === true,
+    dropSet: p.dropSet === true,
+    dropPct: (typeof p.dropPct === 'number') ? p.dropPct : null,
+    superConAnterior: p.superConAnterior === true,
   }));
 
   const grupoDe = new Map();
@@ -104,6 +110,14 @@ function normalizar(raw){
         kgSets, reps, rir,
         obs: (e.obs ?? '').trim(),
         modulada: e.modulada === true,
+        // El cliente marcó el ejercicio como hecho CON MOLESTIAS o
+        // limitaciones. La app lo registra igual (kg, reps y volumen cuentan)
+        // pero no lo evalúa: no gasta intento de progresión, no fija su
+        // referencia y no puede marcar un récord. El Coach tiene que leerlo
+        // igual, o una sesión suave con dolor se lee aquí como un bajón.
+        // Clave aditiva: las copias anteriores a esta versión no la traen.
+        molestias: e.molestias === true,
+        noDisponible: e.noDisponible === true,
         nSeries: Math.max(reps.length, rir.length, kgSets ? kgSets.length : 0),
       };
     });
@@ -259,17 +273,33 @@ const Metricas = {
     return false;
   },
 
+  /* Puntos del histórico que SÍ valen para juzgar la progresión.
+     Fuera quedan las sesiones que el propio motor de TrueLift no evalúa:
+     el ejercicio marcado como hecho con molestias (carga o rango recortados a
+     propósito) y el marcado como no realizado. Sin este filtro, tres semanas
+     entrenando suave por una tendinitis se leían aquí como un estancamiento y
+     el entrenador bajaba una carga que no había que tocar. */
+  evaluables(hist){
+    return hist.filter(p => !p.entrada.molestias && !p.entrada.noDisponible);
+  },
+
   // Diagnóstico de progresión de un ejercicio
   diagnostico(hist){
-    if (hist.length < 2) return { estado:'insuficiente', texto:'Datos insuficientes' };
+    const h = this.evaluables(hist);
+    // Todas sus sesiones son con molestias: no hay estancamiento que
+    // diagnosticar, hay un ejercicio que duele. Se dice tal cual en vez de
+    // devolver un "datos insuficientes" que esconde el motivo.
+    if (!h.length && hist.some(p => p.entrada.molestias))
+      return { estado:'molestias', texto:'Entrenado con molestias' };
+    if (h.length < 2) return { estado:'insuficiente', texto:'Datos insuficientes' };
     let racha = 0; // sesiones consecutivas (desde el final) sin mejora
-    for (let i = hist.length - 1; i >= 1; i--){
-      if (this._mejora(hist[i], hist[i-1])) break;
+    for (let i = h.length - 1; i >= 1; i--){
+      if (this._mejora(h[i], h[i-1])) break;
       racha++;
     }
     if (racha === 0) return { estado:'progresando', texto:'Progresando' };
     if (racha >= 3){
-      const desde = hist[hist.length - racha].fecha;
+      const desde = h[h.length - racha].fecha;
       return { estado:'estancado', texto:`Estancado desde ${fmtFecha(desde)}`, desde, racha };
     }
     return { estado:'neutro', texto:`Sin mejora en la última sesión` };
@@ -277,24 +307,57 @@ const Metricas = {
 
   // RIR medio >= 3 en las 2 últimas sesiones → va sobrado
   rirAltoSostenido(hist){
-    if (hist.length < 2) return false;
-    const u = hist.slice(-2);
+    const h = this.evaluables(hist);
+    if (h.length < 2) return false;
+    const u = h.slice(-2);
     return u.every(p => p.rirMed != null && p.rirMed >= 3);
   },
 
   PALABRAS_MOLESTIA: ['dolor','molest','pinch','tiron','lesion','duele','sobrecarga','cargad',
                       'rodilla','hombro','lumbar','cervical','codo','muneca','aductor','isquio','tendon'],
 
-  // Observaciones con posibles molestias en el rango
+  // Observaciones con posibles molestias en el rango.
+  //
+  // Es una heurística sobre texto libre, así que deja fuera las entradas que el
+  // cliente ya marcó explícitamente: esas las devuelve [molestiasMarcadas] y
+  // listarlas dos veces llenaría el panel de alertas duplicadas.
   molestias(fuerzaR){
     const out = [];
     fuerzaR.forEach(s => s.entradas.forEach(e => {
-      if (!e.obs) return;
+      if (!e.obs || e.molestias) return;
       const t = sinTildes(e.obs);
       if (this.PALABRAS_MOLESTIA.some(p => t.includes(p)))
         out.push({ fecha: s.fecha, ejercicio: e.ejercicio, obs: e.obs });
     }));
     return out.reverse(); // más recientes primero
+  },
+
+  /* Ejercicios que el cliente marcó como hechos CON MOLESTIAS en el rango.
+     A diferencia de [molestias] no es una sospecha leída entre líneas: es una
+     declaración suya, y además dice que esa sesión no ha entrado en su
+     progresión. Más recientes primero. */
+  molestiasMarcadas(fuerzaR){
+    const out = [];
+    fuerzaR.forEach(s => s.entradas.forEach(e => {
+      if (e.molestias) out.push({ fecha: s.fecha, ejercicio: e.ejercicio, obs: e.obs });
+    }));
+    return out.reverse();
+  },
+
+  /* Ejercicios con molestias marcadas en [n] sesiones o más dentro del rango,
+     con cuántas veces y la más reciente. Es lo que separa "un mal día" de "esto
+     lleva semanas": la app protege esa progresión indefinidamente, así que la
+     decisión de cambiar el movimiento es del entrenador. */
+  molestiasRecurrentes(fuerzaR, n = 3){
+    const conteo = new Map();
+    this.molestiasMarcadas(fuerzaR).forEach(m => {
+      const e = conteo.get(m.ejercicio) || { ejercicio: m.ejercicio, veces: 0, ultima: m.fecha };
+      e.veces++;
+      if (m.fecha > e.ultima) e.ultima = m.fecha;
+      conteo.set(m.ejercicio, e);
+    });
+    return [...conteo.values()].filter(e => e.veces >= n)
+      .sort((a,b) => b.veces - a.veces);
   },
 
   adherencia(fuerzaR, desde, hasta, diasSemana){
