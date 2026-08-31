@@ -658,6 +658,10 @@ const Planner = {
     // Solo viajan los ejercicios personalizados de este cliente y los usados
     // en la rutina; no se filtra la biblioteca de otros clientes.
     r.biblioteca = this.bibliotecaParaExcel(r, c?.datos);
+    // Catálogo completo para los desplegables del Excel: la plantilla
+    // embebida se quedó con los ejercicios que había el día que se creó, y el
+    // cliente tiene que poder elegir también los que llegaron después.
+    r.listasPorPatron = CAT_LISTAS;
     const nombre = c ? '_' + c.nombre.trim().replace(/\s+/g, '_') : '';
     try {
       await XLSX.descargar(r, `mi_rutina_truelift${nombre}.xlsx`);

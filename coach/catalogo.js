@@ -37,7 +37,9 @@ const CAT_LISTAS = {
   "Press de pecho en máquina",
   "Press en máquina convergente",
   "Press banca declinado con barra",
-  "Press de pecho unilateral en máquina"
+  "Press de pecho unilateral en máquina",
+  "Flexiones inclinadas",
+  "Press de pecho con banda"
  ],
  "Empuje inclinado": [
   "Press inclinado con mancuernas",
@@ -46,7 +48,8 @@ const CAT_LISTAS = {
   "Press inclinado en Smith",
   "Press inclinado en máquina",
   "Press inclinado en máquina convergente",
-  "Press inclinado con mancuernas agarre neutro"
+  "Press inclinado con mancuernas agarre neutro",
+  "Flexiones declinadas"
  ],
  "Aislamiento": [
   "Curl en polea",
@@ -83,7 +86,16 @@ const CAT_LISTAS = {
   "Extensión de tríceps con barra recta en polea",
   "Extensión unilateral de tríceps en polea",
   "Elevación lateral unilateral en polea",
-  "Extensión de tríceps en máquina"
+  "Extensión de tríceps en máquina",
+  "Encogimientos con mancuernas",
+  "Encogimientos con barra",
+  "Remo al mentón con barra Z",
+  "Press banca agarre cerrado",
+  "Fondos entre bancos",
+  "Flexiones diamante",
+  "Patada de tríceps con mancuerna",
+  "Extensión de tríceps con banda",
+  "Curl con banda"
  ],
  "Tirón vertical": [
   "Dominada agarre prono",
@@ -97,7 +109,9 @@ const CAT_LISTAS = {
   "Pullover en polea",
   "Dominada agarre supino",
   "Jalón unilateral en polea",
-  "Jalón al pecho agarre ancho"
+  "Jalón al pecho agarre ancho",
+  "Jalón al pecho agarre neutro",
+  "Pullover con mancuerna"
  ],
  "Tirón horizontal": [
   "Remo con barra inclinado",
@@ -111,7 +125,8 @@ const CAT_LISTAS = {
   "Remo unilateral en polea",
   "Remo invertido",
   "Remo en máquina Hammer",
-  "Remo en polea baja agarre amplio"
+  "Remo en polea baja agarre amplio",
+  "Remo con banda sentado"
  ],
  "Empuje vertical": [
   "Press militar de pie con barra",
@@ -121,7 +136,9 @@ const CAT_LISTAS = {
   "Press sentado con mancuernas",
   "Press militar con mancuernas de pie",
   "Press en Smith sentado",
-  "Press landmine a una mano"
+  "Press landmine a una mano",
+  "Flexión pica",
+  "Press de hombro con banda"
  ],
  "Deltoide posterior": [
   "Face pull en polea",
@@ -161,7 +178,8 @@ const CAT_LISTAS = {
   "Sentadilla goblet con mancuerna",
   "Sentadilla frontal con barra",
   "Prensa horizontal",
-  "Sentadilla pendular"
+  "Sentadilla pendular",
+  "Sentadilla con peso corporal"
  ],
  "Unilateral": [
   "Sentadilla búlgara en Smith",
@@ -203,7 +221,8 @@ const CAT_LISTAS = {
   "Puente de glúteo con barra",
   "Hip thrust en Smith",
   "Extensión de cadera en máquina",
-  "Pull-through en polea"
+  "Pull-through en polea",
+  "Puente de glúteo"
  ],
  "Glúteo medio": [
   "Abducción de cadera en máquina",
@@ -222,7 +241,8 @@ const CAT_LISTAS = {
   "Gemelo sentado",
   "Gemelo de pie en máquina",
   "Gemelo de pie en Smith",
-  "Gemelo en prensa horizontal"
+  "Gemelo en prensa horizontal",
+  "Gemelo de pie con peso corporal"
  ],
  "Core": [
   "Plancha frontal",
@@ -237,7 +257,11 @@ const CAT_LISTAS = {
   "Crunch inverso",
   "Elevación de rodillas en silla romana",
   "Plancha con peso",
-  "Bird dog"
+  "Bird dog",
+  "Superman",
+  "Hollow hold",
+  "Giro ruso con mancuerna",
+  "Paseo del granjero con mancuernas"
  ]
 };
 
@@ -412,7 +436,31 @@ const CAT_GRUPO_DE = {
  "Crunch inverso": "Core",
  "Elevación de rodillas en silla romana": "Core",
  "Plancha con peso": "Core",
- "Bird dog": "Core"
+ "Bird dog": "Core",
+ "Jalón al pecho agarre neutro": "Espalda",
+ "Pullover con mancuerna": "Espalda",
+ "Encogimientos con mancuernas": "Hombro",
+ "Encogimientos con barra": "Hombro",
+ "Remo al mentón con barra Z": "Hombro",
+ "Press banca agarre cerrado": "Tríceps",
+ "Fondos entre bancos": "Tríceps",
+ "Flexiones diamante": "Tríceps",
+ "Patada de tríceps con mancuerna": "Tríceps",
+ "Extensión de tríceps con banda": "Tríceps",
+ "Curl con banda": "Bíceps",
+ "Flexión pica": "Hombro",
+ "Press de hombro con banda": "Hombro",
+ "Flexiones declinadas": "Pectoral",
+ "Flexiones inclinadas": "Pectoral",
+ "Press de pecho con banda": "Pectoral",
+ "Remo con banda sentado": "Espalda",
+ "Sentadilla con peso corporal": "Cuádriceps",
+ "Puente de glúteo": "Isquios/glúteo",
+ "Gemelo de pie con peso corporal": "Gemelo",
+ "Superman": "Core",
+ "Hollow hold": "Core",
+ "Giro ruso con mancuerna": "Core",
+ "Paseo del granjero con mancuernas": "Core"
 };
 
 // Grupo por patrón (para ejercicios personalizados que no estén en el catálogo)

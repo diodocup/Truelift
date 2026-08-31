@@ -471,6 +471,237 @@ const XLSX = {
     return salida;
   },
 
+  /* ---- Completado de la plantilla embebida ----
+     La plantilla es un archivo fijo: sus instrucciones y sus desplegables se
+     escribieron el día que se creó. Ni explicaba las columnas de superserie
+     (K) y drop set (L/M) ni conoce los ejercicios que el catálogo y el
+     entrenador han ido sumando después, así que se completa al exportar.
+     Mismo criterio (y mismo resultado) que la exportación de la app. */
+
+  // Líneas de la hoja «Instrucciones» que documentan las modalidades nuevas.
+  INSTRUCCIONES_MODALIDADES: [
+    '9) DROP SET (opcional, columna L) = "sí": la 1.ª serie fija la progresión',
+    '   y el resto son drops sin descanso, cada uno con el % de peso menos (M)',
+    '   que la serie anterior. Necesita al menos 2 series.',
+    '10) SUPERSERIE (opcional, columna K): pon el MISMO número (1, 2, 3…) en',
+    '   filas CONSECUTIVAS del mismo día para alternar sus series (A1→B1→A2…).',
+    '   Deja la columna vacía en los ejercicios que van solos.',
+    '11) Las tres modalidades son EXCLUYENTES: una fila lleva H (top+back) o L',
+    '   (drop set), y una superserie solo enlaza filas sin H ni L (series rectas).',
+  ],
+
+  _indiceColumna(col){
+    let n = 0;
+    for (const c of col) n = n * 26 + (c.charCodeAt(0) - 64);
+    return n;
+  },
+  _nombreColumna(indice){
+    let n = indice, out = '';
+    while (n > 0){ const r = (n - 1) % 26; out = String.fromCharCode(65 + r) + out; n = (n - 1 - r) / 26; }
+    return out;
+  },
+
+  /* Celdas con texto de una hoja: "COLFILA" → texto. */
+  _celdasConTexto(xml){
+    const out = {};
+    const re = /<(?:[A-Za-z_][\w.-]*:)?c r="([A-Z]+)(\d+)"[^>]*?(?:\/>|>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?c>)/g;
+    let m;
+    while ((m = re.exec(xml))){
+      const interior = m[3] || '';
+      const t = /<(?:[A-Za-z_][\w.-]*:)?t[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?t>/.exec(interior);
+      const v = /<(?:[A-Za-z_][\w.-]*:)?v[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?v>/.exec(interior);
+      const texto = (t ? t[1] : (v ? v[1] : ''))
+        .replaceAll('&lt;', '<').replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"').replaceAll('&apos;', "'")
+        .replaceAll('&amp;', '&').trim();
+      if (texto) out[m[1] + m[2]] = { col: m[1], fila: parseInt(m[2], 10), texto };
+    }
+    return out;
+  },
+
+  /* Rangos con nombre verticales del workbook: nombre → {col, desde, hasta}. */
+  _rangosConNombre(xml){
+    const out = {};
+    const re = /<(?:[A-Za-z_][\w.-]*:)?definedName\b[^>]*\bname="([^"]+)"[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?definedName>/g;
+    let m;
+    while ((m = re.exec(xml))){
+      const r = /^[^!]*!\$([A-Z]+)\$(\d+):\$([A-Z]+)\$(\d+)$/.exec(m[2].trim());
+      if (!r || r[1] !== r[3]) continue;
+      out[m[1]] = { col: r[1], desde: parseInt(r[2], 10), hasta: parseInt(r[4], 10) };
+    }
+    return out;
+  },
+
+  /* Escribe una celda de texto respetando el orden de filas y de columnas que
+     Excel exige. Si la celda existe se sustituye (la plantilla trae celdas
+     vacías de relleno). */
+  _escribirCelda(xml, col, fila, valor){
+    const ref = col + fila;
+    const celda = `<x:c r="${ref}" t="inlineStr"><x:is>`
+      + `<x:t xml:space="preserve">${this._escXml(valor)}</x:t></x:is></x:c>`;
+    const existente = new RegExp(
+      `<(?:[A-Za-z_][\\w.-]*:)?c r="${ref}"[^>]*?(?:/>|>[\\s\\S]*?</(?:[A-Za-z_][\\w.-]*:)?c>)`)
+      .exec(xml);
+    if (existente)
+      return xml.slice(0, existente.index) + celda
+        + xml.slice(existente.index + existente[0].length);
+    const filaRe = new RegExp(
+      `<(?:[A-Za-z_][\\w.-]*:)?row r="${fila}"(?:\\s[^>]*)?(?:/>|>[\\s\\S]*?</(?:[A-Za-z_][\\w.-]*:)?row>)`);
+    const filaExistente = filaRe.exec(xml);
+    if (filaExistente){
+      const texto = filaExistente[0];
+      let nueva;
+      if (texto.endsWith('/>')){
+        nueva = texto.slice(0, -2).trimEnd() + '>' + celda + '</x:row>';
+      } else {
+        let corte = texto.lastIndexOf('</');
+        const reC = /<(?:[A-Za-z_][\w.-]*:)?c r="([A-Z]+)\d+"/g;
+        let mc;
+        while ((mc = reC.exec(texto))){
+          if (this._indiceColumna(mc[1]) > this._indiceColumna(col)){ corte = mc.index; break; }
+        }
+        nueva = texto.slice(0, corte) + celda + texto.slice(corte);
+      }
+      return xml.slice(0, filaExistente.index) + nueva
+        + xml.slice(filaExistente.index + texto.length);
+    }
+    const nuevaFila = `<x:row r="${fila}">${celda}</x:row>`;
+    const reF = /<(?:[A-Za-z_][\w.-]*:)?row r="(\d+)"/g;
+    let mf;
+    while ((mf = reF.exec(xml))){
+      if (parseInt(mf[1], 10) > fila)
+        return xml.slice(0, mf.index) + nuevaFila + xml.slice(mf.index);
+    }
+    const cierre = xml.indexOf('</x:sheetData>');
+    if (cierre < 0) return xml;
+    return xml.slice(0, cierre) + nuevaFila + xml.slice(cierre);
+  },
+
+  /* La plantilla embebida trae el desplegable sí/no de la columna H
+     (top+back) pero no el de la L (drop set), que llegó después: se clona.
+     Idempotente. */
+  _completarValidacionDrop(xmlHoja){
+    if (xmlHoja.includes('"L4:L13"')) return xmlHoja;
+    const re = /<x:dataValidation\b[^>]*sqref="H4:H13"[^>]*>[\s\S]*?<\/x:dataValidation>|<x:dataValidation\b[^>]*sqref="H4:H13"[^>]*\/>/;
+    const m = re.exec(xmlHoja);
+    if (!m) return xmlHoja;
+    const clon = m[0].replaceAll('H4:H13', 'L4:L13');
+    let out = xmlHoja.slice(0, m.index + m[0].length) + clon
+            + xmlHoja.slice(m.index + m[0].length);
+    out = out.replace(/<x:dataValidations count="(\d+)"/,
+      (_, n) => `<x:dataValidations count="${parseInt(n, 10) + 1}"`);
+    return out;
+  },
+
+  /* Añade a «Instrucciones» la explicación de K y L/M. Idempotente. */
+  _completarInstrucciones(xml){
+    // El texto viaja escapado (_escXml también escapa las comillas), así que
+    // la comprobación de idempotencia se hace sobre la forma escapada.
+    if (xml.includes(this._escXml(this.INSTRUCCIONES_MODALIDADES[0]))) return xml;
+    let ultima = 0;
+    for (const m of xml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?row r="(\d+)"/g))
+      ultima = Math.max(ultima, parseInt(m[1], 10));
+    let fila = ultima + 1, out = xml;
+    for (const linea of this.INSTRUCCIONES_MODALIDADES){
+      out = this._escribirCelda(out, 'A', fila, linea);
+      fila++;
+    }
+    return out;
+  },
+
+  /* Mete en la columna de cada patrón los ejercicios que falten y estira su
+     rango con nombre (lo que leen las validaciones). Es ADITIVO: no quita ni
+     reordena lo que la plantilla ya trae, así que se conserva su curación
+     («Punto débil opcional» ofrece aislamientos a propósito). */
+  _completarListas(xmlListas, xmlWorkbook, porPatron){
+    const rangos = this._rangosConNombre(xmlWorkbook);
+    if (!rangos.PATRONES) return { listas: xmlListas, workbook: xmlWorkbook, anadidos: 0 };
+    let listas = xmlListas;
+    const celdas = this._celdasConTexto(listas);
+    const ocupadas = new Set(Object.values(celdas).map(c => c.col)
+      .concat(Object.values(rangos).map(r => r.col)));
+    const nuevos = {};
+    let patrones = rangos.PATRONES;
+    const nombresPatron = Object.values(celdas)
+      .filter(c => c.col === patrones.col && c.fila >= patrones.desde && c.fila <= patrones.hasta)
+      .map(c => c.texto);
+    let anadidos = 0;
+
+    for (const [patronCrudo, ejercicios] of Object.entries(porPatron)){
+      const patron = String(patronCrudo || '').trim();
+      if (!patron || patron === '(Ninguno)') continue;
+      const clave = patron.replaceAll(' ', '_');
+      let rango = rangos[clave];
+      const estrena = !rango;
+      if (!rango){
+        // Nombre inválido para un rango con nombre de Excel: se deja fuera (el
+        // ejercicio sigue viajando en el bloque privado de la biblioteca).
+        if (/[\s\-'"!@#$%^&*()+=[\]{};:,<>/\\?|~`]/.test(clave) || /^\d/.test(clave)) continue;
+        let i = 3;
+        while (ocupadas.has(this._nombreColumna(i)) || (i >= 23 && i <= 29)) i++;
+        const col = this._nombreColumna(i);
+        ocupadas.add(col);
+        rango = { col, desde: 1, hasta: 0 };
+        if (!nombresPatron.includes(patron)){
+          patrones = { col: patrones.col, desde: patrones.desde, hasta: patrones.hasta + 1 };
+          listas = this._escribirCelda(listas, patrones.col, patrones.hasta, patron);
+          nombresPatron.push(patron);
+          nuevos.PATRONES = patrones;
+        }
+      }
+      const existentes = new Set(Object.values(celdas)
+        .filter(c => c.col === rango.col).map(c => c.texto));
+      let fila = rango.hasta >= rango.desde ? rango.hasta : rango.desde - 1;
+      const filaInicial = fila;
+      for (const nombreCrudo of ejercicios){
+        const nombre = String(nombreCrudo || '').trim();
+        if (!nombre || existentes.has(nombre)) continue;
+        existentes.add(nombre);
+        fila++;
+        // A partir de la fila 101 vive el bloque privado de la biblioteca.
+        if (fila >= this.FILA_BIBLIOTECA){ fila--; break; }
+        listas = this._escribirCelda(listas, rango.col, fila, nombre);
+        celdas[rango.col + fila] = { col: rango.col, fila, texto: nombre };
+        anadidos++;
+      }
+      if (fila >= rango.desde && (fila !== filaInicial || estrena))
+        nuevos[clave] = { col: rango.col, desde: rango.desde, hasta: fila };
+    }
+
+    let workbook = xmlWorkbook;
+    for (const [nombre, r] of Object.entries(nuevos)){
+      const ref = `Listas!$${r.col}$${r.desde}:$${r.col}$${r.hasta}`;
+      const re = new RegExp(
+        `(<(?:[A-Za-z_][\\w.-]*:)?definedName\\b[^>]*\\bname="${nombre}"[^>]*>)[\\s\\S]*?(</(?:[A-Za-z_][\\w.-]*:)?definedName>)`);
+      // Sustitución por FUNCIÓN: la referencia lleva «$» y en la forma de
+      // texto los «$1»/«$&» de replace se interpretarían como grupos.
+      if (re.test(workbook))
+        workbook = workbook.replace(re, (_, abre, cierra) => abre + ref + cierra);
+      else
+        workbook = workbook.replace('</x:definedNames>', () =>
+          `<x:definedName name="${nombre}">${ref}</x:definedName></x:definedNames>`);
+    }
+    return { listas, workbook, anadidos };
+  },
+
+  /* Ejercicios que deben poder elegirse en el Excel, por patrón: el catálogo
+     del Coach (si el llamante lo pasa), los que usa la propia rutina y los
+     personalizados del entrenador que viajan con ella. */
+  _ejerciciosPorPatron(rutina){
+    const out = {};
+    const add = (patron, nombre) => {
+      const p = String(patron || '').trim(), n = String(nombre || '').trim();
+      if (!p || !n || p === '(Ninguno)') return;
+      (out[p] ||= []).push(n);
+    };
+    for (const [patron, lista] of Object.entries(rutina.listasPorPatron || {}))
+      for (const nombre of (lista || [])) add(patron, nombre);
+    for (const dia of (rutina.dias || []))
+      for (const fila of (dia.filas || [])) add(fila.patron, fila.ejercicio);
+    for (const e of (rutina.biblioteca || [])) add(e.patron, e.nombre);
+    return out;
+  },
+
   _reemplazaSheetData(xmlHoja, nuevoInterior){
     const ini = xmlHoja.indexOf('<x:sheetData>');
     const fin = xmlHoja.indexOf('</x:sheetData>');
@@ -507,12 +738,14 @@ const XLSX = {
       }
     }
 
-    // Instrucciones (sheet1): sistema en B3
+    // Instrucciones (sheet1): sistema en B3 y explicación de las columnas de
+    // superserie (K) y drop set (L/M), que la plantilla embebida no traía.
     {
       let xml = dec.decode(files['xl/worksheets/sheet1.xml']);
       xml = xml.replace(
         /(<x:c r="B3"[^>]*>\s*<x:is>\s*<x:t[^>]*>)[^<]*(<\/x:t>)/,
         `$1${rutina.sistema === 'simple' ? 'simple' : 'doble'}$2`);
+      xml = this._completarInstrucciones(xml);
       files['xl/worksheets/sheet1.xml'] = enc.encode(xml);
     }
 
@@ -524,18 +757,27 @@ const XLSX = {
         dia ? dia.nombre : `Día ${d + 1}`,
         dia ? dia.filas : [],
         rutina.sistema);
-      const xml = this._reemplazaSheetData(dec.decode(files[entrada]), interior);
+      let xml = this._reemplazaSheetData(dec.decode(files[entrada]), interior);
+      xml = this._completarValidacionDrop(xml);
       files[entrada] = enc.encode(xml);
     }
 
-    // Listas: el contrato exige siempre una única marca en W101; aunque no
-    // haya personalizados se limpia cualquier bloque heredado de la plantilla.
+    // Listas: primero se completan los desplegables (los ejercicios del
+    // catálogo y del entrenador que la plantilla embebida no conoce, con sus
+    // rangos con nombre estirados en el workbook) y después el bloque privado,
+    // cuyo contrato exige siempre una única marca en W101; aunque no haya
+    // personalizados se limpia cualquier bloque heredado de la plantilla.
     {
       const rutaListas = this._rutaHoja(files, dec, 'Listas')
                       || this._rutaHoja(files, dec, 'Lists');
       if (rutaListas && files[rutaListas]){
-        const xml = this._reemplazarBiblioteca(
-          dec.decode(files[rutaListas]), rutina.biblioteca || []);
+        let xml = dec.decode(files[rutaListas]);
+        const completadas = this._completarListas(
+          xml, dec.decode(files['xl/workbook.xml']),
+          this._ejerciciosPorPatron(rutina));
+        xml = completadas.listas;
+        files['xl/workbook.xml'] = enc.encode(completadas.workbook);
+        xml = this._reemplazarBiblioteca(xml, rutina.biblioteca || []);
         files[rutaListas] = enc.encode(xml);
       }
     }
