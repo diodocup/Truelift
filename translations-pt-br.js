@@ -1,6 +1,6 @@
 const portugueseTranslations = {
   "TrueLift | Entrenamiento de fuerza y progresión automática": "TrueLift | Treino de força e progressão automática",
-  "App de fuerza e hipertrofia que decide cuánto peso cargar en cada serie y te explica por qué. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android.": "App de força e hipertrofia que decide quanta carga colocar em cada série e explica o porquê. Progressão automática, sem anúncios, sem conta e offline. Grátis no Android.",
+  "App de fuerza e hipertrofia que decide cuánto peso cargar en cada serie y te explica por qué. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android y iOS.": "App de força e hipertrofia que decide quanta carga colocar em cada série e explica o porquê. Progressão automática, sem anúncios, sem conta e offline. Grátis no Android e iOS.",
   "TrueLift | El entrenador que planifica tu progresión": "TrueLift | O treinador que planeja sua progressão",
   "TrueLift decide cuánto peso cargar en cada serie, te explica por qué y frena cuando acumulas fatiga. Gratis, sin anuncios y sin cuenta. 16 sesiones de entrenamiento con PRO incluidas.": "A TrueLift decide quanta carga colocar em cada série, explica o porquê e desacelera quando a fadiga se acumula. Grátis, sem anúncios e sem conta. 16 sessões de treino com PRO incluídas.",
 
@@ -14,7 +14,7 @@ const portugueseTranslations = {
   "Seleccionar idioma": "Selecionar idioma",
   "Descargar gratis": "Baixar grátis",
 
-  "App de fuerza e hipertrofia · Android": "App de força e hipertrofia · Android",
+  "App de fuerza e hipertrofia · Android y iOS": "App de força e hipertrofia · Android e iOS",
   "Un entrenador en tu bolsillo.": "Um treinador no seu bolso.",
   "Las apps de registro guardan lo que haces. TrueLift decide lo que haces después: cuánto peso cargar en cada serie, cuándo mantener y cuándo frenar. Y te explica el porqué.": "Os apps de registro guardam o que você fez. A TrueLift decide o que você faz depois: quanta carga colocar em cada série, quando manter e quando desacelerar. E explica o porquê.",
   "Disponible en Google Play": "Disponível no Google Play",
@@ -180,7 +180,7 @@ const portugueseTranslations = {
   "Decisión de hoy · Pierna 2": "Decisão de hoje · Perna 2",
   "Serie 2/12": "Série 2/12",
   "Mantenemos la carga y seguimos intentando lograr el objetivo.": "Mantemos a carga e seguimos tentando alcançar o objetivo.",
-  "iOS · pronto": "iOS · em breve",
+  "Descargar en la App Store": "Baixar na App Store",
   "16 sesiones PRO incluidas": "16 sessões PRO incluídas",
   "16 sesiones PRO": "16 sessões PRO",
   "Sesión en curso · serie a serie": "Sessão em andamento · série a série",

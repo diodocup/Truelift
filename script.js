@@ -2,7 +2,7 @@ document.documentElement.classList.add("js");
 
 const englishTranslations = {
   "TrueLift | Entrenamiento de fuerza y progresión automática": "TrueLift | Strength training and automatic progression",
-  "App de fuerza e hipertrofia que decide cuánto peso cargar en cada serie y te explica por qué. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android.": "Strength and hypertrophy app that decides how much weight to load on every set and explains why. Automatic progression, no ads, no account and offline. Free on Android.",
+  "App de fuerza e hipertrofia que decide cuánto peso cargar en cada serie y te explica por qué. Progresión automática, sin anuncios, sin cuenta y offline. Gratis en Android y iOS.": "Strength and hypertrophy app that decides how much weight to load on every set and explains why. Automatic progression, no ads, no account and offline. Free on Android and iOS.",
   "TrueLift | El entrenador que planifica tu progresión": "TrueLift | The coach that plans your progression",
   "TrueLift decide cuánto peso cargar en cada serie, te explica por qué y frena cuando acumulas fatiga. Gratis, sin anuncios y sin cuenta. 16 sesiones de entrenamiento con PRO incluidas.": "TrueLift decides how much weight to load on every set, explains why and holds back when fatigue builds up. Free, no ads, no account. 16 training sessions with PRO included.",
 
@@ -16,7 +16,7 @@ const englishTranslations = {
   "Seleccionar idioma": "Select language",
   "Descargar gratis": "Download free",
 
-  "App de fuerza e hipertrofia · Android": "Strength and hypertrophy app · Android",
+  "App de fuerza e hipertrofia · Android y iOS": "Strength and hypertrophy app · Android and iOS",
   "Un entrenador en tu bolsillo.": "A coach in your pocket.",
   "Las apps de registro guardan lo que haces. TrueLift decide lo que haces después: cuánto peso cargar en cada serie, cuándo mantener y cuándo frenar. Y te explica el porqué.": "Workout loggers save what you did. TrueLift decides what you do next: how much weight to load on each set, when to hold and when to back off. And it explains why.",
   "Disponible en Google Play": "Get it on Google Play",
@@ -184,7 +184,7 @@ const englishTranslations = {
   "Carga": "Load",
   "Objetivo": "Target",
   "Mantenemos la carga y seguimos intentando lograr el objetivo.": "We hold the load and keep going for the target.",
-  "iOS · pronto": "iOS · soon",
+  "Descargar en la App Store": "Download on the App Store",
   "16 sesiones PRO incluidas": "16 PRO sessions included",
   "16 sesiones PRO": "16 PRO sessions",
   "Sesión en curso · serie a serie": "Workout in progress · set by set",

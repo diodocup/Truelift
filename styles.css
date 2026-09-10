@@ -268,13 +268,6 @@ h3 {
   color: var(--lime);
 }
 
-/* "iOS - pronto": tiene forma de botón pero no lleva a ninguna parte. */
-.button.is-static {
-  border-color: rgba(244, 247, 240, 0.22);
-  color: var(--quiet);
-  cursor: default;
-}
-
 .button.is-large {
   min-height: 60px;
   padding: 0 32px;
