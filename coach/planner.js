@@ -717,6 +717,7 @@ const Planner = {
           ${CAT_PATRONES.map(p => `<option value="${esc(p === '(Ninguno)' ? '' : p)}" ${p === (f.patron || '(Ninguno)') ? 'selected' : ''}>${esc(p)}</option>`).join('')}
           ${f.patron && !CAT_PATRONES.includes(f.patron) ? `<option value="${esc(f.patron)}" selected>${esc(f.patron)}</option>` : ''}
         </select>
+        ${dibujoEjercicio(f.ejercicio || '', { clase: 'pln-dibujo' })}
         <span class="pln-ej">
           <select class="pln-campo" data-d="${d}" data-f="${i}" data-k="ejercicio" title="Ejercicio">
             <option value="" ${!f.ejercicio ? 'selected' : ''}>— elige ejercicio —</option>

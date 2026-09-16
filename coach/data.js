@@ -174,6 +174,18 @@ function normalizar(raw){
   const nutricion = normalizarNutricion(raw);
   const nut = Nutricion.contexto(nutricion);
 
+  /* Grupo muscular de lo que el cliente hizo FUERA de su rutina activa
+     (sustituciones, ejercicios de un bloque anterior): el planMod solo trae
+     el grupo de lo planificado hoy, así que el resto caía en «Otros» y se
+     quedaba fuera del reparto de volumen. La biblioteca de la app —la copia
+     de catalogo.js— sí sabe a qué grupo pertenece cada ejercicio suyo. */
+  if (typeof CAT_GRUPO_DE === 'object' && CAT_GRUPO_DE){
+    fuerza.forEach(s => s.entradas.forEach(e => {
+      if (!grupoDe.has(e.ejercicio) && CAT_GRUPO_DE[e.ejercicio])
+        grupoDe.set(e.ejercicio, CAT_GRUPO_DE[e.ejercicio]);
+    }));
+  }
+
   return { perfil, plan, fuerza, cardio, readiness, grupoDe, nutricion, nut };
 }
 

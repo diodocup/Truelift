@@ -23,11 +23,31 @@ ninguna persona.
 - **Cartera**: pantalla inicial con todos los clientes — semáforo de atención, última sesión, antigüedad de los datos importados, adherencia del bloque y alertas. Clic para abrir un cliente. Ordenada por atención requerida.
 - **Resumen**: ficha, adherencia, disponibilidad diaria (semáforo), rendimiento y alertas (ejercicios marcados con molestias, molestias intuidas en observaciones, estancamientos, RIR alto, readiness/VFC).
 - **Sesiones**: cada sesión con kg/reps/RIR por serie, observaciones resaltadas, delta vs sesión anterior y el distintivo 🤒 de los ejercicios hechos con molestias.
-- **Ejercicios**: progresión por ejercicio con gráfica de kg y e1RM estimado, y diagnóstico automático.
+- **Ejercicios**: progresión por ejercicio con gráfica de kg y e1RM estimado, diagnóstico automático y la ficha del ejercicio (dibujo, patrón, músculos secundarios, descanso sugerido y nota técnica), la misma que ve el cliente en su app.
 - **Rutina**: plan activo vs última ejecución, ejercicios fuera de plan, volumen semanal por grupo y la **evolución del volumen real** — series efectivas/semana por grupo muscular sobre todo el historial del cliente, con la zona objetivo y los cambios de rutina marcados. Desde aquí puedes abrir la rutina en el Planificador.
 - **Planificador**: crea o revisa la rutina del cliente y expórtala al Excel que él importa en TrueLift.
 - **Readiness**: estado para entrenar (0–100), VFC con su banda y detalle diario.
 - **Nutrición**: la capa de dieta del cliente, si la tiene activada (ver abajo).
+
+## Dibujos de los ejercicios
+
+Las pestañas de Sesiones, Ejercicios, Rutina y el Planificador enseñan el
+dibujo de cada ejercicio, el mismo que el cliente tiene en TrueLift. Sirve
+para no tener que descifrar el nombre entre variantes que se llaman casi
+igual, y al pulsarlo se abre su ficha: grupo, patrón, músculos secundarios,
+descanso sugerido y la nota técnica.
+
+Los ejercicios que te has inventado tú (**+ Nuevo ejercicio** del
+Planificador) o que creó el cliente no están en la biblioteca de TrueLift y no
+tienen dibujo: en su lugar sale su inicial. Al imprimir el informe los dibujos
+no salen.
+
+El catálogo de ejercicios del Coach (`catalogo.js`) y sus dibujos
+(`media/ejercicios/`) son una copia de la biblioteca de la app y se generan
+desde el repositorio de TrueLift con `tool/coach_generar_catalogo.py`: no se
+editan a mano. Lo único que sí se edita ahí son los criterios del entrenador
+del final del archivo (objetivos de volumen y frecuencia por grupo), que el
+generador respeta.
 
 ## Ejercicios hechos con molestias
 
