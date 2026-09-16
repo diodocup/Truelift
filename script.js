@@ -195,7 +195,13 @@ const englishTranslations = {
   "Marcas": "Records",
   "Estado · PRO": "Readiness · PRO",
   "Para entrenadores": "For coaches",
-  "App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "A web app to follow your athletes from your desktop, using the file they export from the app."
+  "App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "A web app to follow your athletes from your desktop, using the file they export from the app.",
+
+  "¿Vienes de otra app? Trae tu historial": "Coming from another app? Bring your history",
+  "TrueLift importa tu historial de entrenamiento desde Hevy y Strong con el archivo de exportación que generan esas apps. Tus sesiones, ejercicios, series y cargas entran en TrueLift, así que empiezas con tu progreso real y la progresión automática decide con tus datos desde el primer día.": "TrueLift imports your training history from Hevy and Strong using the export file those apps generate. Your sessions, exercises, sets and loads come across, so you start with your real progress and automatic progression decides using your own data from day one.",
+  "Hevy y Strong son marcas de sus respectivos titulares. TrueLift no está afiliada ni asociada a ellas.": "Hevy and Strong are trademarks of their respective owners. TrueLift is not affiliated with or endorsed by them.",
+  "Vengo de Hevy o Strong, ¿pierdo mi historial?": "I'm coming from Hevy or Strong. Do I lose my history?",
+  "No. TrueLift puede importar tu historial de entrenamiento desde Hevy y Strong a partir del archivo de exportación que generan esas apps: sesiones, ejercicios, series y cargas se incorporan a tu registro y la progresión automática trabaja con tu histórico real, sin empezar de cero. Hevy y Strong son marcas de sus respectivos titulares y TrueLift no está afiliada ni asociada a ellas.": "No. TrueLift can import your training history from Hevy and Strong using the export file those apps generate: sessions, exercises, sets and loads are added to your log, and automatic progression works with your real history instead of starting from scratch. Hevy and Strong are trademarks of their respective owners and TrueLift is not affiliated with or endorsed by them."
 };
 
 const normaliseTranslationKey = (value) => value.replace(/\s+/g, " ").trim();

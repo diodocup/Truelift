@@ -834,6 +834,34 @@ h3 {
   line-height: 1.55;
 }
 
+.note-lime h3 {
+  margin: 0 0 8px;
+  font: 800 11px var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.note-lime p {
+  margin: 0;
+}
+
+/* Nota de importación al cierre de «Cómo funciona»: presente, pero por debajo
+   de los tres pasos. */
+.import-note {
+  max-width: 760px;
+}
+
+.import-note p + p {
+  margin-top: 10px;
+}
+
+.import-note-legal {
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* ---------- Cómo funciona ---------- */
 
 .steps {
