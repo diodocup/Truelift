@@ -190,5 +190,11 @@ const portugueseTranslations = {
   "De fuerza por ejercicio según tu peso corporal, sexo y edad.": "De força por exercício conforme seu peso corporal, sexo e idade.",
   "Estado · PRO": "Estado · PRO",
   "Para entrenadores": "Para treinadores",
-  "App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "App web para acompanhar seus atletas pelo computador, a partir do arquivo que eles exportam do app."
+  "App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.": "App web para acompanhar seus atletas pelo computador, a partir do arquivo que eles exportam do app.",
+
+  "¿Vienes de otra app? Trae tu historial": "Vem de outro app? Traga seu histórico",
+  "TrueLift importa tu historial de entrenamiento desde Hevy y Strong con el archivo de exportación que generan esas apps. Tus sesiones, ejercicios, series y cargas entran en TrueLift, así que empiezas con tu progreso real y la progresión automática decide con tus datos desde el primer día.": "A TrueLift importa seu histórico de treino do Hevy e do Strong a partir do arquivo de exportação que esses apps geram. Suas sessões, exercícios, séries e cargas entram na TrueLift, então você começa com seu progresso real e a progressão automática decide com os seus dados desde o primeiro dia.",
+  "Hevy y Strong son marcas de sus respectivos titulares. TrueLift no está afiliada ni asociada a ellas.": "Hevy e Strong são marcas de seus respectivos titulares. A TrueLift não é afiliada nem associada a elas.",
+  "Vengo de Hevy o Strong, ¿pierdo mi historial?": "Venho do Hevy ou do Strong, perco meu histórico?",
+  "No. TrueLift puede importar tu historial de entrenamiento desde Hevy y Strong a partir del archivo de exportación que generan esas apps: sesiones, ejercicios, series y cargas se incorporan a tu registro y la progresión automática trabaja con tu histórico real, sin empezar de cero. Hevy y Strong son marcas de sus respectivos titulares y TrueLift no está afiliada ni asociada a ellas.": "Não. A TrueLift consegue importar seu histórico de treino do Hevy e do Strong a partir do arquivo de exportação que esses apps geram: sessões, exercícios, séries e cargas são incorporados ao seu registro e a progressão automática trabalha com o seu histórico real, sem começar do zero. Hevy e Strong são marcas de seus respectivos titulares e a TrueLift não é afiliada nem associada a elas."
 };
