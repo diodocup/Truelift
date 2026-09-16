@@ -26,6 +26,65 @@ function chipMolestias(e){
        + 'La sesión queda registrada pero no se evalúa: no gasta intento de progresión, '
        + 'no fija su referencia y no puede marcar un récord.">🤒 molestias</span>';
 }
+/* ---------- Dibujo y ficha de un ejercicio ----------
+   La biblioteca de TrueLift trae un dibujo de cada ejercicio y el Coach lleva
+   una copia en media/ejercicios/ (ver catalogo.js). Enseñarlo ahorra
+   descifrar el nombre entre variantes que se llaman casi igual («Curl
+   martillo con banda» / «Curl martillo en polea»), y al pulsarlo se abre la
+   ficha con lo que la app le cuenta al cliente: grupo, patrón, músculos
+   secundarios, descanso sugerido y nota técnica.
+   Los ejercicios que se ha inventado el cliente o el entrenador no están en
+   la biblioteca y no tienen dibujo: en su hueco va la inicial sobre fondo
+   apagado, nunca un recuadro roto. */
+function dibujoEjercicio(nombre, { clase = '', ficha = true } = {}){
+  const n = String(nombre ?? '').trim();
+  const src = (typeof imagenEjercicio === 'function') ? imagenEjercicio(n) : null;
+  const cls = `ej-dibujo${clase ? ' ' + clase : ''}`;
+  // Sin dibujo se reserva el hueco igualmente para que no bailen las columnas
+  // al elegir ejercicio en una fila vacía del Planificador.
+  if (!src)
+    return `<span class="${cls} ej-dibujo-hueco" aria-hidden="true">${esc(n.charAt(0).toUpperCase())}</span>`;
+  const abre = ficha
+    ? ` data-ficha="${esc(n)}" title="Ver la ficha de ${esc(n)}"` : '';
+  return `<img class="${cls}" src="${esc(src)}" alt="${esc(n)}"
+    loading="lazy" decoding="async"${abre}>`;
+}
+
+/* Nombre del ejercicio con su dibujo delante, para las celdas de las tablas.
+   `tras` va en la misma línea que el nombre (chips) y `debajo` en la de abajo
+   (grupo, fecha…), los dos como HTML ya escapado por quien llama. */
+function celdaEjercicio(nombre, tras = '', debajo = ''){
+  return `<div class="ej-celda">${dibujoEjercicio(nombre, { clase: 'ej-dibujo-s' })}<div class="ej-celda-txt">`
+       + `<span class="ej-celda-nom">${esc(nombre)}</span>${tras}${debajo}</div></div>`;
+}
+
+/* Datos de la biblioteca de un ejercicio en formato kv, sin el dibujo. */
+function htmlDatosEjercicio(f){
+  if (!f) return '';
+  const linea = (etq, val) => val
+    ? `<div class="kv"><span class="muted">${etq}</span><b>${esc(val)}</b></div>` : '';
+  return linea('Grupo', f.grupo)
+       + linea('Patrón', f.patron)
+       + linea('También trabaja', (f.secundarios || []).join(', '))
+       + linea('En la biblioteca', f.prioridad)
+       + linea('Descanso sugerido', f.descanso)
+       + (f.nota ? `<p class="ej-nota">${esc(f.nota)}</p>` : '');
+}
+
+/* Ficha completa de un ejercicio para el modal (dibujo grande + datos). */
+function htmlFichaEjercicio(nombre){
+  const n = String(nombre ?? '').trim();
+  const f = (typeof fichaEjercicio === 'function') ? fichaEjercicio(n) : null;
+  const cuerpo = f
+    ? `<div class="ej-ficha">
+         ${dibujoEjercicio(n, { clase: 'ej-dibujo-xl', ficha: false })}
+         <div class="ej-ficha-datos">${htmlDatosEjercicio(f)}</div>
+       </div>`
+    : `<p class="muted">Este ejercicio no está en la biblioteca de TrueLift: lo añadiste tú o lo creó el cliente, así que no tiene dibujo ni ficha.</p>`;
+  return `<h2>${esc(n)}</h2>${cuerpo}
+    <div class="mod-acciones"><button class="btn pri" onclick="cerrarModal()">Cerrar</button></div>`;
+}
+
 function textoRend(s){
   const partes = [];
   if (s.rendimiento) partes.push(s.rendimiento);
@@ -667,7 +726,8 @@ const Vistas = {
         const idx = hist.findIndex(p => p.entrada === e);
         const d = idx >= 0 ? Metricas.delta(hist, idx) : null;
         return `<tr>
-          <td>${esc(e.ejercicio)}${e.modulada ? ' <span class="chip ambar" title="Carga modulada por autorregulación">mod.</span>' : ''}${chipMolestias(e)}</td>
+          <td>${celdaEjercicio(e.ejercicio,
+            `${e.modulada ? ' <span class="chip ambar" title="Carga modulada por autorregulación">mod.</span>' : ''}${chipMolestias(e)}`)}</td>
           <td class="num">${celdaKg(e)}${d ? `<span class="delta ${d.tipo}">${d.texto}</span>` : ''}</td>
           <td class="num">${joinSeries(e.reps)}</td>
           <td class="num">${joinSeries(e.rir)}</td>
@@ -716,7 +776,8 @@ const Vistas = {
       <div class="ej-grupo">${esc(g)}</div>
       ${porGrupo.get(g).map(n => `
         <button class="ej-item ${n === ejercicioSel ? 'sel' : ''}" data-ej="${esc(n)}">
-          <span>${esc(n)}</span><span class="muted">${conteo.get(n)}</span>
+          ${dibujoEjercicio(n, { clase: 'ej-dibujo-xs', ficha: false })}
+          <span class="ej-item-nom">${esc(n)}</span><span class="muted">${conteo.get(n)}</span>
         </button>`).join('')}`).join('');
 
     let detalle = '<div class="card"><div class="muted" style="padding:30px;text-align:center">Selecciona un ejercicio de la lista para ver su progresión.</div></div>';
@@ -763,9 +824,20 @@ const Vistas = {
       // Mismo criterio que los récords de la app: una sesión con molestias no
       // fija marca, así que tampoco puede ser el mejor e1RM del rango.
       const mejor = Math.max(...Metricas.evaluables(hist).map(p => p.e1rm ?? -Infinity));
+      // Ficha de la biblioteca (dibujo, patrón, secundarios, nota técnica): es
+      // lo mismo que el cliente ve en su app, así que los dos hablan del
+      // mismo ejercicio cuando lo comentan.
+      const ficha = (typeof fichaEjercicio === 'function') ? fichaEjercicio(ejercicioSel) : null;
       detalle = `<div class="card">
-        <h3 style="font-size:16px;text-transform:none;letter-spacing:0;color:var(--texto)">${esc(ejercicioSel)}
-          <span class="muted" style="font-weight:400">· ${esc(datos.grupoDe.get(ejercicioSel) || 'Otros')}</span></h3>
+        <div class="ej-cab">
+          ${dibujoEjercicio(ejercicioSel, { clase: 'ej-dibujo-l', ficha: !!ficha })}
+          <div>
+            <h3 style="font-size:16px;text-transform:none;letter-spacing:0;color:var(--texto);margin:0">${esc(ejercicioSel)}
+              <span class="muted" style="font-weight:400">· ${esc(datos.grupoDe.get(ejercicioSel) || ficha?.grupo || 'Otros')}</span></h3>
+            ${ficha ? `<div class="muted ej-cab-sub">${esc(ficha.patron)}${ficha.secundarios?.length ? ` · también trabaja ${esc(ficha.secundarios.join(', '))}` : ''}${ficha.descanso ? ` · descanso ${esc(ficha.descanso)}` : ''}</div>` : ''}
+            ${ficha?.nota ? `<p class="ej-nota">${esc(ficha.nota)}</p>` : ''}
+          </div>
+        </div>
         <div style="margin-bottom:8px">${chips}</div>
         <div class="kv" style="max-width:420px"><span class="muted">Mejor e1RM del rango</span><b>${isFinite(mejor) ? fmtNum(mejor,1) + ' kg' : '—'}</b></div>
         <div class="chart-caja">${grafica}</div>
@@ -838,7 +910,8 @@ const Vistas = {
         }
         return `<tr>
           <td class="num muted">${p.orden}</td>
-          <td>${esc(p.ejercicio)}<div class="muted" style="font-size:12px">${esc(p.grupo)} · ${esc(p.patron)}</div></td>
+          <td>${celdaEjercicio(p.ejercicio, '',
+            `<div class="muted" style="font-size:12px">${esc(p.grupo)} · ${esc(p.patron)}</div>`)}</td>
           <td class="num">${p.series ?? '—'} × ${esc(p.reps)} @RIR ${esc(p.rir)}${p.topBack ? ' <span class="chip azul" title="Top set + back-offs: la 1.ª serie fija la progresión">T+B</span>' : ''}${p.dropSet ? ` <span class="chip azul" title="Drop set: la 1.ª serie fija la progresión; el resto baja${p.dropPct != null ? ` un ${p.dropPct} %` : ''} en cascada sin descanso">Drop</span>` : ''}${numSS[iSS] ? ` <span class="chip azul" title="Superserie ${numSS[iSS]}: en la app se alternan las series con el resto del grupo">SS${numSS[iSS]}</span>` : ''}${p.descansoMin != null ? `<div class="muted" style="font-size:12px">descanso ${fmtNum(p.descansoMin,1)} min</div>` : ''}</td>
           <td>${ejec}${avisos}</td>
         </tr>`;
@@ -857,7 +930,7 @@ const Vistas = {
     const htmlFuera = fuera.length ? `<div class="card" style="margin-bottom:14px"><h3>Ejecutado fuera del plan</h3>
       <div class="muted" style="font-size:13px;margin-bottom:6px">Ejercicios registrados que no están en la rutina activa (sustituciones del cliente).</div>
       ${fuera.map(n => { const u = ultima.get(n);
-        return `<div class="kv"><span>${esc(n)}</span><b>${celdaKg(u.e)} kg · ${joinSeries(u.e.reps)} reps · ${fmtFechaCorta(u.s.fecha)}</b></div>`; }).join('')}
+        return `<div class="kv"><span>${celdaEjercicio(n)}</span><b>${celdaKg(u.e)} kg · ${joinSeries(u.e.reps)} reps · ${fmtFechaCorta(u.s.fecha)}</b></div>`; }).join('')}
     </div>` : '';
 
     // Volumen semanal por grupo (series ejecutadas)

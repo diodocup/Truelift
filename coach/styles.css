@@ -364,15 +364,56 @@ details.sesion .cuerpo{padding:6px 16px 14px;border-top:1px solid var(--sep)}
   color:var(--txt4);
 }
 .ej-item{
-  display:flex;justify-content:space-between;gap:8px;width:100%;
-  min-height:0;padding:7px 9px;text-align:left;
+  display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;
+  min-height:0;padding:6px 9px;text-align:left;
   background:none;border:1px solid transparent;border-radius:8px;
   color:var(--txt2);
   font:400 13px var(--sans);letter-spacing:0;text-transform:none;
 }
 .ej-item:hover{background:var(--sup2);color:var(--txt)}
 .ej-item.sel{background:var(--lima-14);color:var(--lima);font-weight:600}
+.ej-item-nom{flex:1;min-width:0}
 #buscaEj{width:100%;margin-bottom:6px}
+
+/* ==========================================================================
+   Dibujo del ejercicio (copia de la biblioteca de TrueLift)
+   --------------------------------------------------------------------------
+   Los dibujos son cuadrados y de trazo blanco sobre negro, así que encajan
+   con el fondo oscuro sin recortes ni marcos: solo un borde tenue para que
+   no se fundan con la tarjeta. Al imprimir se quitan (el informe va sobre
+   blanco y saldrían como cuadrados negros).
+   ========================================================================== */
+.ej-dibujo{
+  flex:none;display:block;width:44px;height:44px;
+  border-radius:9px;object-fit:cover;
+  background:#000;border:1px solid var(--borde-campo);
+}
+img.ej-dibujo[data-ficha]{cursor:zoom-in}
+img.ej-dibujo[data-ficha]:hover{border-color:var(--lima)}
+.ej-dibujo-hueco{
+  display:flex;align-items:center;justify-content:center;
+  background:var(--sup2);color:var(--txt4);
+  font:700 14px var(--sans);
+}
+.ej-dibujo-xs{width:34px;height:34px;border-radius:8px;font-size:12px}
+.ej-dibujo-s{width:36px;height:36px;border-radius:8px;font-size:12px}
+.ej-dibujo-l{width:96px;height:96px;border-radius:12px;font-size:28px}
+.ej-dibujo-xl{width:220px;height:220px;border-radius:14px;font-size:56px}
+
+.ej-celda{display:flex;gap:9px;align-items:center}
+.ej-celda-txt{min-width:0}
+.ej-celda-nom{display:block}
+.ej-cab{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
+.ej-cab-sub{font-size:12px;margin-top:3px}
+.ej-nota{
+  margin:6px 0 0;max-width:62ch;
+  font:400 12.5px var(--sans);line-height:1.5;color:var(--txt3);
+}
+.ej-ficha{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.ej-ficha-datos{flex:1;min-width:220px}
+@media (max-width:640px){
+  .ej-dibujo-xl{width:100%;height:auto;aspect-ratio:1}
+}
 
 /* ==========================================================================
    Calendario de disponibilidad
@@ -538,7 +579,14 @@ textarea.notas{width:100%;min-height:60px;margin-top:4px}
 .pln-drag:hover{color:var(--lima)}
 .pln-drag:active{cursor:grabbing}
 .pln-num{min-width:16px;text-align:right;font:500 11px var(--mono);color:var(--txt4)}
-.pln-ej{flex:1;min-width:220px}
+/* El desplegable de ejercicio encogió de 220 a 170 px al entrar el dibujo:
+   con 220 la fila más cargada (T+B desplegado y casilla SS) no cabía en una
+   línea y el botón de borrar se caía a la de abajo. Sigue estirándose con el
+   ancho disponible (flex:1). */
+.pln-ej{flex:1;min-width:170px}
+/* El dibujo del ejercicio va entre el patrón y el desplegable; pequeño para
+   no robarle ancho a una fila que ya va muy justa. */
+.pln-dibujo{width:30px;height:30px;border-radius:7px;font-size:11px}
 .pln-ej input,.pln-ej select{width:100%;max-width:none}
 .pln-x{white-space:nowrap;font:500 11.5px var(--mono);color:var(--txt4)}
 .pln-tb{display:flex;gap:4px;align-items:center;white-space:nowrap;font-size:12px;color:var(--txt3);cursor:pointer}
@@ -596,7 +644,7 @@ input[type=number].pln-campo{padding:6px 4px;text-align:center}
     --borde:#d5d9d2; --borde-campo:#c8ccc4; --sep:#e4e7e1; --reticula:#e4e7e1;
   }
   body{background:#fff;color:#222}
-  .no-print,#tabs,#topbar,#dropzone,#modal,.privacy-notice{display:none!important}
+  .no-print,#tabs,#topbar,#dropzone,#modal,.privacy-notice,.ej-dibujo{display:none!important}
   body.imprimiendo #contenido{display:none!important}
   body.imprimiendo #informe{display:block}
   #contenido{padding:0;max-width:none}

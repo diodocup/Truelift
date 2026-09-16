@@ -497,6 +497,11 @@ function init(){
 
   // Delegados: abrir cliente desde la cartera y selección de ejercicio
   $('#contenido').addEventListener('click', ev => {
+    // Dibujo de un ejercicio: abre su ficha de la biblioteca de TrueLift.
+    // Va el primero porque el dibujo puede estar dentro de otra cosa pulsable.
+    const ficha = ev.target.closest('[data-ficha]');
+    if (ficha){ abrirModal(htmlFichaEjercicio(ficha.dataset.ficha)); return; }
+
     const abrir = ev.target.closest('[data-abrir]');
     if (abrir){
       State.store.clienteActivoId = abrir.dataset.abrir;

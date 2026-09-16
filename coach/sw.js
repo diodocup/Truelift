@@ -4,7 +4,7 @@
    IMPORTANTE: al publicar cambios en la app, sube el número de VERSION
    para que los navegadores de los entrenadores se actualicen. */
 
-const VERSION = 'tlcoach-v11';
+const VERSION = 'tlcoach-v12';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -23,6 +23,10 @@ const ARCHIVOS = [
   'media/icono.png',
   'media/icono-192.png',
   'media/banner.png',
+  // Los dibujos de los ejercicios (media/ejercicios/, uno por ejercicio de la
+  // biblioteca) NO se precachean: son cientos y no hace falta bajarlos todos
+  // para abrir la app. La estrategia de abajo (red primero) los va guardando
+  // a medida que se ven, y quedan disponibles sin internet.
   '../fonts/archivo-latin.woff2',
   '../fonts/archivo-latin-ext.woff2',
   '../fonts/jetbrainsmono-latin.woff2',
