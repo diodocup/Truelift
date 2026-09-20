@@ -236,6 +236,9 @@ function normalizarNutricion(raw){
       pesoObjetivoKg: numNut(f.pesoObjetivoKg) ?? 0,
       semanasPreviasEnTipo: numNut(f.semanasPreviasEnTipo) ?? 0,
       modoCiclo: f.modoCiclo === true,
+      // Pasos extra al día que la fase lleva pedidos: con la base del reloj
+      // previa a la fase, es el objetivo de pasos que enseña la app.
+      pasosExtraAcumuladosDia: numNut(f.pasosExtraAcumuladosDia) ?? 0,
       porcionesProteinaDia: numNut(f.porcionesProteinaDia),
       proteinaGPorKg: numNut(f.proteinaGPorKg) ?? NUT.proteinaGPorKg,
       proteinaPesoReferenciaKg: numNut(f.proteinaPesoReferenciaKg),

@@ -2,7 +2,7 @@
 /* ================================================================
    TrueLift Coach — views.js
    Renderizado de las 5 pestañas. Cada vista recibe ctx:
-   { datos, perfil, fuerzaR, cardioR, readinessR, desde, hasta,
+   { datos, perfil, fuerzaR, cardioR, readinessR, saludR, desde, hasta,
      ejercicioSel, buscaEj, nombreCliente }
    (R = ya filtrado por el rango de fechas)
    ================================================================ */
@@ -455,6 +455,135 @@ function chipFrescura(dias){
   return `<span class="chip ${col}">${txt}</span>`;
 }
 
+/* ---------- Reloj conectado (Health Connect / Apple Salud) ----------
+   La app lee del reloj el sueño, los pasos, las calorías, la FC en reposo y el
+   peso; aquí se enseña lo que el entrenador no puede deducir del cuestionario.
+   Todo es aditivo: una copia sin `saludDiaria` no pinta ninguna de estas
+   piezas y el resto de la vista queda igual que siempre. */
+
+/* Propuesta del reloj para la pregunta de sueño, solo cuando el cliente la
+   cambió: lo interesante no es que coincidan, sino cuánto y hacia dónde
+   corrige (eso es lo que la app aprende). */
+function chipSugerenciaSueno(r){
+  if (r.suenoSugerido == null || r.sueno == null || r.suenoSugerido === r.sueno) return '';
+  const signo = r.sueno > r.suenoSugerido ? '+' : '−';
+  return ` <span class="chip gris" title="El reloj proponía ${r.suenoSugerido}; el cliente respondió ${r.sueno}">`
+       + `reloj ${r.suenoSugerido} (${signo}${Math.abs(r.sueno - r.suenoSugerido)})</span>`;
+}
+
+/* Celda con la noche medida: horas dormidas y, si la fuente distingue fases,
+   el porcentaje de sueño reparador (profundo + REM). */
+function celdaSuenoReloj(d){
+  const s = d && d.sueno;
+  if (!s) return '<span class="muted">—</span>';
+  const det = [
+    `dormido ${Salud.fmtHm(s.total)}`,
+    s.conFases ? `profundo ${Salud.fmtHm(s.profundo)} · REM ${Salud.fmtHm(s.rem)} · ligero ${Salud.fmtHm(s.ligero)}` : 'la fuente no distingue fases',
+    `despierto ${Salud.fmtHm(s.despierto)} en ${s.despertares} despertar${s.despertares === 1 ? '' : 'es'}`,
+  ].join(' · ');
+  const rep = s.reparadorPct != null
+    ? ` <span class="muted">${fmtNum(s.reparadorPct * 100, 0)} % rep.</span>` : '';
+  return `<span title="${esc(det)}">${esc(Salud.fmtHm(s.total))}</span>${rep}`;
+}
+
+/* Tarjetas de sueño, pasos y calorías del reloj. Devuelve '' cuando la copia
+   no trae datos del reloj en el rango. */
+function tarjetasReloj(ctx){
+  const { datos, saludR } = ctx;
+  const dias = saludR || [];
+  if (!Salud.hay(dias)) return '';
+
+  // --- Sueño medido ---
+  const noches = dias.filter(d => d.sueno);
+  let htmlSueno = '';
+  if (noches.length){
+    const series = [
+      { nombre: 'Dormido', color: '#6FA8DC', unidad: 'h',
+        puntos: noches.map(d => ({ x: d.fecha, y: Salud.horas(d.sueno.total) })) },
+    ];
+    if (noches.some(d => d.sueno.conFases)){
+      series.push({ nombre: 'Reparador (profundo + REM)', color: '#a8ee19', unidad: 'h',
+        puntos: noches.filter(d => d.sueno.conFases)
+                      .map(d => ({ x: d.fecha, y: Salud.horas(d.sueno.reparador) })) });
+    }
+    if (noches.some(d => d.sueno.despierto > 0)){
+      series.push({ nombre: 'Despierto', color: '#E0A92E', unidad: 'min', eje: 'der',
+        puntos: noches.map(d => ({ x: d.fecha, y: d.sueno.despierto })) });
+    }
+    const medias = {
+      dormido: Salud.mediana(noches.map(d => d.sueno.total)),
+      despierto: Salud.mediana(noches.map(d => d.sueno.despierto)),
+      rep: Salud.mediana(noches.filter(d => d.sueno.conFases).map(d => d.sueno.reparadorPct)),
+    };
+    htmlSueno = `
+      <div class="card" style="margin-bottom:14px"><h3>Sueño del reloj</h3>
+        <div class="chart-caja">${Charts.lineas({ series, lineaBase: { y: 7, label: '7 h' } })}</div>
+        <div class="muted" style="font-size:12px">
+          Mediana del rango: ${esc(Salud.fmtHm(medias.dormido))} dormidos
+          · ${esc(Salud.fmtHm(medias.despierto))} despierto
+          ${medias.rep != null ? `· ${fmtNum(medias.rep * 100, 0)} % reparador` : '· sin fases en la fuente'}.
+          Es lo que la app propone en la pregunta de sueño del check-in; la respuesta del cliente manda.
+        </div>
+      </div>`;
+  }
+
+  // --- Pasos frente al objetivo ---
+  const conPasos = dias.filter(d => d.pasos != null);
+  let htmlPasos = '';
+  if (conPasos.length){
+    const obj = Salud.objetivoPasos(datos);
+    const color = n => n === 2 ? '#a8ee19' : n === 1 ? '#E0A92E' : '#E8776B';
+    const series = [
+      { nombre: 'Pasos', color: '#6FA8DC', unidad: 'pasos',
+        puntos: conPasos.map(d => ({ x: d.fecha, y: d.pasos, c: color(Salud.nivelPasos(obj, d.pasos)) })) },
+      { nombre: `Objetivo (${fmtNum(obj.objetivo,0)})`, color: '#a8ee19', dash: '6 4', sinPuntos: true, grosor: 2,
+        puntos: conPasos.map(d => ({ x: d.fecha, y: obj.objetivo })) },
+    ];
+    if (obj.minimo != null){
+      series.push({ nombre: `Mínimo (${fmtNum(obj.minimo,0)})`, color: '#E0A92E', dash: '3 4', sinPuntos: true, grosor: 2,
+        puntos: conPasos.map(d => ({ x: d.fecha, y: obj.minimo })) });
+    }
+    const med = Salud.mediana(conPasos.map(d => d.pasos));
+    htmlPasos = `
+      <div class="card" style="margin-bottom:14px"><h3>Pasos por día</h3>
+        <div class="chart-caja">${Charts.lineas({ series })}</div>
+        <div class="muted" style="font-size:12px">
+          Mediana del rango: ${fmtNum(med,0)} pasos/día sobre ${conPasos.length} día${conPasos.length === 1 ? '' : 's'} con registro
+          (los días sin reloj no se dibujan, no cuentan como cero).
+          ${obj.deNutricion
+            ? `Objetivo del plan de nutrición: ${fmtNum(obj.base,0)} habituales antes de la fase + ${fmtNum(obj.extra,0)} extra pedidos.`
+            : 'Objetivo de referencia general (no hay fase de nutrición que pida pasos extra).'}
+        </div>
+      </div>`;
+  }
+
+  // --- Calorías: solo el factor de actividad, que es lo que la app usa ---
+  const conKcal = dias.filter(d => d.kcalTotal != null || d.kcalActiva != null || d.kcalBasal != null);
+  let htmlKcal = '';
+  if (conKcal.length){
+    const factor = Salud.factorActividad(datos.salud || [], ctx.hasta);
+    const medTotal = Salud.mediana(conKcal.map(d => d.kcalTotal).filter(v => v != null));
+    const medBasal = Salud.mediana(conKcal.map(d => d.kcalBasal).filter(v => v != null));
+    const medActiva = Salud.mediana(conKcal.map(d => d.kcalActiva).filter(v => v != null));
+    htmlKcal = `
+      <div class="card" style="margin-bottom:14px"><h3>Gasto medido</h3>
+        <div class="kv"><span class="muted">Factor de actividad (total / basal)</span>
+          <b>${factor != null ? fmtNum(factor, 2) : '—'}</b></div>
+        ${medTotal != null ? `<div class="kv"><span class="muted">Calorías totales (mediana)</span><b>${fmtNum(medTotal,0)} kcal</b></div>` : ''}
+        ${medActiva != null ? `<div class="kv"><span class="muted">Calorías activas (mediana)</span><b>${fmtNum(medActiva,0)} kcal</b></div>` : ''}
+        ${medBasal != null ? `<div class="kv"><span class="muted">Basal del reloj (mediana)</span><b>${fmtNum(medBasal,0)} kcal</b></div>` : ''}
+        <div class="muted" style="font-size:12px;margin-top:8px">
+          ${factor != null
+            ? 'La app usa este factor medido en lugar del fijo para calcular el suelo de seguridad de la ingesta; el lazo de peso no lo mira.'
+            : 'Aún no hay días completos suficientes para un factor medido fiable: la app sigue con el factor fijo.'}
+        </div>
+      </div>`;
+  }
+
+  if (!htmlSueno && !htmlPasos && !htmlKcal) return '';
+  return `${htmlSueno}${htmlPasos}${htmlKcal}`;
+}
+
 const Vistas = {
 
   // ================= CARTERA (panel de todos los clientes) =================
@@ -560,11 +689,17 @@ const Vistas = {
 
     // Adherencia
     const ad = Metricas.adherencia(fuerzaR, desde, hasta, P.diasSemana);
+    // Pasos del reloj: mediana de los días CON registro del rango (un día sin
+    // reloj es hueco, no un cero, o la mediana bajaría sola).
+    const pasosMed = Salud.mediana((ctx.saludR || []).map(d => d.pasos).filter(v => v != null));
     const adherencia = `
       <div class="card"><h3>Adherencia del periodo</h3>
         <div class="big">${ad.hechas}${ad.esperadas != null ? ` / ${ad.esperadas}` : ''} <span class="muted" style="font-size:15px;font-weight:400">sesiones de fuerza</span></div>
         ${ad.pct != null ? `<div>${ad.pct >= 85 ? '<span class="chip verde">' : ad.pct >= 60 ? '<span class="chip ambar">' : '<span class="chip rojo">'}${ad.pct}% de lo esperado</span></div>` : ''}
-        <div class="kv" style="margin-top:8px"><span class="muted">Sesiones de cardio</span><b>${cardioR.length}</b></div>
+        <div class="kv" style="margin-top:8px"><span class="muted">Sesiones de cardio</span><b>${cardioR.length}${
+          cardioR.some(s => s.origen === 'reloj')
+            ? ` <span class="muted" style="font-weight:400">(${cardioR.filter(s => s.origen === 'reloj').length} del reloj)</span>` : ''}</b></div>
+        ${pasosMed != null ? `<div class="kv"><span class="muted">Pasos (mediana/día)</span><b>${fmtNum(pasosMed,0)}</b></div>` : ''}
       </div>`;
 
     // Disponibilidad (mini-calendario, máx. 8 semanas más recientes)
@@ -702,13 +837,27 @@ const Vistas = {
     return items.map((it, i) => {
       const s = it.s;
       if (it.tipo === 'cardio'){
+        // Cardio del reloj: la app lo registra solo, con la intensidad
+        // estimada a partir de la FC del tramo cuando la hubo. Se marca para
+        // que el entrenador no lo confunda con lo que el cliente anotó.
+        const delReloj = s.origen === 'reloj';
+        const detalle = [
+          s.fcMedia != null ? `FC media ${fmtNum(s.fcMedia,0)} ppm` : '',
+          s.fcMax != null ? `máx ${fmtNum(s.fcMax,0)} ppm` : '',
+          s.kcal != null ? `${fmtNum(s.kcal,0)} kcal` : '',
+          s.distanciaM != null ? `${fmtNum(s.distanciaM / 1000, 2)} km` : '',
+        ].filter(Boolean).join(' · ');
         return `<details class="sesion">
           <summary>
             <span class="ses-fecha">${fmtFecha(s.fecha)}</span>
             <span class="ses-nombre">Cardio · ${esc(s.nombre)}</span>
             ${s.duracion != null ? `<span class="chip azul">${s.duracion} min</span>` : ''}
-            ${s.intensidad != null ? `<span class="chip gris">intensidad ${s.intensidad}/10</span>` : ''}
+            ${s.intensidad != null
+              ? `<span class="chip gris" title="${s.rpeDeFc ? 'Estimada a partir de la FC del entrenamiento' : (delReloj ? 'Referencia del tipo de actividad: el reloj no dio FC suficiente' : 'Anotada por el cliente')}">intensidad ${s.intensidad}/10${s.rpeDeFc ? ' (por FC)' : ''}</span>`
+              : ''}
+            ${delReloj ? '<span class="chip azul" title="Registrada por el reloj, no a mano">⌚ reloj</span>' : ''}
           </summary>
+          ${detalle ? `<div class="cuerpo"><div class="muted" style="font-size:13px">${esc(detalle)}</div></div>` : ''}
         </details>`;
       }
       const chips = [
@@ -1107,8 +1256,10 @@ const Vistas = {
 
   // ================= READINESS =================
   readiness(ctx){
-    const { datos, perfil, readinessR } = ctx;
-    if (!readinessR.length) return tarjetaVacia('No hay cuestionarios de readiness en el rango.');
+    const { datos, perfil, readinessR, saludR } = ctx;
+    if (!readinessR.length && !Salud.hay(saludR || []))
+      return tarjetaVacia('No hay cuestionarios de readiness ni datos del reloj en el rango.');
+    if (!readinessR.length) return tarjetasReloj(ctx) || tarjetaVacia('No hay cuestionarios de readiness en el rango.');
 
     // Cálculos sobre TODO el histórico (la media 7d y la fatiga necesitan contexto previo)
     const serieVfc = VFC.tendenciaSerie(datos.readiness);
@@ -1196,6 +1347,13 @@ const Vistas = {
       </div>`;
     }
 
+    // --- Reloj conectado (sueño, pasos y calorías de la plataforma) ---
+    const htmlReloj = tarjetasReloj(ctx);
+    // El sueño de la noche se enseña junto a la respuesta del cliente: la app
+    // lo usa para PRE-RELLENAR la pregunta, así que ver las dos cosas dice si
+    // el cliente corrigió al reloj y en qué dirección.
+    const saludPorFecha = new Map((datos.salud || []).map(d => [d.clave, d]));
+
     // --- Tabla diaria ---
     const filas = readinessR.slice().reverse().map(r => {
       const c = r.estadoDia || bandaEstado(r.estadoEntrenar);
@@ -1211,10 +1369,12 @@ const Vistas = {
       // banda invertida, aquí lo malo es pasarse por arriba.
       const bDia = bandaFcSerie.get(fmtISO(r.fecha));
       const fcReposoAlta = bDia != null && r.fcReposo != null && !r.vfcDescartada && r.fcReposo > bDia.alta;
+      const noche = saludPorFecha.get(fmtISO(r.fecha));
       return `<tr>
         <td>${fmtFecha(r.fecha)}</td>
         <td>${r.estadoEntrenar != null ? `<span class="chip ${c || 'gris'}">${r.estadoEntrenar}</span>` : (c ? chipCompuerta(c) : '<span class="muted">—</span>')}</td>
-        <td>${escDots(r.sueno, 'buena')}</td>
+        <td>${escDots(r.sueno, 'buena')}${chipSugerenciaSueno(r)}</td>
+        <td>${celdaSuenoReloj(noche)}</td>
         <td>${escDots(r.animo, 'buena')}</td>
         <td>${escDots(r.agujetas, 'mala')}${zonaTxt(r.agujetasZona)}</td>
         <td>${escDots(r.dolor, 'mala')}${zonaTxt(r.dolorZona)}</td>
@@ -1227,12 +1387,14 @@ const Vistas = {
           : '—'}</td>
         <td class="num">${r.fcReposo != null
           ? (fcReposoAlta ? `<span class="chip ambar" title="Por encima del umbral de FC en reposo de esa fecha">${fmtNum(r.fcReposo,0)}</span>` : fmtNum(r.fcReposo,0))
+            + (r.fcOrigen === 'reloj' ? ' <span class="muted" title="Medida por el reloj">⌚</span>' : '')
           : '—'}</td>
       </tr>`;
     }).join('');
 
     return `
       ${htmlCombinada}
+      ${htmlReloj}
       <div class="card" style="margin-bottom:14px"><h3>Estado para entrenar (0–100)</h3>
         <div class="chart-caja">${barras}</div>
         <div class="muted" style="font-size:12px">0–39 naranja · 40–69 ámbar · 70–100 lima.
@@ -1243,9 +1405,11 @@ const Vistas = {
         <div class="muted" style="font-size:12px;margin-bottom:8px">
           Lima = perfecto, ámbar = atención, naranja = señal fuerte. En sueño y ánimo el 4 es lo mejor;
           en agujetas, dolor y estrés lo mejor es el 1. Fatiga = días con señales en la ventana de 7 días.
+          La columna «Sueño reloj» es lo que midió la plataforma de salud esa noche; junto al sueño respondido
+          aparece la propuesta del reloj cuando el cliente la corrigió.
         </div>
         <div style="overflow-x:auto"><table>
-          <thead><tr><th>Fecha</th><th>Estado</th><th>Sueño</th><th>Ánimo/energía</th><th>Agujetas</th><th>Dolor</th><th>Estrés</th><th>Fatiga</th><th>Enfermo</th><th class="num">VFC</th><th class="num">FC reposo (ppm)</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Estado</th><th>Sueño</th><th>Sueño reloj</th><th>Ánimo/energía</th><th>Agujetas</th><th>Dolor</th><th>Estrés</th><th>Fatiga</th><th>Enfermo</th><th class="num">VFC</th><th class="num">FC reposo (ppm)</th></tr></thead>
           <tbody>${filas}</tbody>
         </table></div>
       </div>`;
@@ -1789,6 +1953,10 @@ const Vistas = {
     // Ficha + adherencia
     const ad = Metricas.adherencia(fuerzaR, desde, hasta, P.diasSemana);
     const diasFase = P.faseInicio ? diasEntre(P.faseInicio, hoy) : null;
+    // Reloj conectado: solo las dos medianas que el entrenador leería de un
+    // vistazo. Sin reloj quedan fuera del informe, no en blanco.
+    const infPasos = Salud.mediana((ctx.saludR || []).map(d => d.pasos).filter(v => v != null));
+    const infSueno = Salud.mediana((ctx.saludR || []).filter(d => d.sueno).map(d => d.sueno.total));
     const ficha = `
       <div class="card"><h3>Resumen</h3>
         <div class="inf-2col">
@@ -1802,6 +1970,8 @@ const Vistas = {
             <div class="kv"><span class="muted">Sesiones de fuerza</span><b>${ad.hechas}${ad.esperadas != null ? ` / ${ad.esperadas} (${ad.pct}%)` : ''}</b></div>
             <div class="kv"><span class="muted">Sesiones de cardio</span><b>${cardioR.length}</b></div>
             <div class="kv"><span class="muted">Cuestionarios readiness</span><b>${readinessR.length}</b></div>
+            ${infPasos != null ? `<div class="kv"><span class="muted">Pasos (mediana/día)</span><b>${fmtNum(infPasos,0)}</b></div>` : ''}
+            ${infSueno != null ? `<div class="kv"><span class="muted">Sueño del reloj (mediana)</span><b>${esc(Salud.fmtHm(infSueno))}</b></div>` : ''}
           </div>
         </div>
       </div>`;

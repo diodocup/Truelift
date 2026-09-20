@@ -26,7 +26,7 @@ ninguna persona.
 - **Ejercicios**: progresión por ejercicio con gráfica de kg y e1RM estimado, diagnóstico automático y la ficha del ejercicio (dibujo, patrón, músculos secundarios, descanso sugerido y nota técnica), la misma que ve el cliente en su app.
 - **Rutina**: plan activo vs última ejecución, ejercicios fuera de plan, volumen semanal por grupo y la **evolución del volumen real** — series efectivas/semana por grupo muscular sobre todo el historial del cliente, con la zona objetivo y los cambios de rutina marcados. Desde aquí puedes abrir la rutina en el Planificador.
 - **Planificador**: crea o revisa la rutina del cliente y expórtala al Excel que él importa en TrueLift.
-- **Readiness**: estado para entrenar (0–100), VFC con su banda y detalle diario.
+- **Readiness**: estado para entrenar (0–100), VFC con su banda, los datos del reloj conectado (sueño, pasos y gasto) y detalle diario.
 - **Nutrición**: la capa de dieta del cliente, si la tiene activada (ver abajo).
 
 ## Dibujos de los ejercicios
@@ -65,6 +65,20 @@ El Coach lee la marca con el mismo criterio, para que no aparezcan diagnósticos
 - **Alertas**: cada ejercicio marcado genera una alerta roja, y si se repite en **3 o más sesiones** del periodo sube a *Molestias repetidas*. Eso último merece decisión tuya: la app protege esa progresión indefinidamente, así que conviene cambiar el ejercicio por una variante que no le moleste.
 
 Es una marca distinta de las **molestias intuidas en las observaciones**, que el Coach sigue detectando por palabras clave en el texto libre. Aquellas son una sospecha; esta es una declaración del cliente. Las copias de seguridad anteriores a esta versión se importan igual: simplemente no traen la marca.
+
+## Reloj conectado
+
+Si el cliente tiene un reloj o una pulsera enlazados con la plataforma de salud del móvil (**Health Connect** en Android, **Apple Salud** en iOS), su copia de seguridad trae también lo que la app leyó de ahí. El Coach lo enseña donde ayuda a decidir:
+
+- **Readiness · Sueño del reloj**: horas dormidas por noche, sueño reparador (profundo + REM) cuando la fuente distingue fases, y minutos despierto en el eje derecho. En la app, esta noche **pre-rellena** la pregunta de sueño del check-in; la respuesta del cliente sigue mandando. En el detalle diario, la columna *Sueño reloj* enseña lo medido y, junto al sueño respondido, un chip con lo que proponía el reloj cuando el cliente lo corrigió. Esa corrección es información: un cliente que baja sistemáticamente la nota del reloj está durmiendo peor de lo que el reloj cree.
+- **Readiness · Pasos por día**: pasos frente al objetivo. Si hay una fase de nutrición que ha pedido pasos extra, el objetivo es el de su plan (lo habitual del cliente antes de la fase más lo extra pedido); si no, una referencia general de salud. Los días sin reloj **no se dibujan**: son huecos, no ceros, y no bajan la mediana.
+- **Readiness · Gasto medido**: el factor de actividad real (calorías totales / basales) que la app usa para calcular el **suelo de seguridad** de la ingesta. No toca el lazo de peso: el ritmo sigue gobernándolo el pesaje.
+- **Sesiones**: el cardio que el reloj registró solo aparece marcado con ⌚ y, al desplegarlo, con la FC media y máxima, las calorías y la distancia del tramo. La intensidad dice *(por FC)* cuando se estimó a partir del pulso; sin pulso suficiente es la referencia del tipo de actividad. Solo entra el cardio aeróbico: ni caminar (ya lo recogen los pasos) ni fuerza (la app tiene su propio registro).
+- **FC en reposo**: la que viene del reloj se marca con ⌚ en el detalle diario. Se juzga con la misma banda de siempre.
+- **Peso**: los pesajes que escribe una báscula conectada entran en el lazo de nutrición por el camino normal, así que aparecen en la pestaña **Nutrición** sin nada especial.
+- **Resumen e informe**: mediana de pasos por día del periodo, mediana de sueño del reloj y cuántas sesiones de cardio vinieron del reloj.
+
+Las copias de seguridad anteriores a esta versión, o las de un cliente sin reloj, se importan igual: estas piezas simplemente no aparecen.
 
 ## Nutrición
 

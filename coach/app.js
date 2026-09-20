@@ -47,6 +47,7 @@ function calcularRangoDe(datos, modo, desdeCustomStr = null, hastaCustomStr = nu
     ...datos.fuerza.map(s => s.fecha),
     ...datos.cardio.map(s => s.fecha),
     ...datos.readiness.map(r => r.fecha),
+    ...(datos.salud || []).map(d => d.fecha),
     ...(N && N.presente ? [
       ...N.pesajes.map(p => p.fecha),
       ...N.medicionesGrasa.map(m => m.fecha),
@@ -89,6 +90,7 @@ function renderCartera(){
       fuerzaR: datos.fuerza.filter(s => enRango(s.fecha, desde, hasta)),
       cardioR: datos.cardio.filter(s => enRango(s.fecha, desde, hasta)),
       readinessR: datos.readiness.filter(r => enRango(r.fecha, desde, hasta)),
+      saludR: (datos.salud || []).filter(d => enRango(d.fecha, desde, hasta)),
       ejercicioSel: null, buscaEj: '', nombreCliente: c.nombre,
     };
     const alertas = Vistas._alertas(ctx);
@@ -123,6 +125,7 @@ function construirCtx(){
     fuerzaR: datos.fuerza.filter(s => enRango(s.fecha, desde, hasta)),
     cardioR: datos.cardio.filter(s => enRango(s.fecha, desde, hasta)),
     readinessR: datos.readiness.filter(r => enRango(r.fecha, desde, hasta)),
+    saludR: (datos.salud || []).filter(d => enRango(d.fecha, desde, hasta)),
     ejercicioSel: State.ejercicioSel,
     buscaEj: State.buscaEj,
     nombreCliente: c.nombre,

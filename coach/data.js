@@ -97,6 +97,17 @@ function normalizar(raw){
       cardio.push({
         fecha, nombre: l.nombre ?? 'Cardio',
         duracion: l.duracion ?? null, intensidad: l.intensidad ?? null,
+        // Claves aditivas del reloj conectado: las sesiones que la app volcó
+        // desde Health Connect / Apple Salud traen origen 'reloj' y, cuando
+        // hubo pulso suficiente, la FC del tramo con la que se estimó la
+        // intensidad. Las copias anteriores no traen nada de esto.
+        origen: l.origen ?? null,
+        saludTipo: l.saludTipo ?? null,
+        rpeDeFc: l.rpeDeFc === true,
+        fcMedia: (typeof l.fcMedia === 'number') ? l.fcMedia : null,
+        fcMax: (typeof l.fcMax === 'number') ? l.fcMax : null,
+        kcal: (typeof l.kcal === 'number') ? l.kcal : null,
+        distanciaM: (typeof l.distanciaM === 'number') ? l.distanciaM : null,
       });
       return;
     }
@@ -156,9 +167,15 @@ function normalizar(raw){
       estres: r.estres ?? null, animo: r.animo ?? null,
       dolor: r.dolor ?? null, dolorZona: r.dolorZona ?? null,
       enfermo: r.enfermo === true,
+      // Lo que proponía el reloj para la pregunta de sueño cuando el cliente
+      // contestó: la diferencia con `sueno` es su corrección. Clave aditiva.
+      suenoSugerido: (typeof r.suenoSugerido === 'number') ? r.suenoSugerido : null,
       vfc: (typeof r.vfc === 'number') ? r.vfc : null,
       vfcDescartada: r.vfcDescartada === true,
       fcReposo: (typeof r.fcReposo === 'number') ? r.fcReposo : null,
+      // 'reloj' cuando la FC en reposo la puso la plataforma de salud y no
+      // el cliente a mano.
+      fcOrigen: r.fcOrigen ?? null,
       estadoEntrenar: (typeof r.estadoEntrenar === 'number') ? r.estadoEntrenar : null,
       estadoDia: r.estadoDia ?? null,                  // verde | ambar | rojo | null
     }))
@@ -174,6 +191,25 @@ function normalizar(raw){
   const nutricion = normalizarNutricion(raw);
   const nut = Nutricion.contexto(nutricion);
 
+  // Reloj conectado (clave `saludDiaria`, aditiva desde la versión con Health
+  // Connect / Apple Salud). Un día solo trae lo que la plataforma dio: todo
+  // campo puede faltar, y un día sin dato es HUECO, nunca un cero.
+  const salud = (Array.isArray(raw.saludDiaria) ? raw.saludDiaria : [])
+    .map(d => {
+      if (!d || typeof d !== 'object') return null;
+      const fecha = parseFecha(d.fecha);
+      if (!fecha) return null;
+      return {
+        fecha, clave: fmtISO(fecha),
+        pasos: num(d.pasos), fcReposo: num(d.fcReposo),
+        kcalTotal: num(d.kcalTotal), kcalBasal: num(d.kcalBasal),
+        kcalActiva: num(d.kcalActiva), pesoKg: num(d.pesoKg),
+        sueno: resumenSueno(d.sueno),
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b) => a.fecha - b.fecha);
+
   /* Grupo muscular de lo que el cliente hizo FUERA de su rutina activa
      (sustituciones, ejercicios de un bloque anterior): el planMod solo trae
      el grupo de lo planificado hoy, así que el resto caía en «Otros» y se
@@ -186,8 +222,117 @@ function normalizar(raw){
     }));
   }
 
-  return { perfil, plan, fuerza, cardio, readiness, grupoDe, nutricion, nut };
+  return { perfil, plan, fuerza, cardio, readiness, salud, grupoDe, nutricion, nut };
 }
+
+function num(v){ return (typeof v === 'number' && isFinite(v)) ? v : null; }
+
+// Noche del reloj. `total` son los minutos DORMIDOS (los tramos despierto van
+// aparte); `dormido` es la parte sin fase conocida, la que escriben las apps
+// que no las distinguen.
+function resumenSueno(s){
+  if (!s || typeof s !== 'object') return null;
+  const n = k => (typeof s[k] === 'number' && isFinite(s[k])) ? s[k] : 0;
+  const r = {
+    total: n('total'), ligero: n('ligero'), profundo: n('profundo'),
+    rem: n('rem'), despierto: n('despierto'), despertares: n('despertares'),
+    dormido: n('dormido'),
+  };
+  if (!r.total && !r.despierto) return null;
+  r.conFases = (r.ligero + r.profundo + r.rem) > 0;
+  r.reparador = r.profundo + r.rem;
+  // Sin fases no se puede juzgar cuánto sueño fue reparador (igual que en la
+  // app): la proporción se deja en null en vez de inventar un 0 %.
+  r.reparadorPct = (r.conFases && r.total > 0) ? r.reparador / r.total : null;
+  return r;
+}
+
+/* Cuentas sobre los días del reloj. Espejo de `CalculosSalud` y
+   `ObjetivoPasos` de la app (lib/salud/modelos.dart): si allí cambian los
+   umbrales, aquí también. */
+const Salud = {
+  diasMinFactor: 7,
+  diasMinPasos: 5,
+  ventanaDias: 14,
+  pasosMinimoDefecto: 8000,
+  pasosObjetivoDefecto: 12000,
+
+  hay(salud){
+    return Array.isArray(salud) && salud.some(d =>
+      d.pasos != null || d.fcReposo != null || d.kcalTotal != null ||
+      d.kcalBasal != null || d.kcalActiva != null || d.pesoKg != null || d.sueno);
+  },
+
+  mediana(xs){
+    const v = xs.filter(x => typeof x === 'number' && isFinite(x)).slice().sort((a,b) => a-b);
+    if (!v.length) return null;
+    const m = v.length >> 1;
+    return v.length % 2 ? v[m] : (v[m-1] + v[m]) / 2;
+  },
+
+  // Mediana de pasos de los días completos en [desde, hasta) (fechas Date).
+  pasosMedianos(salud, desde, hasta){
+    const d0 = desde ? +soloDia(desde) : -Infinity;
+    const d1 = hasta ? +soloDia(hasta) : Infinity;
+    const v = salud.filter(d => d.pasos != null && +soloDia(d.fecha) >= d0 && +soloDia(d.fecha) < d1)
+                   .map(d => d.pasos);
+    if (v.length < this.diasMinPasos) return null;
+    return Math.round(this.mediana(v));
+  },
+
+  /* Objetivo diario de pasos, como en Progreso de la app: manda el plan de
+     nutrición (lo habitual antes de la fase + lo extra que lleva pedido) y,
+     sin él, las referencias generales de salud. */
+  objetivoPasos(datos){
+    const fase = datos.nutricion && datos.nutricion.presente ? datos.nutricion.fase : null;
+    const extra = fase ? fase.pasosExtraAcumuladosDia : null;
+    const base = (fase && fase.inicio)
+      ? this.pasosMedianos(datos.salud, new Date(+soloDia(fase.inicio) - 14 * 86400000), fase.inicio)
+      : null;
+    if (base > 0 && extra > 0){
+      const objetivo = Math.round((base + extra) / 100) * 100;
+      return { objetivo, minimo: this.pasosMinimoDefecto < objetivo ? this.pasosMinimoDefecto : null,
+               deNutricion: true, base, extra };
+    }
+    return { objetivo: this.pasosObjetivoDefecto, minimo: this.pasosMinimoDefecto,
+             deNutricion: false, base: null, extra: null };
+  },
+
+  // 2 objetivo alcanzado · 1 por encima del mínimo · 0 corto.
+  nivelPasos(obj, pasos){
+    if (pasos >= obj.objetivo) return 2;
+    if (obj.minimo == null || pasos >= obj.minimo) return 1;
+    return 0;
+  },
+
+  /* Factor de actividad medido (total/basal), mediana de los últimos 14 días
+     completos y acotado a 1,2–2,2 como en la app. Es lo que allí sustituye al
+     factor fijo del SUELO de seguridad de la nutrición. */
+  factorActividad(salud, hasta = null){
+    const tope = hasta ? +soloDia(hasta) : Infinity;
+    const r = [];
+    for (let i = salud.length - 1; i >= 0 && r.length < this.ventanaDias; i--){
+      const d = salud[i];
+      if (+soloDia(d.fecha) > tope) continue;
+      const b = d.kcalBasal;
+      const t = d.kcalTotal != null ? d.kcalTotal
+              : (d.kcalActiva != null && b != null ? d.kcalActiva + b : null);
+      if (t == null || b == null || b <= 0 || t < b) continue;
+      r.push(t / b);
+    }
+    if (r.length < this.diasMinFactor) return null;
+    return Math.min(2.2, Math.max(1.2, this.mediana(r)));
+  },
+
+  horas(min){ return (min == null) ? null : min / 60; },
+
+  // "7 h 20 min" a partir de minutos.
+  fmtHm(min){
+    if (min == null) return '—';
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h ? `${h} h${m ? ` ${m} min` : ''}` : `${m} min`;
+  },
+};
 
 // ---------- Métricas ----------
 const Metricas = {
