@@ -9,7 +9,7 @@
    los cambios se pierden. Lo de después del centinela «Criterios del
    entrenador» sí se conserva entre generaciones.
 
-   Biblioteca: 364 ejercicios · 364 con dibujo.
+   Biblioteca: 365 ejercicios · 365 con dibujo.
    ================================================================ */
 
 // Patrones de la plantilla (columna A de «Listas»)
@@ -161,7 +161,8 @@ const CAT_LISTAS = {
   "Press JM con barra",
   "Press de tríceps sentado con mancuerna",
   "Fondos de tríceps en el suelo",
-  "Fondos en anillas"
+  "Fondos en anillas",
+  "Fondos asistidos en máquina"
  ],
  "Tirón vertical": [
   "Dominada agarre prono",
@@ -592,9 +593,10 @@ const CAT_FICHA = {
  "Flexión a una mano": { grupo: "Pectoral", patron: "Empuje horizontal", secundarios: ["Tríceps", "Core"], prioridad: "Alternativa", descanso: "2 min", nota: "", img: "Flexión a una mano" },
  "Flexión desde plancha": { grupo: "Core", patron: "Core", secundarios: ["Tríceps", "Hombro"], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Flexión desde plancha" },
  "Flexión pica": { grupo: "Hombro", patron: "Empuje vertical", secundarios: ["Tríceps", "Core"], prioridad: "Alternativa", descanso: "90 s", nota: "Cadera alta formando una V invertida; baja la cabeza al suelo entre las manos y empuja hasta extender los brazos. Eleva los pies para aumentar la dificultad.", img: "Flexión pica" },
+ "Fondos asistidos en máquina": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "60–90 s", nota: "Máquina de contrapeso: apoya rodillas o pies en la plataforma, tronco erguido y baja la ayuda a medida que puedas con más peso propio.", img: "Fondos asistidos en máquina" },
  "Fondos de tríceps en el suelo": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "60–90 s", nota: "", img: "Fondos de tríceps en el suelo" },
  "Fondos en anillas": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "60–90 s", nota: "", img: "Fondos en anillas" },
- "Fondos en máquina": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Trayectoria guiada; tronco erguido para enfatizar el tríceps.", img: "Fondos en máquina" },
+ "Fondos en máquina": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Máquina sentada de torre de placas: espalda apoyada, tronco erguido y empuja los agarres hasta extender los codos.", img: "Fondos en máquina" },
  "Fondos en paralelas": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Tronco vertical para enfatizar tríceps, baja controlado, extensión completa arriba.", img: "Fondos en paralelas" },
  "Fondos entre bancos": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Manos en el borde del banco y cadera cerca del apoyo; baja hasta unos 90° de codo y extiende; hombros lejos de las orejas. Añade un disco sobre los muslos para progresar.", img: "Fondos entre bancos" },
  "Frog pump con mancuerna": { grupo: "Isquios/glúteo", patron: "Glúteo", secundarios: [], prioridad: "Alternativa", descanso: "90 s", nota: "", img: "Frog pump con mancuerna" },

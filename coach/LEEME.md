@@ -47,7 +47,10 @@ El catálogo de ejercicios del Coach (`catalogo.js`) y sus dibujos
 desde el repositorio de TrueLift con `tool/coach_generar_catalogo.py`: no se
 editan a mano. Lo único que sí se edita ahí son los criterios del entrenador
 del final del archivo (objetivos de volumen y frecuencia por grupo), que el
-generador respeta.
+generador respeta. `canonico.js` —el mapa que permite importar un Excel que la
+app exportó en inglés o en portugués— sale igual de las traducciones de la app,
+con `tool/coach_generar_canonico.py`. Los dos aceptan `--check`, que no escribe
+nada y avisa si el Coach se ha quedado atrás.
 
 ## Ejercicios hechos con molestias
 
