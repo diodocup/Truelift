@@ -25,7 +25,7 @@
 
   // App Store Connect → App Analytics → Fuentes → "Crear enlace de campaña":
   // el número pt=… que aparece en el enlace generado.
-  var APPLE_PROVIDER_TOKEN = 'PEGAR_PT_DE_APP_STORE_CONNECT';
+  var APPLE_PROVIDER_TOKEN = '129321386';
   var APPLE_APP_ID = '6803201895';
 
   var q = new URLSearchParams(window.location.search);
@@ -60,8 +60,8 @@
     if (!APPLE_PROVIDER_TOKEN || APPLE_PROVIDER_TOKEN.indexOf('PEGAR') === 0) return original;
     try {
       var u = new URL(original);
-      // ct: máx. 40 caracteres, visible en App Analytics como "campaña".
-      var ct = ('oai_' + utm.utm_campaign + (utm.utm_content ? '_' + utm.utm_content : '')).slice(0, 40);
+      // ct: máx. 30 caracteres, visible en App Analytics como "campaña".
+      var ct = ('oai_' + (utm.utm_content || utm.utm_campaign)).slice(0, 30);
       u.searchParams.set('pt', APPLE_PROVIDER_TOKEN);
       u.searchParams.set('ct', ct);
       u.searchParams.set('mt', '8');
