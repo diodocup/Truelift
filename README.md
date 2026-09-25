@@ -22,7 +22,7 @@ https://play.google.com/store/apps/details?id=es.rubensoro.truelift&pcampaignid=
 La versión de iOS está publicada en App Store:
 
 ```text
-https://apps.apple.com/es/app/truelift-strength-training/id6803201895
+https://apps.apple.com/es/app/truelift-programaci%C3%B3n-fuerza/id6803201895
 ```
 
 Los enlaces explícitos de Google Play y App Store conservan siempre su tienda.
