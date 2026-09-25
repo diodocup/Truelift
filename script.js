@@ -385,8 +385,8 @@ if (revealTargets.length && "IntersectionObserver" in window && !prefersReducedM
   revealTargets.forEach((target) => target.classList.add("is-visible"));
 }
 
-// El CTA de la cabecera apunta a Google Play por defecto (así funciona sin JS y
-// así lo ven los buscadores). En iPhone y iPad lo redirigimos a la App Store.
+// Los CTA genéricos ofrecen ambas tiendas sin JS y en escritorio.
+// En móviles llevan directamente a la tienda del dispositivo.
 function isAppleMobileDevice() {
   const userAgent = navigator.userAgent || "";
   if (/iPhone|iPad|iPod/.test(userAgent)) return true;
@@ -394,8 +394,10 @@ function isAppleMobileDevice() {
   return /Macintosh/.test(userAgent) && navigator.maxTouchPoints > 1;
 }
 
-if (isAppleMobileDevice()) {
-  document.querySelectorAll("a[data-store-cta][data-store-ios]").forEach((link) => {
-    link.setAttribute("href", link.getAttribute("data-store-ios"));
+const mobileStore = isAppleMobileDevice() ? "ios" : /Android/i.test(navigator.userAgent || "") ? "android" : null;
+if (mobileStore) {
+  document.querySelectorAll("a[data-store-cta]").forEach((link) => {
+    const destination = link.getAttribute(`data-store-${mobileStore}`);
+    if (destination) link.setAttribute("href", destination);
   });
 }

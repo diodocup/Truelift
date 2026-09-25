@@ -19,9 +19,17 @@ La versión de Android ya está publicada en Google Play:
 https://play.google.com/store/apps/details?id=es.rubensoro.truelift&pcampaignid=web_share
 ```
 
-La versión de iOS estará disponible próximamente. Cuando se publique su ficha, sustituye
-los dos `<span class="button is-static">iOS · pronto</span>` de `index.html` (hero y cierre)
-por enlaces al App Store.
+La versión de iOS está publicada en App Store:
+
+```text
+https://apps.apple.com/es/app/truelift-strength-training/id6803201895
+```
+
+Los enlaces explícitos de Google Play y App Store conservan siempre su tienda.
+Los botones genéricos de cabecera y prueba PRO (`data-store-cta`) detectan Android,
+iPhone e iPad, incluido iPadOS con identificador Macintosh y pantalla táctil.
+En escritorio, dispositivos desconocidos o sin JavaScript, llevan a `#descargar`,
+donde se pueden elegir ambas tiendas. No se redirige automáticamente al visitante.
 
 ## Diseño
 
