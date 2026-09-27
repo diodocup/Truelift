@@ -29,7 +29,7 @@ const englishTranslations = {
   "Sin anuncios": "No ads",
   "Sin cuenta ni email": "No account or email",
   "16 sesiones de entrenamiento con PRO incluidas": "16 training sessions with PRO included",
-  "Sesión en curso: objetivo de repeticiones y RIR, carga sugerida, cronómetro de descanso y explicación de por qué se mantiene la carga": "Session in progress: rep and RIR target, suggested load, rest timer and the reason the load is being held",
+  "Sesión en curso: objetivo de repeticiones y RIR, carga sugerida, tu última sesión en verde y explicación de por qué sube la carga": "Session in progress: rep and RIR target, suggested load, your last green session and the reason the load goes up",
 
   "Por qué TrueLift": "Why TrueLift",
   "Deja de preguntarte si hoy toca subir peso.": "Stop wondering whether today is the day to add weight.",
@@ -46,7 +46,7 @@ const englishTranslations = {
   "Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado": "Log tab with today's session and a breakdown of today's readiness to train",
   "Abre la sesión que toca": "Open today's session",
   "Rutina lista desde el primer día según tus días de entreno y tu nivel. Con PRO, un estado diario de 0 a 100 te dice cómo llegas.": "A routine ready from day one, based on your training days and level. With PRO, a daily 0–100 readiness score tells you how you are arriving.",
-  "Registro serie a serie con la carga sugerida, el objetivo de repeticiones y RIR y el cronómetro de descanso": "Set-by-set logging with the suggested load, the rep and RIR target and the rest timer",
+  "Registro serie a serie con la carga sugerida, el objetivo de repeticiones y RIR y tu última sesión en verde": "Set-by-set logging with the suggested load, the rep and RIR target and your last green session",
   "Registra serie a serie": "Log set by set",
   "Carga sugerida, objetivo de repeticiones y RIR, cronómetro de descanso. Tú solo confirmas lo que has hecho.": "Suggested load, rep and RIR target, rest timer. You just confirm what you did.",
   "Sesión guardada con el rendimiento frente a tu base, tonelaje, series, RPE y duración": "Saved session with performance against your baseline, tonnage, sets, RPE and duration",

@@ -27,7 +27,7 @@ const portugueseTranslations = {
   "Sin anuncios": "Sem anúncios",
   "Sin cuenta ni email": "Sem conta nem e-mail",
   "16 sesiones de entrenamiento con PRO incluidas": "16 sessões de treino com PRO incluídas",
-  "Sesión en curso: objetivo de repeticiones y RIR, carga sugerida, cronómetro de descanso y explicación de por qué se mantiene la carga": "Sessão em andamento: alvo de repetições e RIR, carga sugerida, cronômetro de descanso e explicação de por que a carga é mantida",
+  "Sesión en curso: objetivo de repeticiones y RIR, carga sugerida, tu última sesión en verde y explicación de por qué sube la carga": "Sessão em andamento: alvo de repetições e RIR, carga sugerida, sua última sessão em verde e explicação de por que a carga sobe",
 
   "Por qué TrueLift": "Por que a TrueLift",
   "Deja de preguntarte si hoy toca subir peso.": "Pare de se perguntar se hoje é dia de aumentar a carga.",
@@ -44,7 +44,7 @@ const portugueseTranslations = {
   "Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado": "Aba Registro com a sessão do dia e a prontidão para treinar de hoje detalhada",
   "Abre la sesión que toca": "Abra a sessão do dia",
   "Rutina lista desde el primer día según tus días de entreno y tu nivel. Con PRO, un estado diario de 0 a 100 te dice cómo llegas.": "Rotina pronta desde o primeiro dia, conforme seus dias de treino e seu nível. Com o PRO, uma prontidão diária de 0 a 100 mostra como você chega.",
-  "Registro serie a serie con la carga sugerida, el objetivo de repeticiones y RIR y el cronómetro de descanso": "Registro série a série com a carga sugerida, o alvo de repetições e RIR e o cronômetro de descanso",
+  "Registro serie a serie con la carga sugerida, el objetivo de repeticiones y RIR y tu última sesión en verde": "Registro série a série com a carga sugerida, o alvo de repetições e RIR e sua última sessão em verde",
   "Registra serie a serie": "Registre série a série",
   "Carga sugerida, objetivo de repeticiones y RIR, cronómetro de descanso. Tú solo confirmas lo que has hecho.": "Carga sugerida, alvo de repetições e RIR, cronômetro de descanso. Você só confirma o que fez.",
   "Sesión guardada con el rendimiento frente a tu base, tonelaje, series, RPE y duración": "Sessão salva com o desempenho em relação à sua base, tonelagem, séries, RPE e duração",
