@@ -79,7 +79,7 @@
     </script>
     <link rel="preload" as="font" type="font/woff2" href="fonts/archivo-latin.woff2" crossorigin>
     <link rel="preload" as="font" type="font/woff2" href="fonts/jetbrainsmono-latin.woff2" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260916-1">
+    <link rel="stylesheet" href="styles.css?v=20260927-1">
   </head>
   <body>
     <header class="site-header">
@@ -87,6 +87,7 @@
         <span class="wordmark"><svg class="wordmark-t" viewBox="26.2 32 55.6 44" aria-hidden="true" focusable="false"><path class="wm-brazo" d="M28 32H44A2 2 0 0 1 46 34V42A2 2 0 0 1 44 44H32.2A2.8 2.8 0 0 1 29.7 42.5L26.2 35.5A2.4 2.4 0 0 1 28 32Z"/><path class="wm-brazo" d="M80 32H64A2 2 0 0 0 62 34V42A2 2 0 0 0 64 44H75.8A2.8 2.8 0 0 0 78.3 42.5L81.8 35.5A2.4 2.4 0 0 0 80 32Z"/><path class="wm-pie" d="M50 32H58A2 2 0 0 1 60 34V71.2A3 3 0 0 1 59.1 73.3L56.4 75.6A2 2 0 0 1 55.1 76H50A2 2 0 0 1 48 74V34A2 2 0 0 1 50 32Z"/></svg>RUE<span>LIFT</span></span>
       </a>
       <nav class="site-nav" aria-label="Secciones">
+        <a href="#reloj">Reloj</a>
         <a href="#como-funciona">Cómo funciona</a>
         <a href="#progreso">Progreso</a>
         <a href="#planes">Planes</a>
@@ -119,6 +120,19 @@
               Las apps de registro guardan lo que haces. TrueLift decide lo que haces después:
               cuánto peso cargar en cada serie, cuándo mantener y cuándo frenar. Y te explica el porqué.
             </p>
+
+            <a class="watch-strip" href="#reloj">
+              <span class="watch-strip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 6l.6-3h4.8l.6 3M9 18l.6 3h4.8l.6-3"/><path d="M12 9.5V12l1.5 1.5"/></svg></span>
+              <span class="watch-strip-copy">
+                <span class="watch-strip-title">Conecta tu smartwatch <span class="tag-pro">PRO</span></span>
+                <span class="watch-strip-platforms">
+                  <span class="platform-chip">Health Connect <span>Android</span></span>
+                  <span class="platform-chip">Apple Salud <span>iOS</span></span>
+                </span>
+                <span class="watch-strip-brands">Apple Watch · Garmin · Samsung Galaxy Watch · Pixel Watch · Polar · y muchos más</span>
+              </span>
+              <span class="watch-strip-arrow" aria-hidden="true">→</span>
+            </a>
 
             <div class="decision-card">
               <div class="decision-head">
@@ -167,10 +181,104 @@
         </div>
       </section>
 
+      <section class="section watch-section" id="reloj" aria-labelledby="watch-title">
+        <div class="section-inner" data-reveal>
+          <div class="section-head is-pro">
+            <span class="num">01</span>
+            <span class="label">Reloj conectado · novedad</span>
+            <span class="tag-pro">PRO</span>
+            <span class="rule" aria-hidden="true"></span>
+          </div>
+          <div class="heading-split">
+            <h2 id="watch-title">Tu reloj ya sabe cómo has dormido. Ahora TrueLift también.</h2>
+            <p>
+              Conecta tu smartwatch o tu pulsera a través de Health Connect en Android o de Apple Salud en iOS.
+              TrueLift aprovecha lo que tu reloj ya mide para ajustar tu entrenamiento y tu nutrición, sin que tengas que anotarlo.
+            </p>
+          </div>
+
+          <ol class="watch-flow" aria-label="Del reloj a TrueLift">
+            <li class="watch-flow-node">
+              <span class="watch-flow-kicker">Tu reloj o pulsera</span>
+              <p>Mide tu sueño, tu pulso, tus pasos y tus entrenos, como ya hace cada día.</p>
+            </li>
+            <li class="watch-flow-node is-platform">
+              <span class="watch-flow-kicker">Health Connect · Apple Salud</span>
+              <p>La app de tu marca guarda ahí tus datos, dentro de tu propio móvil.</p>
+            </li>
+            <li class="watch-flow-node is-truelift">
+              <span class="watch-flow-kicker">TrueLift</span>
+              <p>Los lee con tu permiso y los tiene en cuenta en cada decisión.</p>
+            </li>
+          </ol>
+
+          <div class="cards watch-cards">
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">01</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></span>
+              </div>
+              <h3>Si duermes mal, lo tiene en cuenta</h3>
+              <p>Tu sueño y tu pulso en reposo llegan solos a tu estado diario. Si hoy vienes cansado, TrueLift lo sabe antes de proponerte subir peso.</p>
+            </article>
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">02</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></span>
+              </div>
+              <h3>Tu cardio se apunta solo</h3>
+              <p>Las carreras, rutas en bici o sesiones de natación que grabe tu reloj pasan a tu historial con su intensidad y cuentan en tu fatiga.</p>
+            </article>
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">03</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 10.5a5 5 0 0 1 7 0"/><path d="M12 11l1.3-1.8"/></svg></span>
+              </div>
+              <h3>Pasos y peso, directos a nutrición</h3>
+              <p>Tus pasos, tu gasto diario y el peso de tu báscula conectada alimentan la capa de nutrición sin que los copies a mano.</p>
+            </article>
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">04</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+              </div>
+              <h3>Solo lectura, nada sale del móvil</h3>
+              <p>TrueLift solo lee lo que tú autorizas y nunca envía tus datos a ningún servidor. Puedes retirar el permiso cuando quieras.</p>
+            </article>
+          </div>
+
+          <div class="watch-brands">
+            <p class="watch-brands-label">Relojes y pulseras compatibles</p>
+            <ul class="watch-brands-list" aria-label="Marcas de relojes y pulseras compatibles">
+                <li>Apple Watch</li>
+                <li>Garmin</li>
+                <li>Samsung Galaxy Watch</li>
+                <li>Google Pixel Watch</li>
+                <li>Fitbit</li>
+                <li>Polar</li>
+                <li>Suunto</li>
+                <li>Coros</li>
+                <li>Amazfit</li>
+                <li>Xiaomi</li>
+                <li>Withings</li>
+                <li>Whoop</li>
+            </ul>
+            <p class="watch-brands-note">
+              Funciona con cualquier reloj, pulsera o báscula cuya app sincronice con Health Connect (Android) o Apple Salud (iOS).
+              Los datos que llegan dependen de lo que comparta la app de cada marca.
+            </p>
+            <p class="watch-brands-legal">
+              Apple, Apple Watch y Apple Salud son marcas de Apple Inc. Health Connect, Google Pixel Watch y Fitbit son marcas de Google LLC.
+              Las demás marcas citadas pertenecen a sus respectivos titulares. TrueLift no está afiliada ni asociada a ninguna de ellas.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section class="section is-band" id="por-que" aria-labelledby="why-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">01</span>
+            <span class="num">02</span>
             <span class="label">Por qué TrueLift</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
@@ -218,7 +326,7 @@
       <section class="section" id="como-funciona" aria-labelledby="how-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">02</span>
+            <span class="num">03</span>
             <span class="label">Cómo funciona</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
@@ -277,7 +385,7 @@
       <section class="section is-band" id="progreso" aria-labelledby="progress-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">03</span>
+            <span class="num">04</span>
             <span class="label">Progreso</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
@@ -321,7 +429,7 @@
       <section class="section" id="planes" aria-labelledby="plans-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">04</span>
+            <span class="num">05</span>
             <span class="label">Gratis vs PRO</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
@@ -355,6 +463,7 @@
               <ul class="check-list gold">
                 <li>Rutina totalmente configurable y rutinas descargables</li>
                 <li>Autorregulación por sueño, estrés, molestias y VFC</li>
+                <li>Reloj conectado: Health Connect y Apple Salud</li>
                 <li>Descarga guiada y descarga automática por fatiga</li>
                 <li>Capa de nutrición: temporada por bloques y ajuste semanal</li>
                 <li>Crear ejercicios e importar tu rutina desde Excel</li>
@@ -448,6 +557,11 @@
                     <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
+                    <th scope="row">Conectar tu smartwatch con Health Connect o Apple Salud</th>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                  </tr>
+                  <tr>
                     <th scope="row">Progresión ajustada a déficit, mantenimiento o superávit</th>
                     <td class="no"><span class="sr-only">No incluido</span></td>
                     <td class="yes"><span class="sr-only">Incluido</span></td>
@@ -472,7 +586,7 @@
       <section class="section is-band" id="nutricion" aria-labelledby="nutrition-title">
         <div class="section-inner" data-reveal>
           <div class="section-head is-pro">
-            <span class="num">05</span>
+            <span class="num">06</span>
             <span class="label">Capa de nutrición · opcional</span>
             <span class="tag-pro">PRO</span>
             <span class="rule" aria-hidden="true"></span>
@@ -522,7 +636,7 @@
       <section class="section is-band" id="capturas" aria-labelledby="screens-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">06</span>
+            <span class="num">07</span>
             <span class="label">Capturas</span>
             <span class="rule" aria-hidden="true"></span>
             <span class="hint" aria-hidden="true">Desliza para ver más →</span>
@@ -580,7 +694,7 @@
       <section class="section" id="faq" aria-labelledby="faq-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">07</span>
+            <span class="num">08</span>
             <span class="label">Preguntas frecuentes</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
@@ -632,6 +746,23 @@
                   bandas de pulso y que suele avisar de la fatiga antes que el rendimiento. Si la mides, la app
                   la integra con el resto de señales; si no, la autorregulación funciona con tu descanso,
                   tu estrés, tus molestias y tu rendimiento reciente.
+                </p>
+                <p>
+                  Si tu reloj la mide y lo conectas a través de Health Connect o Apple Salud, llega sola, sin anotarla.
+                </p>
+              </details>
+              <details>
+                <summary>¿Qué relojes son compatibles con TrueLift?</summary>
+                <p>
+                  Cualquier reloj, pulsera o báscula cuya app sincronice con Health Connect en Android o con Apple Salud
+                  en iOS: Apple Watch, Garmin, Samsung Galaxy Watch, Google Pixel Watch, Fitbit, Polar, Suunto, Coros,
+                  Amazfit, Xiaomi, Withings o Whoop, entre otros. TrueLift no se conecta al reloj directamente: lee lo
+                  que la app de tu marca guarda en la plataforma de salud de tu móvil, así que los datos disponibles
+                  dependen de lo que esa app comparta.
+                </p>
+                <p>
+                  Es una función PRO. Se activa en Ajustes, dentro de Autorregulación y VFC, y el acceso es solo de lectura:
+                  puedes retirarlo cuando quieras.
                 </p>
               </details>
               <details>
@@ -724,8 +855,8 @@
       </div>
     </footer>
 
-    <script src="translations-pt-br.js?v=20260916-1"></script>
-    <script src="script.js?v=20260925-1"></script>
+    <script src="translations-pt-br.js?v=20260927-1"></script>
+    <script src="script.js?v=20260927-1"></script>
     <script src="atribucion-tiendas.js?v=20260925-2" defer></script>
   </body>
 </html>

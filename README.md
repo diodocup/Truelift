@@ -43,6 +43,14 @@ Open Font License). No se cargan desde Google Fonts a propósito: la política d
 declara que el sitio es estático y sin terceros, y traer las fuentes de fuera enviaría la IP
 de quien visita la web a un servicio que no está descrito en esa política.
 
+## Reloj conectado
+
+La franja «Conecta tu smartwatch» de la portada y la sección `#reloj` anuncian la lectura de datos
+del reloj a través de Health Connect (Android) y Apple Salud (iOS), que es función PRO. Las marcas
+de relojes van **como texto** en la tipografía de la web, no como logotipos: nombrarlas para indicar
+compatibilidad no sugiere colaboración y no depende de las normas de uso de logotipos de cada
+fabricante (Apple, por ejemplo, no permite usar su manzana). El aviso de marcas va al pie de la sección.
+
 ## Precios
 
 **En la web no se publican precios.** La sección de planes indica solo las modalidades de pago
