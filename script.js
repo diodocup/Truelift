@@ -201,7 +201,40 @@ const englishTranslations = {
   "TrueLift importa tu historial de entrenamiento desde Hevy y Strong con el archivo de exportación que generan esas apps. Tus sesiones, ejercicios, series y cargas entran en TrueLift, así que empiezas con tu progreso real y la progresión automática decide con tus datos desde el primer día.": "TrueLift imports your training history from Hevy and Strong using the export file those apps generate. Your sessions, exercises, sets and loads come across, so you start with your real progress and automatic progression decides using your own data from day one.",
   "Hevy y Strong son marcas de sus respectivos titulares. TrueLift no está afiliada ni asociada a ellas.": "Hevy and Strong are trademarks of their respective owners. TrueLift is not affiliated with or endorsed by them.",
   "Vengo de Hevy o Strong, ¿pierdo mi historial?": "I'm coming from Hevy or Strong. Do I lose my history?",
-  "No. TrueLift puede importar tu historial de entrenamiento desde Hevy y Strong a partir del archivo de exportación que generan esas apps: sesiones, ejercicios, series y cargas se incorporan a tu registro y la progresión automática trabaja con tu histórico real, sin empezar de cero. Hevy y Strong son marcas de sus respectivos titulares y TrueLift no está afiliada ni asociada a ellas.": "No. TrueLift can import your training history from Hevy and Strong using the export file those apps generate: sessions, exercises, sets and loads are added to your log, and automatic progression works with your real history instead of starting from scratch. Hevy and Strong are trademarks of their respective owners and TrueLift is not affiliated with or endorsed by them."
+  "No. TrueLift puede importar tu historial de entrenamiento desde Hevy y Strong a partir del archivo de exportación que generan esas apps: sesiones, ejercicios, series y cargas se incorporan a tu registro y la progresión automática trabaja con tu histórico real, sin empezar de cero. Hevy y Strong son marcas de sus respectivos titulares y TrueLift no está afiliada ni asociada a ellas.": "No. TrueLift can import your training history from Hevy and Strong using the export file those apps generate: sessions, exercises, sets and loads are added to your log, and automatic progression works with your real history instead of starting from scratch. Hevy and Strong are trademarks of their respective owners and TrueLift is not affiliated with or endorsed by them.",
+
+  // Reloj conectado (Health Connect · Apple Salud)
+  "Reloj": "Watch",
+  "Conecta tu smartwatch": "Connect your smartwatch",
+  "Apple Salud": "Apple Health",
+  "Apple Watch · Garmin · Samsung Galaxy Watch · Pixel Watch · Polar · y muchos más": "Apple Watch · Garmin · Samsung Galaxy Watch · Pixel Watch · Polar · and many more",
+  "Reloj conectado · novedad": "Connected watch · new",
+  "Tu reloj ya sabe cómo has dormido. Ahora TrueLift también.": "Your watch already knows how you slept. Now TrueLift does too.",
+  "Conecta tu smartwatch o tu pulsera a través de Health Connect en Android o de Apple Salud en iOS. TrueLift aprovecha lo que tu reloj ya mide para ajustar tu entrenamiento y tu nutrición, sin que tengas que anotarlo.": "Connect your smartwatch or fitness band through Health Connect on Android or Apple Health on iOS. TrueLift uses what your watch already measures to adjust your training and nutrition, with nothing to type in.",
+  "Del reloj a TrueLift": "From your watch to TrueLift",
+  "Tu reloj o pulsera": "Your watch or band",
+  "Mide tu sueño, tu pulso, tus pasos y tus entrenos, como ya hace cada día.": "Tracks your sleep, heart rate, steps and workouts, just as it already does every day.",
+  "Health Connect · Apple Salud": "Health Connect · Apple Health",
+  "La app de tu marca guarda ahí tus datos, dentro de tu propio móvil.": "Your brand's app stores your data there, on your own phone.",
+  "Los lee con tu permiso y los tiene en cuenta en cada decisión.": "Reads them with your permission and factors them into every decision.",
+  "Si duermes mal, lo tiene en cuenta": "Slept badly? It takes that into account",
+  "Tu sueño y tu pulso en reposo llegan solos a tu estado diario. Si hoy vienes cansado, TrueLift lo sabe antes de proponerte subir peso.": "Your sleep and resting heart rate flow straight into your daily readiness. If you show up tired, TrueLift knows before it suggests adding weight.",
+  "Tu cardio se apunta solo": "Your cardio logs itself",
+  "Las carreras, rutas en bici o sesiones de natación que grabe tu reloj pasan a tu historial con su intensidad y cuentan en tu fatiga.": "The runs, rides and swims your watch records go into your history with their intensity and count towards your fatigue.",
+  "Pasos y peso, directos a nutrición": "Steps and weight, straight to nutrition",
+  "Tus pasos, tu gasto diario y el peso de tu báscula conectada alimentan la capa de nutrición sin que los copies a mano.": "Your steps, daily energy expenditure and the weight from your connected scale feed the nutrition layer, with no copying by hand.",
+  "Solo lectura, nada sale del móvil": "Read-only, nothing leaves your phone",
+  "TrueLift solo lee lo que tú autorizas y nunca envía tus datos a ningún servidor. Puedes retirar el permiso cuando quieras.": "TrueLift only reads what you allow and never sends your data to any server. You can revoke access whenever you like.",
+  "Relojes y pulseras compatibles": "Compatible watches and bands",
+  "Marcas de relojes y pulseras compatibles": "Compatible watch and band brands",
+  "Funciona con cualquier reloj, pulsera o báscula cuya app sincronice con Health Connect (Android) o Apple Salud (iOS). Los datos que llegan dependen de lo que comparta la app de cada marca.": "Works with any watch, band or scale whose app syncs with Health Connect (Android) or Apple Health (iOS). Which data comes through depends on what each brand's app shares.",
+  "Apple, Apple Watch y Apple Salud son marcas de Apple Inc. Health Connect, Google Pixel Watch y Fitbit son marcas de Google LLC. Las demás marcas citadas pertenecen a sus respectivos titulares. TrueLift no está afiliada ni asociada a ninguna de ellas.": "Apple, Apple Watch and Apple Health are trademarks of Apple Inc. Health Connect, Google Pixel Watch and Fitbit are trademarks of Google LLC. All other brands mentioned belong to their respective owners. TrueLift is not affiliated or associated with any of them.",
+  "Reloj conectado: Health Connect y Apple Salud": "Connected watch: Health Connect and Apple Health",
+  "Conectar tu smartwatch con Health Connect o Apple Salud": "Connect your smartwatch via Health Connect or Apple Health",
+  "Si tu reloj la mide y lo conectas a través de Health Connect o Apple Salud, llega sola, sin anotarla.": "If your watch measures it and you connect it through Health Connect or Apple Health, it comes in on its own, with nothing to type.",
+  "¿Qué relojes son compatibles con TrueLift?": "Which watches work with TrueLift?",
+  "Cualquier reloj, pulsera o báscula cuya app sincronice con Health Connect en Android o con Apple Salud en iOS: Apple Watch, Garmin, Samsung Galaxy Watch, Google Pixel Watch, Fitbit, Polar, Suunto, Coros, Amazfit, Xiaomi, Withings o Whoop, entre otros. TrueLift no se conecta al reloj directamente: lee lo que la app de tu marca guarda en la plataforma de salud de tu móvil, así que los datos disponibles dependen de lo que esa app comparta.": "Any watch, band or scale whose app syncs with Health Connect on Android or Apple Health on iOS: Apple Watch, Garmin, Samsung Galaxy Watch, Google Pixel Watch, Fitbit, Polar, Suunto, Coros, Amazfit, Xiaomi, Withings or Whoop, among others. TrueLift doesn't connect to the watch directly: it reads what your brand's app stores in your phone's health platform, so the data available depends on what that app shares.",
+  "Es una función PRO. Se activa en Ajustes, dentro de Autorregulación y VFC, y el acceso es solo de lectura: puedes retirarlo cuando quieras.": "It's a PRO feature. You turn it on in Settings, under Autoregulation and HRV, and access is read-only: you can revoke it whenever you like."
 };
 
 const normaliseTranslationKey = (value) => value.replace(/\s+/g, " ").trim();

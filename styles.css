@@ -1580,6 +1580,238 @@ h3 {
   }
 }
 
+/* ---------- Reloj conectado ----------
+   Reclamo de portada y sección propia. Es PRO, así que el acento es el oro.
+   Las marcas van como texto en la tipografía de la web, no como logotipos:
+   citar un nombre para decir con qué es compatible no sugiere colaboración y
+   no depende de las normas de uso del logotipo de cada fabricante. */
+
+.watch-strip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 560px;
+  margin: 0 0 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(226, 186, 74, 0.38);
+  border-radius: var(--radius);
+  background: linear-gradient(100deg, rgba(226, 186, 74, 0.1), rgba(226, 186, 74, 0.02) 70%);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.watch-strip:hover {
+  border-color: rgba(226, 186, 74, 0.7);
+}
+
+.watch-strip-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(226, 186, 74, 0.4);
+  border-radius: 14px;
+  color: var(--gold);
+}
+
+.watch-strip-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.watch-strip-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.watch-strip-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font: 900 20px var(--sans);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.watch-strip-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.platform-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--bright);
+  font: 800 13px var(--sans);
+  white-space: nowrap;
+}
+
+.platform-chip span {
+  color: var(--quiet);
+  font: 700 9px var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.watch-strip-brands {
+  color: var(--dim);
+  font: 700 10px var(--mono);
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+
+.watch-strip-arrow {
+  flex: 0 0 auto;
+  color: var(--gold);
+  font: 700 22px var(--mono);
+  transition: transform 0.18s ease;
+}
+
+.watch-strip:hover .watch-strip-arrow {
+  transform: translateX(4px);
+}
+
+.watch-section {
+  background:
+    radial-gradient(ellipse 60% 50% at 85% 0%, rgba(226, 186, 74, 0.08), transparent 70%),
+    var(--bg);
+}
+
+/* Del reloj a TrueLift en tres pasos; el conector es un filete entre nodos. */
+.watch-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 34px;
+  margin: 0 0 40px;
+  padding: 0;
+  list-style: none;
+}
+
+.watch-flow-node {
+  position: relative;
+  padding: 20px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.watch-flow-node:not(:last-child)::after {
+  content: "\2192";
+  position: absolute;
+  top: 50%;
+  right: -26px;
+  transform: translateY(-50%);
+  color: var(--gold);
+  font: 700 18px var(--mono);
+}
+
+.watch-flow-node.is-platform {
+  border-color: rgba(226, 186, 74, 0.4);
+}
+
+.watch-flow-node.is-truelift {
+  border-color: rgba(168, 238, 25, 0.35);
+}
+
+.watch-flow-kicker {
+  display: block;
+  margin-bottom: 8px;
+  font: 800 11px var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.watch-flow-node.is-truelift .watch-flow-kicker {
+  color: var(--lime);
+}
+
+.watch-flow-node p {
+  margin: 0;
+  color: var(--dim);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.card-head .glyph svg {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.watch-brands {
+  margin-top: 46px;
+  padding-top: 30px;
+  border-top: 1px solid var(--line);
+}
+
+.watch-brands-label {
+  margin: 0 0 18px;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--quiet);
+}
+
+.watch-brands-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.watch-brands-list li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 62px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  font: 800 17px var(--sans);
+  letter-spacing: -0.01em;
+  text-align: center;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.watch-brands-list li:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.watch-brands-note {
+  max-width: 760px;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.watch-brands-legal {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* ---------- Ajustes de pantalla estrecha ----------
    El grueso del layout es auto-fit y clamp(), así que solo hacen falta unos
    pocos ajustes para que la cabecera y el hero no se coman el móvil. */
@@ -1655,6 +1887,48 @@ h3 {
 
   .closing-inner {
     padding: 72px 0 64px;
+  }
+
+  .watch-strip {
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .watch-strip-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .watch-strip-title {
+    font-size: 18px;
+  }
+
+  .watch-strip-arrow {
+    display: none;
+  }
+
+  .watch-flow {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .watch-flow-node:not(:last-child)::after {
+    content: "\2193";
+    top: auto;
+    right: auto;
+    bottom: -26px;
+    left: 22px;
+    transform: none;
+  }
+
+  .watch-brands-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .watch-brands-list li {
+    min-height: 54px;
+    font-size: 15px;
   }
 
   .footer-inner {
