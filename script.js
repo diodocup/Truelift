@@ -25,6 +25,7 @@ const englishTranslations = {
   "Disponible pronto en": "Coming soon to",
   "Abrir aplicación web": "Open web app",
   "Resumen de TrueLift": "TrueLift at a glance",
+  "Opiniones de usuarios": "User reviews",
   "Gratis para siempre": "Free forever",
   "Sin anuncios": "No ads",
   "Sin cuenta ni email": "No account or email",

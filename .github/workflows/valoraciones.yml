@@ -1,0 +1,50 @@
+# Actualiza a diario la nota y las reseñas de Google Play y App Store que muestra
+# la web (valoraciones.json). También se puede lanzar a mano desde la pestaña
+# Actions > "Valoraciones de las tiendas" > Run workflow.
+name: Valoraciones de las tiendas
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/valoraciones.yml"
+      - ".github/scripts/actualizar-valoraciones.mjs"
+      - "valoraciones-config.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: valoraciones
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar el lector de Google Play
+        run: npm install --no-save --no-package-lock google-play-scraper@10
+
+      - name: Descargar nota y reseñas
+        run: node .github/scripts/actualizar-valoraciones.mjs
+
+      - name: Publicar cambios
+        run: |
+          if git diff --quiet -- valoraciones.json && ! git ls-files --others --exclude-standard --error-unmatch valoraciones.json >/dev/null 2>&1; then
+            echo "Sin cambios que publicar."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add valoraciones.json
+          git commit -m "Actualiza valoraciones de las tiendas"
+          git push

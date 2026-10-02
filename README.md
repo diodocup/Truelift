@@ -77,3 +77,21 @@ Si una captura solo existe en algunos idiomas, la `<figure>` de la galería lo i
 
 Para regenerarlas a partir de capturas del móvil (1220×2712): recortar la barra de estado
 (96 px superiores) y reducir a 800 px de ancho, JPEG de calidad ~82.
+
+## Valoraciones y reseñas de las tiendas
+
+El hero muestra la nota de Google Play y App Store y una tarjeta con reseñas que
+pasan solas cada pocos segundos (se pausa al pasar el ratón y se puede deslizar
+en móvil). Los datos salen de `valoraciones.json`, que **no se edita a mano**:
+
+- La Action **Valoraciones de las tiendas** (`.github/workflows/valoraciones.yml`)
+  se ejecuta cada día, lee las tiendas con
+  `.github/scripts/actualizar-valoraciones.mjs` y hace commit solo si algo cambió.
+  También se puede lanzar a mano desde *Actions > Valoraciones de las tiendas > Run workflow*.
+- Solo se publican reseñas con texto y de **4 o 5 estrellas**. Las de 1-3 estrellas
+  nunca llegan a la web.
+- Para retirar una reseña concreta, copia su `id` de `valoraciones.json` a la lista
+  `ocultar` de `valoraciones-config.json`. Ahí también se ajustan `minEstrellas` y
+  `minCaracteres`.
+- Si `valoraciones.json` no existe o una tienda aún no muestra nota, ese elemento
+  simplemente no aparece.

@@ -79,7 +79,7 @@
     </script>
     <link rel="preload" as="font" type="font/woff2" href="fonts/archivo-latin.woff2" crossorigin>
     <link rel="preload" as="font" type="font/woff2" href="fonts/jetbrainsmono-latin.woff2" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260927-1">
+    <link rel="stylesheet" href="styles.css?v=20261002-1">
   </head>
   <body>
     <header class="site-header">
@@ -120,6 +120,15 @@
               Las apps de registro guardan lo que haces. TrueLift decide lo que haces después:
               cuánto peso cargar en cada serie, cuándo mantener y cuándo frenar. Y te explica el porqué.
             </p>
+
+            <!-- Nota de las tiendas y reseñas: las rellena valoraciones.js con valoraciones.json. -->
+            <div class="social-proof" data-social-proof hidden>
+              <div class="store-ratings" data-store-ratings hidden></div>
+              <div class="review-rotator" data-review-rotator role="region" aria-roledescription="carrusel" aria-label="Opiniones de usuarios" hidden>
+                <div class="review-viewport" data-review-viewport></div>
+                <div class="review-dots" data-review-dots></div>
+              </div>
+            </div>
 
             <a class="watch-strip" href="#reloj">
               <span class="watch-strip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 6l.6-3h4.8l.6 3M9 18l.6 3h4.8l.6-3"/><path d="M12 9.5V12l1.5 1.5"/></svg></span>
@@ -855,8 +864,9 @@
       </div>
     </footer>
 
-    <script src="translations-pt-br.js?v=20260927-1"></script>
-    <script src="script.js?v=20260927-1"></script>
+    <script src="translations-pt-br.js?v=20261002-1"></script>
+    <script src="script.js?v=20261002-1"></script>
+    <script src="valoraciones.js?v=20261002-1" defer></script>
     <script src="atribucion-tiendas.js?v=20260925-2" defer></script>
   </body>
 </html>
