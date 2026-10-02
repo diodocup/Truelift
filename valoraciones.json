@@ -1,0 +1,76 @@
+{
+  "actualizado": "2026-10-02T09:08:28.308Z",
+  "android": {
+    "nota": 4.6,
+    "total": 17
+  },
+  "ios": {
+    "nota": 5,
+    "total": 1
+  },
+  "resenas": [
+    {
+      "id": "gp:ca4f4251-6d43-4e2b-bc99-2fb8e5ee14f4",
+      "tienda": "android",
+      "autor": "Cristian R.",
+      "estrellas": 5,
+      "texto": "Muy buena app para que te lleve la progresión de pesos en el gimnasio en función de tu estado. Fácil ingresar los datos y dejarte llevar en el entrenamiento!",
+      "fecha": "2026-08-26",
+      "idioma": "es"
+    },
+    {
+      "id": "gp:fa87f651-4693-4f35-ae81-6977b27c5b9e",
+      "tienda": "android",
+      "autor": "rush W.",
+      "estrellas": 5,
+      "texto": "App top para los que quieren rutinas de calidad y no complicarse la vida diseñando, te permite personalizar bastante según tu equipamiento, se nota que es una aplicacion creada por alguien que ha entrenado mucho tiempo. La mayoria de apps tienen un diseño visualmente atractivo pero en cuanto a funcionalidades...se quedan cortas, y ahí es donde sospechas que los diseñadores tienen \"experiencia de campo\".",
+      "fecha": "2026-08-13",
+      "idioma": "es"
+    },
+    {
+      "id": "gp:56b2f210-f478-427d-a714-71fb82c39c7b",
+      "tienda": "android",
+      "autor": "Miguel Á.",
+      "estrellas": 5,
+      "texto": "Buena App, desde que la descubrí, he dejado mi excel de seguimiento de las rutinas del gimnasio. El tiempo que llevo con ella, noto evolución, mucho más sencillo el hacer ejercicio, así como el seguimiento y evolución en el gimnasio. Recomendada!!!",
+      "fecha": "2026-08-13",
+      "idioma": "es"
+    },
+    {
+      "id": "gp:46649543-2425-4809-b0e2-f1a6a3279917",
+      "tienda": "android",
+      "autor": "ana L.",
+      "estrellas": 5,
+      "texto": "Es increíble: por fin una app de entrenamiento hecha por gente que realmente entrena. No es solo que ofrezca sobrecarga progresiva gratuita o rutinas diseñadas con verdadero criterio, es que se nota la calidad en cada detalle. Para un principiante, la versión gratuita es más que suficiente para progresar a lo grande. Y si eres intermedio, todo lo que ofrece es una pasada: autorregulación basada en la VFC de tu reloj y métricas súper cuidadas. Poco más puedo decir: pruébala tu mismo. 💪",
+      "fecha": "2026-08-11",
+      "idioma": "es"
+    },
+    {
+      "id": "gp:17c2c1d0-77c9-4fae-b00c-c4ce343be0a1",
+      "tienda": "android",
+      "autor": "J",
+      "estrellas": 5,
+      "texto": "La mejor app para llevar tu progreso en el gimnasio y la más completa. Te propone una rutina adaptada a ti, pero además te programa la progesión del entrenamiento pocas apps encontrarás que hagan esto.",
+      "fecha": "2026-08-11",
+      "idioma": "es"
+    },
+    {
+      "id": "gp:97898c2e-451b-402b-a03f-61ec190cad31",
+      "tienda": "android",
+      "autor": "Javier J.",
+      "estrellas": 5,
+      "texto": "Muy contento con la aplicación. No es simplemente otra aplicación de rutinas más, realmente sientes que tienes un seguimiento y te ayuda a progresar adecuadamente ya que aplica de manera muy correcta los principios necesarios para mejorar en el gimnasio. Además, todas sus funciones son muy útiles para entender bien tu progreso y adaptarlo completamente a tus necesidades. Espero que los resultados sean tan buenos como la aplicación!!",
+      "fecha": "2026-08-11",
+      "idioma": "es"
+    },
+    {
+      "id": "gp:41ae5636-d616-4d41-ab12-017ffa85af27",
+      "tienda": "android",
+      "autor": "David D.",
+      "estrellas": 5,
+      "texto": "Buena shurapp. Será mi nueva compañera del gimnasio. Sencilla de usar, muy util y con interfaz amigable. Permite, de forma sencilla, poder cambiar ejercicios similares si tu gimnasio no cuenta con la maquina que te dice. En otras app habría que hacer ese cambio a mano. Gracias shur",
+      "fecha": "2026-08-02",
+      "idioma": "es"
+    }
+  ]
+}
