@@ -23,6 +23,7 @@ const portugueseTranslations = {
   "Disponible pronto en": "Em breve na",
   "Abrir aplicación web": "Abrir aplicativo web",
   "Resumen de TrueLift": "Resumo da TrueLift",
+  "Opiniones de usuarios": "Avaliações de usuários",
   "Gratis para siempre": "Grátis para sempre",
   "Sin anuncios": "Sem anúncios",
   "Sin cuenta ni email": "Sem conta nem e-mail",
