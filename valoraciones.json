@@ -1,14 +1,23 @@
 {
-  "actualizado": "2026-10-02T09:08:28.308Z",
+  "actualizado": "2026-10-03T10:27:31.056Z",
   "android": {
     "nota": 4.6,
-    "total": 17
+    "total": 18
   },
   "ios": {
     "nota": 5,
     "total": 1
   },
   "resenas": [
+    {
+      "id": "gp:c062034d-b4db-49d8-b6d8-22c8ecc62058",
+      "tienda": "android",
+      "autor": "Eduardo S.",
+      "estrellas": 5,
+      "texto": "Llevo con ella un par de meses y solo puedo escribir cosas buenas, empecé con la versión de prueba pero he cambiado a Pro sin dudarlo. Lo que más me gusta es las recomendaciones que te da la propia app cuando recibe tu información sobre sueño, estado de forma etc.",
+      "fecha": "2026-10-01",
+      "idioma": "es"
+    },
     {
       "id": "gp:ca4f4251-6d43-4e2b-bc99-2fb8e5ee14f4",
       "tienda": "android",
