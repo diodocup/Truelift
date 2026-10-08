@@ -92,10 +92,11 @@ const Planner = {
     const secundarios = this._listaMeta(primero(
       ['secundarios','gruposSecundarios','musculosSecundarios','músculosSecundarios','secondaryMuscles'],
       fallback.secundarios || [fallback.grupo2, fallback.grupo3].filter(Boolean)));
+    const grupo = String(primero(['grupo','grupoMuscular','musculo','músculo','muscleGroup'], fallback.grupo || 'Otros')).trim() || 'Otros';
     return {
       nombre,
-      patron: String(primero(['patron','patrón','pattern'], fallback.patron || 'Aislamiento')).trim() || 'Aislamiento',
-      grupo: String(primero(['grupo','grupoMuscular','musculo','músculo','muscleGroup'], fallback.grupo || 'Otros')).trim() || 'Otros',
+      patron: patronVigente(String(primero(['patron','patrón','pattern'], fallback.patron || 'Aislamiento')).trim() || 'Aislamiento', grupo),
+      grupo,
       grupo2: secundarios[0] || null,
       grupo3: secundarios[1] || null,
       prioridad: String(primero(['prioridad','tipo','origen'], fallback.prioridad || 'Añadido por ti')).trim() || 'Añadido por ti',
@@ -583,7 +584,10 @@ const Planner = {
       ? { plan: c.datos.planMod, sistema: c.datos.sistema }
       : { plan: datos.plan, sistema: datos.perfil.sistema };
     const rutina = XLSX.desdePlanMod(fuente.plan, fuente.sistema);
-    rutina.dias.forEach(d => this._sanearModalidades(d.filas));
+    rutina.dias.forEach(d => {
+      this._patronesVigentes(d.filas);
+      this._sanearModalidades(d.filas);
+    });
     this.rutina = rutina;
     this.guardar(); render();
   },
@@ -592,6 +596,7 @@ const Planner = {
     if (!file) return;
     try {
       const rutina = await XLSX.leerRutina(await file.arrayBuffer());
+      rutina.dias.forEach(d => this._patronesVigentes(d.filas));
       // Añade a la biblioteca del entrenador los ejercicios personalizados que
       // la app incrustó en el Excel (aditivo, sin pisar los existentes) y,
       // después, cualquier ejercicio usado en los días que siga siendo
@@ -605,6 +610,16 @@ const Planner = {
       abrirModal(`<h2>No se pudo leer el Excel</h2><p>${esc(err.message)}</p>
         <div class="mod-acciones"><button class="btn pri" onclick="cerrarModal()">Entendido</button></div>`);
     }
+  },
+
+  /* Filas con un patrón que la plantilla ya no tiene (p. ej. el antiguo
+     «Punto débil opcional»): pasan al patrón en cuya lista está su ejercicio. */
+  _patronesVigentes(filas){
+    filas.forEach(f => {
+      if (CAT_PATRONES.includes(f.patron)) return;
+      const alt = CAT_PATRONES.find(p => (CAT_LISTAS[p] || []).includes(f.ejercicio));
+      if (alt) f.patron = alt;
+    });
   },
 
   enBlanco(){
@@ -641,12 +656,7 @@ const Planner = {
       // Al caerse filas incompletas cambian los vecinos: se rehace la
       // exclusión antes de escribir K/L/M en el Excel.
       this._sanearModalidades(d.filas);
-      d.filas.forEach(f => {
-        if (!CAT_PATRONES.includes(f.patron)){
-          const alt = CAT_PATRONES.find(p => (CAT_LISTAS[p] || []).includes(f.ejercicio));
-          if (alt) f.patron = alt;
-        }
-      });
+      this._patronesVigentes(d.filas);
     });
     const conFilas = r.dias.filter(d => d.filas.length);
     if (conFilas.length < 2){
