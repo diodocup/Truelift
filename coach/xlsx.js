@@ -611,8 +611,7 @@ const XLSX = {
 
   /* Mete en la columna de cada patrón los ejercicios que falten y estira su
      rango con nombre (lo que leen las validaciones). Es ADITIVO: no quita ni
-     reordena lo que la plantilla ya trae, así que se conserva su curación
-     («Punto débil opcional» ofrece aislamientos a propósito). */
+     reordena lo que la plantilla ya trae, así que se conserva su curación. */
   _completarListas(xmlListas, xmlWorkbook, porPatron){
     const rangos = this._rangosConNombre(xmlWorkbook);
     if (!rangos.PATRONES) return { listas: xmlListas, workbook: xmlWorkbook, anadidos: 0 };

@@ -17,6 +17,7 @@ function cargarPlanner(store = { clientes: [], ejerciciosCoach: [] }) {
     CAT_LISTAS: { 'Empuje horizontal': ['Press banca'], Aislamiento: [] },
     CAT_PATRON_GRUPO: { 'Empuje horizontal': 'Pectoral', Aislamiento: 'Otros' },
     CAT_PATRONES: ['Empuje horizontal', 'Aislamiento'],
+    patronVigente: p => p,
     OBJETIVOS_GRUPO: {}, ORDEN_GRUPOS: [],
     clienteActivo: () => null, datosActivos: () => null,
     render: () => {}, abrirModal: () => {}, cerrarModal: () => {}, esc: String,

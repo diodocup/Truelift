@@ -22,6 +22,13 @@ function fmtNum(n, dec = 1){
 function sinTildes(s){
   return String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
+/* «Punto débil opcional» dejó de ser un patrón: sus ejercicios pasan al
+   patrón de su grupo muscular. Las copias y rutinas antiguas aún lo traen. */
+function patronVigente(patron, grupo){
+  if (patron !== 'Punto débil opcional') return patron;
+  if (grupo === 'Gemelo' || grupo === 'Core') return grupo;
+  return 'Aislamiento';
+}
 function uuid(){
   return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,9);
 }
@@ -73,7 +80,7 @@ function normalizar(raw){
   };
 
   const plan = (Array.isArray(raw.planMod) ? raw.planMod : []).map(p => ({
-    dia: p.dia ?? '—', orden: p.orden ?? 0, patron: p.patron ?? '',
+    dia: p.dia ?? '—', orden: p.orden ?? 0, patron: patronVigente(p.patron ?? '', p.grupo),
     grupo: p.grupo ?? 'Otros', ejercicio: p.ejercicio ?? '—',
     series: p.series ?? null, reps: p.reps ?? '—', rir: p.rir ?? '—',
     descansoMin: (typeof p.descansoMin === 'number') ? p.descansoMin : null,

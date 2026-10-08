@@ -23,7 +23,6 @@ const CAT_PATRONES = [
  "Empuje vertical",
  "Deltoide posterior",
  "Estabilidad escapular",
- "Punto débil opcional",
  "Rodilla",
  "Unilateral",
  "Bisagra",
@@ -35,8 +34,7 @@ const CAT_PATRONES = [
 ];
 
 // Ejercicios disponibles por patrón, en el orden de los desplegables del
-// Excel. Un mismo ejercicio puede salir en dos patrones a propósito
-// («Punto débil opcional» ofrece aislamientos de otros patrones).
+// Excel.
 const CAT_LISTAS = {
  "Empuje horizontal": [
   "Press banca con barra",
@@ -161,7 +159,16 @@ const CAT_LISTAS = {
   "Press JM con barra",
   "Press de tríceps sentado con mancuerna",
   "Fondos de tríceps en el suelo",
-  "Fondos en anillas"
+  "Fondos en anillas",
+  "Elevación lateral ligera en polea",
+  "Elevación frontal con mancuernas",
+  "Elevación lateral ligera con mancuernas",
+  "Elevación frontal con banda",
+  "Elevación frontal con barra",
+  "Elevación frontal en polea",
+  "Elevación frontal en suspensión",
+  "Elevación frontal con disco",
+  "Elevación de disco sobre la cabeza"
  ],
  "Tirón vertical": [
   "Dominada agarre prono",
@@ -249,22 +256,6 @@ const CAT_LISTAS = {
   "Dominada escapular",
   "Elevación en Y en polea",
   "Pino contra pared"
- ],
- "Punto débil opcional": [
-  "Elevación lateral ligera en polea",
-  "Elevación frontal con mancuernas",
-  "Elevación lateral ligera con mancuernas",
-  "Elevación lateral en máquina",
-  "Curl en cuerda en polea",
-  "Extensión en cuerda en polea",
-  "Gemelo sentado",
-  "Crunch en máquina",
-  "Elevación frontal con banda",
-  "Elevación frontal con barra",
-  "Elevación frontal en polea",
-  "Elevación frontal en suspensión",
-  "Elevación frontal con disco",
-  "Elevación de disco sobre la cabeza"
  ],
  "Rodilla": [
   "Sentadilla con barra",
@@ -536,7 +527,7 @@ const CAT_FICHA = {
  "Drag curl con barra": { grupo: "Bíceps", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60–90 s", nota: "", img: "Drag curl con barra" },
  "Dragon flag": { grupo: "Core", patron: "Core", secundarios: ["Espalda"], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Dragon flag" },
  "Elevaciones Y en banco inclinado": { grupo: "Hombro", patron: "Estabilidad escapular", secundarios: [], prioridad: "Alternativa", descanso: "45–60 s", nota: "Pecho apoyado en banco inclinado, eleva los brazos formando una Y con carga ligera.", img: "Elevaciones Y en banco inclinado" },
- "Elevación de disco sobre la cabeza": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: ["Core"], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación de disco sobre la cabeza" },
+ "Elevación de disco sobre la cabeza": { grupo: "Hombro", patron: "Aislamiento", secundarios: ["Core"], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación de disco sobre la cabeza" },
  "Elevación de piernas colgado": { grupo: "Core", patron: "Core", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Sube las rodillas o piernas sin balanceo; controla la bajada.", img: "Elevación de piernas colgado" },
  "Elevación de piernas en paralelas": { grupo: "Core", patron: "Core", secundarios: ["Hombro"], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación de piernas en paralelas" },
  "Elevación de piernas tumbado": { grupo: "Core", patron: "Core", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación de piernas tumbado" },
@@ -544,19 +535,19 @@ const CAT_FICHA = {
  "Elevación de rodillas en silla romana": { grupo: "Core", patron: "Core", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Espalda apoyada, eleva rodillas hacia el pecho sin balancear las piernas.", img: "Elevación de rodillas en silla romana" },
  "Elevación de rodillas tumbado": { grupo: "Core", patron: "Core", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación de rodillas tumbado" },
  "Elevación en Y en polea": { grupo: "Hombro", patron: "Estabilidad escapular", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación en Y en polea" },
- "Elevación frontal con banda": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal con banda" },
- "Elevación frontal con barra": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal con barra" },
- "Elevación frontal con disco": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal con disco" },
- "Elevación frontal con mancuernas": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Sin balanceo del tronco; sube hasta la altura del hombro, controla la bajada.", img: "Elevación frontal con mancuernas" },
- "Elevación frontal en polea": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal en polea" },
- "Elevación frontal en suspensión": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal en suspensión" },
+ "Elevación frontal con banda": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal con banda" },
+ "Elevación frontal con barra": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal con barra" },
+ "Elevación frontal con disco": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal con disco" },
+ "Elevación frontal con mancuernas": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Sin balanceo del tronco; sube hasta la altura del hombro, controla la bajada.", img: "Elevación frontal con mancuernas" },
+ "Elevación frontal en polea": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal en polea" },
+ "Elevación frontal en suspensión": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Elevación frontal en suspensión" },
  "Elevación lateral con banda": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60–90 s", nota: "", img: "Elevación lateral con banda" },
  "Elevación lateral con mancuernas": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60–90 s", nota: "Codos ligeramente flexionados y fijos, sube hasta la horizontal en balanceo controlado.", img: "Elevación lateral con mancuernas" },
  "Elevación lateral en máquina": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Ajusta la altura del pivote, sube hasta la horizontal; pausa breve arriba.", img: "Elevación lateral en máquina" },
  "Elevación lateral en polea": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "1ª opción", descanso: "60–90 s", nota: "Polea baja, brazo ligeramente adelantado; sube hasta la horizontal.", img: "Elevación lateral en polea" },
  "Elevación lateral inclinado en banco": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Tumbado de lado, mancuerna sube en arco; máxima tensión en el deltoide medio.", img: "Elevación lateral inclinado en banco" },
- "Elevación lateral ligera con mancuernas": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Foco en deltoide medio con poco peso; calidad de repetición por encima de la carga.", img: "Elevación lateral ligera con mancuernas" },
- "Elevación lateral ligera en polea": { grupo: "Hombro", patron: "Punto débil opcional", secundarios: [], prioridad: "1ª opción", descanso: "60 s", nota: "Peso ligero, recorrido lento y controlado, pausa en la cima; sin inercia.", img: "Elevación lateral ligera en polea" },
+ "Elevación lateral ligera con mancuernas": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Foco en deltoide medio con poco peso; calidad de repetición por encima de la carga.", img: "Elevación lateral ligera con mancuernas" },
+ "Elevación lateral ligera en polea": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "1ª opción", descanso: "60 s", nota: "Peso ligero, recorrido lento y controlado, pausa en la cima; sin inercia.", img: "Elevación lateral ligera en polea" },
  "Elevación lateral unilateral en polea": { grupo: "Hombro", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60–90 s", nota: "Polea baja, brazo ligeramente adelantado y subida hasta la horizontal con tensión constante.", img: "Elevación lateral unilateral en polea" },
  "Encogimientos con barra": { grupo: "Hombro", patron: "Aislamiento", secundarios: ["Antebrazo"], prioridad: "Alternativa", descanso: "60–90 s", nota: "Barra al frente con agarre prono, sube los hombros en vertical, pausa arriba y baja lento; los brazos actúan solo como ganchos.", img: "Encogimientos con barra" },
  "Encogimientos con mancuernas": { grupo: "Hombro", patron: "Aislamiento", secundarios: ["Antebrazo"], prioridad: "Alternativa", descanso: "60–90 s", nota: "De pie con las mancuernas a los lados, eleva los hombros hacia las orejas, pausa arriba y baja con control; sin girar los hombros ni flexionar los codos.", img: "Encogimientos con mancuernas" },
@@ -840,8 +831,8 @@ const CAT_GRUPO_DE = Object.fromEntries(
 /* ==== Criterios del entrenador (editables a mano) ==== */
 
 // Grupo por patrón (para ejercicios personalizados que no estén en el catálogo).
-// «Aislamiento» y «Punto débil opcional» se quedan fuera a propósito: agrupan
-// ejercicios de grupos distintos y no se puede deducir uno solo.
+// «Aislamiento» se queda fuera a propósito: agrupa ejercicios de grupos
+// distintos y no se puede deducir uno solo.
 const CAT_PATRON_GRUPO = {
  "Empuje horizontal": "Pectoral",
  "Empuje inclinado": "Pectoral",

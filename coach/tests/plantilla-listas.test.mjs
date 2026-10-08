@@ -131,21 +131,35 @@ test('el catálogo entero entra en los desplegables del Excel exportado', () => 
     .includes('Press casero del coach'));
 });
 
+test('«Punto débil opcional» ya no es un patrón de la plantilla', () => {
+  const { XLSX, xml } = cargar();
+  const listas = xml('xl/worksheets/sheet7.xml');
+  const rangos = XLSX._rangosConNombre(xml('xl/workbook.xml'));
+  assert.equal(rangos['Punto_débil_opcional'], undefined);
+  const p = rangos.PATRONES;
+  const patrones = valores(XLSX, listas, p.col, p.desde, p.hasta);
+  assert.ok(!patrones.includes('Punto débil opcional'));
+  assert.ok(!patrones.includes(''));
+});
+
 test('es aditivo: conserva la curación de la plantilla y no repite', () => {
   const { XLSX, xml } = cargar();
   const listas0 = xml('xl/worksheets/sheet7.xml');
   const wb0 = xml('xl/workbook.xml');
-  const antes = XLSX._rangosConNombre(wb0)['Punto_débil_opcional'];
+  const antes = XLSX._rangosConNombre(wb0)['Aislamiento'];
   const listaAntes = valores(XLSX, listas0, antes.col, antes.desde, antes.hasta);
 
   const porPatron = XLSX._ejerciciosPorPatron({ listasPorPatron: catalogo() });
   const una = XLSX._completarListas(listas0, wb0, porPatron);
-  const despues = XLSX._rangosConNombre(una.workbook)['Punto_débil_opcional'];
+  const despues = XLSX._rangosConNombre(una.workbook)['Aislamiento'];
   const listaDespues = valores(XLSX, una.listas,
     despues.col, despues.desde, despues.hasta);
-  // «Punto débil opcional» ofrece a propósito aislamientos de otro patrón:
-  // siguen ahí, en el mismo orden y los primeros.
+  // Lo que la plantilla ya traía sigue ahí, en el mismo orden y lo primero.
   assert.deepEqual(listaDespues.slice(0, listaAntes.length), listaAntes);
+  // Los antiguos «puntos débiles» (elevaciones frontales y laterales ligeras)
+  // se eligen ahora desde Aislamiento.
+  assert.ok(listaDespues.includes('Elevación frontal con mancuernas'));
+  assert.ok(listaDespues.includes('Elevación lateral ligera en polea'));
 
   // Y pasarlo dos veces no cambia nada.
   const dos = XLSX._completarListas(una.listas, una.workbook, porPatron);
