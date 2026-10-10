@@ -1,0 +1,223 @@
+# TrueLift Escritorio — plan, decisiones y registro
+
+Versión de escritorio de TrueLift para la persona que entrena: importa su copia
+JSON y, si quiere, su ZIP de fotos, y analiza su propia evolución en el
+ordenador. Todo se procesa y guarda en el navegador.
+
+Este archivo es el registro de trabajo: si se interrumpe, se continúa desde
+aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
+
+## Estado de las fases
+
+| Fase | Estado | Verificación |
+|---|---|---|
+| 0. Auditoría y diseño | Hecha | Este documento + `CONTRATO_DATOS.md` |
+| 1. Importación fiable y persistencia | Hecha (ver «Fase 1» abajo) | `tests/*.test.mjs` (Node) + `tests/e2e.mjs` (Chromium/Playwright) |
+| 2. Experiencia personal y métricas | Pendiente | — |
+| 3. Resumen y ficha por ejercicio | Pendiente | — |
+| 4. Comparación de periodos | Pendiente | — |
+| 5. Evolución física | Pendiente | — |
+| 6. Planificador personal | Pendiente | — |
+| 7. Informes y acabado | Pendiente | — |
+| 8. Validación integral | Pendiente | — |
+
+## Fase 0 — Auditoría
+
+### Repositorios
+
+- `diodocup/Truelift` es la web publicada (`CNAME` truelift.es). Su `coach/` es
+  la copia **canónica** del Coach: los generadores de App-PRO
+  (`tool/coach_generar_catalogo.py`, `tool/coach_generar_canonico.py`)
+  escriben en `../Truelift/coach`.
+- `App-PRO/web-truelift/coach` es una copia **antigua y divergente** (última
+  edición 29/09). Solo ella tiene la modalidad **rest-pause** en el
+  planificador (`e9dea7b`); la canónica no. Hay que portarla antes de la
+  fase 6 (riesgo R6).
+- El trabajo se hace en `Truelift/escritorio/`. App-PRO solo se lee.
+
+### Coach existente (Truelift/coach)
+
+- Sin módulos ni build: scripts clásicos con globales, cargados en orden
+  (`data.js → nutricion.js → charts.js → views.js → catalogo.js →
+  canonico.js → plantilla.js → xlsx.js → planner.js → app.js`).
+- Almacenamiento: **todo** en `localStorage['tlcoach_clientes']` (cartera con
+  el JSON crudo de cada cliente y borradores del planificador). Sin
+  transacciones; si se llena, `alert`.
+- Importación: `leerArchivo` → `pareceTrueLift` (`logs` o `planMod`) →
+  `modalImportar` (cliente nuevo / actualizar). Sustituye `datos` del cliente.
+  No valida tipos, no detecta copias idénticas ni retrocesos.
+- `sw.js` **no se registra en ningún sitio**: hoy el Coach no funciona sin
+  conexión aunque el LEEME lo sugiera. Además su `activate` borra **todas**
+  las cachés del origen que no sean la suya (riesgo R4 si un día se registra
+  junto a otro SW).
+- No lee `medidas` ni fotos.
+- `xlsx.js` trae un unzip propio (`_unzip`) sin límites de tamaño ni de
+  entradas ni validación de rutas: válido para un Excel generado, no para un
+  ZIP de fotos arbitrario.
+- Pruebas: `node --test coach/tests/*.mjs` → **75/83** en la línea base. Los 8
+  fallos son previos y ajenos: comparaciones `deepStrictEqual` entre «realms»
+  de `vm` en Node 22 y un color de VFC desactualizado en la expectativa.
+
+### Funciones existentes (no duplicar)
+
+| Necesidad | Ya existe en | Uso en escritorio |
+|---|---|---|
+| Parseo de fechas locales, formato | `coach/data.js` `parseFecha`, `fmtISO`, `fmtFecha`, `soloDia`, `diasEntre` | Reutilizar |
+| Normalización del JSON a modelo de vistas | `coach/data.js` `normalizar` | Reutilizar (fase 2 la ampliará con las claves que faltan, en el mismo archivo) |
+| e1RM, tonelaje, diagnóstico simplificado | `coach/data.js` `Metricas` | Reutilizar tras auditarlo en fase 2 (hoy difiere del motor, §4 del contrato) |
+| VFC, FC reposo, fatiga, salud | `coach/data.js` | Reutilizar |
+| Nutrición (filtro de peso, bandas, composición) | `coach/nutricion.js` | Reutilizar |
+| Gráficas SVG accesibles por tooltip | `coach/charts.js` | Reutilizar (fase 2+) |
+| Vistas de sesiones, ejercicios, readiness, nutrición | `coach/views.js` | Adaptar en fase 2 (dependen de `State` en 3 sitios) |
+| Editor de rutinas y Excel compatible | `coach/planner.js`, `coach/xlsx.js`, `coach/plantilla.js`, `coach/catalogo.js`, `coach/canonico.js` | Reutilizar en fase 6 con almacenamiento propio |
+| Lectura ZIP | `coach/xlsx.js` `_unzip` | **No** se reutiliza para fotos (sin límites); nuevo `zip-seguro.js` |
+
+### Arquitectura
+
+```
+Truelift/
+  coach/          herramienta del entrenador (sin cambios en fase 1)
+  escritorio/     versión personal
+    index.html    carga ../coach/data.js y ../coach/nutricion.js + módulos propios
+    importar.js   validación del JSON, resumen, comparación de instantáneas
+    zip-seguro.js lector ZIP con límites, rutas seguras, CRC y cancelación
+    fotos.js      resolución foto↔índice (prioridades del contrato §5) y plan de importación
+    almacen.js    IndexedDB versionada, transacciones atómicas, cuota, modo temporal
+    app.js        interfaz
+```
+
+- **Aislamiento:** otra carpeta, otra página, otra base de datos
+  (`IndexedDB 'truelift-escritorio'`). No lee ni escribe
+  `localStorage['tlcoach_clientes']`: la cartera del Coach queda intacta.
+- **Una sola lógica de cálculo:** el escritorio carga los módulos de cálculo
+  de `../coach/` en vez de copiarlos. Cualquier corrección de métricas
+  (fase 2) se hace allí y beneficia a las dos herramientas.
+- **Sin dependencias externas ni CDN.** ZIP con `DecompressionStream`
+  nativo; hash con `crypto.subtle`; miniaturas con `createImageBitmap`.
+  Política CSP en la página: sin `connect-src` a terceros (requisito 16).
+
+### Modelo de almacenamiento (IndexedDB, versión 1)
+
+| Almacén | Clave | Contenido |
+|---|---|---|
+| `meta` | `clave` | `espacioActivo`, ajustes de la interfaz |
+| `espacios` | `id` | `{id, nombre, creado, instantaneaId, instantaneaAnteriorId, indiceZip, indiceZipImportado}` |
+| `instantaneas` | `id` (índice `espacioId`) | `{texto original, sha256, bytes, nombreArchivo, importadoEn, resumen}` |
+| `fotos` | `[espacioId, archivo]` | metadatos: `sha256, bytes, tipo, ancho, alto, metaZip, origen, importadoEn` |
+| `imagenes` | `[espacioId, archivo]` | `Blob` original |
+| `miniaturas` | `[espacioId, archivo]` | `Blob` JPEG reducido |
+| `importaciones` | autoincremento | historial de importaciones con su informe |
+| `borradores` | `id` | reservado a la fase 6 (rutinas) |
+
+- Una copia JSON es una **instantánea**: se guarda el texto original sin
+  mutarlo y se conserva también la anterior para poder volver a ella.
+- Las fotos y los borradores cuelgan del espacio, no de la instantánea:
+  actualizar los datos no los toca.
+- Todas las escrituras de una importación van en **una transacción**: o se
+  guarda todo o nada. Antes de escribir se comprueba la cuota estimada.
+
+### Riesgos de compatibilidad
+
+| # | Riesgo | Mitigación |
+|---|---|---|
+| R1 | Sin identificador de usuario: dos archivos pueden ser de personas distintas | Elección explícita «actualizar» / «espacio nuevo», con indicios (coincidencia de historial, fecha de nacimiento) que informan pero no deciden |
+| R2 | Sin fecha de exportación: no se puede saber qué copia es más nueva | Comparar el último registro y las sesiones que faltan; avisar de posible retroceso y exigir confirmación. La fecha del nombre del archivo se muestra como indicio no verificado |
+| R3 | Foto con fecha o pose corregidas sin renombrar | La resolución usa el índice (JSON > ZIP > nombre) y se recalcula al leer |
+| R4 | `coach/sw.js` borra cachés ajenas al activarse | No se registra hoy. Si en la fase 7 se activa el modo sin conexión, limitar su borrado a su prefijo |
+| R5 | Fechas con `Z` de sesiones del reloj | Se toma el día del texto, como el resto del Coach; documentado |
+| R6 | Coach canónico sin rest-pause | Portar desde App-PRO/web-truelift antes de la fase 6 |
+| R7 | Métricas del Coach distintas del motor (carga efectiva, sustituciones, drops, récords en verde, estancamiento) | Fase 2: auditar y alinear o etiquetar |
+| R8 | `Nutricion.contexto` usa la fecha de hoy | Fase 2: evaluar con la fecha del último dato de la instantánea |
+| R9 | `file://`: IndexedDB y `crypto.subtle` dependen del navegador | Uso recomendado desde la web publicada o un servidor local; modo temporal explícito si falla la persistencia |
+| R10 | HEIC u otros formatos que el navegador no pinta | Se rechazan con aviso; el móvil siempre guarda JPEG |
+
+### Plan de pruebas (por fase)
+
+- **Node (`node --test escritorio/tests/*.test.mjs`):** módulos puros con
+  datos sintéticos generados en la propia prueba: validación JSON (válido,
+  antiguo, inválido, cero/ausente/no válido, unidades), resumen y fechas,
+  comparación de instantáneas (idéntica, actualización, retroceso, otra
+  persona), ZIP (con índice, sin índice, corrupto, rutas inseguras, límites,
+  bomba de compresión, cancelación), resolución de fotos (prioridades,
+  conflictos, fecha/pose corregidas, huérfanas, ausentes).
+- **Navegador (`node escritorio/tests/e2e.mjs`, Playwright + Chromium):**
+  importar, recargar, actualizar, reimportar, ZIP repetido, error de cuota
+  simulado sin pérdida, borrado de datos, aislamiento del Coach, ausencia de
+  peticiones externas.
+- Coach: `node --test coach/tests/*.mjs` sigue en 75/83 (sin regresiones).
+
+### Orden de implementación
+
+1. Fase 1 (núcleo + interfaz de datos). 2. Fase 2 navegación y auditoría de
+métricas en `coach/data.js`. 3. Resumen y fichas. 4. Comparación. 5. Fotos y
+medidas. 6. Planificador (portar rest-pause). 7. Informe y acabado. 8.
+Validación integral.
+
+## Fase 1 — Importación fiable y persistencia
+
+### Decisiones
+
+- **JSON = instantánea.** Actualizar sustituye la instantánea entera en una
+  transacción; nunca se mezclan historiales. Se conserva la anterior.
+- **Copia idéntica:** mismo SHA-256 del texto → no se guarda nada y se dice.
+- **Retroceso:** si la copia nueva termina antes que la actual o le faltan
+  sesiones que la actual tiene, se avisa con cifras y hay que confirmarlo.
+- **Validación:** estructura de nivel superior errónea → se rechaza. Valores
+  sueltos no válidos → se aceptan como hace el móvil, pero se cuentan y se
+  enseñan en la vista previa (cero, ausente y no válido se distinguen).
+- **Fotos:** prioridad JSON > índice del ZIP > nombre estricto; binarios sin
+  asociación no se guardan; mismo nombre y mismo contenido → no se duplica;
+  mismo nombre y contenido distinto → se conserva el actual salvo que se
+  elija sustituir; fotos del ZIP que la copia JSON no tiene → avisadas y
+  excluidas por defecto (pueden haberse borrado en el móvil).
+- **Límites del ZIP:** 1 GiB comprimido, 5 000 entradas, 40 MiB por imagen,
+  2 GiB descomprimido en total, relación de compresión ≤ 200:1 por entrada.
+  Rutas con `/`, `\`, `..`, absolutas o con caracteres de control se ignoran.
+  Solo JPEG, PNG y WebP comprobados por su firma.
+- **Límite del JSON:** 64 MiB.
+- **Notas importadas:** siempre como texto (`textContent`/`esc`), nunca HTML.
+
+### Registro
+
+- 10/10/2026: auditoría (fase 0) y primera implementación de la fase 1.
+  Ver resultados de pruebas en la sección «Verificación» de abajo.
+
+### Verificación (10/10/2026)
+
+Implementado y comprobado:
+
+- `node --test escritorio/tests/*.test.mjs` → **31/31**: validación (válida,
+  antigua, solo ajustes, inválida, tipos imposibles, cero/ausente/no válido,
+  fechas sin desplazamiento horario, lb, no mutación), comparación
+  (idéntica, actualización, retroceso, sesión borrada, otra persona), ZIP
+  (índice, STORE/DEFLATE, corrupto, truncado, CRC, rutas inseguras,
+  carpetas, demasiadas entradas, bomba, tamaño falso, cancelación) y fotos
+  (patrón estricto, firma, prioridad JSON > ZIP > nombre con fecha/pose
+  corregidas, plan nueva/duplicada/conflicto/fuera de copia/sin asociación,
+  pendientes, resolución al leer).
+- `node escritorio/tests/e2e.mjs` en **Chromium 141 (Playwright 1.56)** por
+  HTTP → **19/19**: importación conjunta, recarga, copia idéntica, ZIP
+  repetido, actualización, retroceso y vuelta atrás, fallo de cuota simulado
+  a mitad de transacción sin cambios, conflicto resuelto explícitamente,
+  espacio nuevo sin mezclar fotos, ZIP sin índice, archivos inválidos,
+  cancelación, ventana de 420 px, borrado, cartera del Coach intacta, cero
+  peticiones externas, cero errores JS.
+- `file://` en Chromium: IndexedDB persistente y `crypto.subtle`
+  disponibles; importar y recargar funciona. Las fuentes no cargan en
+  `file://` (CORS), igual que en el Coach actual.
+- Las seis copias ficticias del repositorio (`coach/*_2026-08-26.json`,
+  `Ejemplo TrueLift Coach.json`) se validan sin valores no válidos.
+- Coach: `node --test coach/tests/*.mjs` sigue en 75/83 (sin cambios).
+
+Sin verificar / pendiente:
+
+- Firefox y Safari (no disponibles en este entorno). `DecompressionStream`
+  y `OffscreenCanvas` existen en sus versiones recientes, pero no se han
+  probado.
+- Cuota real agotada: se simula el error dentro de la transacción; no se ha
+  llenado un disco de verdad.
+- ZIP real exportado por la app (el formato se reproduce desde el código de
+  `seleccion_screen.dart`, con el paquete `archive`: no se ha probado un
+  archivo generado por un móvil).
+- Rendimiento con miles de fotos (probado con 150 entradas y cancelación).
+- Funcionamiento sin conexión: no hay service worker en el escritorio (fase 7).
