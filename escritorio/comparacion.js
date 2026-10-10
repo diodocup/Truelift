@@ -171,5 +171,5 @@ function comparar(M, valores){
   return { a, b, cobertura: cob, avisos, ejercicios: ejercicios(M, a, b), rendimiento: rendimiento(a, b),
     contextoA: contexto(M, a), contextoB: contexto(M, b) };
 }
-return { comparar, defecto, rango, estadistica, sitios, dias };
+return { comparar, defecto, rango, estadistica, sitios, dias, periodo, contexto, cobertura, identidad, fecha };
 })();

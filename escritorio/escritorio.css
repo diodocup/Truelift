@@ -50,7 +50,7 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 
 /* Galería de fotos. */
 .galeria-dia{margin:14px 0}
-.galeria-dia h4{margin:0 0 8px;font:700 12px var(--mono);letter-spacing:.06em;color:var(--txt3)}
+.card .galeria-dia h3{margin:0 0 8px;font:700 12px var(--mono);letter-spacing:.06em;text-transform:none;color:var(--txt3)}
 .galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
 .foto{margin:0;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm);overflow:hidden}
 .foto button{display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:left}
@@ -121,7 +121,7 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 button.enlace{border:0;background:none;padding:0;color:var(--txt);font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--borde-campo);text-underline-offset:3px}
 button.enlace:hover{color:var(--lima);text-decoration-color:var(--lima)}
 .btn-enlace{font-size:12px}
-.sub-h{margin:14px 0 4px;font:700 12px var(--mono);letter-spacing:.06em;color:var(--txt3);text-transform:uppercase}
+.sub-h,.card .sub-h{margin:14px 0 4px;font:700 12px var(--mono);letter-spacing:.06em;color:var(--txt3);text-transform:uppercase}
 .valoracion{font-size:15px;line-height:1.5}
 .valoracion .chip{margin-right:6px;vertical-align:1px}
 details.ayuda summary{font-size:12.5px;color:var(--txt3)}
@@ -145,7 +145,7 @@ img[data-mini]:not([src]){visibility:hidden}
 .resumen-grid > .card{margin:0}
 .conclusiones{display:grid;gap:10px}
 .conclusion{padding:12px 14px;border:1px solid var(--borde);border-left:4px solid var(--txt4);border-radius:var(--radio-sm);background:var(--sup2)}
-.conclusion h4{margin:0 0 4px;font:800 15px var(--sans);color:var(--txt)}
+.card .conclusion h3{margin:0 0 4px;font:800 15px var(--sans);letter-spacing:0;text-transform:none;color:var(--txt)}
 .conclusion p{margin:4px 0}
 .conclusion .periodo{font-size:12.5px}
 .conclusion.tono-verde{border-left-color:var(--lima)}
@@ -175,7 +175,7 @@ img[data-mini]:not([src]){visibility:hidden}
 .rut-estado{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
 .rut-estado > div{padding:2px 0 2px 12px;border-left:3px solid var(--borde)}
 .rut-estado > div:nth-child(2){border-left-color:var(--lima)}
-.rut-estado h3{margin:0 0 6px}
+.card.rut-estado h2{margin:0 0 6px}
 .rut-estado p{margin:4px 0}
 .rut-barra .fila-botones{margin-top:0}
 .rut-barra .fila-botones + .fila-botones{margin-top:10px;padding-top:10px;border-top:1px solid var(--borde)}
@@ -218,3 +218,66 @@ b.baja{color:var(--naranja)}
   .rut-campo.pat,.rut-campo.n4{width:calc(50% - 4px)}
   .rut-barra .spacer{display:none}
 }
+
+/* ---------- Informes (fase 7) ---------- */
+.inf-tipo,.inf-fotos{min-width:0;border:1px solid var(--borde);border-radius:var(--radio-sm);padding:12px;margin:10px 0}
+.inf-tipo legend,.inf-fotos legend{font-weight:700;color:var(--txt)}
+.inf-radio{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:13.5px;color:var(--txt)}
+.inf-fechas{display:flex;gap:16px;flex-wrap:wrap}
+.inf-tipo input[type="date"]{color-scheme:dark;max-width:100%}
+.inf-tipo select{max-width:100%}
+.inf-tipo :disabled{opacity:.5}
+.inf-elegir{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.inf-elegir li{position:relative;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm);padding:6px}
+.inf-elegir input{position:absolute;top:10px;left:10px;width:18px;height:18px;accent-color:var(--lima);z-index:1}
+.inf-elegir label{display:block;font-size:12px;color:var(--txt2);cursor:pointer}
+.inf-elegir .marco{display:flex;aspect-ratio:3/4;background:var(--sup3);border-radius:6px;overflow:hidden;margin-bottom:4px}
+.inf-elegir img{width:100%;height:100%;object-fit:contain}
+.inf-elegir input:checked + label .marco{outline:2px solid var(--lima);outline-offset:-2px}
+.inf-elegir input:disabled + label{opacity:.5;cursor:not-allowed}
+.informe-doc{margin-top:18px;padding-top:6px;border-top:1px dashed var(--borde-campo)}
+.informe-doc > .card{margin-bottom:14px}
+.inf-cab{margin:8px 0 16px}
+.inf-cab h2{margin:2px 0 4px;font:900 26px var(--sans);letter-spacing:-.02em;color:var(--txt)}
+.inf-cab h2:focus{outline:none}
+.inf-cab p{margin:2px 0}
+.inf-marca{font:700 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--lima)}
+.inf-meta{font-size:12.5px}
+.inf-lista{margin:0;padding-left:18px}
+.inf-lista li{margin:6px 0}
+.inf-fecha{font:600 12.5px var(--mono);color:var(--txt2);margin-right:4px}
+.inf-fotos-doc{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.inf-fotos-doc figure{margin:0}
+.inf-fotos-doc .marco{aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;background:var(--sup3);border-radius:8px;overflow:hidden}
+.inf-fotos-doc img{width:100%;height:100%;object-fit:contain}
+.inf-fotos-doc figcaption{font-size:12px;color:var(--txt2);margin-top:4px}
+.inf-pie{font-size:12px;margin-top:4px}
+
+@media print{
+  /* En papel solo el documento: sin controles, sin bordes de pantalla y
+     sin desplegables (las tablas del informe ya van abiertas). */
+  .informe-doc{margin:0;padding:0;border:0}
+  .informe-doc .card{break-inside:auto;padding:12px 14px}
+  .informe-doc h3,.informe-doc h4{break-after:avoid}
+  .informe-doc tr,.informe-doc .cifra,.inf-fotos-doc figure,.informe-doc .chart-caja{break-inside:avoid}
+  .inf-marca{color:#5d7d10}
+  .tabla-scroll{overflow:visible}
+  .informe-doc button.enlace{text-decoration:none;color:inherit}
+  .inf-fotos-doc{grid-template-columns:repeat(3,1fr)}
+  .cifras{grid-template-columns:repeat(4,1fr)}
+  .saltar,#vivo,#chartTip{display:none!important}
+}
+@media (max-width:640px){
+  .inf-cab h2{font-size:22px}
+  .inf-elegir{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+}
+.inf-nota{font-size:12.5px}
+
+/* ---------- Acabado (fase 7): jerarquía y contraste ---------- */
+/* Los títulos de tarjeta son h2 (h1 de sección → h2 de tarjeta → h3), con
+   el mismo aspecto que el h3 de las tarjetas del Coach. */
+.card h2{margin:0 0 11px;font:700 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--txt4)}
+/* En pantalla el gris más tenue y el rojo no llegaban a 4,5:1 sobre las
+   superficies oscuras. Solo en el escritorio y solo en pantalla: el Coach y
+   la hoja de impresión conservan sus tonos. */
+@media screen{:root{--txt4:#838a86;--rojo:#e5645a}}

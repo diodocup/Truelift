@@ -174,3 +174,31 @@ selecciones fuera de cobertura y ausencia de semanas completas.
 
 Pruebas: `tests/comparacion.test.mjs` (15 casos, también con `TZ=Europe/Madrid`)
 y el recorrido de fase 4 de `tests/e2e.mjs`.
+
+## Fase 7 — informe de un periodo
+
+`informe.js` no añade reglas: reúne en un mes natural o unas fechas lo que ya
+calculan `comparacion.js` (periodo y contexto), `analisis.js` (evolución por
+ejercicio, marcas, estados, exclusiones) y `evolucion.js` (contornos). Mismas
+semanas, coberturas y exclusiones que la comparación de la fase 4.
+
+| Bloque | Definición | Límite |
+|---|---|---|
+| Constancia | Sesiones y días con fuerza del periodo; semanas lunes–domingo completas dentro del periodo y de la cobertura; días previstos solo con la rutina histórica acotada (`Analisis.planSemana`) | Las semanas parciales (bordes del periodo o fuera de cobertura) no se comparan con lo previsto ni entran en medias |
+| Progresión verificable | `Analisis.evolucionEjercicio` en el periodo: extremos y cortes del informe mensual de la app sobre el e1RM de marca de sesiones normales con la misma modalidad que la última válida | Solo las lecturas «firmes» (las de Mi resumen) pasan a cambios relevantes y a aspectos que revisar; las demás se muestran como orientativas o «datos insuficientes» |
+| Marcas | Sesiones del periodo que superan la mejor marca anterior (reglas de la app) | En cambios relevantes, una línea por ejercicio |
+| Valoración | Recuento de `verdictAtSave` (o su equivalente guardado) de las sesiones no de descarga | No se recalcula; sesiones sin valoración se cuentan aparte |
+| Peso | Mediana de pesajes del periodo (primero de cada día) y peso tendencia de la app en el primer y el último día pesado del periodo | Sin pesajes no hay tendencia (no se extrapola); con muchos pesajes la tabla se resume por semana |
+| Contornos | Primera y última medida de cada sitio dentro del periodo, con fecha real, del modelo de `evolucion.js` (JSON > índice del ZIP) | Sin arrastre desde fuera del periodo; valores contradictorios excluidos y avisados |
+| Composición | Mediciones del periodo tal como las guarda la app | Estimación: masa magra ≠ músculo |
+| Volumen | `Motor.seriesPorGrupo` (principal entera, secundarios media); media de semanas completas y total de parciales | Sin proyectar parciales; ejercicios sin grupo listados |
+| Recuperación | Medianas de estado, VFC y FC del periodo; días con estado bajo con el mismo corte que `Analisis.recuperacion` | Recuento descriptivo; la lectura «cargada» y la VFC baja sostenida solo se citan si el periodo incluye el último registro |
+| Cambios relevantes | Primera sesión con otra identidad de rutina, descargas, marcas, lecturas firmes, inicio/fin de fases, molestias, cambios de un día, no realizados | Hechos de la copia; sin causas |
+| Aspectos que revisar | Lecturas firmes a la baja, intentos agotados y recuperación (si el periodo incluye el último registro), semanas por debajo de lo previsto, molestias, fotos sin imagen, contornos contradictorios | No son recomendaciones de carga ni médicas; cada uno enlaza a su detalle |
+
+Fotos: fuera del informe por defecto. Solo se añaden las del periodo con
+imagen importada que la persona marque (máximo 6); la elección vive en
+memoria y se pierde al recargar. El periodo elegido sí se guarda por espacio.
+
+Pruebas: `tests/informe.test.mjs` (11 casos) y el recorrido de fase 7 de
+`tests/e2e.mjs`.

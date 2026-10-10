@@ -18,7 +18,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 | 4. Comparación de periodos | Hecha (ver «Fase 4») | 15 casos nuevos + e2e Chromium |
 | 5. Evolución física | Hecha (ver «Fase 5») | 18 casos nuevos + 41 comprobaciones e2e Chromium |
 | 6. Planificador personal | Hecha (ver «Fase 6») | 10 casos nuevos (uno con el lector real de la app en Dart) + 7 comprobaciones e2e Chromium + 3 del Coach |
-| 7. Informes y acabado | Pendiente | — |
+| 7. Informes y acabado | Hecha (ver «Fase 7») | 11 casos del informe + 2 de la caché + 1 de ayudas; 7 comprobaciones e2e nuevas (Chromium); axe-core sin incidencias; medición con 3 años de historial |
 | 8. Validación integral | Pendiente | — |
 
 ## Fase 0 — Auditoría
@@ -126,7 +126,7 @@ Truelift/
 | R1 | Sin identificador de usuario: dos archivos pueden ser de personas distintas | Elección explícita «actualizar» / «espacio nuevo», con indicios (coincidencia de historial, fecha de nacimiento) que informan pero no deciden |
 | R2 | Sin fecha de exportación: no se puede saber qué copia es más nueva | Comparar el último registro y las sesiones que faltan; avisar de posible retroceso y exigir confirmación. La fecha del nombre del archivo se muestra como indicio no verificado |
 | R3 | Foto con fecha o pose corregidas sin renombrar | La resolución usa el índice (JSON > ZIP > nombre) y se recalcula al leer |
-| R4 | `coach/sw.js` borra cachés ajenas al activarse | No se registra hoy. Si en la fase 7 se activa el modo sin conexión, limitar su borrado a su prefijo |
+| R4 | `coach/sw.js` borra cachés ajenas al activarse | Resuelto en la fase 7: los dos service workers solo borran cachés con su prefijo (`tlcoach-`, `tlescritorio-`) |
 | R5 | Fechas con `Z` de sesiones del reloj | Se toma el día del texto, como el resto del Coach; documentado |
 | R6 | Coach canónico sin rest-pause | Hecho en la fase 6: portado desde App-PRO/web-truelift con su prueba |
 | R7 | Métricas del Coach distintas del motor (carga efectiva, sustituciones, drops, récords en verde, estancamiento) | Fase 2: auditar y alinear o etiquetar |
@@ -641,3 +641,111 @@ modelo de contornos, sus claves estables y sus unidades canónicas.
   `escritorio/#rutina` con una copia propia, exportar e importar el Excel en el
   móvil y volver a importar la copia para ver «A prueba» / «En tu móvil».
   No fusionar ni desplegar sin autorización.
+
+
+## Fase 7 — Informes personales y acabado (10/10/2026)
+
+### Base y rama
+
+- Rama `claude/truelift-desktop-personal-eu7jlj` sobre `main` (`0cba39b`, fases
+  1–6 integradas). Sin cambios en App-PRO, producción, compras ni permisos PRO.
+  No hay `AGENTS.md` en Truelift; se siguen las reglas de textos de App-PRO
+  (`CLAUDE.md`: sin umbrales, porcentajes, ventanas ni recuentos del algoritmo
+  en los textos de cara a la persona).
+
+### Decisiones
+
+- **Informe = composición, no reglas nuevas.** `informe.js` reúne en un mes
+  natural o unas fechas lo que ya calculan `comparacion.js` (se exportan
+  `periodo`, `contexto`, `cobertura`, `identidad` y `fecha`, sin copiarlas),
+  `analisis.js` y `evolucion.js`. Definiciones: `METRICAS.md` §Fase 7.
+- **Mes por defecto:** el último mes natural que termina antes del último
+  registro; si no hay ninguno, el del último registro. El periodo elegido se
+  guarda por espacio en `meta` (`informe:<espacio>`, sin migración) y se borra
+  con el espacio. Un error de fechas no guarda nada, conserva lo tecleado y
+  sigue mostrando el último informe válido.
+- **Solo lo verificable:** lecturas firmes a cambios relevantes y a aspectos
+  que revisar; las demás, orientativas o «datos insuficientes». El estado
+  actual (intentos, recuperación reciente) solo si el periodo incluye el
+  último registro. Contornos sin arrastre; peso tendencia solo en días pesados.
+- **Fotos fuera por defecto:** casilla + selección explícita de fotos del
+  periodo con imagen (máximo 6), solo en memoria. Se cargan los originales y
+  se liberan sus object URLs al cambiar de vista.
+- **Impresión existente:** se reutiliza la hoja `@media print` del Coach (papel
+  blanco, colores adaptados, `.no-print`), con reglas propias para que el
+  documento corte bien entre páginas. «Imprimir» espera a las fotos y pone
+  como título el nombre propuesto para el PDF (`Informe TrueLift 2026-09`).
+  Sin desplegables en el documento (en papel quedarían cerrados).
+- **Sin conexión:** `escritorio/sw.js` (red primero, caché de respaldo) solo
+  para la lista de archivos de la página; los datos siguen en IndexedDB. Se
+  registra solo por http(s). Al activarse borra solo `tlescritorio-*`; se
+  corrige igual `coach/sw.js` (que sigue sin registrarse) → riesgo R4 cerrado.
+  «Mis datos» indica si ya está disponible; no se anuncia instalación (no hay
+  manifiesto en el escritorio).
+- **Acabado:** títulos de tarjeta como h2 (h1 → h2 → h3), h1 en «Mis datos»,
+  cabeceras de tabla vacías con texto para lector de pantalla, tablas que
+  desbordan enfocables como región, leyenda en la gráfica de estado, y en
+  pantalla del escritorio `--txt4` y `--rojo` con contraste ≥ 4,5:1 (el Coach y
+  la impresión no cambian). Ayudas reescritas sin cifras del algoritmo
+  (arrastre de medidas, mínimos de sesiones y de medidas, reparto ×1/×0,5).
+
+### Archivos
+
+- Nuevos: `informe.js`, `informe-vista.js`, `sw.js`,
+  `tests/informe.test.mjs`, `tests/sin-conexion.test.mjs`,
+  `validacion/fase7/30-informe.png`, `31-informe-fotos.png`,
+  `32-informe-impreso.png`, `32-informe.pdf`, `33-informe-estrecha.png`
+  (datos y fotos sintéticos).
+- Cambiados: `app.js` (controlador de Informes, registro del SW, tablas
+  desplazables), `index.html`, `escritorio.css`, `vistas.js` (sin el marcador
+  de Informes; h2; textos), `comparacion.js` (exporta), `almacen.js`,
+  `evolucion.js` (texto del motivo), `fisica-vista.js`, `rutina-vista.js`,
+  `tests/comun.mjs`, `tests/analisis.test.mjs`, `tests/e2e.mjs`, `LEEME.md`,
+  `METRICAS.md`; Coach: `sw.js` (prefijo y v17).
+
+### Verificación
+
+- `node --test escritorio/tests/*.test.mjs` → **134/135, 1 omitida** (el lector
+  real del Excel en Dart, que necesita `DART`; esta fase no toca el
+  planificador). Nuevas: periodo y validación, constancia con semanas
+  parciales, lecturas firmes/orientativas, estado actual solo con el último
+  registro, cobertura, periodo sin semanas completas o sin datos, descarga,
+  molestias, cambios de un día y no realizados, contornos sin arrastre y con
+  conflictos, peso sin extrapolar, fotos solo elegidas, escape de nombres,
+  notas sin cifras, tablas con `caption`, no mutación; caché que cubre cada
+  archivo de `index.html` y borrado por prefijo; ayudas de todas las vistas
+  sin cifras del algoritmo.
+- `node escritorio/tests/e2e.mjs` en **Chromium 141 (Playwright 1.56)** →
+  **55/55** (dos ejecuciones seguidas). Nuevas: Alt + 6 y secciones del
+  informe; fechas con teclado, rechazo sin guardar y foco; fotos solo por
+  elección; impresión (espera a fotos, título del PDF, restaurado tras
+  imprimir); hoja de impresión sobre blanco sin controles y PDF real; recarga
+  (periodo sí, fotos no) y actualización de copia; comparar con el periodo
+  anterior y 420 px; **sin conexión** con el servidor apagado (página, datos e
+  informe; control negativo: lo que no está en la lista no se sirve; cachés
+  ajenas intactas). Se corrigió una espera intermitente previa de la fase 4.
+- **Accesibilidad:** axe-core 4.10 (instalado solo en el directorio temporal,
+  no es dependencia) con WCAG 2.1 A/AA y buenas prácticas sobre todas las
+  secciones, el editor de rutina, la vista previa, el detalle de sesión y
+  420 px → **0 incidencias** (antes: contraste, orden de encabezados, h1,
+  cabeceras vacías y regiones desplazables).
+- **Rendimiento** (copia sintética de 3 años: 626 sesiones, 1 095 pesajes y
+  cuestionarios, medidas semanales, 468 fotos en ZIP de 2,1 MB): vista previa
+  JSON+ZIP 8,4 s (miniaturas, con progreso y cancelación), guardado 0,4 s,
+  recarga 0,3 s, secciones entre 10 y 231 ms, informe de 3 años 191 ms,
+  galería con 48 miniaturas cargadas, 22 MB de memoria JS.
+- `file://` en Chromium: importar e informe correctos; «Sin conexión» se
+  muestra como no disponible.
+- Coach: `node --test coach/tests/*.mjs` → 85/93, los mismos 8 fallos previos.
+- `node --check` de todos los scripts y `git diff --check`: correctos.
+
+### Sin verificar / pendiente
+
+- Firefox y Safari: impresión a PDF, service worker y `DecompressionStream`
+  no probados aquí.
+- La impresión se ha comprobado con la emulación de impresión y el PDF de
+  Chromium; no con un diálogo de impresión real ni con impresora.
+- Modo sin conexión: comprobado en Chromium por HTTP local; no en la web
+  publicada ni tras una actualización real de versión.
+- Fase 8 (validación integral) pendiente. No fusionar ni desplegar sin
+  autorización.

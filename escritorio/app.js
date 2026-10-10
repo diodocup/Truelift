@@ -19,10 +19,13 @@ const E = {
   indiceJson: null, fotosMeta: [], galeria: [], importaciones: [],
   seccion: 'datos', ocupado: false, abort: null, P: null,
   urls: new Set(), urlModal: null, obs: null, canal: null,
-  estimacion: null, persistido: null, origenModal: null,
+  estimacion: null, persistido: null, origenModal: null, sinConexion: null,
   M: null, errorModelo: null, fisica: null, espacioFisica: null,
   fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 },
-  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, periodos: null },
+  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, periodos: null, informe: null },
+  // Informe (fase 7): la selección del periodo se guarda por espacio; las
+  // fotos elegidas viven solo en memoria y empiezan siempre vacías.
+  inf: { conFotos: false, fotos: new Set(), error: null, borrador: null }, espacioInforme: null,
   // Planificador (fase 6): borradores del espacio, el activo y, solo en
   // memoria, las pilas de deshacer/rehacer de cada borrador.
   rut: { borradores: [], activoId: null, pilas: new Map(), error: null, foco: null },
@@ -66,6 +69,7 @@ function abrirModal(html, { ancho = false, bloqueado = false } = {}){
   caja.dataset.bloqueado = bloqueado ? '1' : '';
   caja.innerHTML = html;
   m.classList.remove('oculto');
+  marcarDesplazables();
   const foco = caja.querySelector('[autofocus]') || caja.querySelector('h2') || caja;
   if (foco === caja || foco.tagName === 'H2') foco.setAttribute('tabindex', '-1');
   foco.focus();
@@ -117,6 +121,8 @@ async function cargarEstado(){
   }
   if (!E.fis.dirty) E.fis.encuadres = espacioId ? (await Almacen.leer('meta', `encuadres:${espacioId}`))?.valor || {} : {};
   E.st.periodos = E.espacio ? (await Almacen.leer('meta', `periodos:${E.espacio.id}`))?.valor || null : null;
+  E.st.informe = E.espacio ? (await Almacen.leer('meta', `informe:${E.espacio.id}`))?.valor || null : null;
+  if (espacioId !== E.espacioInforme){ E.inf = { conFotos: false, fotos: new Set(), error: null, borrador: null }; E.espacioInforme = espacioId; }
   // Borradores de rutina: cuelgan del espacio, no de la copia; actualizar la
   // copia no los toca.
   E.rut.borradores = E.espacio
@@ -599,7 +605,7 @@ async function confirmarImportacion(){
 // ---------- Mis datos ----------
 function renderDatos(){
   if (!E.espacio) return renderBienvenida();
-  const out = [];
+  const out = ['<div class="cabecera-seccion"><h1>Mis datos</h1></div>'];
   out.push(`<div class="grid cols2" style="align-items:start">${tarjetaDatos()}${tarjetaAlmacen()}</div>`);
   out.push(tarjetaFotos('resumen'));
   out.push(tarjetaHistorial());
@@ -626,15 +632,15 @@ function renderBienvenida(){
 
 function tarjetaDatos(){
   const inst = E.inst;
-  if (!inst) return `<div class="card"><h3>Datos de entrenamiento</h3>
+  if (!inst) return `<div class="card"><h2>Datos de entrenamiento</h2>
     <p>Aún no has importado tu copia de datos en este espacio.</p>
     <div class="fila-botones"><button class="btn pri" type="button" data-accion="importar-datos">Importar datos de TrueLift</button></div></div>`;
-  if (E.rawError) return `<div class="card"><h3>Datos de entrenamiento</h3>
+  if (E.rawError) return `<div class="card"><h2>Datos de entrenamiento</h2>
     <div class="alerta rojo"><span class="tag">Error</span><span>${esc(E.rawError)}</span></div>
     ${E.espacio.instantaneaAnteriorId ? '<button class="btn sec" type="button" data-accion="volver-anterior">Volver a la copia anterior</button>' : ''}</div>`;
   const r = inst.resumen;
   const antig = hace(r.ultimoRegistro);
-  return `<div class="card"><h3>Datos de entrenamiento</h3>
+  return `<div class="card"><h2>Datos de entrenamiento</h2>
     <div class="kv"><span>Archivo</span><b class="mono-peq">${esc(inst.nombreArchivo || '—')}</b></div>
     <div class="kv"><span>Importado</span><b>${fmtMomento(inst.importadoEn)}</b></div>
     <div class="kv"><span>Periodo</span><b>${fmtDia(r.primerRegistro)} — ${fmtDia(r.ultimoRegistro)}</b></div>
@@ -656,12 +662,14 @@ function tarjetaDatos(){
 function tarjetaAlmacen(){
   const e = E.estimacion || {};
   const temporal = Almacen.modo === 'temporal';
-  return `<div class="card"><h3>Almacenamiento en este navegador</h3>
+  return `<div class="card"><h2>Almacenamiento en este navegador</h2>
     ${temporal ? `<div class="alerta rojo"><span class="tag">Modo temporal</span><span>${esc(Almacen.motivoTemporal || '')} Lo que importes desaparecerá al cerrar la pestaña.</span></div>` : ''}
     <div class="kv"><span>Espacio usado</span><b>${fmtBytes(e.uso)}${e.cuota != null ? ` <span class="muted">de ${fmtBytes(e.cuota)}</span>` : ''}</b></div>
     <div class="kv"><span>Conservación</span><b>${temporal ? 'solo mientras la pestaña esté abierta'
       : E.persistido ? 'persistente' : 'el navegador podría liberarlo si se queda sin espacio'}</b></div>
     ${!temporal && E.persistido === false ? '<button class="btn sec" type="button" data-accion="persistir">Pedir conservación persistente</button>' : ''}
+    <div class="kv"><span>Sin conexión</span><b>${{ listo: 'esta página ya se puede abrir sin conexión en este navegador',
+      preparando: 'preparándose…', 'tras-recargar': 'disponible la próxima vez que abras la página', no: 'no disponible (abre la página desde la web, no como archivo)' }[E.sinConexion] || '—'}</b></div>
     <p class="muted" style="font-size:12.5px">Guardar aquí es cómodo, pero no es una copia de seguridad: borrar los datos del navegador lo elimina. Conserva tus archivos JSON y ZIP originales.</p>
     <div class="mod-fila"><label for="selEspacio">Espacio personal</label>
       <select id="selEspacio">${E.espacios.map(s => `<option value="${esc(s.id)}" ${s.id === E.espacio.id ? 'selected' : ''}>${esc(s.nombre)}</option>`).join('')}</select>
@@ -683,7 +691,7 @@ function tarjetaFotos(modo = 'galeria'){
   const fuera = g.filter(f => f.fueraDeCopia).length;
   const disc = g.filter(f => f.discrepancia).length;
   if (!g.length){
-    return `<div class="card"><h3>Fotos de progreso</h3>
+    return `<div class="card"><h2>Fotos de progreso</h2>
       <p>${E.indiceJson ? 'Tu copia de datos no tiene fotos registradas.' : 'No hay fotos en este espacio.'}
       Puedes importar el ZIP que exporta la app desde Ajustes → Copia de seguridad → Exportar fotos.</p>
       <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button></div></div>`;
@@ -695,7 +703,7 @@ function tarjetaFotos(modo = 'galeria'){
   const porDia = new Map();
   visibles.forEach(f => { if (!porDia.has(f.fecha)) porDia.set(f.fecha, []); porDia.get(f.fecha).push(f); });
   const dias = [...porDia.keys()].sort().reverse();
-  return `<div class="card"><h3>Fotos de progreso</h3>
+  return `<div class="card"><h2>Fotos de progreso</h2>
     <div class="cifras">
       ${cifra(con, 'con imagen')}
       ${pend ? cifra(pend, 'sin imagen importada', true) : ''}
@@ -707,8 +715,8 @@ function tarjetaFotos(modo = 'galeria'){
     <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button>
       ${modo === 'resumen' ? '<button class="btn sec" type="button" data-ir="fisica">Ver la galería</button>' : ''}</div>
     ${modo === 'galeria' ? `<div class="foto-filtro"><label for="galeriaPose">Filtrar galería por pose <select id="galeriaPose">${[['todas', 'Todas'], ...Object.entries(POSE_TXT)].map(([k, txt]) => `<option value="${k}"${E.fis.galeriaPose === k ? ' selected' : ''}>${txt}</option>`).join('')}</select></label><span>${filtradas.length} fotos · Página ${E.fis.pagina + 1} de ${paginas}</span><button class="btn sec" type="button" data-pagina-fotos="-1"${E.fis.pagina === 0 ? ' disabled' : ''}>Anterior</button><button class="btn sec" type="button" data-pagina-fotos="1"${E.fis.pagina >= paginas - 1 ? ' disabled' : ''}>Siguiente</button></div>${filtradas.length ? '' : '<p class="muted">No hay fotos de esta pose.</p>'}` : ''}
-    ${modo === 'resumen' && visibles.length ? '<h4 class="sub-h">Fotos que conviene revisar</h4>' : ''}
-    ${dias.map(d => `<section class="galeria-dia"><h4>${fmtDia(d)}</h4><div class="galeria">
+    ${modo === 'resumen' && visibles.length ? '<h3 class="sub-h">Fotos que conviene revisar</h3>' : ''}
+    ${dias.map(d => `<section class="galeria-dia"><h3>${fmtDia(d)}</h3><div class="galeria">
       ${porDia.get(d).map(fotoHtml).join('')}</div></section>`).join('')}
   </div>`;
 }
@@ -739,7 +747,7 @@ function tarjetaHistorial(){
     if (r.restaurada) que.push('vuelta a la copia anterior');
     return `<tr><td class="num">${fmtMomento(r.fecha)}</td><td>${esc(que.join(' · ') || '—')}</td><td class="mono-peq">${(r.archivos || []).map(esc).join('<br>')}</td></tr>`;
   };
-  return `<div class="card"><h3>Historial de importaciones</h3><div class="tabla-scroll"><table>
+  return `<div class="card"><h2>Historial de importaciones</h2><div class="tabla-scroll"><table>
     <thead><tr><th>Fecha</th><th>Qué se importó</th><th>Archivos</th></tr></thead>
     <tbody>${E.importaciones.slice(0, 20).map(fila).join('')}</tbody></table></div></div>`;
 }
@@ -948,11 +956,28 @@ function render(){
   cont.innerHTML = renderSeccion();
   activarMiniaturas();
   activarOriginales();
+  activarFotosInforme();
+  marcarDesplazables();
   rutRestaurarFoco();
 }
 
+/* Una tabla más ancha que su caja se desplaza con el teclado: su caja recibe
+   el foco y se anuncia como región con el nombre de la tabla. Solo las que
+   desbordan, para no añadir paradas de tabulación inútiles. */
+function marcarDesplazables(){
+  $$('.tabla-scroll').forEach(c => {
+    const desborda = c.scrollWidth > c.clientWidth + 1;
+    if (desborda && !c.hasAttribute('tabindex')){
+      c.setAttribute('tabindex', '0'); c.setAttribute('role', 'region');
+      c.setAttribute('aria-label', `${c.querySelector('caption')?.textContent || 'Tabla'} (desplazable)`);
+    } else if (!desborda && c.getAttribute('role') === 'region'){
+      c.removeAttribute('tabindex'); c.removeAttribute('role'); c.removeAttribute('aria-label');
+    }
+  });
+}
+
 function sinCopiaHtml(){
-  return `<section class="card"><h3>${esc(SECCIONES[E.seccion])}</h3>
+  return `<section class="card"><h2>${esc(SECCIONES[E.seccion])}</h2>
     <p>${E.rawError || E.errorModelo
       ? `No se pudo leer tu copia de datos${E.errorModelo ? ` (${esc(E.errorModelo)})` : ''}. Revisa «Mis datos».`
       : 'Para ver esta sección importa tu copia de datos de TrueLift (el archivo <code>.json</code>). Las fotos solas no traen tus entrenamientos.'}</p>
@@ -973,7 +998,7 @@ function renderSeccion(){
     case 'fisica': return VistasEsc.fisica(M, ctx);
     case 'recuperacion': return VistasEsc.recuperacion(M);
     case 'rutina': return RutinaVista.html(rutCtx());
-    case 'informes': return VistasEsc.informes(M);
+    case 'informes': return InformeVista.seccion(M, { sel: E.st.informe, error: E.inf.error, fisica: E.fisica, galeria: E.galeria, inst: E.inst, st: E.inf });
   }
   return '';
 }
@@ -1237,6 +1262,72 @@ function rutRestaurarFoco(){
   if (el && !el.disabled) el.focus({ preventScroll: false });
 }
 
+// ---------- Informes (fase 7) ----------
+/* Fotos elegidas para el informe: originales (calidad de impresión), con
+   sus object URLs registradas para liberarlas al cambiar de vista. */
+function activarFotosInforme(){
+  const espacioId = E.espacio?.id;
+  $$('[data-inf-foto]').forEach(async marco => {
+    const fin = estado => { marco.dataset.estado = estado; };
+    try {
+      const archivo = marco.dataset.infFoto;
+      const reg = await Almacen.leer('imagenes', [espacioId, archivo]);
+      if (!document.contains(marco) || E.espacio?.id !== espacioId) return;
+      if (!reg){ marco.textContent = 'Imagen no disponible'; fin('error'); return; }
+      const url = URL.createObjectURL(reg.blob); E.urls.add(url);
+      const f = E.galeria.find(x => x.archivo === archivo);
+      const img = document.createElement('img');
+      img.alt = f ? `${POSE_TXT[f.pose] || f.pose}, ${fmtDia(f.fecha)}` : archivo;
+      img.onload = () => { if (document.contains(marco)){ marco.replaceChildren(img); fin('lista'); } };
+      img.onerror = () => { if (document.contains(marco)){ marco.textContent = 'Imagen ilegible'; fin('error'); } };
+      img.src = url;
+    } catch (_) { if (document.contains(marco)){ marco.textContent = 'No se pudo cargar'; fin('error'); } }
+  });
+}
+
+function selInformeDe(form){
+  const d = new FormData(form);
+  return d.get('tipo') === 'fechas' ? { tipo: 'fechas', desde: d.get('desde') || '', hasta: d.get('hasta') || '' }
+    : { tipo: 'mes', mes: d.get('mes') || '' };
+}
+
+async function verInforme(form){
+  const sel = selInformeDe(form);
+  try { Informe.rango(sel); }
+  catch (e) { E.inf.error = e.message; E.inf.borrador = sel; render(); $('#formInforme button[type="submit"]')?.focus(); return; }
+  E.inf.error = null; E.inf.borrador = null;
+  if (await guardarSimple([{ almacen: 'meta', put: { clave: `informe:${E.espacio.id}`, valor: sel } }], 'Informe actualizado')){
+    const t = $('#informeTitulo');
+    if (t){ t.setAttribute('tabindex', '-1'); t.focus(); }
+  }
+}
+
+async function imprimirInforme(){
+  const doc = $('.informe-doc');
+  if (!doc) return;
+  // Las fotos elegidas deben estar cargadas antes de abrir la impresión.
+  const t0 = Date.now();
+  while ([...doc.querySelectorAll('[data-inf-foto]')].some(m => !m.dataset.estado) && Date.now() - t0 < 8000)
+    await new Promise(ok => setTimeout(ok, 50));
+  let r = null;
+  try { r = Informe.rango(E.st.informe || Informe.defecto(E.M)); } catch (_) { /* título por defecto */ }
+  const titulo = document.title;
+  // El título es el nombre que propone el navegador al guardar en PDF.
+  if (r) document.title = r.tipo === 'mes' ? `Informe TrueLift ${fmtISO(r.desde).slice(0, 7)}` : `Informe TrueLift ${fmtISO(r.desde)} a ${fmtISO(r.hasta)}`;
+  const restaurar = () => { document.title = titulo; window.removeEventListener('afterprint', restaurar); };
+  window.addEventListener('afterprint', restaurar);
+  window.print();
+}
+
+async function compararConAnterior(){
+  let r;
+  try { r = Informe.rango(E.st.informe || Informe.defecto(E.M)); } catch (_) { return; }
+  const a = Informe.anterior(r);
+  const valor = { a: { desde: fmtISO(a.desde), hasta: fmtISO(a.hasta) }, b: { desde: fmtISO(r.desde), hasta: fmtISO(r.hasta) } };
+  if (await guardarSimple([{ almacen: 'meta', put: { clave: `periodos:${E.espacio.id}`, valor } }], 'Periodos preparados para comparar'))
+    irA('entrenamiento:comparar');
+}
+
 // ---------- eventos ----------
 function trampaFoco(ev){
   const m = $('#modal');
@@ -1271,6 +1362,8 @@ async function accion(nombre, el){
       } catch (e) { modalMensaje('No se guardaron los encuadres', `<p>${esc(e.message || String(e))}. Las fotos originales siguen intactas.</p>`); }
       break;
     }
+    case 'imprimir-informe': await imprimirInforme(); break;
+    case 'informe-comparar': await compararConAnterior(); break;
     case 'importar-datos': $('#inputDatos').click(); break;
     case 'importar-fotos': $('#inputFotos').click(); break;
     case 'cancelar-proceso': if (E.abort) E.abort.abort(); break;
@@ -1377,6 +1470,7 @@ function init(){
     if (b){ b.focus(); try { b.setSelectionRange(pos, pos); } catch (_) { /* tipo search */ } }
   });
   $('#contenido').addEventListener('submit', async ev => {
+    if (ev.target.id === 'formInforme'){ ev.preventDefault(); await verInforme(ev.target); return; }
     if (ev.target.id !== 'compararPeriodos') return;
     ev.preventDefault();
     const datos = new FormData(ev.target);
@@ -1388,6 +1482,23 @@ function init(){
   });
   $('#contenido').addEventListener('change', async ev => {
     if (ev.target.dataset.rut || ev.target.id === 'rutExcel'){ await rutCambio(ev.target); return; }
+    // Informe: el tipo de periodo activa sus campos sin repintar.
+    if (ev.target.name === 'tipo' && ev.target.form?.id === 'formInforme'){
+      const mes = ev.target.value === 'mes';
+      $('#informeMes').disabled = !mes; $('#informeDesde').disabled = mes; $('#informeHasta').disabled = mes;
+      return;
+    }
+    if (ev.target.id === 'informeConFotos'){
+      E.inf.conFotos = ev.target.checked; render(); $('#informeConFotos')?.focus();
+      anunciar(E.inf.conFotos ? 'Elige las fotos que quieres añadir' : 'El informe sale sin fotos'); return;
+    }
+    if (ev.target.dataset.infElegir != null){
+      const id = ev.target.id;
+      // La selección es lo marcado en pantalla (solo fotos del periodo).
+      E.inf.fotos = new Set($$('[data-inf-elegir]').filter(i => i.checked).map(i => i.dataset.infElegir).slice(0, Informe.MAX_FOTOS));
+      render(); document.getElementById(id)?.focus();
+      anunciar(ev.target.checked ? 'Foto añadida al informe' : 'Foto quitada del informe'); return;
+    }
     const idFis = ev.target.id;
     if (['compPose', 'compFotoA', 'compFotoB', 'contornoSitio', 'galeriaPose'].includes(idFis)){
       const valor = ev.target.value;
@@ -1458,6 +1569,10 @@ function init(){
     $('#avisoGlobal').innerHTML = '<div class="alerta ambar"><span class="tag">Actualización</span><span>Se ha abierto una versión más reciente del escritorio en otra pestaña. Recarga esta página.</span></div>';
   };
   window.addEventListener('pagehide', () => { liberarUrls(); if (E.urlModal) URL.revokeObjectURL(E.urlModal); });
+  let tRes = null;
+  window.addEventListener('resize', () => { clearTimeout(tRes); tRes = setTimeout(marcarDesplazables, 150); });
+  // Las tablas de los desplegables solo tienen ancho al abrirse.
+  document.addEventListener('toggle', ev => { if (ev.target.open) marcarDesplazables(); }, true);
 
   arrancar();
 }
@@ -1475,6 +1590,20 @@ async function arrancar(){
   const h = location.hash.slice(1);
   irA(h && SECCIONES[h.split('/')[0]] ? h : (E.inst ? 'resumen' : 'datos'), { foco: false, historial: false });
   document.documentElement.dataset.listo = '1';
+  registrarSinConexion();
+}
+
+/* Caché de los archivos de la página para abrirla sin conexión (sw.js).
+   Solo por http(s): desde un archivo local el navegador no lo permite. */
+function registrarSinConexion(){
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)){ E.sinConexion = 'no'; return; }
+  E.sinConexion = navigator.serviceWorker.controller ? 'listo' : 'preparando';
+  navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => {
+    const antes = E.sinConexion;
+    E.sinConexion = navigator.serviceWorker.controller ? 'listo' : 'tras-recargar';
+    if (antes !== E.sinConexion && E.seccion === 'datos') render();
+  }).catch(() => { E.sinConexion = 'no'; if (E.seccion === 'datos') render(); });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { E.sinConexion = 'listo'; if (E.seccion === 'datos') render(); });
 }
 
 // Para las pruebas automáticas (estado de solo lectura).
