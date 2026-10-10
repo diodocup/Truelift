@@ -15,7 +15,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 | 1. Importación fiable y persistencia | Hecha (ver «Fase 1» abajo) | `tests/*.test.mjs` (Node) + `tests/e2e.mjs` (Chromium/Playwright) |
 | 2. Experiencia personal y métricas | Hecha (ver «Fase 2» abajo) | `tests/motor*.test.mjs`, `tests/analisis.test.mjs` + e2e (Chromium) |
 | 3. Resumen y ficha por ejercicio | Hecha (ver «Fase 3» abajo) | `tests/resumen.test.mjs` + e2e (Chromium) |
-| 4. Comparación de periodos | Pendiente | — |
+| 4. Comparación de periodos | Hecha (ver «Fase 4») | 15 casos nuevos + e2e Chromium |
 | 5. Evolución física | Pendiente | — |
 | 6. Planificador personal | Pendiente | — |
 | 7. Informes y acabado | Pendiente | — |
@@ -379,3 +379,88 @@ Sin verificar / pendiente:
 - El informe mensual del móvil incluye en su progreso sesiones con molestias
   o descarga; el escritorio las excluye (diferencia documentada en
   `METRICAS.md`).
+
+
+## Fase 4 — Comparación entre periodos y bloques (10/10/2026)
+
+### Estado, alcance y decisiones
+
+Implementada en `diodocup/Truelift`, rama `codex/escritorio-fase4-periodos`,
+sobre `bd8f52a` (fases 1–3 ya integradas). No hay `AGENTS.md` en este
+repositorio. App-PRO se ha usado solo como fuente de lectura: se verificó el
+modelo de contornos, sus claves estables y sus unidades canónicas.
+
+- Apartado **Entrenamiento → Comparar periodos** y enlace desde Mi resumen.
+  Cuatro fechas, validación de intervalos y acceso a dos ventanas de cuatro
+  semanas completas. Fechas guardadas por espacio en `meta`, sin cambiar el
+  esquema, preservadas al actualizar el JSON. Borrar un espacio borra también
+  esa selección. Fallo de escritura conserva la selección previa.
+- Duraciones, muestras, frecuencia, días con fuerza, constancia donde se
+  conoce el plan histórico, tiempos y descargas. Detalle de semanas y enlaces
+  a sesiones. Semanas parciales separadas, sin extrapolarlas.
+- Ejercicios comunes por nombre y modalidad: e1RM estimado de marca, medianas
+  y muestras con exclusiones móviles existentes. Diferencias solo con al menos
+  dos sesiones válidas por lado; para peso corporal se omiten porque el peso
+  de perfil actual no reconstruye el histórico. Cambios de series y rutina
+  advertidos; ejercicios exclusivos de cada periodo enumerados.
+- Rendimiento numérico guardado agrupado por identidad de rutina explícita y
+  día, bruto y neto por separado. No se inventan cifras desde las palabras
+  «buena»/«floja»; grupos sin muestra compatible no producen diferencias.
+- Volumen con el reparto de `Motor.seriesPorGrupo`, media de semanas completas
+  y totales parciales separados. Ejercicios sin grupo enumerados.
+- Peso y contornos medidos dentro de cada periodo (sin arrastre), contexto
+  nutricional histórico y recuperación registrada, con muestra y fechas.
+- No se inventan bloques a partir de revisiones ni se usan planes futuros
+  como historia. No hay ganador automático, causalidad ni recomendaciones.
+  Definiciones completas en `METRICAS.md`, instrucciones en `LEEME.md`.
+- Las fases 5–8 siguen pendientes. Esta entrega no completa el proyecto ni
+  añade el editor personal o la comparación de fotos.
+
+### Archivos
+
+- Nuevo `comparacion.js`: cálculo puro y datos de las muestras.
+- `index.html`, `vistas.js`, `app.js`, `escritorio.css`: carga, navegación,
+  selector, tablas accesibles, foco y persistencia local.
+- `tests/comparacion.test.mjs`: casos sintéticos de fase 4.
+- `tests/comun.mjs`, `tests/e2e.mjs`: carga del módulo y recorrido de navegador.
+- `PLAN.md`, `METRICAS.md`, `LEEME.md`: decisiones, verificación y uso.
+- `tests/capturas-fase4/19-periodos-desiguales.png`,
+  `20-periodos-parciales.png`, `21-periodos-estrecha.png`: datos sintéticos,
+  revisadas visualmente. No contienen datos personales.
+
+### Verificación
+
+- `node --test escritorio/tests/*.test.mjs`: **92 aprobadas, 0 fallos, 2
+  omitidas** (94 totales). Las omitidas son la sincronía con fuentes de App-PRO,
+  que no está clonado junto a este repositorio; no se ha modificado `motor.js`.
+- `TZ=Europe/Madrid node --test escritorio/tests/comparacion.test.mjs`:
+  **15/15**, incluyendo fechas de cambio de hora.
+- `node escritorio/tests/e2e.mjs`: **33/33 en Chromium 141.0.7390.0**, con
+  Playwright del runtime. Se ejecutó por HTTP con viewport 1366×900 y 420×900.
+  Incluye importación, ventanas desiguales, parciales, solapamiento, rechazo
+  de intervalo invertido, fallo de cuota simulado, recarga, actualización
+  de JSON, cierre/reapertura de pestaña, selección por espacio, restablecimiento,
+  navegación a origen, teclado/foco, aislamiento del Coach y cero solicitudes
+  externas o errores JS (también en las pestañas reabiertas).
+- La instalación estándar de Chromium por CDN no devolvió un archivo válido.
+  Se usó un ejecutable Chromium 141 del paquete temporal `@sparticuz/chromium`
+  con un adaptador local de Playwright. No se añadió dependencia al proyecto
+  ni se utiliza ese paquete en la web. Para reproducir en otro entorno basta
+  Playwright con su Chromium instalado y `PLAYWRIGHT_MODULE` si no está en la
+  ruta habitual.
+- Coach: **75/83**, mismos 8 fallos preexistentes documentados en fases 0–3.
+  Ningún archivo de Coach cambiado en esta fase.
+- Sintaxis (`node --check`) y `git diff --check` correctos.
+
+### Pendientes y límites
+
+- Firefox, Safari e interacción `file://` de esta fase no probados. No se
+  anuncia funcionamiento offline ni se activa ningún service worker.
+- Las muestras son sintéticas; no se ha ejecutado Flutter ni una comparación
+  con una copia real del móvil.
+- No se ha medido rendimiento con historiales extremos (límite de selección:
+  diez años). No se añade una nueva batería sin riesgo concreto.
+- Sin publicación ni fusión. Propuesta: revisar la PR de esta rama y pasar a
+  fase 5 tras aceptar la comparación. Para errores de importación siguen
+  vigentes las instrucciones de recuperación de `LEEME.md`; esta fase no
+  modifica las instantáneas ni sus fotos.

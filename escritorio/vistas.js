@@ -191,6 +191,7 @@ function tarjetaComparables(M){
       x.deltaPct != null ? F.signo(x.deltaPct) : '—', chip(cl, txt, x.lectura !== 'insuficiente' && !x.firme ? 'Pocas sesiones comparables: no se usa como conclusión' : '')];
   });
   return tarjeta('Evolución de tus ejercicios', `${tabla(['Ejercicio', 'Sesiones comparables', 'Al principio', 'Al final', 'Cambio', 'Lectura'], filas, { caption: 'Evolución del 1RM estimado en las últimas semanas' })}
+    <div class="fila-botones">${ir('entrenamiento:comparar', 'Comparar dos periodos')}</div>
     ${ayuda('Compara el 1RM estimado del principio y del final de tus últimas semanas, solo con las sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias ni cambios de un día) y con la misma modalidad de series. «Sin cambios claros» describe una diferencia pequeña; no significa que estés estancado. Con pocas sesiones comparables la lectura es orientativa y no se usa como conclusión. El 1RM es una estimación a partir de tus series.')}`);
 }
 
@@ -252,7 +253,7 @@ function tarjetaValoracion(M){
 // ---------------------------------------------------------------
 // ENTRENAMIENTO
 // ---------------------------------------------------------------
-const SUBS = [['sesiones', 'Sesiones'], ['ejercicios', 'Ejercicios'], ['rendimiento', 'Rendimiento'], ['volumen', 'Volumen']];
+const SUBS = [['sesiones', 'Sesiones'], ['ejercicios', 'Ejercicios'], ['rendimiento', 'Rendimiento'], ['volumen', 'Volumen'], ['comparar', 'Comparar periodos']];
 
 function subnav(actual, seccion){
   return `<nav class="subnav" aria-label="Apartados">${SUBS.map(([k, t]) =>
@@ -265,8 +266,111 @@ function entrenamiento(M, st){
   if (sub === 'ejercicios') cuerpo = st.ejercicio && M.ejercicios.has(st.ejercicio) ? fichaEjercicio(M, st.ejercicio, st) : listaEjercicios(M, st);
   else if (sub === 'rendimiento') cuerpo = rendimiento(M);
   else if (sub === 'volumen') cuerpo = volumen(M);
+  else if (sub === 'comparar') cuerpo = compararPeriodos(M, st);
   else cuerpo = sesiones(M, st);
   return `<div class="cabecera-seccion"><h1>Entrenamiento</h1></div>${subnav(sub, 'entrenamiento')}${cuerpo}`;
+}
+
+// Fase 4: selector manual. Las identidades de sesiones no se convierten en
+// bloques: no incluyen la fecha exacta en que se empezó o terminó la rutina.
+function compararPeriodos(M, st){
+  const valores = st.periodos || Comparacion.defecto(M);
+  const campos = ['a', 'b'].map((k, i) => `<fieldset><legend>Periodo ${i ? 'B' : 'A'}</legend>
+    ${['desde', 'hasta'].map(c => `<div class="mod-fila"><label for="periodo-${k}-${c}">${c === 'desde' ? 'Desde' : 'Hasta'}</label>
+      <input id="periodo-${k}-${c}" name="${k}-${c}" type="date" required value="${esc(valores[k]?.[c] || '')}"></div>`).join('')}</fieldset>`).join('');
+  const selector = tarjeta('Comparar periodos', `<p>Elige dos intervalos para revisar qué cambió en tus registros.</p>
+    <form id="compararPeriodos"><div class="periodos-sel">${campos}</div><div class="fila-botones">
+    <button type="submit" class="btn pri">Comparar</button><button type="button" class="btn sec" data-accion-vista="periodos-defecto">Últimas 4 semanas completas frente a las 4 anteriores</button></div></form>
+    <p class="muted">Se conservan las fechas para este espacio personal. Puedes comparar bloques indicando sus fechas: la copia no permite reconstruir sus límites exactos a partir de los cambios de rutina.</p>`);
+  let C;
+  try { C = Comparacion.comparar(M, valores); }
+  catch (e) { return selector + `<div class="alerta ambar" role="alert">${esc(e.message)}</div>`; }
+  const { a, b } = C;
+  const numero = (v, unidad = '', dec = 1) => v == null ? '—' : `${F.num(v, dec)}${unidad ? ' ' + unidad : ''}`;
+  const muestra = (s, unidad = '') => s.n ? `${numero(s.mediana, unidad)} <span class="muted">· n=${s.n}<br>${F.dia(s.desde)}–${F.dia(s.hasta)}${s.conflictos ? `<br>${s.conflictos} días con valores contradictorios excluidos` : ''}</span>` : `—${s.conflictos ? ` (${s.conflictos} días contradictorios excluidos)` : ''}`;
+  const diff = (x, y, unidad = '') => x == null || y == null ? '—' : `${y - x > 0 ? '+' : ''}${numero(y - x, unidad, 2)}`;
+  const rutinaTxt = key => {
+    if (key === 'Sin identidad histórica') return key;
+    const [variante, dias, revision] = key.split('|');
+    const tipo = variante.endsWith('_doble') ? 'Rutina doble' : variante.endsWith('_simple') ? 'Rutina simple' : variante;
+    return `${tipo} · ${dias} días · versión ${revision}`;
+  };
+  const cab = ['Dato', 'Periodo A', 'Periodo B'];
+  const filas = [
+    ['Fechas', `${F.dia(a.desde)}–${F.dia(a.hasta)}`, `${F.dia(b.desde)}–${F.dia(b.hasta)}`],
+    ['Duración seleccionada', `${a.dias} días`, `${b.dias} días`],
+    ['Sesiones de fuerza registradas', String(a.sesiones.length), String(b.sesiones.length)],
+    ['Semanas completas con cobertura', String(a.completas.length), String(b.completas.length)],
+    ['Semanas parciales o fuera de cobertura', String(a.parciales.length), String(b.parciales.length)],
+    ['Sesiones / semana completa', numero(a.frecuencia), numero(b.frecuencia)],
+    ['Días con fuerza / semana completa', numero(a.diasSemana), numero(b.diasSemana)],
+    ['Constancia frente a plan conocido', ...[a, b].map(p => p.conocidas ? `${p.hechasConPlan} de ${p.previstas} días previstos · ${p.conocidas} semanas` : 'Sin planificación histórica suficiente')],
+    ['Sesiones de descarga', String(a.descarga), String(b.descarga)],
+    ['Tiempo por sesión (mediana)', muestra(a.duracion, 'min'), muestra(b.duracion, 'min')],
+    ['Rutinas registradas', ...[a, b].map(p => p.rutinas.map(k => esc(rutinaTxt(k))).join('<br>') || '—')],
+  ];
+  const out = [selector, tarjeta('Muestra y contexto de entrenamiento',
+    `<p class="muted">Diferencias descriptivas: no hay un periodo ganador ni se demuestra qué provocó los cambios. «—» significa dato ausente o muestra insuficiente, no cero.</p>
+    ${C.avisos.map(t => `<p class="aviso-comparacion">${esc(t)}</p>`).join('')}${tabla(cab, filas, { caption: 'Duración y muestras de los periodos' })}
+    ${ayuda('Las semanas son de lunes a domingo. Las medias usan solo semanas completas incluidas en la selección y entre el primer registro disponible y el último. Las semanas sin entrenamientos dentro de esa cobertura cuentan como cero sesiones registradas. La copia puede contener huecos: cero registros no demuestra que no entrenaras. Los días previstos usan la identidad histórica acotada por sesiones, nunca la frecuencia actual sin comprobarla. El tiempo excluye duraciones ausentes, no positivas o marcadas como anómalas.')}`)];
+
+  const semanas = (p, letra) => p.semanas.map(s => [letra, `${F.dia(s.desde)}–${F.dia(s.hasta)}`, s.completa ? 'Completa' : 'Parcial / sin cobertura',
+    s.indices.map(i => `<button type="button" class="enlace" data-sesion="${i}">${F.corta(M.sesiones.find(x => x.indice === i).fecha)}</button>`).join(', ') || '0 registradas',
+    String(s.dias), s.previstas == null ? '—' : String(s.previstas)]);
+  out.push(tarjeta('Semanas completas y parciales', `<details class="detalle"><summary>Ver semanas y sesiones de origen</summary>
+    ${tabla(['Periodo', 'Fechas incluidas', 'Tipo', 'Sesiones (abrir detalle)', 'Días con sesión', 'Días previstos'], [...semanas(a, 'A'), ...semanas(b, 'B')], { caption: 'Semanas y sesiones incluidas en cada periodo' })}</details>`));
+
+  const ejerc = C.ejercicios.comunes.map(e => {
+    const motivos = p => Object.entries(p.excluidos).map(([k, n]) => `${n} ${Analisis.MOTIVO_TXT[k] || k}`).join(', ');
+    const valor = p => p.n ? `${numero(p.mediana, 'kg')} · n=${p.n} de ${p.registradas}<br><span class="muted">${esc(motivos(p))}</span>` : `— · 0 de ${p.registradas}<br><span class="muted">${esc(motivos(p))}</span>`;
+    const avisos = [e.deltaPct == null ? (e.pesoCorporal ? 'Peso corporal histórico no reconstruible: sin diferencia estimada.' : 'Se necesitan al menos 2 sesiones válidas por periodo en esta modalidad.') : '',
+      e.seriesDistintas ? 'Cambió el número de series: no comparar tonelaje ni repeticiones totales.' : '',
+      e.cambioRutina ? 'Rutinas distintas; contexto diferente.' : ''].filter(Boolean).join(' ');
+    return [`<button type="button" class="enlace" data-ejercicio="${esc(e.nombre)}">${esc(e.nombre)}</button><br><span class="muted">${esc(Analisis.MODALIDAD_TXT[e.config])}</span>`,
+      valor(e.a), valor(e.b), F.signo(e.deltaPct), esc(avisos)];
+  });
+  out.push(tarjeta('Ejercicios comunes · 1RM estimado', `${ejerc.length ? tabla(['Ejercicio / modalidad', 'Mediana A', 'Mediana B', 'Diferencia B − A', 'Limitaciones'], ejerc, { caption: 'Comparación de ejercicios comunes' }) : vacio('No hay ejercicios realizados en ambos periodos.')}
+    <p class="muted">Solo A: ${esc(C.ejercicios.soloA.join(', ') || 'ninguno')}. Solo B: ${esc(C.ejercicios.soloB.join(', ') || 'ninguno')}.</p>
+    ${ayuda('Se compara la mediana del 1RM estimado de marca, con el tope de repeticiones de la app, por nombre y modalidad. Se excluyen descarga, molestias, cambio de un día, días no verdes y entradas sin estimación. Cada sesión cuenta una vez. Dos sesiones por periodo permiten una diferencia descriptiva, no confirmar una tendencia. En ejercicios de peso corporal la estimación usa el peso del perfil actual: no se calcula una diferencia histórica. La copia tampoco permite verificar cambios de máquina, técnica o rango de movimiento.')}`));
+
+  const rend = C.rendimiento.flatMap(g => ['bruto', 'neto'].filter(k => g[`${k}A`].n || g[`${k}B`].n).map(k => {
+    const A = g[`${k}A`], B = g[`${k}B`];
+    return [`${esc(rutinaTxt(g.rutina))}<br>${esc(g.dia)} · ${k === 'bruto' ? 'Bruto' : 'Neto'}`, muestra(A, '%'), muestra(B, '%'),
+      A.n >= 2 && B.n >= 2 ? diff(A.mediana, B.mediana, 'pp') : 'Muestra insuficiente'];
+  }));
+  out.push(tarjeta('Rendimiento guardado por la app', `${rend.length ? tabla([...cab, 'Diferencia B − A'], rend, { caption: 'Rendimiento por identidad de rutina y día' }) : vacio('No hay rendimiento agrupable con identidad histórica completa.')}
+    ${ayuda('Bruto y neto son porcentajes frente a la referencia móvil de cada sesión; esa referencia puede cambiar dentro de la misma rutina. La diferencia se expresa en puntos porcentuales y no mide fuerza ganada. Se separan rutina (variante, días y revisión explícita) y día. No se inventan porcentajes a partir de «buena» o «floja», ni se comparan grupos ausentes de un periodo. Las descargas y los puntos sin referencia quedan fuera.')}`));
+
+  const grupos = Motor.GRUPOS_VOLUMEN.filter(g => [...a.semanas, ...b.semanas].some(s => s.volumen.has(g)));
+  const parcial = (p, g) => p.parciales.reduce((n, s) => n + (s.volumen.get(g) || 0), 0);
+  out.push(tarjeta('Series realizadas por grupo muscular', (a.sinGrupo.length || b.sinGrupo.length ? `<p class="muted">Sin reparto por grupo: ${esc([...new Set([...a.sinGrupo, ...b.sinGrupo])].join(', '))}.</p>` : '') + (grupos.length ? tabla(['Grupo', 'A · series / semana completa', 'B · series / semana completa', 'Diferencia B − A', 'A · parciales (total)', 'B · parciales (total)'], grupos.map(g => {
+    const A = a.completas.length ? a.volumen.get(g) || 0 : null, B = b.completas.length ? b.volumen.get(g) || 0 : null;
+    return [esc(g), numero(A), numero(B), diff(A, B), numero(parcial(a, g)), numero(parcial(b, g))];
+  }), { caption: 'Series por grupo en semanas completas' }) + ayuda('Mismo reparto que la app: grupo principal ×1, secundarios ×0,5. Incluye series realizadas con molestias, descargas y modalidades especiales; «no realizado» no suma. Las columnas de parciales son totales registrados, sin proyectarlos a una semana ni calcular diferencias entre ellos. Un ejercicio puede contribuir a varios grupos, por lo que sumar grupos no equivale al número de series totales.') : vacio('No hay series asignables a grupos en estos periodos.'))));
+
+  const contexto = [C.contextoA, C.contextoB];
+  const medidas = [...new Set(contexto.flatMap(c => Object.keys(c.medidas)))];
+  const vacia = { n: 0, mediana: null };
+  out.push(tarjeta('Peso y contornos registrados', tabla([...cab, 'Diferencia entre medianas B − A'], [
+    ['Peso medido', ...contexto.map(c => muestra(c.peso, 'kg')), diff(C.contextoA.peso.mediana, C.contextoB.peso.mediana, 'kg')],
+    ...medidas.map(k => { const A = C.contextoA.medidas[k] || vacia, B = C.contextoB.medidas[k] || vacia;
+      return [esc(Comparacion.sitios[k]), muestra(A, 'cm'), muestra(B, 'cm'), diff(A.mediana, B.mediana, 'cm')]; }),
+  ], { caption: 'Medianas de peso y contornos de cada periodo' }) + ayuda('Son medianas de mediciones tomadas dentro de cada periodo, con sus fechas reales. No se arrastran medidas fuera del intervalo ni se usa el peso actual del perfil. Una única medida describe ese día, no una tendencia. La diferencia no es un cambio entre extremos ni mide músculo ganado o perdido. Los pesajes siguen la deduplicación móvil (primero por día); en contornos los duplicados contradictorios se excluyen.')));
+
+  const nutTexto = c => c.fases.length ? c.fases.map(f => `${esc(FASE_NUT[f.tipo] || f.tipo)} · ${F.dia(f.inicio)}–${f.fin ? F.dia(f.fin) : 'sin cierre registrado'}`).join('<br>') : 'Sin fase histórica fechada';
+  out.push(tarjeta('Contexto nutricional', tabla(cab, [
+    ['Fases que coinciden con el periodo', ...contexto.map(nutTexto)],
+    ['Recomendaciones registradas', ...contexto.map(c => String(c.recomendaciones.length))],
+    ['Ritmo real guardado (mediana)', ...contexto.map(c => muestra(Comparacion.estadistica(c.recomendaciones.filter(r => r.tasaRealPctSemana != null).map(r => ({ fecha: r.fecha, valor: r.tasaRealPctSemana }))), '% / semana'))],
+  ], { caption: 'Contexto nutricional histórico' }) + `<details class="detalle"><summary>Ver recomendaciones y ajustes guardados</summary>${tabla(['Periodo', 'Fecha', 'Fase', 'Tipo', 'Ajuste (kcal/día)'], contexto.flatMap((c, i) => c.recomendaciones.map(r => [i ? 'B' : 'A', F.dia(r.fecha), esc(r.faseId), esc(r.tipo), numero(r.ajusteKcalDia)])), { caption: 'Recomendaciones nutricionales dentro de la selección' })}</details>` +
+    ayuda('Las fases proceden de sus fechas guardadas; el plan de temporada es una previsión y no se usa como historia realizada. No se aplica la fase actual a fechas anteriores a su inicio. Los ajustes son propuestas guardadas por la app: no demuestran ingesta real ni adherencia a la dieta. No se atribuyen los cambios de entrenamiento a la nutrición.')));
+
+  out.push(tarjeta('Recuperación registrada', tabla([...cab, 'Diferencia B − A'], [
+    ['Estado para entrenar (0–100)', ...contexto.map(c => muestra(c.estado)), diff(C.contextoA.estado.mediana, C.contextoB.estado.mediana)],
+    ['VFC nocturna', ...contexto.map(c => muestra(c.vfc, 'ms')), diff(C.contextoA.vfc.mediana, C.contextoB.vfc.mediana, 'ms')],
+    ['FC en reposo', ...contexto.map(c => muestra(c.fc, 'lpm')), diff(C.contextoA.fc.mediana, C.contextoB.fc.mediana, 'lpm')],
+  ], { caption: 'Medianas de recuperación registrada' }) + ayuda('Se muestran días con medición válida; los huecos no cuentan como cero. La VFC descartada queda fuera. No se considera una VFC más alta automáticamente mejor ni se hacen recomendaciones médicas. Cambios de reloj, de condiciones de medida o pocos días registrados pueden explicar diferencias.')));
+  return out.join('');
 }
 
 function marcasSesion(s){

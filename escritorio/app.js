@@ -21,7 +21,7 @@ const E = {
   urls: new Set(), urlModal: null, obs: null, canal: null,
   estimacion: null, persistido: null, origenModal: null,
   M: null, errorModelo: null,
-  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null },
+  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, periodos: null },
 };
 
 const SECCIONES = {
@@ -104,6 +104,7 @@ async function cargarEstado(){
       catch (e) { E.errorModelo = e && e.message ? e.message : String(e); console.error(e); }
     }
   }
+  E.st.periodos = E.espacio ? (await Almacen.leer('meta', `periodos:${E.espacio.id}`))?.valor || null : null;
   E.estimacion = await Almacen.estimacion();
   E.persistido = await Almacen.persistido();
 }
@@ -806,6 +807,7 @@ async function borrarEspacio(){
   const id = E.espacio.id;
   const resto = E.espacios.filter(s => s.id !== id);
   const ops = Almacen.opsBorrarEspacio(id);
+  ops.push({ almacen: 'meta', del: `periodos:${id}` });
   ops.push(resto.length ? { almacen: 'meta', put: { clave: 'espacioActivo', valor: resto[0].id } }
                         : { almacen: 'meta', del: 'espacioActivo' });
   liberarUrls();
@@ -1024,6 +1026,10 @@ function init(){
       irA(`entrenamiento:ejercicios:${encodeURIComponent(ej.dataset.ejercicio)}`); return;
     }
     const av = ev.target.closest('[data-accion-vista]');
+    if (av && av.dataset.accionVista === 'periodos-defecto'){
+      if (E.M) guardarSimple([{ almacen: 'meta', put: { clave: `periodos:${E.espacio.id}`, valor: Comparacion.defecto(E.M) } }], 'Periodos restaurados');
+      return;
+    }
     if (av && av.dataset.accionVista === 'ver-todas'){ E.st.verTodas = true; render(); return; }
     const ver = ev.target.closest('[data-ver]');
     if (ver){ verFoto(ver.dataset.ver); return; }
@@ -1045,6 +1051,16 @@ function init(){
     render();
     const b = $('#buscaEj');
     if (b){ b.focus(); try { b.setSelectionRange(pos, pos); } catch (_) { /* tipo search */ } }
+  });
+  $('#contenido').addEventListener('submit', async ev => {
+    if (ev.target.id !== 'compararPeriodos') return;
+    ev.preventDefault();
+    const datos = new FormData(ev.target);
+    const valor = Object.fromEntries(['a', 'b'].map(k => [k, { desde: datos.get(`${k}-desde`), hasta: datos.get(`${k}-hasta`) }]));
+    try { Comparacion.comparar(E.M, valor); }
+    catch (e) { modalMensaje('Revisa los periodos', `<p>${esc(e.message)}</p>`); return; }
+    const guardado = await guardarSimple([{ almacen: 'meta', put: { clave: `periodos:${E.espacio.id}`, valor } }], 'Comparación actualizada');
+    if (guardado) $('#compararPeriodos button[type="submit"]')?.focus();
   });
   $('#contenido').addEventListener('change', async ev => {
     // Comparar dos sesiones de la ficha: se vuelve a pintar y el foco sigue

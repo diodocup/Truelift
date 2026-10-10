@@ -132,3 +132,11 @@ img[data-mini]:not([src]){visibility:hidden}
   .tabla-series td:nth-child(3){min-width:160px}
 }
 .resumen-grid td .chip{white-space:normal;text-align:center}
+
+/* Comparación manual de periodos (fase 4). */
+.periodos-sel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:12px 0}
+.periodos-sel fieldset{min-width:0;border:1px solid var(--borde);border-radius:var(--radio-sm);padding:12px}
+.periodos-sel legend{font-weight:700;color:var(--txt)}
+.periodos-sel input{min-width:0;max-width:100%;color-scheme:dark}
+.aviso-comparacion{border-left:3px solid var(--ambar);padding-left:10px;color:var(--txt2)}
+@media (max-width:640px){.periodos-sel{grid-template-columns:1fr}}
