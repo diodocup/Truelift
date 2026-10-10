@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { cargar, cargarCoach, copiaRica } from './comun.mjs';
 
 cargarCoach('motor.js', 'data.js', 'nutricion.js', 'charts.js', 'catalogo.js');
-const G = cargar('analisis.js', 'vistas.js');
+const G = cargar('importar.js', 'fotos.js', 'evolucion.js', 'analisis.js', 'vistas.js');
 const { Analisis, VistasEsc, Motor } = G;
 
 const resumen = { ultimoRegistro: '2026-07-02', ultimoEntreno: '2026-07-02', primerRegistro: '2026-06-01' };

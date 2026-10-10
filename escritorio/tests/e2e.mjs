@@ -31,6 +31,7 @@ const servidor = http.createServer((req, res) => {
 });
 await new Promise(ok => servidor.listen(0, '127.0.0.1', ok));
 const origen = `http://127.0.0.1:${servidor.address().port}`;
+const origenesPrueba = new Set([origen]);
 
 const tmp = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'tl-e2e-'));
 const escribir = (nombre, datos) => { const p = path.join(tmp, nombre); fs.writeFileSync(p, datos); return p; };
@@ -38,7 +39,7 @@ const escribir = (nombre, datos) => { const p = path.join(tmp, nombre); fs.write
 const navegador = await pw.chromium.launch();
 const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 } });
 const externas = [], erroresJs = [];
-ctx.on('request', r => { if (!r.url().startsWith(origen) && !r.url().startsWith('blob:') && !r.url().startsWith('data:')) externas.push(r.url()); });
+ctx.on('request', r => { if (![...origenesPrueba].some(o => r.url().startsWith(o + '/')) && !r.url().startsWith('blob:') && !r.url().startsWith('data:')) externas.push(r.url()); });
 ctx.on('page', p => {
   p.on('pageerror', e => erroresJs.push(String(e)));
   p.on('console', m => { if (m.type() === 'error') erroresJs.push(m.text()); });
@@ -47,7 +48,12 @@ let pagina = await ctx.newPage();
 
 let paso = 0;
 const ok = msg => console.log(`ok ${++paso} - ${msg}`);
-const foto = async n => capturas && pagina.screenshot({ path: path.join(capturas, n), fullPage: true });
+const foto = async n => {
+  if (!capturas) return;
+  await pagina.evaluate(() => scrollTo(0, 0));
+  if (/^2[2-4]-/.test(n)) await pagina.locator('#comparadorFotos').screenshot({ path: path.join(capturas, n) });
+  else await pagina.screenshot({ path: path.join(capturas, n), fullPage: true });
+};
 
 try {
   // La cartera del Coach del mismo origen no debe tocarse.
@@ -116,7 +122,7 @@ try {
   ok('vista previa conjunta: periodo, recuentos, discrepancia, fuera de copia y ausentes');
   await foto('02-previa.png');
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   const galeria1 = await pagina.evaluate(() => Escritorio.estado.galeria.map(f => [f.archivo, f.fecha, f.pose, f.tieneImagen, f.fuente]));
   assert.deepEqual(galeria1, [
@@ -159,7 +165,7 @@ try {
   assert.equal(await pagina.isDisabled('[data-accion="confirmar"]'), true);
   await pagina.check('input[name="destino"][value="actualizar"]');
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   assert.equal(await pagina.evaluate(() => Escritorio.estado.inst.resumen.sesionesFuerza), 6);
   assert.equal(await pagina.evaluate(() => Escritorio.estado.fotosMeta.length), 1);
@@ -174,7 +180,7 @@ try {
   await foto('04-retroceso.png');
   await pagina.check('input[data-op="retroceso"]');
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   assert.equal(await pagina.evaluate(() => Escritorio.estado.inst.resumen.sesionesFuerza), 4);
   await pagina.click('[data-accion="volver-anterior"]');
@@ -212,7 +218,7 @@ try {
   await pagina.check('input[data-op="sustituir"]');
   assert.match(await pagina.textContent('#modalCaja'), /2\s*se guardarán/);
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   const g2 = await pagina.evaluate(() => Escritorio.estado.galeria.map(f => [f.archivo, f.tieneImagen]));
   assert.deepEqual(g2, [['foto_20260801_frente.jpg', true], ['foto_20260801_espalda.jpg', true]]);
@@ -225,7 +231,7 @@ try {
   await pagina.check('input[name="destino"][value="nuevo"]');
   await pagina.fill('#nombreNuevo', 'Prueba');
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   const nuevo = await pagina.evaluate(() => ({ n: Escritorio.estado.espacios.length, nom: Escritorio.estado.espacio.nombre,
     fotos: Escritorio.estado.fotosMeta.length, s: Escritorio.estado.inst.resumen.sesionesFuerza }));
@@ -240,7 +246,7 @@ try {
   await pagina.setInputFiles('#inputFotos', [zipViejo]);
   await pagina.getByText('no trae índice').waitFor();
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   const g3 = await pagina.evaluate(() => Escritorio.estado.galeria.map(f => [f.archivo, f.fecha, f.pose, f.fuente]));
   assert.deepEqual(g3, [['foto_20250310_frente.jpg', '2025-03-10', 'frente', 'nombre']]);
@@ -300,7 +306,7 @@ try {
   await pagina.setInputFiles('#inputDatos', [pR]);
   await pagina.getByText('Revisa la importación').waitFor();
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   await pagina.click('#tabs [data-seccion="resumen"]');
   await pagina.getByText('Rendimiento irregular').waitFor();
@@ -378,7 +384,7 @@ try {
   await pagina.check('input[name="destino"][value="nuevo"]');
   await pagina.fill('#nombreNuevo', 'Fase 3');
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   await pagina.evaluate(() => { location.hash = '#resumen'; });
   await pagina.getByText('Lo más relevante').waitFor();
@@ -517,7 +523,7 @@ try {
   await pagina.getByText('¿Dónde guardar esta copia?').waitFor();
   await pagina.check('input[name="destino"][value="actualizar"]');
   await pagina.click('[data-accion="confirmar"]');
-  await pagina.getByText('Importación completada').waitFor();
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
   await pagina.click('[data-accion="cerrar"]');
   assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.st.periodos), fechasAntesActualizar);
   assert.equal(await pagina.evaluate(() => Escritorio.estado.M.sesiones.length), raw3.logs.length + 1);
@@ -531,6 +537,201 @@ try {
   pagina = await ctx.newPage();
   await pagina.goto(`${origen}/escritorio/`);
   ok('comparador: actualizar la instantánea y cerrar/reabrir conserva las fechas');
+
+  // --- Fase 5. Comparación física con índice corregido y datos sintéticos ---
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  const raw5 = copiaRica();
+  const archivoA = 'foto_20260601_frente.jpg', archivoB = 'foto_20260901_perfil.jpg';
+  raw5.medidas = { schemaVersion: 1, registros: [
+    { fecha: '2026-06-01', sitio: 'cintura', cm: 88 },
+    { fecha: '2026-07-01', sitio: 'cintura', cm: 86 },
+    { fecha: '2026-09-01', sitio: 'cintura', cm: 82 },
+    { fecha: '2026-09-03', sitio: 'pecho', cm: 105 }, // futura para foto B
+    { fecha: '2026-06-01', sitio: 'cuello', cm: 39 }, // >30 días en foto B
+  ], fotos: [
+    { archivo: archivoA, fecha: '2026-06-03', pose: 'perfil', pesoKg: 80 },
+    { archivo: archivoB, fecha: '2026-09-02', pose: 'perfil', pesoKg: 78 },
+    { archivo: 'ausente.jpg', fecha: '2026-09-05', pose: 'perfil' },
+    ...Array.from({ length: 55 }, (_, i) => ({ archivo: `pendiente_${i}.jpg`, fecha: '2026-08-01', pose: 'frente' })),
+  ] };
+  raw5.nutricion.fasesCerradas = [{ id: 'cut', tipo: 'DEFICIT', inicio: '2026-06-01', fin: '2026-07-31', estado: 'CLOSED' }];
+  raw5.nutricion.fase = { id: 'bulk', tipo: 'SURPLUS', inicio: '2026-08-01', tasaObjetivoPctSemana: 0.25, pesoObjetivoKg: 82 };
+  raw5.nutricion.medicionesGrasa = [
+    { fecha: '2026-06-01', porcentajePct: 18, pesoAnclaKg: 80, metodo: 'DIRECT' },
+    { fecha: '2026-09-01', porcentajePct: 16, pesoAnclaKg: 78, metodo: 'DIRECT' },
+  ];
+  const idx5 = { ...raw5.medidas, fotos: raw5.medidas.fotos.map(f => f.archivo === archivoA ? { ...f, fecha: '2026-06-01', pose: 'frente' } : f) };
+  const zip5 = escribir('fotos-fase5.zip', crearZip([
+    { nombre: archivoA, datos: img[0] }, { nombre: archivoB, datos: img[1] },
+    { nombre: 'medidas.json', datos: JSON.stringify(idx5) },
+  ]));
+  const p5 = escribir('fase5.json', JSON.stringify(raw5));
+  await pagina.setInputFiles('#inputDatos', [p5, zip5]);
+  await pagina.getByText('¿Dónde guardar esta copia?').waitFor();
+  await pagina.check('input[name="destino"][value="nuevo"]');
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+  await pagina.click('[data-accion="cerrar"]');
+  await pagina.evaluate(() => { location.hash = '#fisica'; });
+  await pagina.waitForFunction(() => document.querySelectorAll('[data-original] img').length === 2);
+  assert.equal(await pagina.inputValue('#compPose'), 'perfil');
+  assert.equal(await pagina.inputValue('#compFotoA'), archivoA);
+  const comparador = pagina.locator('#comparadorFotos');
+  assert.ok((await comparador.innerText()).includes('1 jun 2026 · 2 días antes'));
+  assert.ok((await comparador.innerText()).includes('−6 cm'));
+  assert.ok((await comparador.innerText()).includes('sin medida anterior'));
+  assert.ok((await comparador.innerText()).includes('medida de hace más de 30 días'));
+  assert.ok((await comparador.innerText()).includes('Déficit'));
+  assert.ok((await comparador.innerText()).includes('Superávit'));
+  await foto('22-fotos-lado.png');
+  ok('fotos: misma pose, ficha corregida, peso guardado, fases y fechas reales; sin contornos futuros ni antiguos');
+
+  await pagina.click('[data-modo-foto="cortina"]');
+  await pagina.waitForFunction(() => document.querySelectorAll('[data-original] img').length === 2);
+  await pagina.locator('#fotoCorte').focus();
+  await pagina.keyboard.press('Home'); await pagina.keyboard.press('ArrowRight');
+  assert.equal(await pagina.inputValue('#fotoCorte'), '1');
+  assert.ok(await pagina.locator('.foto-b').evaluate(el => getComputedStyle(el).clipPath.includes('99%')));
+  const proporciones = await pagina.locator('[data-original] img').evaluateAll(imgs => imgs.map(i => [getComputedStyle(i).objectFit, i.clientWidth, i.clientHeight]));
+  assert.ok(proporciones.every(p => p[0] === 'contain' && p[1] === proporciones[0][1] && p[2] === proporciones[0][2]));
+  await foto('23-fotos-cortina.png');
+  await pagina.click('[data-modo-foto="superposicion"]');
+  await pagina.locator('#fotoOpacidad').focus(); await pagina.keyboard.press('Home');
+  assert.equal(await pagina.locator('.foto-b').evaluate(el => getComputedStyle(el).opacity), '0');
+  await pagina.keyboard.press('End');
+  assert.equal(await pagina.locator('.foto-b').evaluate(el => getComputedStyle(el).opacity), '1');
+  await pagina.locator('#fotoOpacidad').evaluate(i => { i.value = 50; i.dispatchEvent(new Event('input', { bubbles: true })); });
+  await foto('24-fotos-superposicion.png');
+  ok('fotos: cortina y opacidad con teclado; ambos marcos mantienen proporciones');
+
+  const hashesAntes = await pagina.evaluate(() => Escritorio.estado.fotosMeta.map(f => [f.archivo, f.sha256]));
+  await pagina.locator('#ajustesFotos summary').click();
+  await pagina.locator('#enc-a-zoom').evaluate(i => { i.value = 1.5; i.dispatchEvent(new Event('input', { bubbles: true })); });
+  await pagina.locator('#enc-a-x').evaluate(i => { i.value = 10; i.dispatchEvent(new Event('input', { bubbles: true })); });
+  await pagina.waitForFunction(() => document.querySelector('[data-lado="a"] img')?.style.transform.includes('scale(1.5)'));
+  assert.ok((await pagina.locator('[data-lado="a"] img').getAttribute('style')).includes('translate(10%, 0%)'));
+  await pagina.click('[data-accion="guardar-encuadres"]');
+  await pagina.getByText('Encuadres guardados', { exact: true }).waitFor();
+  const id5 = await pagina.evaluate(() => Escritorio.estado.espacio.id);
+  await pagina.reload(); await pagina.waitForSelector('html[data-listo="1"]');
+  await pagina.waitForFunction(() => document.querySelector('[data-lado="a"] img')?.style.transform.includes('scale(1.5)'));
+  assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.fotosMeta.map(f => [f.archivo, f.sha256])), hashesAntes);
+  assert.equal(await pagina.evaluate(() => Escritorio.estado.inst.texto), JSON.stringify(raw5));
+  await pagina.close(); pagina = await ctx.newPage(); await pagina.goto(`${origen}/escritorio/#fisica`);
+  await pagina.waitForSelector('html[data-listo="1"]');
+  assert.equal(await pagina.evaluate(a => Escritorio.estado.fis.encuadres[a].zoom, archivoA), 1.5);
+  ok('fotos: encuadres guardados tras recarga y cierre/reapertura; hashes y JSON originales intactos');
+
+  await pagina.locator('#ajustesFotos summary').click();
+  await pagina.getByRole('button', { name: 'Restablecer A', exact: true }).click();
+  assert.equal(await pagina.inputValue('#enc-a-zoom'), '1');
+  await pagina.evaluate(() => { Almacen._falloSimulado = 'QuotaExceededError'; });
+  await pagina.click('[data-accion="guardar-encuadres"]');
+  await pagina.getByRole('heading', { name: 'No se guardaron los encuadres' }).waitFor();
+  assert.equal(await pagina.evaluate(async id => (await Almacen.leer('meta', `encuadres:${id}`)).valor['foto_20260601_frente.jpg'].zoom, id5), 1.5);
+  await pagina.click('[data-accion="cerrar"]');
+  await pagina.click('[data-accion="guardar-encuadres"]');
+  await pagina.getByText('Encuadres guardados', { exact: true }).waitFor();
+  ok('fotos: restablecer es reversible; fallo de escritura conserva encuadres previos e imágenes');
+
+  await pagina.selectOption('#compFotoB', archivoA);
+  await pagina.getByText('Selecciona dos fotos diferentes.', { exact: true }).waitFor();
+  assert.equal(await pagina.locator('[data-original]').count(), 0);
+  await pagina.selectOption('#compFotoB', 'ausente.jpg');
+  await pagina.getByText('Falta una imagen seleccionada.', { exact: false }).waitFor();
+  assert.equal(await pagina.locator('[data-original]').count(), 0);
+  await pagina.selectOption('#compPose', 'espalda');
+  await pagina.getByText('Hacen falta dos fotos de la misma pose para comparar.', { exact: true }).waitFor();
+  await pagina.selectOption('#compPose', 'perfil');
+  await pagina.selectOption('#galeriaPose', 'frente');
+  assert.equal(await pagina.locator('.galeria .foto').count(), 48);
+  await pagina.click('[data-pagina-fotos="1"]');
+  assert.equal(await pagina.locator('.galeria .foto').count(), 7);
+  await pagina.selectOption('#contornoSitio', 'pecho');
+  assert.ok((await pagina.locator('#contenido').innerText()).includes('Datos insuficientes para una tendencia'));
+  await pagina.getByText('Todos los contornos por fecha', { exact: true }).click();
+  await pagina.getByRole('heading', { name: 'Composición corporal (estimación)', exact: true }).waitFor();
+  await pagina.setViewportSize({ width: 420, height: 900 });
+  assert.ok(await pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+  await foto('25-fotos-estrecha.png');
+  ok('fotos: ausentes, idénticas, pose sin pareja, paginación, tablas y 420 px sin desbordamiento');
+
+  await pagina.evaluate(() => {
+    const crear = URL.createObjectURL, liberar = URL.revokeObjectURL;
+    window.urlsPrueba = new Set();
+    window.restaurarUrlsPrueba = () => { URL.createObjectURL = crear; URL.revokeObjectURL = liberar; };
+    URL.createObjectURL = blob => { const u = crear.call(URL, blob); urlsPrueba.add(u); return u; };
+    URL.revokeObjectURL = u => { urlsPrueba.delete(u); return liberar.call(URL, u); };
+  });
+  await pagina.click('[data-modo-foto="cortina"]');
+  await pagina.waitForFunction(() => document.querySelectorAll('[data-original] img').length === 2);
+  await pagina.evaluate(() => { location.hash = '#recuperacion'; });
+  await pagina.waitForFunction(() => !document.querySelector('#comparadorFotos') && urlsPrueba.size === 0);
+  await pagina.evaluate(() => { restaurarUrlsPrueba(); location.hash = '#fisica'; });
+  await pagina.locator('#compPose').waitFor();
+  ok('fotos: cambio de sección libera object URLs de originales y miniaturas, también con lecturas en curso');
+
+  // Corrección posterior en JSON, sin importar otra vez los binarios.
+  const corregida5 = structuredClone(raw5);
+  corregida5.medidas.fotos[0].fecha = '2026-07-02'; corregida5.medidas.fotos[0].pose = 'espalda';
+  const p5c = escribir('fase5-corregida.json', JSON.stringify(corregida5));
+  await pagina.setInputFiles('#inputDatos', [p5c]);
+  await pagina.getByText('¿Dónde guardar esta copia?').waitFor();
+  await pagina.check('input[name="destino"][value="actualizar"]');
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+  await pagina.click('[data-accion="cerrar"]');
+  assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.fotosMeta.map(f => [f.archivo, f.sha256])), hashesAntes);
+  const binariosIntactos = await pagina.evaluate(async () => {
+    for (const f of Escritorio.estado.fotosMeta){
+      const binario = await Almacen.leer('imagenes', [f.espacioId, f.archivo]);
+      const h = await crypto.subtle.digest('SHA-256', await binario.blob.arrayBuffer());
+      const hex = [...new Uint8Array(h)].map(x => x.toString(16).padStart(2, '0')).join('');
+      if (hex !== f.sha256) return false;
+    }
+    return true;
+  });
+  assert.equal(binariosIntactos, true);
+  await pagina.evaluate(() => { location.hash = '#fisica'; });
+  await pagina.locator('#compPose').waitFor();
+  assert.equal(await pagina.evaluate(a => Escritorio.estado.galeria.find(f => f.archivo === a).pose, archivoA), 'espalda');
+  assert.equal(await pagina.locator('#compFotoA option').filter({ hasText: archivoA }).count(), 0);
+  assert.equal(await pagina.evaluate(a => Escritorio.estado.fis.encuadres[a].zoom, archivoA), 1);
+  await pagina.selectOption('#compPose', 'espalda');
+  assert.ok((await pagina.locator('#compFotoA').innerText()).includes('2 jul 2026'));
+  ok('fotos: nueva corrección JSON cambia fecha/pose y selección sin renombrar, duplicar o perder encuadres');
+
+  // ZIP sin JSON también permite comparación y contornos; metadatos sin archivo visibles.
+  const paginaConJSON = pagina;
+  // Origen distinto: también aisla IndexedDB en Chromium con --single-process.
+  const servidorSoloZip = http.createServer(servidor.listeners('request')[0]);
+  await new Promise(ok => servidorSoloZip.listen(0, '127.0.0.1', ok));
+  servidorSoloZip.unref();
+  const origenSoloZip = `http://127.0.0.1:${servidorSoloZip.address().port}`;
+  origenesPrueba.add(origenSoloZip);
+  const zipSolo5 = escribir('fotos-solo-fase5.zip', crearZip([
+    { nombre: archivoA, datos: img[0] }, { nombre: archivoB, datos: img[1] },
+    { nombre: 'medidas.json', datos: JSON.stringify(raw5.medidas) },
+  ]));
+  pagina = await ctx.newPage();
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  await pagina.goto(`${origenSoloZip}/escritorio/`);
+  await pagina.waitForSelector('html[data-listo="1"]');
+  await pagina.setInputFiles('#inputDatos', [zipSolo5]);
+  await pagina.getByText('Revisa la importación').waitFor();
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+  await pagina.click('[data-accion="cerrar"]');
+  assert.equal(await pagina.evaluate(() => Escritorio.estado.inst), null);
+  assert.equal(await pagina.evaluate(() => Escritorio.estado.galeria.filter(f => !f.tieneImagen).length), 56);
+  await pagina.evaluate(() => { location.hash = '#fisica'; });
+  await pagina.waitForFunction(() => document.querySelectorAll('[data-original] img').length === 2);
+  await pagina.getByText('Contornos del índice del ZIP.', { exact: false }).waitFor();
+  assert.equal(await pagina.evaluate(() => Escritorio.estado.fis.encuadres['foto_20260601_frente.jpg']), undefined);
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  await foto('26-fotos-solo-zip.png');
+  ok('fotos: ZIP independiente conserva medidas, metadatos ausentes y separación de encuadres entre espacios');
+  await pagina.close(); servidorSoloZip.close(); pagina = paginaConJSON;
 
   // --- 15. Aislamiento y privacidad ---
   assert.equal(await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes')), carteraAntes);

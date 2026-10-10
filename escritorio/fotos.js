@@ -144,7 +144,7 @@ const FotosTL = {
 
   /* Galería efectiva de un espacio: fotos con imagen guardada y fotos del
      índice cuya imagen falta. Ordenada por fecha, pose y archivo. */
-  resolver({ indiceJson = null, guardadas = [] }){
+  resolver({ indiceJson = null, indiceZip = null, guardadas = [] }){
     const out = [];
     const vistas = new Set();
     for (const g of guardadas){
@@ -154,10 +154,11 @@ const FotosTL = {
       out.push({ ...a.ficha, archivo: g.archivo, fuente: a.fuente, fueraDeCopia: a.fueraDeCopia,
                  discrepancia: a.discrepancia, tieneImagen: true });
     }
-    if (indiceJson){
-      indiceJson.fotos.forEach((f, archivo) => {
+    const pendientes = indiceJson || indiceZip;
+    if (pendientes){
+      pendientes.fotos.forEach((f, archivo) => {
         if (vistas.has(archivo)) return;
-        out.push({ ...f, fuente: 'json', fueraDeCopia: false, discrepancia: null, tieneImagen: false });
+        out.push({ ...f, fuente: indiceJson ? 'json' : 'zip', fueraDeCopia: false, discrepancia: null, tieneImagen: false });
       });
     }
     const orden = { frente: 0, perfil: 1, espalda: 2 };
