@@ -20,7 +20,8 @@ const E = {
   seccion: 'datos', ocupado: false, abort: null, P: null,
   urls: new Set(), urlModal: null, obs: null, canal: null,
   estimacion: null, persistido: null, origenModal: null,
-  M: null, errorModelo: null,
+  M: null, errorModelo: null, fisica: null, espacioFisica: null,
+  fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 },
   st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, periodos: null },
 };
 
@@ -96,7 +97,7 @@ async function cargarEstado(){
     if (E.raw && E.raw.medidas && typeof E.raw.medidas === 'object' && !Array.isArray(E.raw.medidas))
       E.indiceJson = FotosTL.leerIndice(E.raw.medidas);
     E.fotosMeta = await Almacen.todos('fotos', E.espacio.id);
-    E.galeria = FotosTL.resolver({ indiceJson: E.indiceJson, guardadas: E.fotosMeta });
+    E.galeria = FotosTL.resolver({ indiceJson: E.indiceJson, indiceZip: FotosTL.leerIndice(E.espacio.indiceZip), guardadas: E.fotosMeta });
     E.importaciones = (await Almacen.todos('importaciones', E.espacio.id)).sort((a, b) => b.id - a.id);
     // Modelo de análisis: se recalcula desde el texto original en cada carga.
     if (E.raw){
@@ -104,6 +105,13 @@ async function cargarEstado(){
       catch (e) { E.errorModelo = e && e.message ? e.message : String(e); console.error(e); }
     }
   }
+  E.fisica = Evolucion.preparar(E.raw, E.espacio?.indiceZip);
+  const espacioId = E.espacio?.id || null;
+  if (espacioId !== E.espacioFisica){
+    Object.assign(E.fis, { pose: null, a: null, b: null, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 });
+    E.espacioFisica = espacioId;
+  }
+  if (!E.fis.dirty) E.fis.encuadres = espacioId ? (await Almacen.leer('meta', `encuadres:${espacioId}`))?.valor || {} : {};
   E.st.periodos = E.espacio ? (await Almacen.leer('meta', `periodos:${E.espacio.id}`))?.valor || null : null;
   E.estimacion = await Almacen.estimacion();
   E.persistido = await Almacen.persistido();
@@ -670,7 +678,10 @@ function tarjetaFotos(modo = 'galeria'){
       Puedes importar el ZIP que exporta la app desde Ajustes → Copia de seguridad → Exportar fotos.</p>
       <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button></div></div>`;
   }
-  const visibles = modo === 'resumen' ? g.filter(f => !f.tieneImagen || f.fuente === 'nombre' || f.fueraDeCopia) : g;
+  const filtradas = modo === 'resumen' ? g.filter(f => !f.tieneImagen || f.fuente === 'nombre' || f.fueraDeCopia) : g.filter(f => E.fis.galeriaPose === 'todas' || f.pose === E.fis.galeriaPose);
+  const porPagina = 48, paginas = Math.max(1, Math.ceil(filtradas.length / porPagina));
+  E.fis.pagina = Math.min(E.fis.pagina, paginas - 1);
+  const visibles = modo === 'resumen' ? filtradas : filtradas.slice().reverse().slice(E.fis.pagina * porPagina, (E.fis.pagina + 1) * porPagina);
   const porDia = new Map();
   visibles.forEach(f => { if (!porDia.has(f.fecha)) porDia.set(f.fecha, []); porDia.get(f.fecha).push(f); });
   const dias = [...porDia.keys()].sort().reverse();
@@ -685,6 +696,7 @@ function tarjetaFotos(modo = 'galeria'){
     ${pend ? '<p class="muted" style="font-size:12.5px">Las fotos sin imagen están registradas en tu copia de datos, pero su archivo no se ha importado. Importa el ZIP de fotos para verlas; sus datos no se borran.</p>' : ''}
     <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button>
       ${modo === 'resumen' ? '<button class="btn sec" type="button" data-ir="fisica">Ver la galería</button>' : ''}</div>
+    ${modo === 'galeria' ? `<div class="foto-filtro"><label for="galeriaPose">Filtrar galería por pose <select id="galeriaPose">${[['todas', 'Todas'], ...Object.entries(POSE_TXT)].map(([k, txt]) => `<option value="${k}"${E.fis.galeriaPose === k ? ' selected' : ''}>${txt}</option>`).join('')}</select></label><span>${filtradas.length} fotos · Página ${E.fis.pagina + 1} de ${paginas}</span><button class="btn sec" type="button" data-pagina-fotos="-1"${E.fis.pagina === 0 ? ' disabled' : ''}>Anterior</button><button class="btn sec" type="button" data-pagina-fotos="1"${E.fis.pagina >= paginas - 1 ? ' disabled' : ''}>Siguiente</button></div>${filtradas.length ? '' : '<p class="muted">No hay fotos de esta pose.</p>'}` : ''}
     ${modo === 'resumen' && visibles.length ? '<h4 class="sub-h">Fotos que conviene revisar</h4>' : ''}
     ${dias.map(d => `<section class="galeria-dia"><h4>${fmtDia(d)}</h4><div class="galeria">
       ${porDia.get(d).map(fotoHtml).join('')}</div></section>`).join('')}
@@ -720,6 +732,39 @@ function tarjetaHistorial(){
   return `<div class="card"><h3>Historial de importaciones</h3><div class="tabla-scroll"><table>
     <thead><tr><th>Fecha</th><th>Qué se importó</th><th>Archivos</th></tr></thead>
     <tbody>${E.importaciones.slice(0, 20).map(fila).join('')}</tbody></table></div></div>`;
+}
+
+function fisicaFotosHtml(){
+  return FisicaVista.comparador(E.galeria, E.fisica, E.raw, E.fis) + tarjetaFotos('galeria');
+}
+function actualizarOutput(i){
+  const out = document.querySelector(`output[for="${i.id}"]`);
+  if (out) out.textContent = i.value;
+}
+function aplicarEncuadres(){
+  $$('[data-original]').forEach(m => {
+    const enc = Evolucion.encuadre(E.fis.encuadres[m.dataset.original]);
+    const img = m.querySelector('img');
+    if (img) img.style.transform = `translate(${enc.x}%, ${enc.y}%) scale(${enc.zoom})`;
+  });
+}
+function activarOriginales(){
+  const espacioId = E.espacio?.id;
+  $$('[data-original]').forEach(async marco => {
+    try {
+      const archivo = marco.dataset.original;
+      const reg = await Almacen.leer('imagenes', [espacioId, archivo]);
+      if (!document.contains(marco) || E.espacio?.id !== espacioId) return;
+      if (!reg){ marco.textContent = 'Imagen no disponible. Importa de nuevo el ZIP.'; return; }
+      const url = URL.createObjectURL(reg.blob); E.urls.add(url);
+      const img = document.createElement('img');
+      const f = E.galeria.find(f => f.archivo === archivo);
+      img.alt = `${POSE_TXT[f.pose]}, ${fmtDia(f.fecha)}, foto ${marco.dataset.lado.toUpperCase()}`;
+      img.onload = () => { if (document.contains(marco)){ marco.replaceChildren(img); aplicarEncuadres(); } };
+      img.onerror = () => { if (document.contains(marco)) marco.textContent = 'Imagen ilegible. Importa de nuevo el ZIP.'; URL.revokeObjectURL(url); E.urls.delete(url); };
+      img.src = url;
+    } catch (_) { if (document.contains(marco)) marco.textContent = 'No se pudo cargar. Vuelve a seleccionar la foto o importa el ZIP.'; }
+  });
 }
 
 // ---------- miniaturas con carga diferida ----------
@@ -759,6 +804,8 @@ async function verFoto(archivo){
   abrirModal(`<h2 id="modalTitulo">${esc(pose)} · ${fmtDia(f.fecha)}</h2>
     <img class="foto-grande" src="${E.urlModal}" alt="${esc(`${pose}, ${fmtDia(f.fecha)}`)}">
     <p class="muted mono-peq" style="margin-top:8px">${esc(archivo)}${f.pesoKg != null ? ` · ${fmtNum(f.pesoKg)} kg` : ''}</p>
+    ${FisicaVista.contexto(f, E.fisica, E.raw)}
+    ${E.fisica.sitios.length ? FisicaVista.asociaciones(f, f, E.fisica) : ''}
     ${f.discrepancia ? `<p class="muted" style="font-size:12.5px">El índice del ZIP la fechaba el ${fmtDia(f.discrepancia.zip.fecha)} (${esc(POSE_TXT[f.discrepancia.zip.pose] || '')}); se usa la ficha corregida de tu copia de datos.</p>` : ''}
     ${f.fuente === 'nombre' ? '<p class="muted" style="font-size:12.5px">Fecha y pose deducidas del nombre del archivo: ningún índice la describe.</p>' : ''}
     <div class="mod-acciones"><button class="btn pri" type="button" data-accion="cerrar" autofocus>Cerrar</button></div>`, { ancho: true });
@@ -890,6 +937,7 @@ function render(){
   }
   cont.innerHTML = renderSeccion();
   activarMiniaturas();
+  activarOriginales();
 }
 
 function sinCopiaHtml(){
@@ -904,10 +952,10 @@ function sinCopiaHtml(){
 function renderSeccion(){
   const M = E.M;
   if (E.seccion === 'fisica' && !M){
-    return `<div class="cabecera-seccion"><h1>Evolución física</h1></div>${sinCopiaHtml()}${tarjetaFotos('galeria')}`;
+    return `<div class="cabecera-seccion"><h1>Evolución física</h1></div>${sinCopiaHtml()}${fisicaFotosHtml()}${VistasEsc.contornos(E.fisica, E.fis)}`;
   }
   if (!M) return sinCopiaHtml();
-  const ctx = { inst: E.inst, galeriaHtml: () => tarjetaFotos('galeria') };
+  const ctx = { inst: E.inst, galeriaHtml: fisicaFotosHtml, fisica: E.fisica, fis: E.fis };
   switch (E.seccion){
     case 'resumen': return VistasEsc.resumen(M, ctx);
     case 'entrenamiento': return VistasEsc.entrenamiento(M, E.st);
@@ -971,6 +1019,15 @@ function trampaFoco(ev){
 async function accion(nombre, el){
   switch (nombre){
     case 'cerrar': cerrarModal(); break;
+    case 'guardar-encuadres': {
+      try {
+        await Almacen.escribir([{ almacen: 'meta', put: { clave: `encuadres:${E.espacio.id}`, valor: E.fis.encuadres } }]);
+        E.fis.dirty = false;
+        $('#estadoEncuadres').textContent = Almacen.modo === 'temporal' ? 'Modo temporal: se perderán al cerrar' : 'Encuadres guardados';
+        anunciar('Encuadres guardados');
+      } catch (e) { modalMensaje('No se guardaron los encuadres', `<p>${esc(e.message || String(e))}. Las fotos originales siguen intactas.</p>`); }
+      break;
+    }
     case 'importar-datos': $('#inputDatos').click(); break;
     case 'importar-fotos': $('#inputFotos').click(); break;
     case 'cancelar-proceso': if (E.abort) E.abort.abort(); break;
@@ -1031,6 +1088,16 @@ function init(){
       return;
     }
     if (av && av.dataset.accionVista === 'ver-todas'){ E.st.verTodas = true; render(); return; }
+    const mf = ev.target.closest('[data-modo-foto]');
+    if (mf){ E.fis.modo = mf.dataset.modoFoto; render(); $(`[data-modo-foto="${E.fis.modo}"]`)?.focus(); return; }
+    const rest = ev.target.closest('[data-restaurar-foto]');
+    if (rest){
+      const archivo = rest.dataset.restaurarFoto; E.fis.encuadres[archivo] = Evolucion.encuadre(); E.fis.dirty = true;
+      document.querySelectorAll('input[data-enc]').forEach(i => { if (i.dataset.archivo === archivo){ i.value = E.fis.encuadres[archivo][i.dataset.enc]; actualizarOutput(i); } });
+      aplicarEncuadres(); $('#estadoEncuadres').textContent = 'Ajustes sin guardar'; return;
+    }
+    const pag = ev.target.closest('[data-pagina-fotos]');
+    if (pag && !pag.disabled){ E.fis.pagina += Number(pag.dataset.paginaFotos); render(); $('#galeriaPose')?.focus(); return; }
     const ver = ev.target.closest('[data-ver]');
     if (ver){ verFoto(ver.dataset.ver); return; }
   });
@@ -1045,6 +1112,18 @@ function init(){
   });
   // Buscador de ejercicios: se filtra al escribir sin perder el foco.
   $('#contenido').addEventListener('input', ev => {
+    const i = ev.target;
+    if (i.dataset.enc){
+      const archivo = i.dataset.archivo;
+      E.fis.encuadres[archivo] = Evolucion.encuadre({ ...Evolucion.encuadre(E.fis.encuadres[archivo]), [i.dataset.enc]: Number(i.value) });
+      E.fis.dirty = true; aplicarEncuadres(); actualizarOutput(i); $('#estadoEncuadres').textContent = 'Ajustes sin guardar'; return;
+    }
+    if (i.id === 'fotoCorte' || i.id === 'fotoOpacidad'){
+      E.fis[i.id === 'fotoCorte' ? 'corte' : 'opacidad'] = Number(i.value);
+      const c = $('.comparador-lienzo');
+      c?.style.setProperty(i.id === 'fotoCorte' ? '--corte' : '--opacidad', i.id === 'fotoCorte' ? `${i.value}%` : Number(i.value) / 100);
+      actualizarOutput(i); return;
+    }
     if (ev.target.id !== 'buscaEj') return;
     E.st.busca = ev.target.value;
     const pos = ev.target.selectionStart;
@@ -1063,6 +1142,16 @@ function init(){
     if (guardado) $('#compararPeriodos button[type="submit"]')?.focus();
   });
   $('#contenido').addEventListener('change', async ev => {
+    const idFis = ev.target.id;
+    if (['compPose', 'compFotoA', 'compFotoB', 'contornoSitio', 'galeriaPose'].includes(idFis)){
+      const valor = ev.target.value;
+      if (idFis === 'compPose'){ E.fis.pose = valor; E.fis.a = null; E.fis.b = null; }
+      else if (idFis === 'compFotoA') E.fis.a = valor;
+      else if (idFis === 'compFotoB') E.fis.b = valor;
+      else if (idFis === 'contornoSitio') E.fis.sitio = valor;
+      else { E.fis.galeriaPose = valor; E.fis.pagina = 0; }
+      render(); $(`#${idFis}`)?.focus(); anunciar('Evolución física actualizada'); return;
+    }
     // Comparar dos sesiones de la ficha: se vuelve a pintar y el foco sigue
     // en el mismo selector.
     if (ev.target.id === 'compA' || ev.target.id === 'compB'){
@@ -1112,7 +1201,7 @@ function init(){
   Almacen.alCambiarVersion = () => {
     $('#avisoGlobal').innerHTML = '<div class="alerta ambar"><span class="tag">Actualización</span><span>Se ha abierto una versión más reciente del escritorio en otra pestaña. Recarga esta página.</span></div>';
   };
-  window.addEventListener('pagehide', liberarUrls);
+  window.addEventListener('pagehide', () => { liberarUrls(); if (E.urlModal) URL.revokeObjectURL(E.urlModal); });
 
   arrancar();
 }

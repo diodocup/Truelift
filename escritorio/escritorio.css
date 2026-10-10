@@ -55,11 +55,41 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 .foto{margin:0;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm);overflow:hidden}
 .foto button{display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:left}
 .foto .marco{aspect-ratio:3/4;background:var(--sup3);display:flex;align-items:center;justify-content:center}
-.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto img{width:100%;height:100%;object-fit:contain;display:block}
 .foto .hueco{padding:10px;text-align:center;font-size:12px;color:var(--txt3)}
 .foto figcaption{padding:6px 8px;font-size:12px;display:flex;flex-direction:column;gap:3px}
 .foto figcaption .chip{align-self:flex-start;font-size:9px}
 .foto-grande{max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:10px}
+
+/* Comparación: cada imagen ocupa el mismo marco y conserva su proporción.
+   La cortina recorta la capa, no cambia su ancho ni escala por eje. */
+.foto-selectores{display:grid;grid-template-columns:130px minmax(0,1fr) minmax(0,1fr);gap:12px}
+.foto-selectores label,.foto-filtro label,.encuadre label{display:block;font-size:12px;color:var(--txt2)}
+.foto-selectores select{display:block;width:100%;margin-top:5px;min-width:0}
+.comparador-etiquetas{display:flex;justify-content:space-between;gap:10px;margin:14px 0 6px;font:600 12px var(--mono)}
+.comparador-lienzo{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;isolation:isolate}
+.comparador-marco{position:relative;aspect-ratio:3/4;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--sup3);border-radius:8px;min-width:0}
+.comparador-marco img{width:100%;height:100%;object-fit:contain;display:block;transform-origin:center;flex-shrink:0}
+.comparador-marco .hueco{padding:20px;font-size:13px;color:var(--txt3);text-align:center}
+.comparador-lienzo:not(.modo-lado){display:block;width:min(100%,540px);aspect-ratio:3/4;margin:0 auto}
+.comparador-lienzo:not(.modo-lado) .comparador-marco{position:absolute;inset:0;width:100%;height:100%}
+.modo-cortina .foto-b{clip-path:inset(0 calc(100% - var(--corte)) 0 0);border-radius:0}
+.modo-cortina::after{content:'';position:absolute;top:0;bottom:0;left:var(--corte);width:2px;background:var(--lima);pointer-events:none;z-index:2}
+.modo-superposicion .foto-b{opacity:var(--opacidad)}
+.comparador-control{max-width:540px;margin:12px auto;font-size:13px}
+.comparador-control input,.encuadre input{display:block;width:100%;accent-color:var(--lima);margin:6px 0 12px}
+.encuadres,.comparador-contextos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.encuadre{min-width:0;border:1px solid var(--borde);border-radius:8px;padding:12px}
+.encuadre legend{font-size:12px;color:var(--txt2)}
+.encuadre output{float:right;font-family:var(--mono)}
+.foto-contexto{font-size:12.5px;line-height:1.6;overflow-wrap:anywhere}
+.foto-filtro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--txt3)}
+@media(max-width:640px){
+  .foto-selectores{grid-template-columns:minmax(0,1fr)}
+  .encuadres,.comparador-contextos{grid-template-columns:minmax(0,1fr)}
+  .comparador-lienzo{gap:6px}
+  .comparador-etiquetas{font-size:10px}
+}
 
 /* Tablas de historial. */
 .tabla-scroll{overflow-x:auto}
