@@ -797,15 +797,15 @@ const COLOR_ESTADO = { verde: TL.lima, ambar: TL.ambar, rojo: TL.naranja };
 // ---------------------------------------------------------------
 // MI RUTINA
 // ---------------------------------------------------------------
-function rutina(M){
-  const out = ['<div class="cabecera-seccion"><h1>Mi rutina</h1></div>'];
+function rutina(M, { sinCabecera = false } = {}){
+  const out = [sinCabecera ? '' : '<div class="cabecera-seccion"><h1>Mi rutina</h1></div>'];
   const lineas = M.planMod;
   if (!lineas.length){
     out.push(tarjeta('Rutina', `<p>Tu copia no incluye una rutina personalizada. Si usas una de las rutinas prefijadas de la app, consúltala en el móvil.</p>`));
     return out.join('');
   }
   const aviso = M.planConocido
-    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana. Es de consulta; el editor para preparar cambios llegará en una fase posterior.</p>`
+    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana. Es de consulta: para preparar cambios crea un borrador.</p>`
     : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días o sistema que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
   const dias = [...new Set(lineas.map(l => l.dia))];
   const bloques = dias.map(d => {

@@ -170,3 +170,51 @@ img[data-mini]:not([src]){visibility:hidden}
 .periodos-sel input{min-width:0;max-width:100%;color-scheme:dark}
 .aviso-comparacion{border-left:3px solid var(--ambar);padding-left:10px;color:var(--txt2)}
 @media (max-width:640px){.periodos-sel{grid-template-columns:1fr}}
+
+/* ---------- Mi rutina: planificador personal (fase 6) ---------- */
+.rut-estado{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.rut-estado > div{padding:2px 0 2px 12px;border-left:3px solid var(--borde)}
+.rut-estado > div:nth-child(2){border-left-color:var(--lima)}
+.rut-estado h3{margin:0 0 6px}
+.rut-estado p{margin:4px 0}
+.rut-barra .fila-botones{margin-top:0}
+.rut-barra .fila-botones + .fila-botones{margin-top:10px;padding-top:10px;border-top:1px solid var(--borde)}
+.rut-dias{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:12px;align-items:start;margin-bottom:12px}
+.rut-dias > .card{margin:0}
+.rut-dia-cab{display:flex;gap:8px;align-items:flex-end}
+.rut-dia-cab .rut-campo.nombre{flex:1}
+.rut-dia-resumen{margin:6px 0 8px;font-size:12px}
+.rut-filas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rut-fila{padding:8px 10px;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm)}
+.rut-fila.en-ss{border-left:3px solid var(--azul)}
+.rut-fila-cab{display:flex;gap:8px;align-items:flex-end}
+.rut-num{font:800 12px var(--mono);color:var(--txt3);min-width:16px;padding-bottom:9px}
+.rut-mover{display:flex;gap:4px;padding-bottom:4px}
+.rut-mover .btn-mini{min-width:30px;min-height:30px}
+.rut-fila-campos{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:6px;align-items:flex-end}
+.rut-campo{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--txt3);min-width:0}
+.rut-campo > span{font:600 10.5px var(--mono);letter-spacing:.03em}
+.rut-campo input,.rut-campo select{width:100%;min-width:0}
+.rut-campo.ej{flex:1}
+.rut-campo.pat{width:150px}
+.rut-campo.n2{width:74px}
+.rut-campo.n3{width:124px}
+.rut-campo.n4{width:184px}
+.rut-campo.nombre{min-width:180px}
+.rut-fijo b{display:block;padding:7px 0;font:600 12px var(--mono);color:var(--txt2)}
+.rut-ss{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--txt2);padding-bottom:7px}
+.rut-ss input{margin:0}
+.rut-meta{margin:6px 0 0}
+.rut-cambios{margin:0;padding-left:18px}
+.rut-cambios > li{margin:6px 0}
+.rut-cambios ul{margin:4px 0;padding-left:14px;list-style:none}
+.rut-cambios ul li{margin:3px 0;font-size:13px}
+.rut-cambios .chip{font-size:9px}
+.rut-analisis{grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))}
+b.sube{color:var(--lima)}
+b.baja{color:var(--naranja)}
+@media (max-width:560px){
+  .rut-fila-cab{flex-wrap:wrap}
+  .rut-campo.pat,.rut-campo.n4{width:calc(50% - 4px)}
+  .rut-barra .spacer{display:none}
+}

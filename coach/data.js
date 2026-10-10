@@ -94,6 +94,8 @@ function normalizar(raw, { hoy = new Date() } = {}){
     dropSet: p.dropSet === true,
     dropPct: (typeof p.dropPct === 'number') ? p.dropPct : null,
     superConAnterior: p.superConAnterior === true,
+    restPause: p.restPause === true,
+    pausaRpSeg: (typeof p.pausaRpSeg === 'number') ? p.pausaRpSeg : null,
   }));
 
   const grupoDe = new Map();

@@ -11,7 +11,8 @@ export function cargar(...archivos){
     if (cargados.has(a)) continue;
     const codigo = fs.readFileSync(new URL(a, dir), 'utf8');
     const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'comparacion.js': 'Comparacion', 'vistas.js': 'VistasEsc',
-                     'fotos.js': 'FotosTL', 'evolucion.js': 'Evolucion', 'fisica-vista.js': 'FisicaVista', 'almacen.js': 'Almacen' }[a];
+                     'fotos.js': 'FotosTL', 'evolucion.js': 'Evolucion', 'fisica-vista.js': 'FisicaVista', 'almacen.js': 'Almacen',
+                     'planificador.js': 'Planificador', 'rutina-vista.js': 'RutinaVista' }[a];
     vm.runInThisContext(`${codigo}\n;globalThis.${nombre} = ${nombre};`, { filename: a });
     cargados.add(a);
   }
@@ -21,8 +22,11 @@ export function cargar(...archivos){
 // Scripts del Coach que reutiliza el escritorio (../coach/), en el mismo
 // realm. `nombres` lista los globales que exporta cada uno.
 const GLOBALES_COACH = { 'motor.js': ['Motor'], 'data.js': ['esc', 'parseFecha', 'fmtISO', 'soloDia', 'diasEntre',
-  'normalizar', 'Metricas', 'VFC', 'FCReposo', 'Fatiga', 'Salud', 'num'],
-  'nutricion.js': ['Nutricion', 'normalizarNutricion', 'NUT'], 'catalogo.js': ['CAT_FICHA', 'CAT_GRUPO_DE'] };
+  'normalizar', 'Metricas', 'VFC', 'FCReposo', 'Fatiga', 'Salud', 'num', 'patronVigente'],
+  'nutricion.js': ['Nutricion', 'normalizarNutricion', 'NUT'],
+  'catalogo.js': ['CAT_FICHA', 'CAT_GRUPO_DE', 'CAT_LISTAS', 'CAT_PATRONES', 'CAT_PATRON_GRUPO', 'CAT_DESCANSOS',
+                  'CAT_SISTEMAS', 'OBJETIVOS_GRUPO', 'ORDEN_GRUPOS'],
+  'planner.js': ['Planner'], 'xlsx.js': ['XLSX'], 'plantilla.js': ['PLANTILLA_XLSX'], 'canonico.js': ['CANON_ES'] };
 export function cargarCoach(...archivos){
   for (const a of archivos){
     const clave = `coach/${a}`;

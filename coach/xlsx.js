@@ -16,12 +16,16 @@
    { sistema: 'simple'|'doble',
      dias: [ { nombre, filas: [ { patron, ejercicio, series, rir,
                repsMin, repsMax, descanso, topBack, backoffPct,
-               rirBack, dropSet, dropPct, superConAnterior } ] } ] }
+               rirBack, dropSet, dropPct, superConAnterior,
+               restPause, pausaRpSeg } ] } ] }
    Columnas de cada hoja Día (igual que rutina_excel.dart de la app):
    A patrón · B ejercicio · C series · D RIR · E reps mín · F reps máx ·
    G descanso · H top+back (sí/no) · I % back-off · J RIR back ·
    K nº de superserie (filas consecutivas con el mismo número van
-   enlazadas) · L drop set (sí/no) · M % drop.
+   enlazadas) · L drop set (sí/no) · M % drop · N rest-pause (sí/no) ·
+   O pausa del rest-pause (s).
+   Bloque de biblioteca (hoja Listas, desde W101): W..AC como la app y AD
+   «1» si el ejercicio se mide por tiempo (aditiva, rutina_excel.dart).
    ================================================================ */
 
 const XLSX = {
@@ -38,6 +42,7 @@ const XLSX = {
   MARCA_BIBLIOTECA: 'TRUELIFT_EXERCISES_V1',
   FILA_BIBLIOTECA: 101,
   COLS_BIBLIOTECA: ['W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC'],
+  COL_POR_TIEMPO: 'AD',
 
   // ============================ ZIP ============================
 
@@ -242,6 +247,7 @@ const XLSX = {
         prioridad: this._canon(celdas.get(cPri + r)),
         nota: this._canon(celdas.get(cNot + r)),
         descanso: this._canon(celdas.get(cDes + r)),
+        ...(String(celdas.get(this.COL_POR_TIEMPO + r) ?? '').trim() === '1' ? { porTiempo: true } : {}),
       });
     }
     return out;
@@ -316,6 +322,9 @@ const XLSX = {
           _superserie: num(g('K')) || 0,
           dropSet: /^\s*(s|y|1)/i.test(String(g('L') ?? '')),
           dropPct: num(g('M')),
+          // N/O: rest-pause y su pausa (aditivas, como K..M).
+          restPause: /^\s*(s|y|1)/i.test(String(g('N') ?? '')),
+          pausaRpSeg: num(g('O')) || 20,
           superConAnterior: false,
         });
       }
@@ -366,8 +375,8 @@ const XLSX = {
   _sheetDataDia(nombreDia, filas, sistema){
     const CAB = ['Patrón','Ejercicio','Series','RIR','Reps mín / objetivo',
                  'Reps máx (solo doble)','Descanso (min)','Top+Back (sí/no)','% back-off','RIR back',
-                 'Superserie (nº)','Drop set (sí/no)','% drop'];
-    const COLS = ['A','B','C','D','E','F','G','H','I','J','K','L','M'];
+                 'Superserie (nº)','Drop set (sí/no)','% drop','Rest-pause (sí/no)','Pausa RP (s)'];
+    const COLS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O'];
     let xml = `<x:row r="1">${this._celdaTexto('A1', 2, 'Nombre del día/sesión:')}${this._celdaTexto('B1', 3, nombreDia)}</x:row>`;
     xml += `<x:row r="3">${CAB.map((t, i) => this._celdaTexto(COLS[i] + 3, 4, t)).join('')}</x:row>`;
     const numsSS = this._numerosSuperserie(filas);
@@ -391,6 +400,11 @@ const XLSX = {
       if (f.dropSet && !f.topBack){
         c += this._celdaTexto('L' + r, 5, 'sí');
         n('M', f.dropPct);
+      }
+      // N/O: rest-pause y su pausa (excluyente con T+B y drop set).
+      if (f.restPause && !f.topBack && !f.dropSet){
+        c += this._celdaTexto('N' + r, 5, 'sí');
+        n('O', f.pausaRpSeg || 20);
       }
       xml += `<x:row r="${r}">${c}</x:row>`;
     }
@@ -443,7 +457,7 @@ const XLSX = {
     const marca = this.FILA_BIBLIOTECA;
     const filas = [...filasBase,
       `<x:row r="${marca}">${this._celdaBiblioteca(cNom + marca, this.MARCA_BIBLIOTECA)}</x:row>`];
-    let r = marca + 1;
+    let r = marca + 1, conPorTiempo = false;
     const vistos = new Set();
     for (const e of (Array.isArray(ejercicios) ? ejercicios : [])){
       const nombre = String(e.nombre ?? '').trim();
@@ -461,13 +475,18 @@ const XLSX = {
                  + this._celdaBiblioteca(cPri + r, String(e.prioridad ?? ''))
                  + this._celdaBiblioteca(cNot + r, String(e.nota ?? ''))
                  + this._celdaBiblioteca(cDes + r, String(e.descanso ?? ''));
+      // AD: «1» si se mide por tiempo (la app la escribe solo en ese caso).
+      if (e.porTiempo === true){
+        celdas += this._celdaBiblioteca(this.COL_POR_TIEMPO + r, '1');
+        conPorTiempo = true;
+      }
       filas.push(`<x:row r="${r}">${celdas}</x:row>`);
       r++;
     }
     let salida = xmlHoja.slice(0, ini + '<x:sheetData>'.length)
       + filas.join('') + xmlHoja.slice(fin);
     salida = salida.replace(/(<x:dimension\b[^>]*\bref=")[^"]*(")/,
-      `$1A1:AC${r - 1}$2`);
+      `$1A1:${conPorTiempo ? 'AD' : 'AC'}${r - 1}$2`);
     return salida;
   },
 
@@ -486,8 +505,11 @@ const XLSX = {
     '10) SUPERSERIE (opcional, columna K): pon el MISMO número (1, 2, 3…) en',
     '   filas CONSECUTIVAS del mismo día para alternar sus series (A1→B1→A2…).',
     '   Deja la columna vacía en los ejercicios que van solos.',
-    '11) Las tres modalidades son EXCLUYENTES: una fila lleva H (top+back) o L',
-    '   (drop set), y una superserie solo enlaza filas sin H ni L (series rectas).',
+    '11) Las modalidades son EXCLUYENTES: una fila lleva H (top+back), L (drop',
+    '   set) o N (rest-pause), y una superserie solo enlaza filas sin H, L ni N.',
+    '12) REST-PAUSE (opcional, columna N) = "sí": mismo peso y al fallo en todas',
+    '   las series, con la pausa de la columna O (10-50 s) entre ellas; las reps',
+    '   son el TOTAL de todas las series. Necesita al menos 2 series.',
   ],
 
   _indiceColumna(col){
@@ -578,18 +600,20 @@ const XLSX = {
   },
 
   /* La plantilla embebida trae el desplegable sí/no de la columna H
-     (top+back) pero no el de la L (drop set), que llegó después: se clona.
-     Idempotente. */
+     (top+back) pero no los de la L (drop set) ni la N (rest-pause), que
+     llegaron después: se clonan. Idempotente. */
   _completarValidacionDrop(xmlHoja){
-    if (xmlHoja.includes('"L4:L13"')) return xmlHoja;
-    const re = /<x:dataValidation\b[^>]*sqref="H4:H13"[^>]*>[\s\S]*?<\/x:dataValidation>|<x:dataValidation\b[^>]*sqref="H4:H13"[^>]*\/>/;
-    const m = re.exec(xmlHoja);
-    if (!m) return xmlHoja;
-    const clon = m[0].replaceAll('H4:H13', 'L4:L13');
-    let out = xmlHoja.slice(0, m.index + m[0].length) + clon
-            + xmlHoja.slice(m.index + m[0].length);
-    out = out.replace(/<x:dataValidations count="(\d+)"/,
-      (_, n) => `<x:dataValidations count="${parseInt(n, 10) + 1}"`);
+    let out = xmlHoja;
+    for (const rango of ['L4:L13', 'N4:N13']){
+      if (out.includes(`"${rango}"`)) continue;
+      const re = /<x:dataValidation\b[^>]*sqref="H4:H13"[^>]*>[\s\S]*?<\/x:dataValidation>|<x:dataValidation\b[^>]*sqref="H4:H13"[^>]*\/>/;
+      const m = re.exec(out);
+      if (!m) return out;
+      const clon = m[0].replaceAll('H4:H13', rango);
+      out = out.slice(0, m.index + m[0].length) + clon + out.slice(m.index + m[0].length);
+      out = out.replace(/<x:dataValidations count="(\d+)"/,
+        (_, n) => `<x:dataValidations count="${parseInt(n, 10) + 1}"`);
+    }
     return out;
   },
 
@@ -859,6 +883,8 @@ const XLSX = {
               dropSet: p.dropSet === true,
               dropPct: num(p.dropPct),
               superConAnterior: p.superConAnterior === true,
+              restPause: p.restPause === true,
+              pausaRpSeg: num(p.pausaRpSeg) || 20,
             };
           }),
       })),

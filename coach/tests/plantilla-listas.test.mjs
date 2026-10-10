@@ -71,14 +71,16 @@ test('al exportar se añade la explicación de superserie y drop set', () => {
   assert.equal(XLSX._completarInstrucciones(completada), completada);
 });
 
-test('la columna L (drop set) estrena su desplegable sí/no', () => {
+test('las columnas L (drop set) y N (rest-pause) estrenan su desplegable sí/no', () => {
   const { XLSX, xml } = cargar();
   const dia = xml('xl/worksheets/sheet2.xml');
   // La plantilla embebida solo trae el desplegable de H (top+back).
   assert.equal(dia.includes('"L4:L13"'), false);
+  assert.equal(dia.includes('"N4:N13"'), false);
   const completada = XLSX._completarValidacionDrop(dia);
   assert.match(completada, /sqref="L4:L13"/);
-  assert.match(completada, /<x:dataValidations count="11"/);
+  assert.match(completada, /sqref="N4:N13"/);
+  assert.match(completada, /<x:dataValidations count="12"/);
   assert.equal(XLSX._completarValidacionDrop(completada), completada);
 });
 

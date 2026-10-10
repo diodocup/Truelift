@@ -17,7 +17,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 | 3. Resumen y ficha por ejercicio | Hecha (ver «Fase 3» abajo) | `tests/resumen.test.mjs` + e2e (Chromium) |
 | 4. Comparación de periodos | Hecha (ver «Fase 4») | 15 casos nuevos + e2e Chromium |
 | 5. Evolución física | Hecha (ver «Fase 5») | 18 casos nuevos + 41 comprobaciones e2e Chromium |
-| 6. Planificador personal | Pendiente | — |
+| 6. Planificador personal | Hecha (ver «Fase 6») | 10 casos nuevos (uno con el lector real de la app en Dart) + 7 comprobaciones e2e Chromium + 3 del Coach |
 | 7. Informes y acabado | Pendiente | — |
 | 8. Validación integral | Pendiente | — |
 
@@ -128,7 +128,7 @@ Truelift/
 | R3 | Foto con fecha o pose corregidas sin renombrar | La resolución usa el índice (JSON > ZIP > nombre) y se recalcula al leer |
 | R4 | `coach/sw.js` borra cachés ajenas al activarse | No se registra hoy. Si en la fase 7 se activa el modo sin conexión, limitar su borrado a su prefijo |
 | R5 | Fechas con `Z` de sesiones del reloj | Se toma el día del texto, como el resto del Coach; documentado |
-| R6 | Coach canónico sin rest-pause | Portar desde App-PRO/web-truelift antes de la fase 6 |
+| R6 | Coach canónico sin rest-pause | Hecho en la fase 6: portado desde App-PRO/web-truelift con su prueba |
 | R7 | Métricas del Coach distintas del motor (carga efectiva, sustituciones, drops, récords en verde, estancamiento) | Fase 2: auditar y alinear o etiquetar |
 | R8 | `Nutricion.contexto` usa la fecha de hoy | Fase 2: evaluar con la fecha del último dato de la instantánea |
 | R9 | `file://`: IndexedDB y `crypto.subtle` dependen del navegador | Uso recomendado desde la web publicada o un servidor local; modo temporal explícito si falla la persistencia |
@@ -543,3 +543,101 @@ modelo de contornos, sus claves estables y sus unidades canónicas.
 - Propuesta de revisión: revisar el delta sobre la rama de fase 4 y probar
   JSON+ZIP propios localmente, sobre todo metadatos corregidos. No fusionar
   ni desplegar sin autorización específica.
+
+
+## Fase 6 — Planificador personal de rutinas (10/10/2026)
+
+### Base y rama
+
+- Rama `ccr-cc59bd34-zd5k4p` sobre `main` (`5c0b9bf`, fases 1–4). La fase 5
+  se fusionó en la rama de la fase 4 (PR #23) después de que esta llegara a
+  `main`, así que **no estaba en `main`**: se ha incorporado con un merge de
+  `origin/codex/escritorio-fase5-evolucion-fisica` (sin conflictos) y la fase 6
+  va encima. La PR incluye por tanto el delta de la fase 5.
+- Sin cambios en App-PRO, producción, compras ni permisos PRO.
+
+### Decisiones
+
+- Contrato con el importador del móvil, reutilización y límites:
+  `PLANIFICADOR.md`.
+- **Una sola lógica:** el escritorio carga `coach/planner.js` y `coach/xlsx.js`.
+  Se extraen dos funciones puras del Coach para compartirlas sin copiar
+  (`Planner.aplicarCampo`, `Planner.prepararExportacion`); el resto del
+  Coach sigue igual. Riesgo R6 resuelto: rest-pause portado al Coach.
+- **Simular el importador** (`Planificador.comoLaApp`) en lugar de suponer:
+  la comparación, los avisos y el estado de una exportación usan lo que la
+  app construirá con el Excel, no el borrador tal cual.
+- **Verificación con la app real:** arnés Dart (`tests/arnes-excel/`) que
+  ejecuta `rutina_excel.dart` de App-PRO, sin copiarlo al repositorio.
+- **Estado de lo exportado** a partir de la copia siguiente: «A prueba» si
+  trae `importPendiente`, «En tu móvil» si coincide, «Sin comprobar» si la
+  copia es anterior. Nunca se da por aplicado lo que solo se ha exportado.
+- **Progresión:** se repite la regla de la app (mismo sistema y días → sigue
+  proponiendo cargas en los ejercicios que se repiten) y se remite a su
+  confirmación; no se promete nada más.
+- **Borradores** en el almacén `borradores` reservado desde la v1 (sin
+  migración), varios por espacio, independientes de la instantánea;
+  deshacer en memoria; discrepancia de origen con dos salidas no
+  destructivas.
+- Ajustes del Coach hallados al reutilizar: la biblioteca exportada perdía
+  los grupos secundarios de los ejercicios del entrenador usados en la
+  rutina y sustituía la ficha completa de un ejercicio creado en la app por
+  una mínima; la columna AD (por tiempo) no se escribía ni leía. Corregidos
+  con pruebas. SW del Coach a v16.
+
+### Archivos
+
+- Nuevos: `escritorio/planificador.js` (modelo), `escritorio/rutina-vista.js`
+  (HTML), `escritorio/PLANIFICADOR.md`, `escritorio/tests/planificador.test.mjs`,
+  `escritorio/tests/arnes-excel/`, `coach/tests/rest-pause.test.mjs`,
+  `escritorio/validacion/fase6/27-rutina-editor.png`,
+  `28-rutina-a-prueba.png`, `29-rutina-estrecha.png` (datos sintéticos).
+- Cambiados: `escritorio/app.js` (controlador de Mi rutina), `index.html`,
+  `escritorio.css`, `vistas.js` (rutina de consulta reutilizable),
+  `almacen.js` (borrar el borrador activo con el espacio),
+  `tests/comun.mjs`, `tests/e2e.mjs`, `LEEME.md`; Coach: `planner.js`,
+  `xlsx.js`, `data.js`, `views.js`, `sw.js`, `LEEME.md`,
+  `tests/plantilla-listas.test.mjs`.
+
+### Verificación
+
+- `DART=… node --test escritorio/tests/*.test.mjs` → **122/122** (112 previas
+  + 10 nuevas), sin omitidas: App-PRO estaba al lado y el SDK de Dart 3.13.5
+  se descargó al directorio temporal de la sesión. El caso del lector real
+  lee dos Excel exportados (completo con top+back, drop set, rest-pause,
+  superserie y ejercicio propio por tiempo; y otro en simple con nombre de
+  día con caracteres especiales) y coincide campo a campo con la simulación.
+  Sin `DART` ese caso se omite y lo dice.
+- `node escritorio/tests/e2e.mjs` en **Chromium 141 (Playwright 1.56.1)** →
+  **48/48** (41 previas + 7): borrador desde el móvil con teclado y foco
+  conservado; edición de series, modalidad, ejercicio nuevo con patrón
+  deducido y orden; cambios, avisos y grupos; deshacer/rehacer/partida;
+  fallo de cuota sin pérdida y recarga; exportación con descarga real,
+  registro «sin comprobar» y reapertura del Excel con la misma rutina;
+  actualización JSON que conserva borradores, reconoce «a prueba» y luego
+  «en tu móvil» y resuelve la discrepancia; exportación bloqueada con menos
+  de 2 días; borrar con confirmación; 420 px sin desbordamiento; cierre y
+  reapertura. Cero peticiones externas y cero errores JS.
+- El Excel descargado por Chromium en una exploración previa se leyó también
+  con el lector real de la app (Dart): días, ejercicios, series, reps y
+  rest-pause correctos.
+- Coach: `node --test coach/tests/*.mjs` → **85/93**: los mismos 8 fallos
+  previos; 10 casos nuevos o actualizados pasan (rest-pause portado, AD,
+  biblioteca, validación N).
+- Coach en Chromium (comprobación manual con Playwright y una copia ficticia
+  del repositorio): cargar la rutina del cliente, marcar RP (pausa 20 → 40 s),
+  marcar T+B apaga RP, exportar; el Excel descargado lo lee el lector real de
+  la app. Sin errores JS. No se ha añadido a una batería automática.
+- Capturas revisadas a mano (`validacion/fase6/`).
+
+### Sin verificar / pendiente
+
+- Importación del Excel en un móvil iOS/Android real (se ha usado el lector
+  de la app fuera del dispositivo, no `AppState.importarRutina` completo ni
+  la ruta sin PRO).
+- Firefox y Safari.
+- Fases 7 (informes y acabado) y 8 (validación integral) pendientes.
+- Propuesta de revisión: revisar la PR (incluye el delta de la fase 5), abrir
+  `escritorio/#rutina` con una copia propia, exportar e importar el Excel en el
+  móvil y volver a importar la copia para ver «A prueba» / «En tu móvil».
+  No fusionar ni desplegar sin autorización.

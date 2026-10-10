@@ -226,6 +226,7 @@ const Almacen = {
       { almacen: 'espacios', del: espacioId },
       { almacen: 'meta', del: `encuadres:${espacioId}` },
       { almacen: 'meta', del: `periodos:${espacioId}` },
+      { almacen: 'meta', del: `borradorActivo:${espacioId}` },
     ];
   },
 
