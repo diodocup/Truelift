@@ -103,3 +103,38 @@ compartidos: el cambio solo por hoy ya no se evalúa, las sesiones sin base
 son hueco y los nombres fusionados se leen como en la app. Sustituir el
 diagnóstico del Coach por el del motor queda fuera de este encargo
 (herramienta del entrenador) y se propone como tarea aparte.
+
+## Fase 3: resumen y ficha por ejercicio
+
+Ventana del resumen: los 28 días que terminan en el último registro (la
+misma que la valoración de la app). Código: `escritorio/analisis.js`.
+
+| Lectura | Origen | Regla |
+|---|---|---|
+| Días previstos por semana | Reproducida desde los datos | Semana lunes-domingo. Rutina conocida si la última sesión anterior, las de la semana y la primera posterior tienen la misma identidad `variante|dias|revisión`; sin sesión posterior, si la rutina actual es la de la última sesión. Previstos = `dias` de esa identidad. Si no, «sin calcular». La semana en curso no se valora. Se compara con días con sesión (como `diasEntrenados` del informe mensual). |
+| Evolución de un ejercicio | Reproducida (`resumen_mensual.dart` `_extremosComparables`, cortes de `informe_mensual.dart`) | Mejor 1RM estimado de marca (Epley con RIR, carga efectiva, tope de 18 reps efectivas) por sesión. Media de las dos primeras y las dos últimas (con 2–3, primera y última). Δ ≥ 1 % al alza; Δ < −1 % a la baja; si no, «sin cambios claros». |
+| Sesiones comparables | Más estricta que el informe mensual | Entrenado en verde (como el móvil) **y** sin descarga, molestias ni cambio de un día, con la misma modalidad (normal, top + back-off, drop set, rest-pause) que la última sesión válida. El informe mensual del móvil no excluye descargas ni molestias ni separa modalidades. |
+| Lectura «firme» | Propia del escritorio | ≥ 4 sesiones comparables y las dos últimas por debajo (o por encima) de la media inicial. Solo las firmes se convierten en conclusión. |
+| Marcas | Reproducida (`mejorMarca`) | Cada sesión que supera la mejor marca anterior; la primera fija la referencia. |
+| Recuperación: cambio | Regla de la app aplicada dos veces | `recuperacionValoracion` en los 14 días previos al último registro y en los 14 anteriores. |
+| VFC baja | Reproducida (`tendenciaBajaFechas`) | Noches de los últimos 7 días con la media de 7 noches por debajo del umbral 3 o más días seguidos. |
+| Peso | Filtro de la app (`coach/nutricion.js`) | Tendencia en el último punto del filtro y en el último punto ≤ 28 días antes; cambio solo con ≥ 2 pesajes en la ventana. No se extrapola. |
+
+### Conclusiones y prioridad
+
+| Prioridad | Conclusión | Condición |
+|---|---|---|
+| 1 | Rendimiento por debajo de tu nivel | Valoración de la app = `cae` (sin descarga) |
+| 1 | Intentos agotados | Algún ejercicio con `intentosAgotados`; si además su 1RM baja de forma firme, se dice aquí |
+| 2 | Estado para entrenar bajo | Lectura `cargada` |
+| 2 | VFC baja sostenida | Alguna noche marcada en la última semana |
+| 3 | 1RM estimado a la baja | Lectura firme a la baja (sin los ya citados por intentos) |
+| 3 / 5 | Constancia | ≥ 2 semanas completas con rutina conocida; 3 si faltan días, 5 si se cumplieron |
+| 4 | Nuevas marcas | Alguna marca superada en la ventana |
+| 4,5 | 1RM estimado al alza | Lectura firme al alza |
+| 4 / 5 / 6 | Valoración mejora / mixta / sostiene | Valoración de la app |
+| 5 | Estado para entrenar mejorado | Antes `cargada`, ahora `buena` |
+
+Empates: el orden de la tabla. Se muestran las tres primeras. Ninguna
+recomienda cambios ni hace valoraciones médicas; las limitaciones de cada
+una se muestran con ella.

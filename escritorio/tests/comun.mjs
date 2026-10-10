@@ -159,3 +159,49 @@ export function jpegFalso(semilla, tam = 200){
   for (let i = 4; i < tam; i++) b[i] = (i * 31 + semilla * 17) & 255;
   return b;
 }
+
+/* Copia de la fase 3 (resumen y ficha). Diez semanas desde el lunes
+   3-ago-2026: las cuatro primeras con una rutina de 4 días (revisión 1) y
+   después una de 3 días (revisión 2: Día A press, B sentadilla, C remo).
+   - Press banca: misma carga y repeticiones a la baja → intentos agotados y
+     1RM estimado a la baja en varias sesiones.
+   - Sentadilla: carga al alza cada semana → marcas nuevas y 1RM al alza.
+   - Remo: solo la última sesión floja → no debe dar conclusión.
+   - Curl: drop set y luego series normales → modalidades no comparables.
+   - Semana 5 sin el día B (2 de 3); estado para entrenar bajo al final. */
+export function diaFase3(w, d){
+  const x = new Date(2026, 7, 3 + w * 7 + d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+}
+export function copiaFase3({ hastaSemana = 9 } = {}){
+  const dia = diaFase3;
+  const s = (fecha, d, entradas, extra = {}) => ({ fecha: `${fecha}T18:00:00.000`, dia: d, variante: 'hombre_doble', dias: '3',
+    rutinaRevision: 2, estadoCompuerta: 'verde', estadoSemaforo: 'verde', descarga: false, rawSessionPct: 0,
+    tolPctAtSave: 3, duracionMin: 60, entradas, ...extra });
+  const e = (ejercicio, kg, reps, rir, extra = {}) => ({ ejercicio, kg, reps, rir, obs: '', ...extra });
+  const logs = [];
+  for (let w = 0; w < 4; w++) for (const [d, n] of [[0, 'Día 1'], [1, 'Día 2'], [3, 'Día 3'], [4, 'Día 4']])
+    logs.push(s(dia(w, d), n, [e('Press banca con barra', 75, [10, 10, 10], [2, 2, 2])], { dias: '4', rutinaRevision: 1, descarga: w === 3 }));
+  const press = { 4: [10, 10, 10], 5: [9, 9, 8], 6: [9, 8, 8], 7: [8, 8, 8], 8: [8, 8, 7], 9: [8, 7, 7] };
+  for (let w = 4; w <= hastaSemana; w++){
+    logs.push(s(dia(w, 0), 'Día A', [e('Press banca con barra', 80, press[w], [2, 2, 2])]));
+    if (w !== 5) logs.push(s(dia(w, 2), 'Día B', [e('Sentadilla con barra', 100 + (w - 6) * 2.5, [8, 8, 8], [2, 2, 2])]));
+    logs.push(s(dia(w, 4), 'Día C', [
+      e('Remo con barra', 70, w === 9 ? [8, 8, 8] : [10, 10, 10], [2, 2, 2]),
+      w < 9 ? e('Curl de bíceps con barra', 30, [12, 10, 8], [0, 0, 0], { dropSet: true, kgSets: [30, 22.5, 15] })
+            : e('Curl de bíceps con barra', 25, [12, 12, 12], [1, 1, 1]),
+    ]));
+  }
+  const readinessDiario = [];
+  for (let w = 6; w <= hastaSemana; w++) for (const d of [0, 2, 4])
+    readinessDiario.push({ fecha: dia(w, d), sueno: 3, animo: 3, estadoEntrenar: w >= 8 ? 55 : 85 });
+  const plan = [
+    { id: 'a1', dia: 'Día A', orden: 1, patron: 'Empuje horizontal', grupo: 'Pectoral', ejercicio: 'Press banca con barra', series: 3, reps: '8-10', rir: '2' },
+    { id: 'b1', dia: 'Día B', orden: 1, patron: 'Rodilla', grupo: 'Cuádriceps', ejercicio: 'Sentadilla con barra', series: 3, reps: '6-8', rir: '2' },
+    { id: 'c1', dia: 'Día C', orden: 1, patron: 'Tirón horizontal', grupo: 'Espalda', ejercicio: 'Remo con barra', series: 3, reps: '8-10', rir: '2' },
+    { id: 'c2', dia: 'Día C', orden: 2, patron: 'Aislamiento', grupo: 'Bíceps', ejercicio: 'Curl de bíceps con barra', series: 3, reps: '10-12', rir: '1' },
+  ];
+  return { sexo: 'hombre', sistema: 'doble', dias: '3', rutinaRevision: 2, planModKey: 'hombre_doble|3', planMod: plan,
+    pesoCorporal: 82, fasePeso: 'normo', unidadPeso: 'kg', readinessActivo: true, logs, readinessDiario,
+    nutricion: { schemaVersion: 3, activo: true, pesajes: Array.from({ length: 4 * (hastaSemana - 4) }, (_, i) => ({ fecha: dia(5 + Math.floor(i / 4), i % 4), pesoKg: 82 - i * 0.05 })) } };
+}
