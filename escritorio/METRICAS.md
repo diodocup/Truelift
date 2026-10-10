@@ -138,3 +138,39 @@ misma que la valoración de la app). Código: `escritorio/analisis.js`.
 Empates: el orden de la tabla. Se muestran las tres primeras. Ninguna
 recomienda cambios ni hace valoraciones médicas; las limitaciones de cada
 una se muestran con ella.
+
+
+## Fase 4 — comparación entre periodos
+
+`comparacion.js` reutiliza `Analisis` y `Motor`; no modifica el JSON ni las
+reglas móviles. Los intervalos son inclusivos, en días locales. Su duración
+se cuenta por componentes de calendario, independiente del horario de verano.
+
+| Dato | Definición en el comparador | Límite |
+|---|---|---|
+| Cobertura | Primer registro fechado de fuerza, recuperación, pesajes o contornos hasta último registro disponible | No acredita que cada día se registrara todo |
+| Frecuencia | Sesiones y días distintos con fuerza / número de semanas lunes–domingo completas dentro del periodo y la cobertura | Semanas vacías cuentan como cero registros; parciales fuera de la media |
+| Constancia | Días con fuerza frente a días previstos, solo en semanas completas con planificación histórica acotada (`Analisis.planSemana`) | Nunca extender automáticamente la frecuencia actual al pasado |
+| Series / grupo | `Motor.seriesPorGrupo`: principal ×1, secundarios ×0,5; media de semanas completas | Totales parciales aparte, sin proyectar ni comparar sus diferencias; sin grupo reconocido fuera del reparto |
+| Tiempo | Mediana de `duracionMin` positiva no marcada como anómala, todas las sesiones del intervalo | `n` y fechas de la muestra; no suplir ausentes con cero |
+| Ejercicios comunes | Mismo nombre vigente y misma modalidad (`Analisis.configuracion`); mediana de e1RM de marca de sesiones elegibles | Sin descarga, molestias, sustitución, día no verde ni estimación ausente; mínimo 2 sesiones únicas por lado para diferencia descriptiva, no conclusión de progreso |
+| Ejercicios de peso corporal | Estimación existente con peso del perfil | Sin diferencia porcentual entre periodos: peso corporal histórico no reconstruible |
+| Rendimiento | Medianas de porcentajes numéricos guardados; grupos por variante, días, revisión explícita y día de entrenamiento | Sin descargas ni puntos sin referencia; mínimo 2 datos por lado para diferencia en pp. Las referencias móviles son móviles: no mide fuerza absoluta |
+| Peso | Mediana de pesajes dentro del intervalo, normalización existente: primero de cada día | No es tendencia ni cambio entre extremos; kg canónicos aunque presentación móvil sea lb |
+| Contornos | Medianas por sitio de registros válidos (10–300 cm) dentro del intervalo | Sin arrastre; mismo día/valor cuenta una vez; valores contradictorios del mismo día excluidos y avisados |
+| Nutrición | Fases con fechas guardadas que coinciden; recomendaciones y ritmo real guardado dentro del periodo | Plan de temporada no es historial; ajuste guardado no acredita ingesta real |
+| Recuperación | Medianas de días con estado 0–100, VFC positiva no descartada y FC positiva | Huecos fuera de la muestra; días repetidos iguales no inflan `n`; conflictos excluidos |
+
+La tabla de ejercicios separa muestras por modalidad y cuenta una sesión una
+vez. Si una entrada se repite en una sesión, conserva la primera elegible para
+esa modalidad. Advierte del cambio de series y rutina. No usa tonelaje ni reps
+totales para inferir progreso. La copia no identifica máquinas ni permite
+verificar técnica o rango de movimiento: se explicita esa limitación.
+
+No se reconstruyen bloques de entrenamiento a partir de revisiones de rutina:
+la primera sesión conocida no es necesariamente el inicio de un bloque. Los
+periodos se eligen manualmente. Se informa de duración distinta, solapamiento,
+selecciones fuera de cobertura y ausencia de semanas completas.
+
+Pruebas: `tests/comparacion.test.mjs` (15 casos, también con `TZ=Europe/Madrid`)
+y el recorrido de fase 4 de `tests/e2e.mjs`.

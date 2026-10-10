@@ -4,8 +4,8 @@ Versión de escritorio de TrueLift para la persona que entrena: importa en el
 ordenador la copia de seguridad de la app y, si quieres, tus fotos de
 progreso, para consultar tu evolución en pantalla grande.
 
-**Estado:** en desarrollo (fases 1 a 3 de 8: importación, almacenamiento,
-secciones personales, resumen con conclusiones y ficha por ejercicio). Informes y el editor de rutina llegan en fases
+**Estado:** en desarrollo (fases 1 a 4 de 8: importación, almacenamiento,
+secciones personales, resumen con conclusiones, ficha por ejercicio y comparación de periodos). Informes y el editor de rutina llegan en fases
 posteriores. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`.
 
 ## Secciones
@@ -19,7 +19,7 @@ posteriores. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`.
 - **Entrenamiento:** sesiones (de consulta, con cada serie), ejercicios con
   su estado de progresión y su ficha (series una a una, por qué de su
   estado, evolución reciente, mejores marcas y comparación de dos
-  sesiones), rendimiento por sesión y volumen por grupo muscular y semana.
+  sesiones), rendimiento por sesión, volumen por grupo muscular y semana y comparación de dos periodos.
 - **Evolución física:** peso tendencia y fase, composición (estimación),
   contornos y galería de fotos.
 - **Recuperación:** estado para entrenar, cuestionarios, VFC, FC en reposo y
@@ -68,6 +68,29 @@ historiales. Tus fotos no se tocan.
   un nombre que ya tienes, se conserva la tuya salvo que elijas sustituirla.
 - Las fotos del ZIP que tu copia de datos no conoce (quizá las borraste en el
   móvil) no se importan salvo que lo indiques.
+
+## Comparar dos periodos (fase 4)
+
+1. Abre **Entrenamiento → Comparar periodos** (también desde Mi resumen).
+2. Elige las fechas de A y B y pulsa **Comparar**. El botón de acceso rápido
+   selecciona las últimas cuatro semanas completas frente a las cuatro
+   anteriores, tomando como referencia el último registro de la copia.
+3. Revisa duración, número de sesiones y semanas completas antes de comparar.
+   Las fechas se conservan por espacio personal, incluso tras actualizar el JSON.
+4. Abre **Ver semanas y sesiones de origen** para consultar una sesión. Pulsa
+   un ejercicio para ir a su ficha.
+
+- Las medias semanales solo usan semanas completas con cobertura; las semanas
+  parciales muestran sus registros y series aparte, sin extrapolarlos.
+- El rendimiento se separa por rutina y día. El 1RM estimado se compara por
+  ejercicio y modalidad con al menos dos sesiones válidas por periodo.
+- Peso y contornos son medianas de mediciones dentro del periodo, con fechas
+  reales. Nutrición y recuperación muestran exclusivamente contexto registrado.
+- Los periodos pueden durar distinto o solaparse: se avisa. No se genera un
+  ganador ni se atribuyen causas a las diferencias.
+- No hay selector automático de bloques: las sesiones identifican la rutina
+  utilizada, pero la copia no guarda sus límites históricos exactos. Indica
+  manualmente las fechas de los bloques que quieras revisar.
 
 ## Dónde se guardan los datos
 

@@ -37,11 +37,13 @@ const escribir = (nombre, datos) => { const p = path.join(tmp, nombre); fs.write
 
 const navegador = await pw.chromium.launch();
 const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 } });
-const pagina = await ctx.newPage();
 const externas = [], erroresJs = [];
-pagina.on('request', r => { if (!r.url().startsWith(origen) && !r.url().startsWith('blob:') && !r.url().startsWith('data:')) externas.push(r.url()); });
-pagina.on('pageerror', e => erroresJs.push(String(e)));
-pagina.on('console', m => { if (m.type() === 'error') erroresJs.push(m.text()); });
+ctx.on('request', r => { if (!r.url().startsWith(origen) && !r.url().startsWith('blob:') && !r.url().startsWith('data:')) externas.push(r.url()); });
+ctx.on('page', p => {
+  p.on('pageerror', e => erroresJs.push(String(e)));
+  p.on('console', m => { if (m.type() === 'error') erroresJs.push(m.text()); });
+});
+let pagina = await ctx.newPage();
 
 let paso = 0;
 const ok = msg => console.log(`ok ${++paso} - ${msg}`);
@@ -364,7 +366,13 @@ try {
   ok('secciones personales sin desbordamiento horizontal en ventana estrecha');
 
   // --- Fase 3: del resumen a los registros que justifican cada conclusión ---
-  const p3 = escribir('copia_truelift_2026-10-09.json', JSON.stringify(copiaFase3()));
+  const raw3 = copiaFase3();
+  raw3.medidas = { registros: [{ fecha: '2026-08-15', sitio: 'cintura', cm: 83 }, { fecha: '2026-09-15', sitio: 'cintura', cm: 82 }] };
+  raw3.nutricion.fasesCerradas = [{ id: 'fase-a', tipo: 'MAINTENANCE', inicio: '2026-08-01', fin: '2026-08-31' }];
+  raw3.nutricion.faseActual = { id: 'fase-b', tipo: 'DEFICIT', inicio: '2026-09-01' };
+  raw3.nutricion.recomendaciones = [{ fecha: '2026-09-15', faseId: 'fase-b', tipo: 'HOLD', tasaRealPctSemana: -0.2, ajusteKcalDia: 0 }];
+  raw3.readinessDiario.forEach(r => { r.vfc = 60; r.fcReposo = 50; });
+  const p3 = escribir('copia_truelift_2026-10-09.json', JSON.stringify(raw3));
   await pagina.setInputFiles('#inputDatos', [p3]);
   await pagina.getByText('¿Dónde guardar esta copia?').waitFor();
   await pagina.check('input[name="destino"][value="nuevo"]');
@@ -427,6 +435,102 @@ try {
   const noBotones3 = await pagina.evaluate(() => [...document.querySelectorAll('[data-ir],[data-sesion],[data-ejercicio]')].filter(el => el.tagName !== 'BUTTON').length);
   assert.equal(noBotones3, 0);
   ok('resumen y ficha sin desbordamiento en ventana estrecha y todo lo pulsable es un botón');
+
+  // --- Fase 4: periodos desiguales, parciales y persistencia independiente ---
+  await pagina.evaluate(() => { location.hash = '#entrenamiento/comparar'; });
+  await pagina.getByRole('heading', { name: 'Comparar periodos', exact: true }).waitFor();
+  const seleccionarPeriodos = async (aDesde, aHasta, bDesde, bHasta) => {
+    for (const [id, valor] of Object.entries({ 'a-desde': aDesde, 'a-hasta': aHasta, 'b-desde': bDesde, 'b-hasta': bHasta }))
+      await pagina.fill(`#periodo-${id}`, valor);
+    await pagina.getByRole('button', { name: 'Comparar', exact: true }).click();
+  };
+  await seleccionarPeriodos('2026-08-10', '2026-08-30', '2026-09-07', '2026-10-04');
+  await pagina.getByText('Los periodos duran distinto.', { exact: false }).waitFor();
+  await pagina.waitForFunction(() => document.activeElement?.matches('#compararPeriodos button[type="submit"]'));
+  assert.match(await pagina.textContent('#contenido'), /21 días/);
+  assert.match(await pagina.textContent('#contenido'), /28 días/);
+  for (const h of ['Ejercicios comunes · 1RM estimado', 'Series realizadas por grupo muscular', 'Contexto nutricional', 'Recuperación registrada'])
+    await pagina.getByRole('heading', { name: h, exact: true }).waitFor();
+  await foto('19-periodos-desiguales.png');
+  const fechas4 = await pagina.evaluate(() => Escritorio.estado.st.periodos);
+  await pagina.reload();
+  await pagina.waitForSelector('html[data-listo="1"]');
+  assert.equal(await pagina.inputValue('#periodo-a-desde'), fechas4.a.desde);
+  assert.equal(await pagina.inputValue('#periodo-b-hasta'), fechas4.b.hasta);
+  ok('comparador: periodos desiguales, contexto y muestras; recarga conserva fechas y foco');
+
+  await pagina.locator('summary', { hasText: 'Ver semanas y sesiones de origen' }).click();
+  await pagina.locator('#contenido [data-sesion]').first().click();
+  await pagina.locator('#modalCaja').getByText('Press banca con barra').first().waitFor();
+  await pagina.keyboard.press('Escape');
+  await pagina.locator('#contenido [data-ejercicio]').first().click();
+  await pagina.getByText('Comparar dos sesiones', { exact: true }).waitFor();
+  await pagina.goBack();
+  await pagina.getByRole('heading', { name: 'Comparar periodos', exact: true }).waitFor();
+  ok('comparador: sesiones de origen, ficha de ejercicio y Atrás accesibles');
+
+  // Inversión rechazada sin cambiar la selección persistida.
+  await seleccionarPeriodos('2026-08-30', '2026-08-10', '2026-09-07', '2026-10-04');
+  await pagina.getByText('Revisa los periodos', { exact: true }).waitFor();
+  assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.st.periodos), fechas4);
+  await pagina.keyboard.press('Escape');
+  // Fallo de escritura: el historial y las fechas anteriores permanecen.
+  await pagina.evaluate(() => Almacen.simularFalloEscritura('QuotaExceededError'));
+  await seleccionarPeriodos('2026-09-07', '2026-09-09', '2026-09-07', '2026-10-04');
+  await pagina.getByText('No se pudo guardar', { exact: true }).waitFor();
+  assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.st.periodos), fechas4);
+  await pagina.keyboard.press('Escape');
+  await seleccionarPeriodos('2026-09-07', '2026-09-09', '2026-09-07', '2026-10-04');
+  await pagina.getByText('Faltan semanas completas', { exact: false }).waitFor();
+  await pagina.getByText('Los periodos se solapan', { exact: false }).waitFor();
+  await foto('20-periodos-parciales.png');
+  ok('comparador: fechas invertidas y fallo de cuota preservan selección; parcial y solapamiento explícitos');
+
+  await pagina.setViewportSize({ width: 420, height: 900 });
+  assert.equal(await pagina.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false);
+  await foto('21-periodos-estrecha.png');
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  // Las fechas son independientes por espacio.
+  await pagina.evaluate(() => { location.hash = '#datos'; });
+  const idFase3 = await pagina.evaluate(() => Escritorio.estado.espacio.id);
+  const otraOpcion = await pagina.locator('#selEspacio option').evaluateAll(os => os.find(o => o.textContent === 'Mis datos')?.value);
+  await pagina.selectOption('#selEspacio', otraOpcion);
+  await pagina.waitForFunction(id => Escritorio.estado.espacio.id !== id, idFase3);
+  await pagina.evaluate(() => { location.hash = '#entrenamiento/comparar'; });
+  await pagina.getByRole('heading', { name: 'Comparar periodos', exact: true }).waitFor();
+  assert.equal(await pagina.evaluate(() => Escritorio.estado.st.periodos), null);
+  await pagina.evaluate(() => { location.hash = '#datos'; });
+  await pagina.selectOption('#selEspacio', idFase3);
+  await pagina.waitForFunction(id => Escritorio.estado.espacio.id === id, idFase3);
+  await pagina.evaluate(() => { location.hash = '#entrenamiento/comparar'; });
+  await pagina.getByRole('heading', { name: 'Comparar periodos', exact: true }).waitFor();
+  assert.equal(await pagina.inputValue('#periodo-a-hasta'), '2026-09-09');
+  await pagina.getByRole('button', { name: 'Últimas 4 semanas completas frente a las 4 anteriores' }).click();
+  await pagina.waitForFunction(() => document.querySelector('#periodo-a-hasta').value === '2026-09-06');
+  ok('comparador: 420 px sin desbordamiento, fechas separadas por espacio y restauración de selección');
+
+  const fechasAntesActualizar = await pagina.evaluate(() => Escritorio.estado.st.periodos);
+  const actualizada4 = structuredClone(raw3);
+  actualizada4.logs.push({ ...structuredClone(raw3.logs.at(-1)), fecha: '2026-10-10T18:00:00.000' });
+  const p4 = escribir('actualizada-fase4.json', JSON.stringify(actualizada4));
+  await pagina.setInputFiles('#inputDatos', [p4]);
+  await pagina.getByText('¿Dónde guardar esta copia?').waitFor();
+  await pagina.check('input[name="destino"][value="actualizar"]');
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByText('Importación completada').waitFor();
+  await pagina.click('[data-accion="cerrar"]');
+  assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.st.periodos), fechasAntesActualizar);
+  assert.equal(await pagina.evaluate(() => Escritorio.estado.M.sesiones.length), raw3.logs.length + 1);
+  // Cerrar la pestaña y abrir otra conserva selección, JSON e IndexedDB.
+  await pagina.close();
+  const reabierta = await ctx.newPage();
+  await reabierta.goto(`${origen}/escritorio/#entrenamiento/comparar`);
+  await reabierta.waitForSelector('html[data-listo="1"]');
+  assert.deepEqual(await reabierta.evaluate(() => Escritorio.estado.st.periodos), fechasAntesActualizar);
+  await reabierta.close();
+  pagina = await ctx.newPage();
+  await pagina.goto(`${origen}/escritorio/`);
+  ok('comparador: actualizar la instantánea y cerrar/reabrir conserva las fechas');
 
   // --- 15. Aislamiento y privacidad ---
   assert.equal(await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes')), carteraAntes);
