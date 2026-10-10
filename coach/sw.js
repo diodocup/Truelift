@@ -4,7 +4,7 @@
    IMPORTANTE: al publicar cambios en la app, sube el número de VERSION
    para que los navegadores de los entrenadores se actualicen. */
 
-const VERSION = 'tlcoach-v16';
+const VERSION = 'tlcoach-v17';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -43,7 +43,8 @@ self.addEventListener('install', ev => {
 self.addEventListener('activate', ev => {
   ev.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
+      // Solo sus propias cachés: el escritorio comparte origen y tiene las suyas.
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('tlcoach-') && k !== VERSION).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

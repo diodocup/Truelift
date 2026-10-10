@@ -49,7 +49,7 @@ const FisicaVista = (() => {
         <button class="btn sec" type="button" data-restaurar-foto="${esc(f.archivo)}">Restablecer ${k.toUpperCase()}</button></fieldset>`;
     };
     const deltaPeso = par.a && par.b && par.b.fecha > par.a.fecha && par.a.pesoKg != null && par.b.pesoKg != null ? ` · Peso guardado B − A: ${signo(par.b.pesoKg - par.a.pesoKg, 'kg')}` : '';
-    return `<section class="card" id="comparadorFotos"><h3>Comparar fotos</h3>
+    return `<section class="card" id="comparadorFotos"><h2>Comparar fotos</h2>
       <div class="foto-selectores"><label for="compPose">Pose<select id="compPose">${Object.entries(poses).map(([k, txt]) => `<option value="${k}"${k === par.pose ? ' selected' : ''}>${txt}</option>`).join('')}</select></label>${selector('A', par.a)}${selector('B', par.b)}</div>
       ${mensaje ? `<p class="muted" role="status">${mensaje}</p>` : `<div class="fila-botones" aria-label="Modo de comparación">${botones}</div>
       <div class="comparador-etiquetas"><span>A · ${F.dia(par.a.fecha)}</span><span>B · ${F.dia(par.b.fecha)}</span></div>
@@ -59,7 +59,7 @@ const FisicaVista = (() => {
       <details class="detalle" id="ajustesFotos"><summary>Ajustar encuadre</summary><p class="muted">Ampliación y posición para alinear referencias. Escala uniforme, sin deformar el cuerpo ni modificar los originales. La cortina y la opacidad solo cambian la visualización.</p>
         <div class="encuadres">${ajuste('a', par.a)}${ajuste('b', par.b)}</div><div class="fila-botones"><button class="btn sec" type="button" data-accion="guardar-encuadres">Guardar encuadres en este navegador</button><span id="estadoEncuadres" role="status">${st.dirty ? 'Ajustes sin guardar' : 'Encuadres guardados o de origen'}</span></div></details>`}
       ${par.a && par.b ? `<div class="comparador-contextos">${contexto(par.a, modelo, raw)}${contexto(par.b, modelo, raw)}</div>${asociaciones(par.a, par.b, modelo)}` : ''}
-      <details class="detalle ayuda"><summary>Cómo comparar con fiabilidad</summary><p class="muted">Mantén pose, distancia, luz y condiciones similares. El encuadre no corrige diferencias de perspectiva, postura o iluminación. Los contornos usan el propio día o la última medida anterior dentro de 30 días; se muestra su fecha real. Un mismo registro en ambas fotos no demuestra cambio. Los pesos son los guardados por la app en cada ficha (pueden proceder de un pesaje cercano o del perfil); no se reconstruyen a partir del peso actual. La fase se muestra solo si su intervalo histórico es inequívoco; no prueba qué causó los cambios.</p></details>
+      <details class="detalle ayuda"><summary>Cómo comparar con fiabilidad</summary><p class="muted">Mantén pose, distancia, luz y condiciones similares. El encuadre no corrige diferencias de perspectiva, postura o iluminación. Los contornos usan la medida del propio día o la última anterior si es reciente, nunca una posterior; se muestra su fecha real. Un mismo registro en ambas fotos no demuestra cambio. Los pesos son los guardados por la app en cada ficha (pueden proceder de un pesaje cercano o del perfil); no se reconstruyen a partir del peso actual. La fase se muestra solo si su intervalo histórico es inequívoco; no prueba qué causó los cambios.</p></details>
     </section>`;
   }
   return { comparador, contexto, asociaciones };

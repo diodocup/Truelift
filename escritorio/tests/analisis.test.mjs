@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { cargar, cargarCoach, copiaRica } from './comun.mjs';
 
 cargarCoach('motor.js', 'data.js', 'nutricion.js', 'charts.js', 'catalogo.js');
-const G = cargar('importar.js', 'fotos.js', 'evolucion.js', 'analisis.js', 'vistas.js');
-const { Analisis, VistasEsc, Motor } = G;
+const G = cargar('importar.js', 'fotos.js', 'evolucion.js', 'analisis.js', 'comparacion.js', 'vistas.js', 'fisica-vista.js', 'informe.js', 'informe-vista.js');
+const { Analisis, VistasEsc, Motor, InformeVista } = G;
 
 const resumen = { ultimoRegistro: '2026-07-02', ultimoEntreno: '2026-07-02', primerRegistro: '2026-06-01' };
 
@@ -99,7 +99,9 @@ test('vistas: se generan sin errores y escapan el texto importado', () => {
   const html = [VistasEsc.resumen(M, ctx), VistasEsc.entrenamiento(M, { sub: 'sesiones' }),
     VistasEsc.entrenamiento(M, { sub: 'ejercicios' }), VistasEsc.entrenamiento(M, { sub: 'ejercicios', ejercicio: 'Sentadilla con barra' }),
     VistasEsc.entrenamiento(M, { sub: 'rendimiento' }), VistasEsc.entrenamiento(M, { sub: 'volumen' }),
-    VistasEsc.fisica(M, ctx), VistasEsc.recuperacion(M), VistasEsc.rutina(M), VistasEsc.informes(M),
+    VistasEsc.fisica(M, ctx), VistasEsc.recuperacion(M), VistasEsc.rutina(M),
+    InformeVista.seccion(M, { sel: { tipo: 'mes', mes: '2026-06' }, inst: ctx.inst, galeria: [], st: { conFotos: false, fotos: new Set() } }),
+    InformeVista.seccion(M, { sel: { tipo: 'fechas', desde: '2026-06-01', hasta: '2026-07-02' }, inst: ctx.inst, galeria: [], st: { conFotos: true, fotos: new Set() } }),
     VistasEsc.detalleSesionHtml(M, 4)].join('\n');
   assert.ok(!html.includes('<b>molesta</b>'), 'la nota no se interpreta como HTML');
   assert.ok(html.includes('Rodilla &lt;b&gt;molesta&lt;/b&gt;'));
@@ -107,6 +109,13 @@ test('vistas: se generan sin errores y escapan el texto importado', () => {
   assert.ok(html.includes('Rendimiento irregular'));
   assert.ok(html.includes('Buscando el objetivo (2 de 4 intentos)'));
   assert.ok(!/cliente|entrenador|cartera/i.test(html), 'sin lenguaje del Coach');
+  // Ayudas de todas las vistas: qué y para qué, sin umbrales, ventanas ni
+  // recuentos del algoritmo. Solo se admiten escalas de un valor y «1RM».
+  const todas = html + VistasEsc.entrenamiento(M, { sub: 'comparar', periodos: { a: { desde: '2026-06-01', hasta: '2026-06-14' }, b: { desde: '2026-06-15', hasta: '2026-07-02' } } })
+    + G.FisicaVista.comparador([], G.Evolucion.preparar(M.raw), M.raw, { encuadres: {} });
+  const ayudas = [...todas.matchAll(/<details class="detalle ayuda">([\s\S]*?)<\/details>/g)].map(m => m[1]);
+  assert.ok(ayudas.length >= 12, `ayudas: ${ayudas.length}`);
+  for (const t of ayudas) assert.doesNotMatch(t.replace(/1RM|0 a 100|0 % = tu nivel/g, ''), /\d/, `ayuda con cifras: ${t.slice(0, 90)}`);
 });
 
 test('copia mínima (solo ajustes) y antigua sin claves nuevas', () => {

@@ -4,9 +4,9 @@ Versión de escritorio de TrueLift para la persona que entrena: importa en el
 ordenador la copia de seguridad de la app y, si quieres, tus fotos de
 progreso, para consultar tu evolución en pantalla grande.
 
-**Estado:** en desarrollo (fases 1 a 6 de 8: importación, almacenamiento,
-secciones personales, resumen con conclusiones, ficha por ejercicio, comparación de periodos, evolución física y planificador de rutina). Los informes llegan en una fase
-posterior. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`; el
+**Estado:** en desarrollo (fases 1 a 7 de 8: importación, almacenamiento,
+secciones personales, resumen con conclusiones, ficha por ejercicio, comparación de periodos, evolución física, planificador de rutina, informes y acabado). Falta la
+validación integral (fase 8). Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`; el
 planificador, en `PLANIFICADOR.md`.
 
 ## Secciones
@@ -28,7 +28,9 @@ planificador, en `PLANIFICADOR.md`.
 - **Mi rutina:** la rutina de tu móvil (consulta) y tus borradores: editor con
   todos los días a la vista, cambios frente a la rutina del móvil, series por
   grupo, avisos y exportación al Excel que importa la app.
-- **Informes:** en preparación.
+- **Informes:** informe de un mes o de unas fechas (constancia, progresión
+  verificable, evolución física, volumen, recuperación, cambios, aspectos que
+  revisar y limitaciones) para leer, imprimir o guardar en PDF.
 - **Mis datos:** importación, almacenamiento, fotos con incidencias e
   historial de importaciones.
 
@@ -152,6 +154,32 @@ no corrigen esas diferencias. Masa magra estimada no equivale a músculo.
   importarlo. Un ejercicio que no tengas en tu biblioteca se añade solo si lo
   aceptas en la app.
 
+## Informe de un periodo (fase 7)
+
+1. Abre **Informes** (Alt + 6). Sale el último mes natural completo de tus
+   datos; elige otro mes u **Otras fechas** y pulsa **Ver informe**. El periodo
+   se guarda para este espacio (también tras actualizar la copia).
+2. Las fotos no se incluyen por defecto. Marca **Añadir fotos al informe** y
+   elige hasta 6 fotos del periodo; la elección no se guarda.
+3. **Imprimir o guardar en PDF** abre la impresión del navegador; elige
+   «Guardar como PDF». En papel solo sale el documento.
+4. **Comparar con el periodo anterior** abre Comparar periodos con el mes (o
+   la misma duración) anterior frente al elegido.
+
+- Si el periodo pasa de tu último registro o empieza antes del primero, el
+  informe lo dice en «Datos insuficientes y limitaciones».
+- Las lecturas del 1RM estimado con pocas sesiones salen como orientativas y
+  no cuentan como cambio relevante.
+- El estado actual (intentos agotados, recuperación reciente) solo aparece
+  si el periodo incluye tu último registro.
+
+## Sin conexión
+
+Tras abrir el escritorio una vez con conexión desde la web, el navegador
+guarda sus archivos y la página se puede volver a abrir sin conexión con tus
+datos (que ya estaban en el navegador). **Mis datos → Sin conexión** indica si
+está listo. Abierto como archivo local (`file://`) no está disponible.
+
 ## Dónde se guardan los datos
 
 En el propio navegador (IndexedDB), separados de TrueLift Coach. Nada se
@@ -181,6 +209,7 @@ pierde al cerrar.
 
 ```
 node --test escritorio/tests/*.test.mjs     # módulos (Node 20+)
+PLAYWRIGHT_MODULE=/ruta/playwright node escritorio/tests/e2e.mjs   # si no está en node_modules
 node escritorio/tests/e2e.mjs [capturas/]   # navegador (requiere Playwright)
 DART=/ruta/dart node --test escritorio/tests/planificador.test.mjs
                                             # + lector real del Excel de la app (App-PRO al lado)

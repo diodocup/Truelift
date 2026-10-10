@@ -339,7 +339,7 @@ try {
   await pagina.keyboard.press('Escape');
   ok('detalle de sesión de solo lectura; las notas importadas se muestran como texto');
 
-  for (const [sec, texto] of [['fisica', 'Contornos (cm)'], ['recuperacion', 'Estado para entrenar'], ['rutina', 'Series planificadas por semana'], ['informes', 'Informe de un periodo']]){
+  for (const [sec, texto] of [['fisica', 'Contornos (cm)'], ['recuperacion', 'Estado para entrenar'], ['rutina', 'Series planificadas por semana'], ['informes', 'Preparar el informe']]){
     await pagina.click(`#tabs [data-seccion="${sec}"]`);
     await pagina.getByText(texto).first().waitFor();
     await foto(`11-${sec}.png`);
@@ -389,7 +389,7 @@ try {
   await pagina.evaluate(() => { location.hash = '#resumen'; });
   await pagina.getByText('Lo más relevante').waitFor();
   assert.equal(await pagina.locator('article.conclusion').count(), 3);
-  const titulos = await pagina.locator('article.conclusion h4').allTextContents();
+  const titulos = await pagina.locator('article.conclusion h3').allTextContents();
   assert.deepEqual(titulos, ['Intentos agotados en Press banca con barra', 'Muchos días con el estado para entrenar bajo', 'Entrenaste 11 de 12 días previstos']);
   await pagina.getByText('Constancia', { exact: true }).waitFor();
   await pagina.getByText('Evolución de tus ejercicios').waitFor();
@@ -510,7 +510,9 @@ try {
   await pagina.waitForFunction(id => Escritorio.estado.espacio.id === id, idFase3);
   await pagina.evaluate(() => { location.hash = '#entrenamiento/comparar'; });
   await pagina.getByRole('heading', { name: 'Comparar periodos', exact: true }).waitFor();
-  assert.equal(await pagina.inputValue('#periodo-a-hasta'), '2026-09-09');
+  // cargarEstado cambia de espacio antes de leer sus fechas: se espera al
+  // valor guardado en lugar de leer el primer repintado.
+  await pagina.waitForFunction(() => document.querySelector('#periodo-a-hasta')?.value === '2026-09-09');
   await pagina.getByRole('button', { name: 'Últimas 4 semanas completas frente a las 4 anteriores' }).click();
   await pagina.waitForFunction(() => document.querySelector('#periodo-a-hasta').value === '2026-09-06');
   ok('comparador: 420 px sin desbordamiento, fechas separadas por espacio y restauración de selección');
@@ -580,7 +582,7 @@ try {
   assert.ok((await comparador.innerText()).includes('1 jun 2026 · 2 días antes'));
   assert.ok((await comparador.innerText()).includes('−6 cm'));
   assert.ok((await comparador.innerText()).includes('sin medida anterior'));
-  assert.ok((await comparador.innerText()).includes('medida de hace más de 30 días'));
+  assert.ok((await comparador.innerText()).includes('medida demasiado antigua'));
   assert.ok((await comparador.innerText()).includes('Déficit'));
   assert.ok((await comparador.innerText()).includes('Superávit'));
   await foto('22-fotos-lado.png');
@@ -897,6 +899,180 @@ try {
     assert.equal(await pagina.evaluate(() => Escritorio.estado.rut.borradores.length), 2);
     ok('rutina: 420 px sin desbordamiento; cerrar y reabrir conserva borradores y el activo');
     await pagina.close(); servidor6.close(); pagina = paginaAntes6;
+  }
+
+  // --- Fase 7. Informe de un periodo: selección, fotos solo elegidas,
+  // impresión/PDF, recarga y ventana estrecha ---
+  {
+    const paginaAntes7 = pagina;
+    const servidor7 = http.createServer(servidor.listeners('request')[0]);
+    await new Promise(ok => servidor7.listen(0, '127.0.0.1', ok));
+    servidor7.unref();
+    const origen7 = `http://127.0.0.1:${servidor7.address().port}`;
+    origenesPrueba.add(origen7);
+    const raw7 = copiaFase3();
+    raw7.medidas = { schemaVersion: 1, registros: [
+      { fecha: '2026-08-28', sitio: 'cintura', cm: 85 }, { fecha: '2026-09-04', sitio: 'cintura', cm: 84.6 }, { fecha: '2026-09-25', sitio: 'cintura', cm: 84 }],
+      fotos: [{ fecha: '2026-09-04', pose: 'frente', archivo: 'foto_20260904_frente.jpg', pesoKg: 81.9 },
+              { fecha: '2026-09-25', pose: 'frente', archivo: 'foto_20260925_frente.jpg', pesoKg: 81.4 },
+              { fecha: '2026-09-25', pose: 'perfil', archivo: 'foto_20260925_perfil.jpg', pesoKg: 81.4 },
+              { fecha: '2026-08-28', pose: 'frente', archivo: 'foto_20260828_frente.jpg', pesoKg: 82 }] };
+    const p7 = escribir('copia_truelift_2026-10-09.json', JSON.stringify(raw7));
+    const z7 = escribir('fotos_2026-10-09.zip', crearZip([
+      { nombre: 'foto_20260904_frente.jpg', datos: img[0] }, { nombre: 'foto_20260925_frente.jpg', datos: img[1] },
+      { nombre: 'foto_20260828_frente.jpg', datos: img[2] }, { nombre: 'medidas.json', datos: JSON.stringify(raw7.medidas) }]));
+    pagina = await ctx.newPage();
+    await pagina.setViewportSize({ width: 1366, height: 900 });
+    await pagina.goto(`${origen7}/escritorio/`);
+    await pagina.waitForSelector('html[data-listo="1"]');
+    await pagina.setInputFiles('#inputDatos', [p7, z7]);
+    await pagina.getByText('Revisa la importación').waitFor();
+    await pagina.click('[data-accion="confirmar"]');
+    await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+    await pagina.click('#modalCaja [data-accion="cerrar"]');
+    await pagina.keyboard.press('Alt+6');
+    await pagina.getByRole('heading', { name: 'Septiembre de 2026', exact: true }).waitFor();
+    const doc = () => pagina.locator('.informe-doc').innerText();
+    for (const t of ['RESUMEN DEL PERIODO', 'CONSTANCIA', 'PROGRESIÓN VERIFICABLE', 'EVOLUCIÓN FÍSICA', 'VOLUMEN REALIZADO', 'RECUPERACIÓN',
+      'CAMBIOS RELEVANTES', 'ASPECTOS QUE REVISAR', 'DATOS INSUFICIENTES Y LIMITACIONES']) assert.ok((await doc()).toUpperCase().includes(t), t);
+    assert.match(await doc(), /8 de 9/);
+    assert.match(await doc(), /Cintura\s+84,6 cm\s*4 sep 2026\s+84 cm\s*25 sep 2026\s+−0,6 cm/);
+    assert.match(await doc(), /Fotos registradas en el periodo: 3 \(1 sin imagen importada\)/);
+    assert.equal(await pagina.locator('[data-inf-foto]').count(), 0);
+    ok('informe: Alt + 6 abre el último mes completo con todas sus secciones, contornos sin arrastre y sin fotos');
+    await foto('30-informe.png');
+
+    // Fechas con el teclado: invertidas se rechazan sin guardar; válidas se
+    // guardan y el foco pasa al título del informe.
+    await pagina.focus('input[name="tipo"][value="mes"]');
+    await pagina.keyboard.press('ArrowDown');
+    assert.equal(await pagina.locator('#informeDesde').isDisabled(), false);
+    assert.equal(await pagina.locator('#informeMes').isDisabled(), true);
+    await pagina.fill('#informeDesde', '2026-09-20');
+    await pagina.fill('#informeHasta', '2026-09-10');
+    await pagina.keyboard.press('Enter');
+    await pagina.getByText('La fecha de inicio debe ser anterior o igual a la final.').waitFor();
+    assert.equal(await pagina.evaluate(() => Escritorio.estado.st.informe), null);
+    await pagina.fill('#informeDesde', '2026-09-07');
+    await pagina.fill('#informeHasta', '2026-10-09');
+    await pagina.click('#formInforme button[type="submit"]');
+    await pagina.waitForFunction(() => document.activeElement?.id === 'informeTitulo');
+    assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.st.informe), { tipo: 'fechas', desde: '2026-09-07', hasta: '2026-10-09' });
+    assert.match(await doc(), /A fecha de tu último registro, la app cuenta los intentos agotados en Press banca con barra/);
+    ok('informe: fechas con teclado, rechazo sin guardar y foco en el informe; el estado actual solo con el último registro');
+
+    // Fotos: solo con la casilla y la elección explícita; solo las del periodo con imagen.
+    await pagina.check('#informeConFotos');
+    await pagina.waitForFunction(() => document.activeElement?.id === 'informeConFotos');
+    const elegibles = await pagina.locator('[data-inf-elegir]').evaluateAll(xs => xs.map(x => x.dataset.infElegir));
+    assert.deepEqual(elegibles, ['foto_20260925_frente.jpg']);
+    assert.equal(await pagina.locator('[data-inf-foto]').count(), 0);
+    await pagina.locator('[data-inf-elegir]').first().check();
+    await pagina.waitForFunction(() => document.querySelector('[data-inf-foto] img')?.naturalWidth > 0);
+    await pagina.evaluate(() => {
+      window.__impresiones = [];
+      window.print = () => window.__impresiones.push({ titulo: document.title,
+        fotos: [...document.querySelectorAll('[data-inf-foto] img')].filter(i => i.complete && i.naturalWidth > 0).length });
+    });
+    await pagina.click('[data-accion="imprimir-informe"]');
+    await pagina.waitForFunction(() => window.__impresiones.length === 1);
+    assert.deepEqual(await pagina.evaluate(() => window.__impresiones[0]), { titulo: 'Informe TrueLift 2026-09-07 a 2026-10-09', fotos: 1 });
+    await pagina.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+    assert.equal(await pagina.title(), 'Informes · TrueLift Escritorio');
+    await foto('31-informe-fotos.png');
+    ok('informe: fotos solo por elección (del periodo y con imagen); imprimir espera a las fotos y propone el nombre del PDF');
+
+    // Hoja de impresión: solo el documento, en papel blanco; PDF real.
+    await pagina.emulateMedia({ media: 'print' });
+    assert.equal(await pagina.locator('#informeOpciones').isVisible(), false);
+    assert.equal(await pagina.locator('#tabs').isVisible(), false);
+    assert.equal(await pagina.locator('.privacy-notice').isVisible(), false);
+    assert.equal(await pagina.locator('.informe-doc').isVisible(), true);
+    assert.equal(await pagina.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(255, 255, 255)');
+    const pdf = await pagina.pdf({ format: 'A4', printBackground: true });
+    assert.equal(Buffer.from(pdf.subarray(0, 4)).toString(), '%PDF');
+    if (capturas) fs.writeFileSync(path.join(capturas, '32-informe.pdf'), pdf);
+    await foto('32-informe-impreso.png');
+    await pagina.emulateMedia({ media: 'screen' });
+    ok('informe: la impresión deja solo el documento sobre blanco y genera un PDF');
+
+    // Recarga: la selección del periodo sigue; las fotos vuelven a quedar fuera.
+    await pagina.reload();
+    await pagina.waitForSelector('.informe-doc');
+    assert.equal(await pagina.inputValue('#informeDesde'), '2026-09-07');
+    assert.equal(await pagina.locator('#informeConFotos').isChecked(), false);
+    assert.equal(await pagina.locator('[data-inf-foto]').count(), 0);
+    // Una copia nueva no borra la selección.
+    const raw7b = structuredClone(raw7);
+    raw7b.logs.push({ ...structuredClone(raw7.logs.at(-1)), fecha: '2026-10-10T18:00:00.000' });
+    await pagina.setInputFiles('#inputDatos', [escribir('copia_truelift_2026-10-10.json', JSON.stringify(raw7b))]);
+    await pagina.getByText('Revisa la importación').waitFor();
+    await pagina.check('input[name="destino"][value="actualizar"]');
+    await pagina.click('[data-accion="confirmar"]');
+    await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+    await pagina.click('#modalCaja [data-accion="cerrar"]');
+    await pagina.evaluate(() => { location.hash = '#informes'; });
+    await pagina.waitForSelector('.informe-doc');
+    assert.equal(await pagina.inputValue('#informeHasta'), '2026-10-09');
+    ok('informe: la recarga conserva el periodo y vuelve sin fotos; actualizar la copia no lo borra');
+
+    await pagina.click('[data-accion="informe-comparar"]');
+    await pagina.getByRole('heading', { name: 'Comparar periodos', exact: true }).waitFor();
+    assert.deepEqual(await pagina.evaluate(() => Escritorio.estado.st.periodos),
+      { a: { desde: '2026-08-05', hasta: '2026-09-06' }, b: { desde: '2026-09-07', hasta: '2026-10-09' } });
+    await pagina.evaluate(() => { location.hash = '#informes'; });
+    await pagina.waitForSelector('.informe-doc');
+    await pagina.setViewportSize({ width: 420, height: 900 });
+    await pagina.waitForTimeout(100);
+    assert.ok(await pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+    await foto('33-informe-estrecha.png');
+    await pagina.setViewportSize({ width: 1366, height: 900 });
+    ok('informe: comparar con el periodo anterior prepara las fechas; 420 px sin desbordamiento');
+    await pagina.close(); servidor7.close(); pagina = paginaAntes7;
+  }
+
+  // --- Fase 7. Sin conexión tras una visita con conexión (service worker) ---
+  {
+    const paginaAntes8 = pagina;
+    const servidor8 = http.createServer(servidor.listeners('request')[0]);
+    await new Promise(ok => servidor8.listen(0, '127.0.0.1', ok));
+    const puerto8 = servidor8.address().port;
+    const origen8 = `http://127.0.0.1:${puerto8}`;
+    origenesPrueba.add(origen8);
+    pagina = await ctx.newPage();
+    await pagina.setViewportSize({ width: 1366, height: 900 });
+    // Cachés ajenas del mismo origen (Coach y otra): no se deben borrar.
+    await pagina.goto(`${origen8}/coach/`);
+    await pagina.evaluate(async () => { await caches.open('tlcoach-v16'); await caches.open('otra-pagina'); });
+    await pagina.goto(`${origen8}/escritorio/`);
+    await pagina.waitForSelector('html[data-listo="1"]');
+    await pagina.setInputFiles('#inputDatos', [escribir('copia_offline.json', JSON.stringify(copiaFase3()))]);
+    await pagina.getByText('Revisa la importación').waitFor();
+    await pagina.click('[data-accion="confirmar"]');
+    await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+    await pagina.click('#modalCaja [data-accion="cerrar"]');
+    await pagina.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    await pagina.getByText('esta página ya se puede abrir sin conexión en este navegador').waitFor();
+    assert.deepEqual((await pagina.evaluate(() => caches.keys())).sort(), ['otra-pagina', 'tlcoach-v16', 'tlescritorio-v1']);
+    // Sin red ni servidor: la página, los datos y el informe siguen disponibles.
+    await ctx.setOffline(true);
+    servidor8.closeAllConnections(); await new Promise(ok => servidor8.close(ok));
+    await pagina.reload();
+    await pagina.waitForSelector('html[data-listo="1"]');
+    await pagina.evaluate(() => { location.hash = '#resumen'; });
+    await pagina.getByRole('heading', { name: 'Mi resumen', exact: true }).waitFor();
+    await pagina.evaluate(() => { location.hash = '#informes'; });
+    await pagina.getByRole('heading', { name: 'Septiembre de 2026', exact: true }).waitFor();
+    assert.equal(await pagina.evaluate(() => document.fonts.check('16px Archivo')), true);
+    // Control: lo que no está en su lista (el Coach) no se sirve sin red.
+    const nErrores = erroresJs.length;
+    assert.equal(await pagina.evaluate(async o => { try { await fetch(`${o}/coach/views.js`); return 'servido'; } catch (_) { return 'sin red'; } }, origen8), 'sin red');
+    await pagina.close();
+    // El fallo de red provocado por el control no es un error de la página.
+    erroresJs.splice(nErrores, erroresJs.length - nErrores, ...erroresJs.slice(nErrores).filter(e => !e.includes('ERR_INTERNET_DISCONNECTED')));
+    await ctx.setOffline(false);
+    pagina = paginaAntes8;
+    ok('sin conexión: tras una visita la página abre con sus datos e informe sin red; solo se crean y gestionan sus cachés');
   }
 
   // --- 15. Aislamiento y privacidad ---

@@ -44,7 +44,7 @@ const Evolucion = {
     }
     if (!mejor) return { registro: null, motivo: 'sin medida anterior' };
     const dias = this.dias(mejor.fecha, fecha);
-    if (dias > this.DIAS_ARRASTRE) return { registro: null, motivo: 'medida de hace más de 30 días' };
+    if (dias > this.DIAS_ARRASTRE) return { registro: null, motivo: 'medida demasiado antigua' };
     // Las exportaciones normales tienen un registro por día/sitio. Si una
     // copia manipulada tiene valores contradictorios, no elegir uno ni
     // ocultar el conflicto usando otra medida más vieja.

@@ -12,7 +12,7 @@ const RutinaVista = (() => {
 
 const PL = Planificador;
 const F = () => VistasEsc.F;
-const tarjeta = (titulo, cuerpo, extra = '') => `<section class="card"${extra}><h3>${esc(titulo)}</h3>${cuerpo}</section>`;
+const tarjeta = (titulo, cuerpo, extra = '') => `<section class="card"${extra}><h2>${esc(titulo)}</h2>${cuerpo}</section>`;
 const chip = (clase, texto, titulo = '') => `<span class="chip ${clase}"${titulo ? ` title="${esc(titulo)}"` : ''}>${esc(texto)}</span>`;
 const ayuda = (txt, titulo = 'Cómo funciona') => `<details class="detalle ayuda"><summary>${esc(titulo)}</summary>${txt}</details>`;
 const btn = (accion, texto, { clase = 'sec', extra = '', des = false, titulo = '' } = {}) =>
@@ -71,9 +71,9 @@ function estado(ctx){
     }
   }
   return `<section class="card rut-estado" aria-label="Estado de tu rutina">
-    <div><h3>En tu móvil</h3>${caja1}</div>
-    <div><h3>Borrador</h3>${caja2}</div>
-    <div><h3>Archivo exportado</h3>${caja3}</div>
+    <div><h2>En tu móvil</h2>${caja1}</div>
+    <div><h2>Borrador</h2>${caja2}</div>
+    <div><h2>Archivo exportado</h2>${caja3}</div>
   </section>`;
 }
 
@@ -273,7 +273,7 @@ function html(ctx){
       : '<p class="muted">Sin avisos: la app podrá leer este borrador tal cual.</p>', ' id="rutAvisos"')}
   </div>`);
   out.push(tarjeta('Series por grupo muscular y semana', gruposHtml(rg) +
-    ayuda('<p class="muted">Mismo reparto que la pestaña de volumen de la app: cada serie suma entera a su grupo principal y media a los grupos que también trabaja. Se cuenta una pasada por cada día de la rutina. «Días» son los días en que el grupo recibe al menos una serie completa.</p>', 'Cómo leer esto')));
+    ayuda('<p class="muted">Mismo reparto que la pestaña de volumen de la app: cada serie suma entera a su grupo principal y media a los grupos que también trabaja. Se cuenta una pasada por cada día de la rutina. «Días» son los días en que el grupo recibe alguna serie completa.</p>', 'Cómo leer esto')));
   if (prog) out.push(tarjeta('Tus cargas al aplicar esta rutina', prog.conserva
     ? '<p>Mantienes el sistema de progresión y el número de días. Según la app, en los ejercicios que se repitan seguirá proponiéndote los pesos que ya venías usando.</p><p class="muted">Es lo que indica la app al importar una rutina; ella misma te lo confirma antes de aplicar nada.</p>'
     : `<p>Cambias ${[!prog.mismosDias ? `el número de días (${esc(prog.diasAntes)} → ${ctx.sim.dias.length})` : '', !prog.mismoSistema ? `el sistema (${esc(SISTEMA[prog.sistemaAntes])} → ${esc(SISTEMA[ctx.sim.sistema])})` : ''].filter(Boolean).join(' y ')}. Según la app, al importarla volverá a proponerte las cargas desde el principio; tu historial y tus récords se conservan.</p><p class="muted">Es lo que indica la app al importar una rutina; ella misma te lo confirma antes de aplicar nada.</p>`));
