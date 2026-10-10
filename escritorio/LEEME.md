@@ -4,9 +4,10 @@ Versión de escritorio de TrueLift para la persona que entrena: importa en el
 ordenador la copia de seguridad de la app y, si quieres, tus fotos de
 progreso, para consultar tu evolución en pantalla grande.
 
-**Estado:** en desarrollo (fases 1 a 4 de 8: importación, almacenamiento,
-secciones personales, resumen con conclusiones, ficha por ejercicio y comparación de periodos). Informes y el editor de rutina llegan en fases
-posteriores. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`.
+**Estado:** en desarrollo (fases 1 a 6 de 8: importación, almacenamiento,
+secciones personales, resumen con conclusiones, ficha por ejercicio, comparación de periodos, evolución física y planificador de rutina). Los informes llegan en una fase
+posterior. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`; el
+planificador, en `PLANIFICADOR.md`.
 
 ## Secciones
 
@@ -21,10 +22,12 @@ posteriores. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`.
   estado, evolución reciente, mejores marcas y comparación de dos
   sesiones), rendimiento por sesión, volumen por grupo muscular y semana y comparación de dos periodos.
 - **Evolución física:** peso tendencia y fase, composición (estimación),
-  contornos y galería de fotos.
+  contornos con gráficas y tablas, galería por fecha/pose y comparación de fotos.
 - **Recuperación:** estado para entrenar, cuestionarios, VFC, FC en reposo y
   datos del reloj.
-- **Mi rutina:** la rutina guardada en tu copia y sus series por grupo.
+- **Mi rutina:** la rutina de tu móvil (consulta) y tus borradores: editor con
+  todos los días a la vista, cambios frente a la rutina del móvil, series por
+  grupo, avisos y exportación al Excel que importa la app.
 - **Informes:** en preparación.
 - **Mis datos:** importación, almacenamiento, fotos con incidencias e
   historial de importaciones.
@@ -92,6 +95,63 @@ historiales. Tus fotos no se tocan.
   utilizada, pero la copia no guarda sus límites históricos exactos. Indica
   manualmente las fechas de los bloques que quieras revisar.
 
+## Comparar fotos y medidas (fase 5)
+
+1. Abre **Evolución física**. Elige una pose y dos fotos distintas. Si falta
+   una imagen, importa el ZIP; la ficha y sus datos se conservan.
+2. Usa **Lado a lado**, **Cortina** o **Superposición**. Los deslizadores
+   admiten las flechas del teclado, Inicio y Fin.
+3. En **Ajustar encuadre** puedes ampliar uniformemente y mover cada imagen.
+   **Restablecer A/B** vuelve al encuadre original. **Guardar encuadres en
+   este navegador** conserva los ajustes al cerrar; no modifica las fotos.
+4. Revisa peso guardado, fase histórica y tabla de contornos asociados.
+   Cada medida enseña su fecha real: hasta 30 días antes, nunca futura.
+   Si se usa la misma medida para ambas fotos, no se calcula un cambio.
+5. Filtra la galería por pose y avanza por páginas. Debajo puedes consultar
+   las gráficas y tablas de peso, composición estimada y contornos.
+
+Las correcciones de fecha o pose hechas en el móvil llegan con la siguiente
+copia JSON. No necesitas reimportar la imagen si conserva su nombre.
+Los encuadres se mantienen en tu espacio aunque actualices la copia.
+El ZIP también permite consultar fotos y contornos sin JSON, si tiene índice;
+para los entrenamientos y fases históricas necesitas la copia JSON.
+
+La perspectiva, la luz y la postura afectan a la comparación; los ajustes
+no corrigen esas diferencias. Masa magra estimada no equivale a músculo.
+
+## Preparar y aplicar un cambio de rutina (fase 6)
+
+1. Importa tu copia de datos y abre **Mi rutina**. Arriba ves tres cosas
+   distintas: la rutina **en tu móvil** (según la copia), tu **borrador** y el
+   último **archivo exportado**.
+2. Pulsa **Nuevo borrador desde la rutina del móvil** (o **Nuevo en blanco**, o
+   **Abrir un Excel de rutina…**). Puedes tener varios borradores.
+3. Edita: nombre y orden de los días, ejercicios (escribe o elige; si eliges
+   uno del catálogo sin patrón, se rellena solo), series, repeticiones, RIR,
+   descanso, modalidad (series normales, top set + back-off, drop set,
+   rest-pause) y superseries. Todo se maneja con el teclado; ↑ ↓ cambian el
+   orden. Cada cambio se guarda en este navegador.
+4. **Deshacer** / **Rehacer** (Ctrl + Z / Ctrl + Y fuera de un campo de texto)
+   y **Volver a la rutina de partida** recuperan versiones anteriores.
+5. Revisa **Cambios frente a la rutina del móvil**, **Series por grupo**,
+   **Avisos antes de exportar** (lo que la app interpretará de otra forma) y
+   **Tus cargas al aplicar esta rutina**.
+6. **Exportar Excel para la app** descarga `mi_rutina_truelift_….xlsx`.
+   **Tu móvil no cambia todavía.**
+7. Pasa el archivo al móvil e impórtalo en la app: **Rutina → Importar**. La
+   app te enseña la rutina a prueba; confírmala o descártala allí.
+8. Para comprobarlo, exporta una copia nueva desde el móvil e impórtala aquí:
+   el archivo exportado aparecerá como **A prueba en el móvil** o **En tu
+   móvil**.
+
+- Importar una copia nueva **no borra** tus borradores. Si la rutina del móvil
+  cambió desde que empezaste un borrador, se avisa con los cambios y eliges
+  entre mantener tu borrador o crear otro desde la rutina actual.
+- El historial importado no se edita aquí; los borradores son aparte.
+- Si la app no admite algo del archivo con tu versión, te lo explica al
+  importarlo. Un ejercicio que no tengas en tu biblioteca se añade solo si lo
+  aceptas en la app.
+
 ## Dónde se guardan los datos
 
 En el propio navegador (IndexedDB), separados de TrueLift Coach. Nada se
@@ -113,10 +173,15 @@ pierde al cerrar.
   datos sin el ZIP.
 - Como último recurso: **Borrar todos los datos del escritorio** y volver a
   importar tus archivos originales.
+- Un borrador que no se pudo guardar (falta de espacio) se queda como estaba
+  en su último guardado; el aviso lo dice. Los Excel ya exportados son
+  archivos tuyos: puedes volver a abrirlos con **Abrir un Excel de rutina…**.
 
 ## Pruebas
 
 ```
 node --test escritorio/tests/*.test.mjs     # módulos (Node 20+)
 node escritorio/tests/e2e.mjs [capturas/]   # navegador (requiere Playwright)
+DART=/ruta/dart node --test escritorio/tests/planificador.test.mjs
+                                            # + lector real del Excel de la app (App-PRO al lado)
 ```

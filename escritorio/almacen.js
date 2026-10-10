@@ -224,6 +224,9 @@ const Almacen = {
       ...['instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones', 'borradores']
         .map(a => ({ almacen: a, delEspacio: espacioId })),
       { almacen: 'espacios', del: espacioId },
+      { almacen: 'meta', del: `encuadres:${espacioId}` },
+      { almacen: 'meta', del: `periodos:${espacioId}` },
+      { almacen: 'meta', del: `borradorActivo:${espacioId}` },
     ];
   },
 

@@ -1,0 +1,6 @@
+name: arnes_excel
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  excel: 4.0.6
+  archive: 3.6.1

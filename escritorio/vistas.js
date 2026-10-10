@@ -39,7 +39,7 @@ function tabla(cab, filas, { caption = '', clase = '' } = {}){
    de pantalla (role=img con resumen); la tabla trae los mismos números. */
 function grafica(svg, resumen, tablaHtml){
   return `<div class="chart-caja" role="img" aria-label="${esc(resumen)}">${svg}</div>
-    <details class="detalle"><summary>Ver los datos en tabla</summary>${tablaHtml}</details>`;
+    ${tablaHtml ? `<details class="detalle"><summary>Ver los datos en tabla</summary>${tablaHtml}</details>` : ''}`;
 }
 
 // ---------------------------------------------------------------
@@ -655,8 +655,36 @@ const SITIOS = { cuello: 'Cuello', hombros: 'Hombros', pecho: 'Pecho', biceps_iz
   antebrazo_izq: 'Antebrazo izq.', antebrazo_der: 'Antebrazo der.', cintura: 'Cintura', abdomen: 'Abdomen', cadera: 'Cadera',
   muslo_izq: 'Muslo izq.', muslo_der: 'Muslo der.', gemelo_izq: 'Gemelo izq.', gemelo_der: 'Gemelo der.' };
 
+function contornos(modelo, st){
+  if (!modelo.sitios.length) return tarjeta('Contornos', vacio(modelo.fuente ? 'No has registrado contornos.' : 'No hay registro de contornos en la copia JSON ni en el índice del ZIP.'));
+  const sitio = modelo.sitios.includes(st.sitio) ? st.sitio : modelo.sitios.includes('cintura') ? 'cintura' : modelo.sitios[0];
+  const serie = modelo.registros.filter(r => r.sitio === sitio && !r.conflicto);
+  const t = Evolucion.tendenciaDe(serie);
+  const puntos = serie.map(r => ({ x: parseFecha(r.fecha), y: r.cm }));
+  const tendencias = t ? [serie[0], serie.at(-1)].map(r => ({ x: parseFecha(r.fecha), y: t.interceptoCm + t.pendienteCmPorDia * Evolucion.dias(t.origen, r.fecha) })) : [];
+  const svg = puntos.length ? Charts.lineas({ series: [
+    { nombre: SITIOS[sitio], color: TL.lima, unidad: 'cm', puntos },
+    { nombre: 'Tendencia estimada', color: TL.txt2, unidad: 'cm', puntos: tendencias, sinPuntos: true, dash: '5 4' },
+  ], w: 960, h: 260 }) : '';
+  const fechas = [...new Set(modelo.registros.map(r => r.fecha))].sort().reverse();
+  const valores = new Map(modelo.registros.map(r => [`${r.fecha}|${r.sitio}`, r]));
+  const filas = fechas.map(f => [F.dia(f), ...modelo.sitios.map(s => {
+    const r = valores.get(`${f}|${s}`);
+    return !r ? '—' : r.conflicto ? '<span class="muted">Conflicto: valores distintos</span>' : `${F.num(r.cm)} cm`;
+  })]);
+  const aviso = modelo.conflictos.length ? `<p class="muted" role="status">${modelo.conflictos.length} días/sitios con valores contradictorios: se conservan en la copia, pero no se usan para asociar fotos ni para calcular tendencias.</p>` : '';
+  return tarjeta('Contornos (cm)', `${modelo.fuente === 'zip' ? '<p class="muted">Contornos del índice del ZIP. El JSON no contiene un módulo de medidas; no se han mezclado registros.</p>' : ''}
+    ${aviso}${modelo.repetidos ? `<p class="muted">${modelo.repetidos} registros repetidos; los idénticos se muestran una sola vez.</p>` : ''}
+    <label for="contornoSitio">Contorno de la gráfica <select id="contornoSitio">${modelo.sitios.map(s => `<option value="${s}"${s === sitio ? ' selected' : ''}>${esc(SITIOS[s])}</option>`).join('')}</select></label>
+    ${svg ? grafica(svg, `Evolución de ${SITIOS[sitio]} en cm`, tabla(['Fecha', `${esc(SITIOS[sitio])} (cm)`], serie.map(r => [F.dia(r.fecha), F.num(r.cm)]), { caption: 'Medidas de la gráfica' })) : vacio('No hay valores utilizables para la gráfica de este contorno.')}
+    <p class="muted">${t ? `Tendencia estimada: ${t.cmPorMes > 0 ? '+' : t.cmPorMes < 0 ? '−' : ''}${F.num(Math.abs(t.cmPorMes), 2)} cm/mes · ${serie.length} medidas.` : 'Datos insuficientes para una tendencia: hacen falta al menos 3 medidas a lo largo de 21 días.'}</p>
+    <details class="detalle"><summary>Todos los contornos por fecha</summary>${tabla(['Fecha', ...modelo.sitios.map(s => esc(SITIOS[s]))], filas, { caption: 'Contornos por fecha, sin arrastre' })}</details>
+    ${ayuda('Los valores son medidas puntuales en centímetros; «—» significa que ese sitio no se midió ese día. La tendencia es la misma recta de mínimos cuadrados de la app (mes medio de 30,44 días), no una predicción. La repetición de un mismo valor en días distintos sigue siendo un registro válido. Ningún contorno ni fotografía permite deducir por sí solo músculo ganado o perdido.')}`);
+}
+
 function fisica(M, ctx){
   const out = ['<div class="cabecera-seccion"><h1>Evolución física</h1></div>'];
+  out.push(ctx.galeriaHtml());
   const N = M.datos.nut;
   // --- peso ---
   if (N && N.pesajes.length){
@@ -666,7 +694,7 @@ function fisica(M, ctx){
       { nombre: 'Pesajes', color: TL.txt2, puntos: pts, soloPuntos: true, unidad: 'kg' },
       { nombre: 'Peso tendencia', color: TL.lima, puntos: tend, unidad: 'kg', sinPuntos: true },
     ], w: 960, h: 260 });
-    const filas = N.pesajes.slice().reverse().slice(0, 120).map(p => {
+    const filas = N.pesajes.slice().reverse().map(p => {
       const t = N.serie.vacia ? null : N.serie.puntos[N.serie.indice.get(p.clave)];
       return [F.dia(p.fecha), F.kg(p.pesoKg, 2), t ? F.kg(t.tendenciaKg, 2) : '—', p.enmascarado ? 'No cuenta (refeed o pausa)' : ''];
     });
@@ -685,24 +713,16 @@ function fisica(M, ctx){
   // --- composición (estimación) ---
   if (N && N.mediciones.length){
     const filas = N.mediciones.slice().reverse().map(m => [F.dia(m.fecha), `${F.num(m.porcentajePct, 1)} %`, F.kg(m.pesoAnclaKg), F.kg(m.grasaKg), F.kg(m.magraKg), esc(METODO[m.metodo] || m.metodo)]);
-    out.push(tarjeta('Composición corporal (estimación)', `${tabla(['Fecha', '% graso', 'Peso', 'Masa grasa', 'Masa magra', 'Método'], filas, { caption: 'Mediciones de grasa corporal' })}
+    const pct = Charts.lineas({ series: [{ nombre: '% graso estimado', color: TL.ambar, unidad: '%', puntos: N.mediciones.map(m => ({ x: m.fecha, y: m.porcentajePct })) }], w: 960, h: 230 });
+    const masas = Charts.lineas({ series: [
+      { nombre: 'Masa grasa estimada', color: TL.ambar, unidad: 'kg', puntos: N.mediciones.filter(m => m.grasaKg != null).map(m => ({ x: m.fecha, y: m.grasaKg })) },
+      { nombre: 'Masa magra estimada', color: TL.lima, unidad: 'kg', puntos: N.mediciones.filter(m => m.magraKg != null).map(m => ({ x: m.fecha, y: m.magraKg })) },
+    ], w: 960, h: 230 });
+    out.push(tarjeta('Composición corporal (estimación)', `${grafica(pct, 'Estimaciones de porcentaje graso', '')}${grafica(masas, 'Masa grasa y masa magra estimadas en kg', '')}${tabla(['Fecha', '% graso', 'Peso', 'Masa grasa', 'Masa magra', 'Método'], filas, { caption: 'Mediciones de grasa corporal' })}
       <p class="muted" style="font-size:12.5px">El % graso es una estimación del método que usaste, y las masas salen de multiplicarlo por tu peso de ese día. Un cambio de masa magra no equivale a músculo ganado o perdido: incluye agua, glucógeno y el error del método.</p>`));
   }
 
-  // --- contornos ---
-  const md = M.raw.medidas && typeof M.raw.medidas === 'object' ? M.raw.medidas : null;
-  const regs = md && Array.isArray(md.registros) ? md.registros.filter(r => r && typeof r.cm === 'number' && r.cm >= 10 && r.cm <= 300 && SITIOS[r.sitio] && parseFecha(r.fecha)) : [];
-  if (regs.length){
-    const fechas = [...new Set(regs.map(r => r.fecha.slice(0, 10)))].sort().reverse();
-    const sitios = Object.keys(SITIOS).filter(s => regs.some(r => r.sitio === s));
-    const val = new Map(regs.map(r => [`${r.fecha.slice(0, 10)}|${r.sitio}`, r.cm]));
-    const filas = fechas.map(f => [F.dia(f), ...sitios.map(s => val.has(`${f}|${s}`) ? F.num(val.get(`${f}|${s}`), 1) : '<span class="muted">—</span>')]);
-    out.push(tarjeta('Contornos (cm)', `${tabla(['Fecha', ...sitios.map(s => esc(SITIOS[s]))], filas, { caption: 'Contornos por fecha' })}
-      <p class="muted" style="font-size:12.5px">«—» es un sitio que no mediste ese día. La comparación de fotos con sus medidas llegará en una fase posterior.</p>`));
-  } else {
-    out.push(tarjeta('Contornos', vacio(md ? 'No has registrado contornos.' : 'Tu copia es de una versión de la app anterior a las medidas y fotos.')));
-  }
-  out.push(ctx.galeriaHtml());
+  out.push(contornos(ctx.fisica || Evolucion.preparar(M.raw), ctx.fis || {}));
   return out.join('');
 }
 const METODO = { DIRECT: 'Valor introducido', NAVY: 'Fórmula con contornos (Navy)', GALLERY: 'Comparación con fotos de referencia' };
@@ -777,15 +797,15 @@ const COLOR_ESTADO = { verde: TL.lima, ambar: TL.ambar, rojo: TL.naranja };
 // ---------------------------------------------------------------
 // MI RUTINA
 // ---------------------------------------------------------------
-function rutina(M){
-  const out = ['<div class="cabecera-seccion"><h1>Mi rutina</h1></div>'];
+function rutina(M, { sinCabecera = false } = {}){
+  const out = [sinCabecera ? '' : '<div class="cabecera-seccion"><h1>Mi rutina</h1></div>'];
   const lineas = M.planMod;
   if (!lineas.length){
     out.push(tarjeta('Rutina', `<p>Tu copia no incluye una rutina personalizada. Si usas una de las rutinas prefijadas de la app, consúltala en el móvil.</p>`));
     return out.join('');
   }
   const aviso = M.planConocido
-    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana. Es de consulta; el editor para preparar cambios llegará en una fase posterior.</p>`
+    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana. Es de consulta: para preparar cambios crea un borrador.</p>`
     : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días o sistema que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
   const dias = [...new Set(lineas.map(l => l.dia))];
   const bloques = dias.map(d => {
@@ -817,5 +837,5 @@ function informes(){
     '<p>Aquí podrás preparar un informe mensual o de las fechas que elijas, para guardarlo en PDF desde la impresión del navegador. Está en preparación.</p><p class="muted">Mientras tanto, la app genera su informe mensual en Progreso.</p>')}`;
 }
 
-return { resumen, entrenamiento, detalleSesionHtml, fisica, recuperacion, rutina, informes, estadoTexto, F };
+return { resumen, entrenamiento, detalleSesionHtml, fisica, contornos, recuperacion, rutina, informes, estadoTexto, F, SITIOS, tabla };
 })();

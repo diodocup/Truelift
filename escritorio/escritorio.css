@@ -55,11 +55,41 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 .foto{margin:0;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm);overflow:hidden}
 .foto button{display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:left}
 .foto .marco{aspect-ratio:3/4;background:var(--sup3);display:flex;align-items:center;justify-content:center}
-.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto img{width:100%;height:100%;object-fit:contain;display:block}
 .foto .hueco{padding:10px;text-align:center;font-size:12px;color:var(--txt3)}
 .foto figcaption{padding:6px 8px;font-size:12px;display:flex;flex-direction:column;gap:3px}
 .foto figcaption .chip{align-self:flex-start;font-size:9px}
 .foto-grande{max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:10px}
+
+/* Comparación: cada imagen ocupa el mismo marco y conserva su proporción.
+   La cortina recorta la capa, no cambia su ancho ni escala por eje. */
+.foto-selectores{display:grid;grid-template-columns:130px minmax(0,1fr) minmax(0,1fr);gap:12px}
+.foto-selectores label,.foto-filtro label,.encuadre label{display:block;font-size:12px;color:var(--txt2)}
+.foto-selectores select{display:block;width:100%;margin-top:5px;min-width:0}
+.comparador-etiquetas{display:flex;justify-content:space-between;gap:10px;margin:14px 0 6px;font:600 12px var(--mono)}
+.comparador-lienzo{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;isolation:isolate}
+.comparador-marco{position:relative;aspect-ratio:3/4;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--sup3);border-radius:8px;min-width:0}
+.comparador-marco img{width:100%;height:100%;object-fit:contain;display:block;transform-origin:center;flex-shrink:0}
+.comparador-marco .hueco{padding:20px;font-size:13px;color:var(--txt3);text-align:center}
+.comparador-lienzo:not(.modo-lado){display:block;width:min(100%,540px);aspect-ratio:3/4;margin:0 auto}
+.comparador-lienzo:not(.modo-lado) .comparador-marco{position:absolute;inset:0;width:100%;height:100%}
+.modo-cortina .foto-b{clip-path:inset(0 calc(100% - var(--corte)) 0 0);border-radius:0}
+.modo-cortina::after{content:'';position:absolute;top:0;bottom:0;left:var(--corte);width:2px;background:var(--lima);pointer-events:none;z-index:2}
+.modo-superposicion .foto-b{opacity:var(--opacidad)}
+.comparador-control{max-width:540px;margin:12px auto;font-size:13px}
+.comparador-control input,.encuadre input{display:block;width:100%;accent-color:var(--lima);margin:6px 0 12px}
+.encuadres,.comparador-contextos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.encuadre{min-width:0;border:1px solid var(--borde);border-radius:8px;padding:12px}
+.encuadre legend{font-size:12px;color:var(--txt2)}
+.encuadre output{float:right;font-family:var(--mono)}
+.foto-contexto{font-size:12.5px;line-height:1.6;overflow-wrap:anywhere}
+.foto-filtro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--txt3)}
+@media(max-width:640px){
+  .foto-selectores{grid-template-columns:minmax(0,1fr)}
+  .encuadres,.comparador-contextos{grid-template-columns:minmax(0,1fr)}
+  .comparador-lienzo{gap:6px}
+  .comparador-etiquetas{font-size:10px}
+}
 
 /* Tablas de historial. */
 .tabla-scroll{overflow-x:auto}
@@ -140,3 +170,51 @@ img[data-mini]:not([src]){visibility:hidden}
 .periodos-sel input{min-width:0;max-width:100%;color-scheme:dark}
 .aviso-comparacion{border-left:3px solid var(--ambar);padding-left:10px;color:var(--txt2)}
 @media (max-width:640px){.periodos-sel{grid-template-columns:1fr}}
+
+/* ---------- Mi rutina: planificador personal (fase 6) ---------- */
+.rut-estado{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.rut-estado > div{padding:2px 0 2px 12px;border-left:3px solid var(--borde)}
+.rut-estado > div:nth-child(2){border-left-color:var(--lima)}
+.rut-estado h3{margin:0 0 6px}
+.rut-estado p{margin:4px 0}
+.rut-barra .fila-botones{margin-top:0}
+.rut-barra .fila-botones + .fila-botones{margin-top:10px;padding-top:10px;border-top:1px solid var(--borde)}
+.rut-dias{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:12px;align-items:start;margin-bottom:12px}
+.rut-dias > .card{margin:0}
+.rut-dia-cab{display:flex;gap:8px;align-items:flex-end}
+.rut-dia-cab .rut-campo.nombre{flex:1}
+.rut-dia-resumen{margin:6px 0 8px;font-size:12px}
+.rut-filas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rut-fila{padding:8px 10px;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm)}
+.rut-fila.en-ss{border-left:3px solid var(--azul)}
+.rut-fila-cab{display:flex;gap:8px;align-items:flex-end}
+.rut-num{font:800 12px var(--mono);color:var(--txt3);min-width:16px;padding-bottom:9px}
+.rut-mover{display:flex;gap:4px;padding-bottom:4px}
+.rut-mover .btn-mini{min-width:30px;min-height:30px}
+.rut-fila-campos{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:6px;align-items:flex-end}
+.rut-campo{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--txt3);min-width:0}
+.rut-campo > span{font:600 10.5px var(--mono);letter-spacing:.03em}
+.rut-campo input,.rut-campo select{width:100%;min-width:0}
+.rut-campo.ej{flex:1}
+.rut-campo.pat{width:150px}
+.rut-campo.n2{width:74px}
+.rut-campo.n3{width:124px}
+.rut-campo.n4{width:184px}
+.rut-campo.nombre{min-width:180px}
+.rut-fijo b{display:block;padding:7px 0;font:600 12px var(--mono);color:var(--txt2)}
+.rut-ss{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--txt2);padding-bottom:7px}
+.rut-ss input{margin:0}
+.rut-meta{margin:6px 0 0}
+.rut-cambios{margin:0;padding-left:18px}
+.rut-cambios > li{margin:6px 0}
+.rut-cambios ul{margin:4px 0;padding-left:14px;list-style:none}
+.rut-cambios ul li{margin:3px 0;font-size:13px}
+.rut-cambios .chip{font-size:9px}
+.rut-analisis{grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))}
+b.sube{color:var(--lima)}
+b.baja{color:var(--naranja)}
+@media (max-width:560px){
+  .rut-fila-cab{flex-wrap:wrap}
+  .rut-campo.pat,.rut-campo.n4{width:calc(50% - 4px)}
+  .rut-barra .spacer{display:none}
+}

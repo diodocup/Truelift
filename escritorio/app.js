@@ -20,9 +20,14 @@ const E = {
   seccion: 'datos', ocupado: false, abort: null, P: null,
   urls: new Set(), urlModal: null, obs: null, canal: null,
   estimacion: null, persistido: null, origenModal: null,
-  M: null, errorModelo: null,
+  M: null, errorModelo: null, fisica: null, espacioFisica: null,
+  fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 },
   st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, periodos: null },
+  // Planificador (fase 6): borradores del espacio, el activo y, solo en
+  // memoria, las pilas de deshacer/rehacer de cada borrador.
+  rut: { borradores: [], activoId: null, pilas: new Map(), error: null, foco: null },
 };
+const PL = Planificador;
 
 const SECCIONES = {
   resumen: 'Mi resumen', entrenamiento: 'Entrenamiento', fisica: 'Evolución física',
@@ -96,7 +101,7 @@ async function cargarEstado(){
     if (E.raw && E.raw.medidas && typeof E.raw.medidas === 'object' && !Array.isArray(E.raw.medidas))
       E.indiceJson = FotosTL.leerIndice(E.raw.medidas);
     E.fotosMeta = await Almacen.todos('fotos', E.espacio.id);
-    E.galeria = FotosTL.resolver({ indiceJson: E.indiceJson, guardadas: E.fotosMeta });
+    E.galeria = FotosTL.resolver({ indiceJson: E.indiceJson, indiceZip: FotosTL.leerIndice(E.espacio.indiceZip), guardadas: E.fotosMeta });
     E.importaciones = (await Almacen.todos('importaciones', E.espacio.id)).sort((a, b) => b.id - a.id);
     // Modelo de análisis: se recalcula desde el texto original en cada carga.
     if (E.raw){
@@ -104,7 +109,20 @@ async function cargarEstado(){
       catch (e) { E.errorModelo = e && e.message ? e.message : String(e); console.error(e); }
     }
   }
+  E.fisica = Evolucion.preparar(E.raw, E.espacio?.indiceZip);
+  const espacioId = E.espacio?.id || null;
+  if (espacioId !== E.espacioFisica){
+    Object.assign(E.fis, { pose: null, a: null, b: null, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 });
+    E.espacioFisica = espacioId;
+  }
+  if (!E.fis.dirty) E.fis.encuadres = espacioId ? (await Almacen.leer('meta', `encuadres:${espacioId}`))?.valor || {} : {};
   E.st.periodos = E.espacio ? (await Almacen.leer('meta', `periodos:${E.espacio.id}`))?.valor || null : null;
+  // Borradores de rutina: cuelgan del espacio, no de la copia; actualizar la
+  // copia no los toca.
+  E.rut.borradores = E.espacio
+    ? (await Almacen.todos('borradores', E.espacio.id)).map(b => PL.leerBorrador(b)).filter(Boolean).sort((a, b) => a.creado < b.creado ? -1 : 1)
+    : [];
+  E.rut.activoId = E.espacio ? (await Almacen.leer('meta', `borradorActivo:${E.espacio.id}`))?.valor || null : null;
   E.estimacion = await Almacen.estimacion();
   E.persistido = await Almacen.persistido();
 }
@@ -670,7 +688,10 @@ function tarjetaFotos(modo = 'galeria'){
       Puedes importar el ZIP que exporta la app desde Ajustes → Copia de seguridad → Exportar fotos.</p>
       <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button></div></div>`;
   }
-  const visibles = modo === 'resumen' ? g.filter(f => !f.tieneImagen || f.fuente === 'nombre' || f.fueraDeCopia) : g;
+  const filtradas = modo === 'resumen' ? g.filter(f => !f.tieneImagen || f.fuente === 'nombre' || f.fueraDeCopia) : g.filter(f => E.fis.galeriaPose === 'todas' || f.pose === E.fis.galeriaPose);
+  const porPagina = 48, paginas = Math.max(1, Math.ceil(filtradas.length / porPagina));
+  E.fis.pagina = Math.min(E.fis.pagina, paginas - 1);
+  const visibles = modo === 'resumen' ? filtradas : filtradas.slice().reverse().slice(E.fis.pagina * porPagina, (E.fis.pagina + 1) * porPagina);
   const porDia = new Map();
   visibles.forEach(f => { if (!porDia.has(f.fecha)) porDia.set(f.fecha, []); porDia.get(f.fecha).push(f); });
   const dias = [...porDia.keys()].sort().reverse();
@@ -685,6 +706,7 @@ function tarjetaFotos(modo = 'galeria'){
     ${pend ? '<p class="muted" style="font-size:12.5px">Las fotos sin imagen están registradas en tu copia de datos, pero su archivo no se ha importado. Importa el ZIP de fotos para verlas; sus datos no se borran.</p>' : ''}
     <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button>
       ${modo === 'resumen' ? '<button class="btn sec" type="button" data-ir="fisica">Ver la galería</button>' : ''}</div>
+    ${modo === 'galeria' ? `<div class="foto-filtro"><label for="galeriaPose">Filtrar galería por pose <select id="galeriaPose">${[['todas', 'Todas'], ...Object.entries(POSE_TXT)].map(([k, txt]) => `<option value="${k}"${E.fis.galeriaPose === k ? ' selected' : ''}>${txt}</option>`).join('')}</select></label><span>${filtradas.length} fotos · Página ${E.fis.pagina + 1} de ${paginas}</span><button class="btn sec" type="button" data-pagina-fotos="-1"${E.fis.pagina === 0 ? ' disabled' : ''}>Anterior</button><button class="btn sec" type="button" data-pagina-fotos="1"${E.fis.pagina >= paginas - 1 ? ' disabled' : ''}>Siguiente</button></div>${filtradas.length ? '' : '<p class="muted">No hay fotos de esta pose.</p>'}` : ''}
     ${modo === 'resumen' && visibles.length ? '<h4 class="sub-h">Fotos que conviene revisar</h4>' : ''}
     ${dias.map(d => `<section class="galeria-dia"><h4>${fmtDia(d)}</h4><div class="galeria">
       ${porDia.get(d).map(fotoHtml).join('')}</div></section>`).join('')}
@@ -720,6 +742,39 @@ function tarjetaHistorial(){
   return `<div class="card"><h3>Historial de importaciones</h3><div class="tabla-scroll"><table>
     <thead><tr><th>Fecha</th><th>Qué se importó</th><th>Archivos</th></tr></thead>
     <tbody>${E.importaciones.slice(0, 20).map(fila).join('')}</tbody></table></div></div>`;
+}
+
+function fisicaFotosHtml(){
+  return FisicaVista.comparador(E.galeria, E.fisica, E.raw, E.fis) + tarjetaFotos('galeria');
+}
+function actualizarOutput(i){
+  const out = document.querySelector(`output[for="${i.id}"]`);
+  if (out) out.textContent = i.value;
+}
+function aplicarEncuadres(){
+  $$('[data-original]').forEach(m => {
+    const enc = Evolucion.encuadre(E.fis.encuadres[m.dataset.original]);
+    const img = m.querySelector('img');
+    if (img) img.style.transform = `translate(${enc.x}%, ${enc.y}%) scale(${enc.zoom})`;
+  });
+}
+function activarOriginales(){
+  const espacioId = E.espacio?.id;
+  $$('[data-original]').forEach(async marco => {
+    try {
+      const archivo = marco.dataset.original;
+      const reg = await Almacen.leer('imagenes', [espacioId, archivo]);
+      if (!document.contains(marco) || E.espacio?.id !== espacioId) return;
+      if (!reg){ marco.textContent = 'Imagen no disponible. Importa de nuevo el ZIP.'; return; }
+      const url = URL.createObjectURL(reg.blob); E.urls.add(url);
+      const img = document.createElement('img');
+      const f = E.galeria.find(f => f.archivo === archivo);
+      img.alt = `${POSE_TXT[f.pose]}, ${fmtDia(f.fecha)}, foto ${marco.dataset.lado.toUpperCase()}`;
+      img.onload = () => { if (document.contains(marco)){ marco.replaceChildren(img); aplicarEncuadres(); } };
+      img.onerror = () => { if (document.contains(marco)) marco.textContent = 'Imagen ilegible. Importa de nuevo el ZIP.'; URL.revokeObjectURL(url); E.urls.delete(url); };
+      img.src = url;
+    } catch (_) { if (document.contains(marco)) marco.textContent = 'No se pudo cargar. Vuelve a seleccionar la foto o importa el ZIP.'; }
+  });
 }
 
 // ---------- miniaturas con carga diferida ----------
@@ -759,6 +814,8 @@ async function verFoto(archivo){
   abrirModal(`<h2 id="modalTitulo">${esc(pose)} · ${fmtDia(f.fecha)}</h2>
     <img class="foto-grande" src="${E.urlModal}" alt="${esc(`${pose}, ${fmtDia(f.fecha)}`)}">
     <p class="muted mono-peq" style="margin-top:8px">${esc(archivo)}${f.pesoKg != null ? ` · ${fmtNum(f.pesoKg)} kg` : ''}</p>
+    ${FisicaVista.contexto(f, E.fisica, E.raw)}
+    ${E.fisica.sitios.length ? FisicaVista.asociaciones(f, f, E.fisica) : ''}
     ${f.discrepancia ? `<p class="muted" style="font-size:12.5px">El índice del ZIP la fechaba el ${fmtDia(f.discrepancia.zip.fecha)} (${esc(POSE_TXT[f.discrepancia.zip.pose] || '')}); se usa la ficha corregida de tu copia de datos.</p>` : ''}
     ${f.fuente === 'nombre' ? '<p class="muted" style="font-size:12.5px">Fecha y pose deducidas del nombre del archivo: ningún índice la describe.</p>' : ''}
     <div class="mod-acciones"><button class="btn pri" type="button" data-accion="cerrar" autofocus>Cerrar</button></div>`, { ancho: true });
@@ -890,6 +947,8 @@ function render(){
   }
   cont.innerHTML = renderSeccion();
   activarMiniaturas();
+  activarOriginales();
+  rutRestaurarFoco();
 }
 
 function sinCopiaHtml(){
@@ -904,16 +963,16 @@ function sinCopiaHtml(){
 function renderSeccion(){
   const M = E.M;
   if (E.seccion === 'fisica' && !M){
-    return `<div class="cabecera-seccion"><h1>Evolución física</h1></div>${sinCopiaHtml()}${tarjetaFotos('galeria')}`;
+    return `<div class="cabecera-seccion"><h1>Evolución física</h1></div>${sinCopiaHtml()}${fisicaFotosHtml()}${VistasEsc.contornos(E.fisica, E.fis)}`;
   }
   if (!M) return sinCopiaHtml();
-  const ctx = { inst: E.inst, galeriaHtml: () => tarjetaFotos('galeria') };
+  const ctx = { inst: E.inst, galeriaHtml: fisicaFotosHtml, fisica: E.fisica, fis: E.fis };
   switch (E.seccion){
     case 'resumen': return VistasEsc.resumen(M, ctx);
     case 'entrenamiento': return VistasEsc.entrenamiento(M, E.st);
     case 'fisica': return VistasEsc.fisica(M, ctx);
     case 'recuperacion': return VistasEsc.recuperacion(M);
-    case 'rutina': return VistasEsc.rutina(M);
+    case 'rutina': return RutinaVista.html(rutCtx());
     case 'informes': return VistasEsc.informes(M);
   }
   return '';
@@ -946,6 +1005,238 @@ function initTooltip(){
   document.addEventListener('mouseleave', ocultar);
 }
 
+// ---------- Mi rutina: borradores (fase 6) ----------
+function borradorActivo(){
+  return E.rut.borradores.find(b => b.id === E.rut.activoId) || E.rut.borradores[E.rut.borradores.length - 1] || null;
+}
+function pilaDe(id){
+  if (!E.rut.pilas.has(id)) E.rut.pilas.set(id, { deshacer: [], rehacer: [] });
+  return E.rut.pilas.get(id);
+}
+function rutCtx(){
+  const b = borradorActivo();
+  const p = b ? pilaDe(b.id) : { deshacer: [], rehacer: [] };
+  return { M: E.M, raw: E.raw, rawExport: PL.rawConBiblioteca(E.raw, b), inst: E.inst, movil: PL.rutinaMovil(E.raw), borrador: b, borradores: E.rut.borradores,
+           pila: { deshacer: p.deshacer.length, rehacer: p.rehacer.length }, error: E.rut.error };
+}
+const ahoraISO = () => new Date().toISOString();
+
+/* Guarda (o borra) borradores en UNA transacción. Si falla, el estado en
+   pantalla vuelve a lo último guardado y se dice. */
+async function rutGuardar({ put = [], del = [], activo, foco = null, msg = null, hecho = null }){
+  const ops = [...put.map(b => ({ almacen: 'borradores', put: b })), ...del.map(id => ({ almacen: 'borradores', del: id }))];
+  if (activo !== undefined) ops.push({ almacen: 'meta', put: { clave: `borradorActivo:${E.espacio.id}`, valor: activo } });
+  try { await Almacen.escribir(ops); }
+  catch (e) {
+    E.rut.error = Almacen.esErrorCuota(e)
+      ? 'No hay espacio en el navegador para guardar el borrador. El último cambio no se ha guardado; lo anterior sigue intacto. Libera espacio (por ejemplo, borrando un espacio que no uses) y vuelve a intentarlo.'
+      : `El último cambio no se ha guardado (${e && e.message ? e.message : e}); lo anterior sigue intacto.`;
+    render(); $('.alerta[role="alert"]')?.scrollIntoView({ block: 'nearest' });
+    anunciar('No se ha guardado el cambio');
+    return false;
+  }
+  E.rut.error = null;
+  const lista = E.rut.borradores.filter(b => !del.includes(b.id) && !put.some(p => p.id === b.id));
+  E.rut.borradores = [...lista, ...put].sort((a, b) => a.creado < b.creado ? -1 : 1);
+  if (activo !== undefined) E.rut.activoId = activo;
+  if (hecho) hecho();
+  if (E.canal) E.canal.postMessage({ tipo: 'cambio' });
+  E.rut.foco = foco;
+  render();
+  if (msg) anunciar(msg);
+  return true;
+}
+
+async function rutEditar(op, foco){
+  const b = borradorActivo();
+  if (!b) return;
+  const r = PL.editar(b.rutina, op);
+  if (!r) return;
+  const p = pilaDe(b.id);
+  await rutGuardar({ put: [{ ...b, rutina: r, actualizado: ahoraISO() }], foco,
+    hecho: () => { p.deshacer.push(b.rutina); if (p.deshacer.length > PL.MAX_DESHACER) p.deshacer.shift(); p.rehacer = []; } });
+}
+
+async function rutCrear(b, msg){
+  await rutGuardar({ put: [b], activo: b.id, foco: 'rutExportar', msg });
+}
+
+function nombreNuevo(base){
+  const usados = new Set(E.rut.borradores.map(b => b.nombre));
+  let n = base, i = 2;
+  while (usados.has(n)) n = `${base} (${i++})`;
+  return n;
+}
+
+async function rutAccion(nombre, el){
+  const b = borradorActivo();
+  const d = el ? Number(el.dataset.d) : NaN, f = el ? Number(el.dataset.f) : NaN;
+  switch (nombre){
+    case 'nuevo-movil': {
+      const m = PL.rutinaMovil(E.raw);
+      if (!m) return;
+      if (!$('#modal').classList.contains('oculto')) cerrarModal();
+      await rutCrear(PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo(`Desde el móvil (${VistasEsc.F.dia(E.inst?.resumen?.ultimoRegistro)})`),
+        rutina: m.rutina, origen: { tipo: 'movil', firma: PL.firma(m.normal), normal: m.normal, rutina: m.rutina,
+          instantaneaId: E.inst?.id || null, desde: E.inst?.resumen?.ultimoRegistro || null } }), 'Borrador creado desde la rutina del móvil');
+      return;
+    }
+    case 'nuevo-blanco':
+      await rutCrear(PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo('Rutina nueva'), rutina: PL.rutinaVacia(), origen: { tipo: 'blanco' } }), 'Borrador en blanco creado');
+      return;
+    case 'abrir-excel': $('#rutExcel')?.click(); return;
+    case 'duplicar':
+      if (b) await rutCrear(PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo(`${b.nombre} (copia)`), rutina: b.rutina,
+        origen: { ...PL.clonar(b.origen) } }), 'Borrador duplicado');
+      return;
+    case 'renombrar':
+      if (!b) return;
+      abrirModal(`<h2 id="modalTitulo">Renombrar borrador</h2>
+        <label for="rutNombre">Nombre</label><input id="rutNombre" type="text" maxlength="80" value="${esc(b.nombre)}" style="width:100%" autofocus>
+        <div class="mod-acciones"><button class="btn sec" type="button" data-accion="cerrar">Cancelar</button>
+          <button class="btn pri" type="button" data-rut-accion="renombrar-ok">Guardar</button></div>`);
+      return;
+    case 'renombrar-ok': {
+      const v = ($('#rutNombre')?.value || '').trim();
+      cerrarModal();
+      if (b && v) await rutGuardar({ put: [{ ...b, nombre: v.slice(0, 80), actualizado: ahoraISO() }], foco: 'rutExportar', msg: 'Borrador renombrado' });
+      return;
+    }
+    case 'eliminar':
+      if (!b) return;
+      abrirModal(`<h2 id="modalTitulo">Eliminar «${esc(b.nombre)}»</h2>
+        <p>Se borra este borrador de este navegador. No afecta a tu móvil ni a los Excel que ya hayas exportado.</p>
+        <div class="mod-acciones"><button class="btn sec" type="button" data-accion="cerrar" autofocus>Cancelar</button>
+          <button class="btn peligro" type="button" data-rut-accion="eliminar-ok">Eliminar borrador</button></div>`);
+      return;
+    case 'eliminar-ok': {
+      cerrarModal();
+      if (!b) return;
+      const resto = E.rut.borradores.filter(x => x.id !== b.id);
+      if (await rutGuardar({ del: [b.id], activo: resto.length ? resto[resto.length - 1].id : null, msg: 'Borrador eliminado' })) E.rut.pilas.delete(b.id);
+      return;
+    }
+    case 'deshacer': case 'rehacer': {
+      if (!b) return;
+      const p = pilaDe(b.id);
+      const [de, a] = nombre === 'deshacer' ? [p.deshacer, p.rehacer] : [p.rehacer, p.deshacer];
+      if (!de.length) return;
+      const r = de[de.length - 1];
+      await rutGuardar({ put: [{ ...b, rutina: r, actualizado: ahoraISO() }], foco: nombre === 'deshacer' ? 'rutDeshacer' : 'rutRehacer',
+                         msg: nombre === 'deshacer' ? 'Cambio deshecho' : 'Cambio rehecho', hecho: () => { de.pop(); a.push(b.rutina); } });
+      return;
+    }
+    case 'partida': {
+      if (!b) return;
+      const p = pilaDe(b.id);
+      await rutGuardar({ put: [{ ...b, rutina: PL.clonar(b.origen.rutina), actualizado: ahoraISO() }], foco: 'rutDeshacer', msg: 'Recuperada la rutina de partida. Puedes deshacerlo.',
+                         hecho: () => { p.deshacer.push(b.rutina); p.rehacer = []; } });
+      return;
+    }
+    case 'rebasar': {
+      const m = PL.rutinaMovil(E.raw);
+      if (!b) return;
+      const origen = m ? { tipo: 'movil', firma: PL.firma(m.normal), normal: m.normal, rutina: m.rutina, instantaneaId: E.inst?.id || null, desde: E.inst?.resumen?.ultimoRegistro || null }
+                       : { ...b.origen, tipo: 'copia' };
+      await rutGuardar({ put: [{ ...b, origen, actualizado: ahoraISO() }], foco: 'rutExportar', msg: 'Borrador conservado; ahora se compara con la rutina actual del móvil' });
+      return;
+    }
+    case 'exportar': {
+      if (!b) return;
+      const av = PL.avisos(b.rutina, E.raw);
+      if (av.bloquea){
+        modalMensaje('Aún no se puede exportar', `<p>La app no podría leer este borrador:</p>${listaHtml(av.avisos.filter(a => a.nivel === 'rojo').map(a => esc(a.txt)))}`);
+        return;
+      }
+      abrirModal(RutinaVista.confirmarExportacion(rutCtx()), { ancho: true });
+      return;
+    }
+    case 'exportar-confirmar': await rutExportar(); return;
+    case 'fila-nueva': await rutEditar({ tipo: 'addFila', d }, `rut-${d}-${b ? b.rutina.dias[d].filas.length : 0}-ejercicio`); return;
+    case 'fila-arriba': await rutEditar({ tipo: 'moverFila', d, f, delta: -1 }, f - 1 > 0 ? `rut-${d}-${f - 1}-arriba` : `rut-${d}-${f - 1}-abajo`); return;
+    case 'fila-abajo': {
+      const ult = b ? b.rutina.dias[d].filas.length - 1 : 0;
+      await rutEditar({ tipo: 'moverFila', d, f, delta: 1 }, f + 1 < ult ? `rut-${d}-${f + 1}-abajo` : `rut-${d}-${f + 1}-arriba`);
+      return;
+    }
+    case 'fila-quitar': {
+      const n = b ? b.rutina.dias[d].filas.length : 0;
+      await rutEditar({ tipo: 'delFila', d, f }, n > 1 ? `rut-${d}-${Math.min(f, n - 2)}-ejercicio` : `rut-${d}-nueva`);
+      anunciar('Ejercicio quitado. Puedes deshacerlo.');
+      return;
+    }
+    case 'dia-nuevo': await rutEditar({ tipo: 'addDia' }, `rut-${b ? b.rutina.dias.length : 0}-nombre`); return;
+    case 'dia-antes': await rutEditar({ tipo: 'moverDia', d, delta: -1 }, `rut-${d - 1}-nombre`); return;
+    case 'dia-despues': await rutEditar({ tipo: 'moverDia', d, delta: 1 }, `rut-${d + 1}-nombre`); return;
+    case 'dia-quitar': await rutEditar({ tipo: 'delDia', d }, `rut-${Math.max(0, d - 1)}-nombre`); anunciar('Día quitado. Puedes deshacerlo.'); return;
+  }
+}
+
+async function rutCambio(el){
+  const b = borradorActivo();
+  const tipo = el.dataset.rut;
+  if (el.id === 'rutExcel'){
+    const file = el.files && el.files[0];
+    el.value = '';
+    if (file) await rutAbrirExcel(file);
+    return;
+  }
+  if (tipo === 'borrador'){
+    await rutGuardar({ activo: el.value, foco: 'rutSelBorrador', msg: 'Borrador cambiado' });
+    return;
+  }
+  if (!b) return;
+  if (tipo === 'sistema') await rutEditar({ tipo: 'sistema', valor: el.value }, 'rutSistema');
+  else if (tipo === 'nombreDia') await rutEditar({ tipo: 'nombreDia', d: Number(el.dataset.d), valor: el.value }, el.id);
+  else if (tipo === 'campo'){
+    const valor = el.type === 'checkbox' ? el.checked : el.value;
+    await rutEditar({ tipo: 'campo', d: Number(el.dataset.d), f: Number(el.dataset.f), k: el.dataset.k, valor }, el.id);
+  }
+}
+
+const MAX_EXCEL = 5 * 1024 * 1024;
+async function rutAbrirExcel(file){
+  if (file.size > MAX_EXCEL){ modalMensaje('Archivo demasiado grande', '<p>Un Excel de rutina de TrueLift ocupa unos pocos KB. Elige el archivo que exporta la app o este escritorio.</p>'); return; }
+  let rutina;
+  try { rutina = await XLSX.leerRutina(await file.arrayBuffer()); }
+  catch (e) { modalMensaje('No se pudo leer el Excel', `<p>${esc(e.message || String(e))}</p><p>Usa un Excel de rutina exportado por la app o por este escritorio.</p>`); return; }
+  const nombre = file.name.replace(/\.xlsx$/i, '').slice(0, 80) || 'Rutina de Excel';
+  const b = PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo(nombre), rutina, origen: { tipo: 'excel', archivo: file.name } });
+  // Ejercicios propios que trae el archivo (bloque de biblioteca de la app):
+  // se guardan con el borrador para volver a exportarlos con sus datos.
+  if (Array.isArray(rutina.biblioteca) && rutina.biblioteca.length) b.bibliotecaExcel = rutina.biblioteca;
+  await rutCrear(b, `Borrador creado desde ${file.name}`);
+}
+
+async function rutExportar(){
+  const b = borradorActivo();
+  if (!b) return;
+  const raw = PL.rawConBiblioteca(E.raw, b);
+  const sim = PL.comoLaApp(b.rutina, raw);
+  let bytes;
+  try { bytes = await XLSX.escribirRutina(sim.exportable); }
+  catch (e) { cerrarModal(); modalMensaje('No se pudo generar el Excel', `<p>${esc(e.message || String(e))}</p>`); return; }
+  const archivo = PL.nombreArchivo(b);
+  const exp = { fecha: ahoraISO(), archivo, firma: PL.firma(sim.normal), bytes: bytes.length, dias: sim.dias.length, sistema: sim.sistema };
+  cerrarModal();
+  const guardado = await rutGuardar({ put: [{ ...b, exportaciones: [...b.exportaciones, exp].slice(-20) }], foco: 'rutExportar' });
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = archivo;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  anunciar(guardado ? `Excel descargado: ${archivo}. Tu móvil no cambia hasta que lo importes allí.` : `Excel descargado: ${archivo}, pero no se pudo anotar la exportación.`);
+}
+
+/* Tras pintar Mi rutina, el foco vuelve al control equivalente. */
+function rutRestaurarFoco(){
+  const id = E.rut.foco;
+  E.rut.foco = null;
+  if (!id || E.seccion !== 'rutina') return;
+  const el = document.getElementById(id);
+  if (el && !el.disabled) el.focus({ preventScroll: false });
+}
+
 // ---------- eventos ----------
 function trampaFoco(ev){
   const m = $('#modal');
@@ -971,6 +1262,15 @@ function trampaFoco(ev){
 async function accion(nombre, el){
   switch (nombre){
     case 'cerrar': cerrarModal(); break;
+    case 'guardar-encuadres': {
+      try {
+        await Almacen.escribir([{ almacen: 'meta', put: { clave: `encuadres:${E.espacio.id}`, valor: E.fis.encuadres } }]);
+        E.fis.dirty = false;
+        $('#estadoEncuadres').textContent = Almacen.modo === 'temporal' ? 'Modo temporal: se perderán al cerrar' : 'Encuadres guardados';
+        anunciar('Encuadres guardados');
+      } catch (e) { modalMensaje('No se guardaron los encuadres', `<p>${esc(e.message || String(e))}. Las fotos originales siguen intactas.</p>`); }
+      break;
+    }
     case 'importar-datos': $('#inputDatos').click(); break;
     case 'importar-fotos': $('#inputFotos').click(); break;
     case 'cancelar-proceso': if (E.abort) E.abort.abort(); break;
@@ -1011,6 +1311,8 @@ function init(){
   }));
 
   document.addEventListener('click', ev => {
+    const ra = ev.target.closest('[data-rut-accion]');
+    if (ra && !ra.disabled){ rutAccion(ra.dataset.rutAccion, ra); return; }
     const a = ev.target.closest('[data-accion]');
     if (a && !a.disabled){ accion(a.dataset.accion, a); return; }
     const ir = ev.target.closest('[data-ir]');
@@ -1031,6 +1333,16 @@ function init(){
       return;
     }
     if (av && av.dataset.accionVista === 'ver-todas'){ E.st.verTodas = true; render(); return; }
+    const mf = ev.target.closest('[data-modo-foto]');
+    if (mf){ E.fis.modo = mf.dataset.modoFoto; render(); $(`[data-modo-foto="${E.fis.modo}"]`)?.focus(); return; }
+    const rest = ev.target.closest('[data-restaurar-foto]');
+    if (rest){
+      const archivo = rest.dataset.restaurarFoto; E.fis.encuadres[archivo] = Evolucion.encuadre(); E.fis.dirty = true;
+      document.querySelectorAll('input[data-enc]').forEach(i => { if (i.dataset.archivo === archivo){ i.value = E.fis.encuadres[archivo][i.dataset.enc]; actualizarOutput(i); } });
+      aplicarEncuadres(); $('#estadoEncuadres').textContent = 'Ajustes sin guardar'; return;
+    }
+    const pag = ev.target.closest('[data-pagina-fotos]');
+    if (pag && !pag.disabled){ E.fis.pagina += Number(pag.dataset.paginaFotos); render(); $('#galeriaPose')?.focus(); return; }
     const ver = ev.target.closest('[data-ver]');
     if (ver){ verFoto(ver.dataset.ver); return; }
   });
@@ -1045,6 +1357,18 @@ function init(){
   });
   // Buscador de ejercicios: se filtra al escribir sin perder el foco.
   $('#contenido').addEventListener('input', ev => {
+    const i = ev.target;
+    if (i.dataset.enc){
+      const archivo = i.dataset.archivo;
+      E.fis.encuadres[archivo] = Evolucion.encuadre({ ...Evolucion.encuadre(E.fis.encuadres[archivo]), [i.dataset.enc]: Number(i.value) });
+      E.fis.dirty = true; aplicarEncuadres(); actualizarOutput(i); $('#estadoEncuadres').textContent = 'Ajustes sin guardar'; return;
+    }
+    if (i.id === 'fotoCorte' || i.id === 'fotoOpacidad'){
+      E.fis[i.id === 'fotoCorte' ? 'corte' : 'opacidad'] = Number(i.value);
+      const c = $('.comparador-lienzo');
+      c?.style.setProperty(i.id === 'fotoCorte' ? '--corte' : '--opacidad', i.id === 'fotoCorte' ? `${i.value}%` : Number(i.value) / 100);
+      actualizarOutput(i); return;
+    }
     if (ev.target.id !== 'buscaEj') return;
     E.st.busca = ev.target.value;
     const pos = ev.target.selectionStart;
@@ -1063,6 +1387,17 @@ function init(){
     if (guardado) $('#compararPeriodos button[type="submit"]')?.focus();
   });
   $('#contenido').addEventListener('change', async ev => {
+    if (ev.target.dataset.rut || ev.target.id === 'rutExcel'){ await rutCambio(ev.target); return; }
+    const idFis = ev.target.id;
+    if (['compPose', 'compFotoA', 'compFotoB', 'contornoSitio', 'galeriaPose'].includes(idFis)){
+      const valor = ev.target.value;
+      if (idFis === 'compPose'){ E.fis.pose = valor; E.fis.a = null; E.fis.b = null; }
+      else if (idFis === 'compFotoA') E.fis.a = valor;
+      else if (idFis === 'compFotoB') E.fis.b = valor;
+      else if (idFis === 'contornoSitio') E.fis.sitio = valor;
+      else { E.fis.galeriaPose = valor; E.fis.pagina = 0; }
+      render(); $(`#${idFis}`)?.focus(); anunciar('Evolución física actualizada'); return;
+    }
     // Comparar dos sesiones de la ficha: se vuelve a pintar y el foco sigue
     // en el mismo selector.
     if (ev.target.id === 'compA' || ev.target.id === 'compB'){
@@ -1080,6 +1415,16 @@ function init(){
     }
   });
   document.addEventListener('keydown', trampaFoco);
+  // Deshacer / rehacer del borrador (fuera de los campos de texto, donde
+  // Ctrl + Z deshace lo que se está escribiendo).
+  document.addEventListener('keydown', ev => {
+    if (E.seccion !== 'rutina' || !(ev.ctrlKey || ev.metaKey) || ev.altKey || !$('#modal').classList.contains('oculto')) return;
+    const t = ev.target;
+    if (t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && !['checkbox', 'radio', 'button'].includes(t.type)))) return;
+    const k = ev.key.toLowerCase();
+    if (k === 'z' && !ev.shiftKey){ ev.preventDefault(); rutAccion('deshacer'); }
+    else if (k === 'y' || (k === 'z' && ev.shiftKey)){ ev.preventDefault(); rutAccion('rehacer'); }
+  });
   // Atajos: Alt + 1…7 para las secciones (sin modal abierto).
   const orden = Object.keys(SECCIONES);
   document.addEventListener('keydown', ev => {
@@ -1112,7 +1457,7 @@ function init(){
   Almacen.alCambiarVersion = () => {
     $('#avisoGlobal').innerHTML = '<div class="alerta ambar"><span class="tag">Actualización</span><span>Se ha abierto una versión más reciente del escritorio en otra pestaña. Recarga esta página.</span></div>';
   };
-  window.addEventListener('pagehide', liberarUrls);
+  window.addEventListener('pagehide', () => { liberarUrls(); if (E.urlModal) URL.revokeObjectURL(E.urlModal); });
 
   arrancar();
 }

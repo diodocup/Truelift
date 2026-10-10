@@ -16,12 +16,15 @@ const Planner = {
   // Claves aditivas (los borradores antiguos no las traen): dropSet/dropPct
   // (drop set: solo la 1.ª serie progresa; el resto baja el % en cascada sin
   // descanso) y superConAnterior (superserie: en la app se alternan las
-  // series con el ejercicio de la fila anterior).
+  // series con el ejercicio de la fila anterior). restPause/pausaRpSeg
+  // (rest-pause: mismo peso y al fallo en todas las series, con una pausa de
+  // 10–50 s entre ellas; las reps son el TOTAL de todas las series).
   filaVacia(){
     return { patron: '', ejercicio: '', series: 3, rir: 1,
              repsMin: null, repsMax: null, descanso: 2,
              topBack: false, backoffPct: 15, rirBack: 2,
-             dropSet: false, dropPct: 15, superConAnterior: false };
+             dropSet: false, dropPct: 15, superConAnterior: false,
+             restPause: false, pausaRpSeg: 20 };
   },
   rutinaVacia(){
     return { sistema: 'doble',
@@ -91,7 +94,9 @@ const Planner = {
     if (!nombre) return null;
     const secundarios = this._listaMeta(primero(
       ['secundarios','gruposSecundarios','musculosSecundarios','músculosSecundarios','secondaryMuscles'],
-      fallback.secundarios || [fallback.grupo2, fallback.grupo3].filter(Boolean)));
+      // Sin lista explícita valen los grupo2/grupo3 del propio registro (así
+      // guarda el Coach sus ejercicios) y, si no, los del respaldo.
+      fallback.secundarios || [e.grupo2 ?? fallback.grupo2, e.grupo3 ?? fallback.grupo3].filter(Boolean)));
     const grupo = String(primero(['grupo','grupoMuscular','musculo','músculo','muscleGroup'], fallback.grupo || 'Otros')).trim() || 'Otros';
     return {
       nombre,
@@ -102,6 +107,8 @@ const Planner = {
       prioridad: String(primero(['prioridad','tipo','origen'], fallback.prioridad || 'Añadido por ti')).trim() || 'Añadido por ti',
       nota: String(primero(['nota','indicaciones','descripcion','descripción','notas'], fallback.nota || '')).trim(),
       descanso: String(primero(['descanso','descansoSugerido','rest'], fallback.descanso || '')).trim(),
+      // Ejercicio medido por tiempo (columna AD del Excel de la app).
+      porTiempo: e.porTiempo === true || fallback.porTiempo === true,
       fuente,
     };
   },
@@ -156,6 +163,7 @@ const Planner = {
       reg.prioridad = b.prioridad || 'Importado';
       if (b.nota) reg.nota = b.nota;
       if (b.descanso) reg.descanso = b.descanso;
+      if (b.porTiempo) reg.porTiempo = true;
       State.store.ejerciciosCoach.push(reg);
       existentes.set(clave, reg);
       nuevos++;
@@ -237,6 +245,9 @@ const Planner = {
       if (!f.ejercicio || this._esEjercicioBase(f.ejercicio)) return;
       const clave = this._claveEjercicio(f.ejercicio);
       const guardado = this.ejerciciosCoach().find(e => this._claveEjercicio(e.nombre) === clave);
+      // Un ejercicio creado en la app (ejerciciosUsuario) ya viaja con su ficha
+      // completa: una fila de la rutina no debe sustituirla por una mínima.
+      if (!guardado && candidatos.some(e => e && this._claveEjercicio(e.nombre) === clave)) return;
       candidatos.push(this._normalizarEjercicio(guardado || { nombre: f.ejercicio }, {
         nombre: f.ejercicio,
         patron: f.patron,
@@ -253,6 +264,7 @@ const Planner = {
       prioridad: e.prioridad || 'Añadido por ti',
       nota: e.nota || '',
       descanso: e.descanso || '',
+      ...(e.porTiempo ? { porTiempo: true } : {}),
     }));
   },
 
@@ -445,9 +457,12 @@ const Planner = {
         seriesDia += s;
         // Un drop set encadena las series sin descanso: solo descansa tras el
         // último drop (~15 s de cambio de discos entre medias).
+        // Un rest-pause solo hace la pausa corta entre sus series.
         durMin += f.dropSet
           ? (f.descanso || 2) + s * 0.8 + Math.max(0, s - 1) * 0.25
-          : s * ((f.descanso || 2) + 0.8);
+          : f.restPause
+            ? (f.descanso || 2) + s * 0.8 + Math.max(0, s - 1) * (f.pausaRpSeg || 20) / 60
+            : s * ((f.descanso || 2) + 0.8);
         const g = this.grupoDe(f.ejercicio, f.patron, datos);
         if (!porGrupo.has(g)) porGrupo.set(g, { series: 0, dias: new Set(), ejercicios: new Set() });
         const e = porGrupo.get(g);
@@ -469,12 +484,16 @@ const Planner = {
           add('ambar', `${d.nombre} · ${f.ejercicio}: un drop set necesita al menos 2 series (la primera y sus drops).`);
         if (f.topBack && f.dropSet)
           add('rojo', `${d.nombre} · ${f.ejercicio}: top+back y drop set son excluyentes; la app se quedará con top+back.`);
+        if (f.restPause && (f.series || 0) < 2)
+          add('ambar', `${d.nombre} · ${f.ejercicio}: un rest-pause necesita al menos 2 series.`);
+        if (f.restPause && (f.topBack || f.dropSet))
+          add('rojo', `${d.nombre} · ${f.ejercicio}: el rest-pause no se combina con top+back ni con drop set; la app se quedará con ${f.topBack ? 'top+back' : 'el drop set'}.`);
         // Superserie solo con series rectas: si el enlace choca con una carga
         // por serie, la app (y el exportador) rompen el enlace.
         if (f.superConAnterior && fi > 0){
           const ant = d.filas[fi - 1];
-          if (f.topBack || f.dropSet || ant.topBack || ant.dropSet)
-            add('rojo', `${d.nombre} · ${f.ejercicio}: una superserie va a series rectas y aquí hay top+back o drop set; el enlace se romperá.`);
+          if (this._conModalidad(f) || this._conModalidad(ant))
+            add('rojo', `${d.nombre} · ${f.ejercicio}: una superserie va a series rectas y aquí hay top+back, drop set o rest-pause; el enlace se romperá.`);
         }
         if (!CAT_LISTAS[f.patron])
           add('azul', `${d.nombre} · ${f.ejercicio}: el patrón "${f.patron}" no es de la plantilla; al exportar se ajustará si es posible.`);
@@ -642,8 +661,14 @@ const Planner = {
     return true;
   },
 
-  async exportar(){
-    const r = JSON.parse(JSON.stringify(this.rutina));
+  /* Rutina lista para escribir en el Excel: solo filas completas, con las
+     modalidades saneadas y patrones de la plantilla, más la biblioteca de
+     ejercicios personalizados (`raw`: copia JSON de quien entrena) y el
+     catálogo completo para los desplegables. No toca `rutina`. Devuelve
+     { rutina, dias } con el número de días con ejercicios. Lo comparten el
+     Coach y el escritorio personal. */
+  prepararExportacion(rutina, raw){
+    const r = JSON.parse(JSON.stringify(rutina));
     // Limpieza para exportar: filas completas y patrón compatible con la plantilla
     r.dias.forEach(d => {
       d.filas = d.filas.filter((f, i) => {
@@ -654,24 +679,29 @@ const Planner = {
         return vale;
       });
       // Al caerse filas incompletas cambian los vecinos: se rehace la
-      // exclusión antes de escribir K/L/M en el Excel.
+      // exclusión antes de escribir K/L/M/N en el Excel.
       this._sanearModalidades(d.filas);
       this._patronesVigentes(d.filas);
     });
-    const conFilas = r.dias.filter(d => d.filas.length);
-    if (conFilas.length < 2){
-      abrirModal(`<h2>Rutina incompleta</h2><p>TrueLift necesita entre 2 y 5 días con ejercicios (patrón y ejercicio rellenos). Ahora mismo hay ${conFilas.length}.</p>
-        <div class="mod-acciones"><button class="btn pri" onclick="cerrarModal()">Entendido</button></div>`);
-      return;
-    }
-    const c = clienteActivo();
-    // Solo viajan los ejercicios personalizados de este cliente y los usados
+    const dias = r.dias.filter(d => d.filas.length).length;
+    // Solo viajan los ejercicios personalizados de esta persona y los usados
     // en la rutina; no se filtra la biblioteca de otros clientes.
-    r.biblioteca = this.bibliotecaParaExcel(r, c?.datos);
+    r.biblioteca = this.bibliotecaParaExcel(r, raw);
     // Catálogo completo para los desplegables del Excel: la plantilla
     // embebida se quedó con los ejercicios que había el día que se creó, y el
     // cliente tiene que poder elegir también los que llegaron después.
     r.listasPorPatron = CAT_LISTAS;
+    return { rutina: r, dias };
+  },
+
+  async exportar(){
+    const c = clienteActivo();
+    const { rutina: r, dias: conFilas } = this.prepararExportacion(this.rutina, c?.datos);
+    if (conFilas < 2){
+      abrirModal(`<h2>Rutina incompleta</h2><p>TrueLift necesita entre 2 y 5 días con ejercicios (patrón y ejercicio rellenos). Ahora mismo hay ${conFilas}.</p>
+        <div class="mod-acciones"><button class="btn pri" onclick="cerrarModal()">Entendido</button></div>`);
+      return;
+    }
     const nombre = c ? '_' + c.nombre.trim().replace(/\s+/g, '_') : '';
     try {
       await XLSX.descargar(r, `mi_rutina_truelift${nombre}.xlsx`);
@@ -708,13 +738,18 @@ const Planner = {
       if (rev.ultKg != null) chips += `<span class="chip gris">últ. ${fmtNum(rev.ultKg, 2)} kg</span>`;
       else if (rev.ultKgReal != null) chips += `<span class="chip ambar" title="Su única carga registrada en el rango es de una sesión con molestias, bajada a propósito: no sirve de referencia para planificar.">últ. ${fmtNum(rev.ultKgReal, 2)} kg (con molestias)</span>`;
     }
-    // Las tres modalidades son excluyentes: dentro de una superserie no hay
-    // top+back ni drop set, y una fila con carga por serie no se enlaza.
+    // Las modalidades son excluyentes: dentro de una superserie no hay
+    // top+back, drop set ni rest-pause, y una fila con cualquiera de ellas no
+    // se enlaza.
     const enSS = ssNum > 0;
-    const ssChoca = !!(f.topBack || f.dropSet ||
-                       (anterior && (anterior.topBack || anterior.dropSet)));
+    const ssChoca = !!(this._conModalidad(f) ||
+                       (anterior && this._conModalidad(anterior)));
     const noEnSS = 'En una superserie se entrena a series rectas: quita la superserie para usar esta modalidad.';
-    const noConCarga = 'Una superserie va a series rectas: quita el top+back o el drop set de esta fila y de la anterior.';
+    const noConCarga = 'Una superserie va a series rectas: quita el top+back, el drop set o el rest-pause de esta fila y de la anterior.';
+    // Rest-pause: las reps son el TOTAL de todas las series (admiten cifras
+    // más altas) y no hay RIR: todas las series van al fallo.
+    const rp = !!f.restPause && !enSS;
+    const repsTope = rp ? 60 : 30;
     const numIn = (k, v, min, max, step, ancho, title) =>
       `<input type="number" class="pln-campo" data-d="${d}" data-f="${i}" data-k="${k}"
         value="${v ?? ''}" min="${min}" max="${max}" step="${step}" style="width:${ancho}px" title="${title}">`;
@@ -736,9 +771,9 @@ const Planner = {
           </select>
         </span>
         ${numIn('series', f.series, 1, 10, 1, 52, 'Series')}<span class="pln-x">×</span>
-        ${numIn('repsMin', f.repsMin, 1, 30, 1, 52, 'Reps mín / objetivo')}
-        ${sistema === 'doble' ? `<span class="pln-x">–</span>${numIn('repsMax', f.repsMax, 1, 30, 1, 52, 'Reps máx')}` : ''}
-        <span class="pln-x">@RIR</span>${numIn('rir', f.rir, 0, 6, 1, 44, 'RIR objetivo')}
+        ${numIn('repsMin', f.repsMin, 1, repsTope, 1, 52, rp ? 'Reps totales mín / objetivo (suma de todas las series)' : 'Reps mín / objetivo')}
+        ${sistema === 'doble' ? `<span class="pln-x">–</span>${numIn('repsMax', f.repsMax, 1, repsTope, 1, 52, rp ? 'Reps totales máx (suma de todas las series)' : 'Reps máx')}` : ''}
+        ${rp ? '<span class="pln-x" title="Rest-pause: todas las series al fallo, sin RIR">total · al fallo</span>' : `<span class="pln-x">@RIR</span>${numIn('rir', f.rir, 0, 6, 1, 44, 'RIR objetivo')}`}
         <select class="pln-campo" data-d="${d}" data-f="${i}" data-k="descanso" title="Descanso (min)">
           ${CAT_DESCANSOS.map(v => `<option value="${v}" ${v === f.descanso ? 'selected' : ''}>${fmtNum(v, 1)}′</option>`).join('')}
         </select>
@@ -750,6 +785,12 @@ const Planner = {
           <input type="checkbox" class="pln-campo" data-d="${d}" data-f="${i}" data-k="dropSet" ${f.dropSet && !enSS ? 'checked' : ''} ${enSS ? 'disabled' : ''}> Drop
         </label>
         ${f.dropSet && !enSS ? `<span class="pln-x">−</span>${numIn('dropPct', f.dropPct, 5, 30, 5, 48, '% de peso menos en cada drop (sobre la serie anterior)')}<span class="pln-x">%</span>` : ''}
+        <label class="pln-tb${enSS ? ' pln-tb-off' : ''}" title="${enSS ? noEnSS : 'Rest-pause: mismo peso y al fallo en todas las series, con una pausa corta entre ellas; las reps son el total de todas las series. Excluyente con T+B, Drop y SS.'}">
+          <input type="checkbox" class="pln-campo" data-d="${d}" data-f="${i}" data-k="restPause" ${rp ? 'checked' : ''} ${enSS ? 'disabled' : ''}> RP
+        </label>
+        ${rp ? `<select class="pln-campo" data-d="${d}" data-f="${i}" data-k="pausaRpSeg" title="Pausa entre series del rest-pause">
+          ${[10, 20, 30, 40, 50].map(v => `<option value="${v}" ${v === (f.pausaRpSeg || 20) ? 'selected' : ''}>${v} s</option>`).join('')}
+        </select>` : ''}
         ${i > 0 ? `<label class="pln-tb${ssChoca ? ' pln-tb-off' : ''}" title="${ssChoca ? noConCarga : 'Superserie con el ejercicio anterior: en la app se alternan las series de los dos (A1→B1→A2→B2…), con los descansos de siempre. Solo con series rectas: excluyente con T+B y con Drop.'}">
           <input type="checkbox" class="pln-campo" data-d="${d}" data-f="${i}" data-k="superConAnterior" ${f.superConAnterior && !ssChoca ? 'checked' : ''} ${ssChoca ? 'disabled' : ''}> SS
         </label>` : ''}
@@ -762,7 +803,7 @@ const Planner = {
   },
 
   /* Deshace las combinaciones imposibles de un día: una fila tiene UNA
-     modalidad (top+back o drop set) y una superserie va SIEMPRE a series
+     modalidad (top+back, drop set o rest-pause) y una superserie va SIEMPRE a series
      rectas. Manda la modalidad de la fila (decide cómo progresa el
      ejercicio) y se suelta el enlace de superserie (solo decide el orden de
      ejecución): misma precedencia que la app. Hace falta además de las
@@ -771,12 +812,21 @@ const Planner = {
   _sanearModalidades(filas){
     (filas || []).forEach((f, i) => {
       if (f.topBack && f.dropSet) f.dropSet = false;
+      // El rest-pause cede ante top+back y drop set (misma precedencia que la
+      // app al importar).
+      if (f.restPause && (f.topBack || f.dropSet)) f.restPause = false;
       if (!f.superConAnterior || i === 0) return;
       const ant = filas[i - 1];
-      if (f.topBack || f.dropSet || ant.topBack || ant.dropSet)
+      if (this._conModalidad(f) || this._conModalidad(ant))
         f.superConAnterior = false;
     });
     return filas;
+  },
+
+  /* ¿La fila lleva alguna modalidad propia (top+back, drop set o
+     rest-pause)? Cualquiera de ellas impide la superserie. */
+  _conModalidad(f){
+    return !!(f && (f.topBack || f.dropSet || f.restPause));
   },
 
   /* Número de superserie (1, 2, …) de cada fila de un día, o 0 si va sola.
@@ -897,67 +947,84 @@ const Planner = {
     return cabecera + dias + addDia + `<div class="grid cols2">${analisis}${avisosHtml}</div>`;
   },
 
+  /* Cambia un campo de la fila `i` de un día respetando las reglas de la
+     app: las modalidades son excluyentes (una fila tiene UNA de top+back /
+     drop set / rest-pause) y una superserie solo enlaza filas a series
+     rectas; activar una apaga las que no caben. `valor`: booleano en las
+     marcas, texto en patrón y ejercicio, número (o texto numérico; vacío =
+     sin dato) en el resto. Lo usan el editor del Coach y el del escritorio. */
+  aplicarCampo(filas, i, k, valor){
+    const fila = filas[i];
+    if (!fila) return false;
+    const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+    const romperSS = () => {
+      fila.superConAnterior = false;
+      if (filas[i + 1]) filas[i + 1].superConAnterior = false;
+    };
+    if (k === 'topBack'){
+      fila.topBack = !!valor;
+      if (valor){ fila.dropSet = false; fila.restPause = false; romperSS(); }
+    }
+    else if (k === 'dropSet'){
+      fila.dropSet = !!valor;
+      if (valor){ fila.topBack = false; fila.restPause = false; romperSS(); }
+    }
+    else if (k === 'restPause'){
+      fila.restPause = !!valor;
+      if (valor){
+        fila.topBack = false; fila.dropSet = false; romperSS();
+        if ((fila.series || 0) < 2) fila.series = 2;
+        if (!fila.pausaRpSeg) fila.pausaRpSeg = 20;
+      }
+    }
+    else if (k === 'superConAnterior'){
+      fila.superConAnterior = !!valor && i > 0;
+      if (fila.superConAnterior){
+        // Todo el grupo resultante va a series rectas.
+        let ini = i;
+        while (ini > 0 && filas[ini].superConAnterior) ini--;
+        let fin = i;
+        while (filas[fin + 1] && filas[fin + 1].superConAnterior) fin++;
+        for (let j = ini; j <= fin; j++){
+          filas[j].topBack = false;
+          filas[j].dropSet = false;
+          filas[j].restPause = false;
+        }
+      }
+    }
+    // Si el ejercicio actual no encaja con el nuevo patrón no se borra: los
+    // avisos lo señalan.
+    else if (k === 'patron') fila.patron = String(valor ?? '');
+    else if (k === 'ejercicio') fila.ejercicio = String(valor ?? '').trim();
+    else fila[k] = num(valor);
+    return true;
+  },
+
   // ---------- Bindings ----------
   bind(){
     const cont = document.querySelector('#contenido');
     const r = this.rutina;
-    const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
 
     cont.querySelectorAll('.pln-campo').forEach(el => el.addEventListener('change', () => {
       const { d, f, k } = el.dataset;
-      const fila = r.dias[+d].filas[+f];
-      // Las tres modalidades son excluyentes (misma regla que la app): una
-      // fila tiene UNA de top+back / drop set, y una superserie solo enlaza
-      // filas a series rectas. Activar una apaga las que no caben.
       const filas = r.dias[+d].filas;
-      const romperSS = () => {
-        fila.superConAnterior = false;
-        if (filas[+f + 1]) filas[+f + 1].superConAnterior = false;
-      };
-      if (k === 'topBack'){
-        fila.topBack = el.checked;
-        if (el.checked){ fila.dropSet = false; romperSS(); }
-      }
-      else if (k === 'dropSet'){
-        fila.dropSet = el.checked;
-        if (el.checked){ fila.topBack = false; romperSS(); }
-      }
-      else if (k === 'superConAnterior'){
-        fila.superConAnterior = el.checked;
-        if (el.checked){
-          // Todo el grupo resultante va a series rectas.
-          let ini = +f;
-          while (ini > 0 && filas[ini].superConAnterior) ini--;
-          let fin = +f;
-          while (filas[fin + 1] && filas[fin + 1].superConAnterior) fin++;
-          for (let j = ini; j <= fin; j++){
-            filas[j].topBack = false;
-            filas[j].dropSet = false;
-          }
+      const fila = filas[+f];
+      if (k === 'ejercicio' && el.value === '__otro__'){
+        const nuevo = window.prompt(
+          'Nombre exacto del ejercicio (tal como existe en la app del cliente):',
+          fila.ejercicio || '');
+        if (nuevo != null && nuevo.trim()){
+          fila.ejercicio = nuevo.trim();
+          this._fusionarBiblioteca([{
+            nombre: fila.ejercicio,
+            patron: fila.patron,
+            grupo: CAT_PATRON_GRUPO[fila.patron] || 'Otros',
+            prioridad: 'Añadido por el coach',
+            fuente: 'manual',
+          }]);
         }
       }
-      else if (k === 'patron'){
-        fila.patron = el.value;
-        // si el ejercicio actual no encaja con el nuevo patrón, no lo borramos: aviso lo señalará
-      }
-      else if (k === 'ejercicio'){
-        if (el.value === '__otro__'){
-          const nuevo = window.prompt(
-            'Nombre exacto del ejercicio (tal como existe en la app del cliente):',
-            fila.ejercicio || '');
-          if (nuevo != null && nuevo.trim()){
-            fila.ejercicio = nuevo.trim();
-            this._fusionarBiblioteca([{
-              nombre: fila.ejercicio,
-              patron: fila.patron,
-              grupo: CAT_PATRON_GRUPO[fila.patron] || 'Otros',
-              prioridad: 'Añadido por el coach',
-              fuente: 'manual',
-            }]);
-          }
-        } else fila.ejercicio = el.value;
-      }
-      else fila[k] = num(el.value);
+      else this.aplicarCampo(filas, +f, k, el.type === 'checkbox' ? el.checked : el.value);
       this.guardar(); render();
     }));
 
@@ -1107,5 +1174,6 @@ const Planner = {
   },
 };
 
-// Registrar como vista (app.js enruta State.tab → Vistas[tab])
-Vistas.planificador = ctx => Planner.render(ctx);
+// Registrar como vista (app.js enruta State.tab → Vistas[tab]). El escritorio
+// personal carga este archivo solo por sus reglas y no tiene `Vistas`.
+if (typeof Vistas !== 'undefined') Vistas.planificador = ctx => Planner.render(ctx);
