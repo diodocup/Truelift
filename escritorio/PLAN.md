@@ -15,7 +15,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 | 1. Importación fiable y persistencia | Hecha (ver «Fase 1» abajo) | `tests/*.test.mjs` (Node) + `tests/e2e.mjs` (Chromium/Playwright) |
 | 2. Experiencia personal y métricas | Hecha (ver «Fase 2» abajo) | `tests/motor*.test.mjs`, `tests/analisis.test.mjs` + e2e (Chromium) |
 | 3. Resumen y ficha por ejercicio | Hecha (ver «Fase 3» abajo) | `tests/resumen.test.mjs` + e2e (Chromium) |
-| 4. Comparación de periodos | Pendiente | — |
+| 4. Comparación de periodos | Hecha (ver «Fase 4» abajo) | `tests/periodos.test.mjs` + e2e (Chromium) |
 | 5. Evolución física | Pendiente | — |
 | 6. Planificador personal | Pendiente | — |
 | 7. Informes y acabado | Pendiente | — |
@@ -84,6 +84,7 @@ Truelift/
     fotos.js      resolución foto↔índice (prioridades del contrato §5) y plan de importación
     almacen.js    IndexedDB versionada, transacciones atómicas, cuota, modo temporal
     analisis.js   modelo personal (fase 2): sesiones, ejercicios, estado, valoración, volumen
+    periodos.js   comparación de dos periodos o bloques (fase 4)
     vistas.js     HTML de las secciones personales (fase 2)
     app.js        interfaz, navegación y «Mis datos»
   coach/motor.js  reglas del motor portadas del móvil (compartidas por las dos herramientas)
@@ -379,3 +380,91 @@ Sin verificar / pendiente:
 - El informe mensual del móvil incluye en su progreso sesiones con molestias
   o descarga; el escritorio las excluye (diferencia documentada en
   `METRICAS.md`).
+
+## Fase 4 — Comparación entre periodos y bloques
+
+### Decisiones
+
+- **Dónde:** Entrenamiento → «Comparar periodos» (`#entrenamiento/comparar/AAAA-MM-DD_AAAA-MM-DD_AAAA-MM-DD_AAAA-MM-DD`).
+  La selección viaja en la dirección (recarga y Atrás la conservan; los
+  cambios de los controles usan `replaceState` para no llenar el
+  historial). Enlace desde «De un vistazo» en Mi resumen. Al cambiar de
+  copia o de espacio se vuelve a la selección por defecto.
+- **Módulo propio sin lógica nueva:** `periodos.js` agrega por periodo lo
+  que ya calculan `analisis.js` y `coach/motor.js` (sesiones, series por
+  grupo con el reparto de la app, sesiones comparables, constancia con la
+  rutina de cada semana, filtro de peso de la app). No hay una segunda
+  copia de ninguna regla.
+- **Bloques fiables solamente:** (1) tramos consecutivos de sesiones con la
+  misma identidad de rutina `variante|días|revisión`, de la primera a la
+  última sesión del tramo (la copia no guarda el día del cambio; el último
+  tramo llega al último registro solo si sigue siendo la rutina actual);
+  (2) fases de nutrición guardadas (`fasesCerradas` + `faseActual`). No se
+  inventan bloques por descargas ni por parecido de ejercicios.
+- **Sugerencias:** últimas 4 semanas completas frente a las 4 anteriores
+  (predeterminada), último mes natural completo frente al anterior, dos
+  últimas rutinas, dos últimas fases. Con menos datos, las dos mitades de
+  lo que cubre la copia.
+- **Periodos:** días incluidos, recortados a [primer registro, último
+  registro] con aviso; orden inverso, fecha vacía o fuera de los datos →
+  mensaje y ningún cálculo (no se corrige en silencio).
+- **Normalización:** las cifras «por semana» son la media de las semanas
+  completas lunes-domingo dentro del periodo; los tramos parciales se
+  cuentan aparte («Semana a semana») y no se proyectan. Los totales solo
+  se restan si los dos periodos duran lo mismo; si no, «no comparable».
+- **Ejercicios:** solo los hechos en los dos periodos; sesiones comparables
+  con las exclusiones de Mi resumen y la misma modalidad en ambos; media
+  del 1RM estimado de marca por periodo; sin diferencia si alguno tiene
+  pocas comparables. Los ejercicios de un solo periodo se listan aparte,
+  nunca se emparejan con otros.
+- **Sin ganador ni causas:** diferencia B − A sin color; un párrafo fijo
+  recuerda que la comparación no dice qué periodo es mejor ni por qué.
+  Avisos de contexto deterministas: duración distinta, solape, recorte,
+  sin semanas completas, muestra pequeña, cambio de rutina dentro de un
+  periodo, rutinas distintas, descarga en uno solo, fase de nutrición
+  distinta, cuestionario en uno solo.
+- **Cero frente a ausente:** sin dato → «sin datos»; las medias de
+  recuperación solo usan días con dato y dicen cuántos.
+
+### Registro
+
+- 10/10/2026: fase 4 implementada y verificada (ver abajo).
+
+### Verificación (fase 4, 10/10/2026)
+
+Implementado y comprobado:
+
+- `node --test escritorio/tests/*.test.mjs` → **90/90** (79 previas + 11 de
+  `periodos.test.mjs`): semanas completas y parciales, validación y
+  recorte de periodos, bloques de rutina (incluido el cambio después de la
+  última sesión), sugerencias, dirección ida y vuelta e inválida, dos
+  rutinas de duración distinta (medias por semana completa, constancia,
+  volumen, avisos), ejercicios comunes (exclusiones, modalidad distinta,
+  ejercicios de un solo periodo), muestra pequeña con solape y sin semanas
+  completas, fases de nutrición (solape por días, recomendaciones,
+  refeeds, «sin ajustes» ≠ 0), peso sin extrapolar, contornos fuera de
+  rango, duraciones anómalas, vista (escape, sin undefined/NaN, sin
+  lenguaje de ganador, totales no comparables, ayudas sin cifras, error de
+  periodo) y copias mínimas o antiguas.
+- `node escritorio/tests/e2e.mjs` en **Chromium 141** → **30/30** (28 previas
+  + 2): desde Mi resumen, selección por defecto, comparación rápida con el
+  teclado sin perder el foco, dirección actualizada, avisos de duración y
+  rutina, «no comparable», constancia 8 de 8 y 11 de 12, recarga que
+  conserva la selección, fechas en orden inverso explicadas, bloque elegido
+  de nuevo, ficha de un ejercicio y Atrás de vuelta a la comparación; 420 px
+  sin desbordamiento de página. Cero peticiones externas y cero errores JS.
+- Capturas sintéticas revisadas (comparación de rutinas y 420 px); se
+  corrigió la maquetación de la lista de avisos.
+- Coach: `node --test coach/tests/*.mjs` sigue en 75/83 con los mismos 8
+  fallos previos (el Coach no se ha tocado en esta fase).
+
+Sin verificar / pendiente:
+
+- Firefox y Safari. El formato de los campos de fecha depende del idioma
+  del navegador (en el Chromium de pruebas, mm/dd/aaaa).
+- Rendimiento con historiales de varios años: cada cambio de selección
+  recalcula los dos periodos (recorridos lineales); no medido con miles de
+  sesiones (fase 7).
+- Equivalencia con una copia real del móvil (los casos son sintéticos).
+- Las tablas anchas se desplazan dentro de su caja en ventanas estrechas
+  (como el resto de tablas del escritorio).

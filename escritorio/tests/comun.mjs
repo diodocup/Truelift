@@ -11,7 +11,7 @@ export function cargar(...archivos){
     if (cargados.has(a)) continue;
     const codigo = fs.readFileSync(new URL(a, dir), 'utf8');
     const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'vistas.js': 'VistasEsc',
-                     'fotos.js': 'FotosTL', 'almacen.js': 'Almacen' }[a];
+                     'fotos.js': 'FotosTL', 'almacen.js': 'Almacen', 'periodos.js': 'Periodos' }[a];
     vm.runInThisContext(`${codigo}\n;globalThis.${nombre} = ${nombre};`, { filename: a });
     cargados.add(a);
   }

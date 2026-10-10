@@ -21,7 +21,7 @@ const E = {
   urls: new Set(), urlModal: null, obs: null, canal: null,
   estimacion: null, persistido: null, origenModal: null,
   M: null, errorModelo: null,
-  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null },
+  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, periodos: null },
 };
 
 const SECCIONES = {
@@ -79,6 +79,7 @@ function modalMensaje(titulo, cuerpoHtml){
 
 // ---------- carga del estado guardado ----------
 async function cargarEstado(){
+  const instAntes = E.inst ? E.inst.id : null;
   E.espacios = (await Almacen.todos('espacios')).sort((a, b) => a.creado < b.creado ? -1 : 1);
   const meta = await Almacen.leer('meta', 'espacioActivo');
   const id = meta && E.espacios.some(e => e.id === meta.valor) ? meta.valor : (E.espacios[0]?.id ?? null);
@@ -104,6 +105,8 @@ async function cargarEstado(){
       catch (e) { E.errorModelo = e && e.message ? e.message : String(e); console.error(e); }
     }
   }
+  // Otra copia u otro espacio: los periodos elegidos eran de otros datos.
+  if ((E.inst ? E.inst.id : null) !== instAntes) E.st.periodos = null;
   E.estimacion = await Almacen.estimacion();
   E.persistido = await Almacen.persistido();
 }
@@ -850,12 +853,16 @@ function irA(destino, { foco = true, historial = true } = {}){
   const cambiaSec = sec !== E.seccion;
   if (cambiaSec || sub !== E.st.sub) E.st.verTodas = false;
   E.st.sub = sub || null;
-  const ejercicio = resto.length ? (() => { try { return decodeURIComponent(resto[0]); } catch (_) { return resto[0]; } })() : null;
+  // En «Comparar periodos» el tercer tramo son las fechas de los dos
+  // periodos; en el resto, el nombre de un ejercicio.
+  const comparar = sec === 'entrenamiento' && sub === 'comparar';
+  if (comparar && resto.length) E.st.periodos = Periodos.deTexto(resto[0]) || E.st.periodos;
+  const ejercicio = !comparar && resto.length ? (() => { try { return decodeURIComponent(resto[0]); } catch (_) { return resto[0]; } })() : null;
   // Las sesiones elegidas para comparar son de un ejercicio concreto.
   if (ejercicio !== E.st.ejercicio){ E.st.compA = null; E.st.compB = null; }
   E.st.ejercicio = ejercicio;
   if (historial){
-    const h = '#' + [sec, sub, E.st.ejercicio && encodeURIComponent(E.st.ejercicio)].filter(Boolean).join('/');
+    const h = '#' + [sec, sub, comparar ? Periodos.aTexto(E.st.periodos) : E.st.ejercicio && encodeURIComponent(E.st.ejercicio)].filter(Boolean).join('/');
     if (location.hash !== h) history.pushState(null, '', h);
   }
   setSeccion(sec, foco);
@@ -915,6 +922,30 @@ function renderSeccion(){
     case 'informes': return VistasEsc.informes(M);
   }
   return '';
+}
+
+/* Nueva selección de periodos a partir del control que ha cambiado. Las
+   fechas a mano se aceptan aunque no sean válidas: la vista explica el
+   problema en lugar de corregirlo en silencio. */
+function cambioPeriodos(id, valor){
+  const M = E.M;
+  const actual = E.st.periodos || Periodos.predeterminada(M);
+  const sel = { A: { ...actual.A }, B: { ...actual.B } };
+  if (id === 'perSug'){
+    const s = Periodos.sugerencias(M).find(x => x.id === valor);
+    if (!s) return null;
+    return { A: { desde: s.A.desde, hasta: s.A.hasta }, B: { desde: s.B.desde, hasta: s.B.hasta } };
+  }
+  const m = id.match(/^per(?:Bloque([AB])|([AB])(desde|hasta))$/);
+  if (m[1]){
+    const b = Periodos.bloques(M).find(x => x.id === valor);
+    if (!b) return null;   // «Fechas a mano»: se quedan las que había
+    sel[m[1]] = { desde: b.desde, hasta: b.hasta };
+  } else {
+    const d = valor ? parseFecha(valor) : null;
+    sel[m[2]][m[3]] = d;
+  }
+  return sel;
 }
 
 function verSesion(indice){
@@ -1057,6 +1088,21 @@ function init(){
       const sel = $(`#${id}`);
       if (sel) sel.focus();
       anunciar('Comparación actualizada');
+      return;
+    }
+    // Comparar periodos: bloque, fechas o comparación rápida. La selección
+    // viaja en la dirección (sin crear historial) y el foco sigue en el
+    // mismo control.
+    if (/^per(Sug|BloqueA|BloqueB|Adesde|Ahasta|Bdesde|Bhasta)$/.test(ev.target.id) && E.M){
+      const id = ev.target.id;
+      const sel = cambioPeriodos(id, ev.target.value);
+      if (!sel) return;
+      E.st.periodos = sel;
+      history.replaceState(null, '', `#entrenamiento/comparar/${Periodos.aTexto(sel)}`);
+      render();
+      const c = $(`#${id}`);
+      if (c) c.focus();
+      anunciar('Comparación de periodos actualizada');
       return;
     }
     if (ev.target.id === 'selEspacio'){

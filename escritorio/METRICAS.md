@@ -138,3 +138,32 @@ misma que la valoración de la app). Código: `escritorio/analisis.js`.
 Empates: el orden de la tabla. Se muestran las tres primeras. Ninguna
 recomienda cambios ni hace valoraciones médicas; las limitaciones de cada
 una se muestran con ella.
+
+## Fase 4: comparación entre periodos
+
+Código: `escritorio/periodos.js`. Diferencia siempre B − A, sin valoración.
+
+| Lectura | Origen | Regla |
+|---|---|---|
+| Periodo | Propia | Días incluidos, recortado al primer y último registro de la copia. Fuera de ese rango no hay datos (no son ceros). |
+| Semanas completas | Propia | Lunes a domingo enteros dentro del periodo. Las medias semanales salen solo de ellas; los tramos parciales se muestran aparte y no se proyectan (como los cubos de volumen de la app). |
+| Totales | Propia | Solo se restan si los dos periodos tienen los mismos días; si no, «no comparable». |
+| Sesiones, días con sesión | Datos | Sesiones de fuerza con fecha válida; días = días distintos con sesión. |
+| Previstos | Fase 3 (`planSemana`) | Igual que en Mi resumen: la rutina de cada semana completa, si las sesiones permiten saberla. |
+| Series por grupo | Reproducida (`seriesPorGrupo`) | Mismo reparto que el volumen de la app. Ejercicio sin ficha: no se reparte (se avisa). |
+| Duración media | App (`tiempo estimado` de `app_state.dart`) | Sesiones con `duracionMin`, no `duracionAnomala` y ≥ 15 min. |
+| Rendimiento medio | Guardado | Media de `rawSessionPct` (sin descargas ni puntos sin base). Es relativo al nivel de cada momento: no mide fuerza absoluta. Diferencia en puntos. |
+| Ejercicios comunes | Fase 3 (`motivoNoComparable`, `configuracion`) | Ejercicio con series en los dos periodos. Sesiones comparables con la modalidad de la última válida de B (o de A) en los dos. Media del 1RM estimado de marca por periodo; diferencia solo con ≥ 2 comparables en cada uno, con los cortes de ±1 % del informe mensual para describirla («más alto en B», «más bajo en B», «similar»). Avisos: modalidad distinta, ninguna rutina común, peso corporal (peso de perfil actual), pocas comparables. |
+| Peso | Filtro de la app (`coach/nutricion.js`) | Peso tendencia en el primer y el último pesaje del periodo; cambio con ≥ 2 pesajes en días distintos; ritmo semanal solo si entre ellos hay ≥ 7 días. Media de los pesajes. |
+| Contornos | Datos (`medidas.registros`) | Mismas validaciones que la app (10–300 cm, sitio conocido, uno por día y sitio). Primera y última medida del periodo; diferencia entre la última de cada periodo. |
+| % graso | Datos | Primera y última medición del periodo; se presenta como estimación. |
+| Nutrición | Datos guardados | Fases que se solapan (días de cada una; una fase sin fin termina donde empieza la siguiente o en el último registro), recomendaciones semanales por tipo, suma de `ajusteKcalDia` de las de ajuste, refeeds que empiezan en el periodo. |
+| Recuperación | Datos y reglas de la app | Medias solo de días con dato (estado para entrenar, VFC válida, FC en reposo válida, sueño y pasos del reloj); días con estado bajo con el mismo corte que la app; sesiones con molestias y en día ámbar o rojo. |
+
+### Avisos de contexto
+
+Duración distinta · solape · periodo recortado · sin semanas completas ·
+pocas sesiones (< 4) · cambio de rutina dentro de un periodo · ninguna
+rutina común · descarga en un solo periodo · fase de nutrición distinta ·
+cuestionario en un solo periodo. Ninguno decide nada: se muestran junto a
+las cifras.

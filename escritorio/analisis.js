@@ -37,6 +37,7 @@ const Analisis = {
       descarga: raw.modoDescarga === true,
       sistema: raw.sistema === 'simple' ? 'simple' : 'doble',
       rutinaActual: Motor.rutinaKeyActual(raw),
+      primerRegistro: resumen && resumen.primerRegistro ? parseFecha(resumen.primerRegistro) : null,
     };
     M.sesiones = this.sesiones(M);
     M.ejercicios = this.ejercicios(M);

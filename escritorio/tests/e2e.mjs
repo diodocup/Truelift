@@ -428,6 +428,56 @@ try {
   assert.equal(noBotones3, 0);
   ok('resumen y ficha sin desbordamiento en ventana estrecha y todo lo pulsable es un botón');
 
+  // --- Fase 4: comparar periodos y bloques ---
+  await pagina.evaluate(() => { location.hash = '#resumen'; });
+  await pagina.getByRole('button', { name: 'Comparar dos periodos' }).click();
+  await pagina.waitForFunction(() => location.hash === '#entrenamiento/comparar');
+  await pagina.getByText('Periodos comparados', { exact: true }).waitFor();
+  assert.equal(await pagina.inputValue('#perBdesde'), '2026-09-07', 'por defecto, las últimas cuatro semanas completas');
+  assert.equal(await pagina.inputValue('#perBhasta'), '2026-10-04');
+  // Comparación rápida con el teclado: las dos rutinas.
+  await pagina.focus('#perSug');
+  await pagina.selectOption('#perSug', 'rutinas');
+  await pagina.waitForFunction(() => location.hash === '#entrenamiento/comparar/2026-08-03_2026-08-28_2026-08-31_2026-10-09');
+  assert.equal(await pagina.evaluate(() => document.activeElement && document.activeElement.id), 'perSug', 'el foco sigue en el selector');
+  const contexto = await pagina.locator('.avisos-periodo').textContent();
+  assert.match(contexto, /no duran lo mismo \(26 y 40 días\)/);
+  assert.match(contexto, /rutinas distintas/);
+  const frecuencia = await pagina.locator('.card', { hasText: 'Frecuencia, constancia y rendimiento' }).textContent();
+  assert.match(frecuencia, /no comparable/);
+  assert.match(frecuencia, /8 de 8/); assert.match(frecuencia, /11 de 12/);
+  const ejercicios = await pagina.locator('.card', { hasText: 'Ejercicios en los dos periodos' }).textContent();
+  assert.match(ejercicios, /Solo en el periodo B:/);
+  assert.match(ejercicios, /rutina distinta/);
+  await foto('19-comparar-rutinas.png');
+  // Recargar conserva la selección (va en la dirección).
+  await pagina.reload();
+  await pagina.waitForSelector('html[data-listo="1"]');
+  await pagina.getByText('Periodos comparados', { exact: true }).waitFor();
+  assert.equal(await pagina.inputValue('#perAhasta'), '2026-08-28');
+  assert.equal(await pagina.locator('#perBloqueA option:checked').textContent(), 'Rutina de 4 días (Día 1, Día 2, Día 3, Día 4) · 3 ago–28 ago');
+  // Fechas a mano en orden inverso: se explica y no se calcula nada.
+  await pagina.fill('#perAdesde', '2026-09-30');
+  await pagina.dispatchEvent('#perAdesde', 'change');
+  await pagina.getByText('la fecha «desde» es posterior a «hasta»', { exact: false }).waitFor();
+  assert.equal(await pagina.locator('text=Periodos comparados').count(), 0);
+  await pagina.selectOption('#perBloqueA', 'r0');
+  await pagina.getByText('Periodos comparados', { exact: true }).waitFor();
+  // Un ejercicio de la tabla lleva a su ficha y Atrás vuelve a la comparación.
+  await pagina.locator('.card', { hasText: 'Ejercicios en los dos periodos' }).locator('button[data-ejercicio="Press banca con barra"]').click();
+  await pagina.waitForFunction(() => location.hash === '#entrenamiento/ejercicios/Press%20banca%20con%20barra');
+  await pagina.goBack();
+  await pagina.getByText('Periodos comparados', { exact: true }).waitFor();
+  assert.equal(await pagina.inputValue('#perAdesde'), '2026-08-03');
+  ok('comparar periodos: rápida, por bloque y a mano, con avisos de contexto, recarga y Atrás');
+
+  await pagina.setViewportSize({ width: 420, height: 900 });
+  await pagina.waitForTimeout(80);
+  assert.equal(await pagina.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, 'comparar desborda a 420 px');
+  await foto('20-comparar-estrecha.png');
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  ok('comparar periodos sin desbordamiento en ventana estrecha');
+
   // --- 15. Aislamiento y privacidad ---
   assert.equal(await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes')), carteraAntes);
   await pagina.goto(`${origen}/coach/`);
