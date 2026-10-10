@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
-import { copiaSintetica, copiaRica, crearZip } from './comun.mjs';
+import { copiaSintetica, copiaRica, copiaFase3, crearZip } from './comun.mjs';
 
 const require = createRequire(import.meta.url);
 let pw;
@@ -264,7 +264,7 @@ try {
   await pagina.setInputFiles('#inputFotos', [zipGrande]);
   await pagina.getByText('Preparando la importación').waitFor();
   await pagina.click('[data-accion="cancelar-proceso"]');
-  await pagina.getByText('Importación cancelada').waitFor();
+  await pagina.locator('#modalCaja').getByText('Importación cancelada').waitFor();
   await pagina.click('[data-accion="cerrar"]');
   assert.equal(await pagina.evaluate(async () => (await Almacen.todos('fotos')).length), nFotosAntes);
   ok('cancelar durante el procesamiento no guarda nada');
@@ -362,6 +362,71 @@ try {
   await foto('13-estrecha-ficha.png');
   await pagina.setViewportSize({ width: 1366, height: 900 });
   ok('secciones personales sin desbordamiento horizontal en ventana estrecha');
+
+  // --- Fase 3: del resumen a los registros que justifican cada conclusión ---
+  const p3 = escribir('copia_truelift_2026-10-09.json', JSON.stringify(copiaFase3()));
+  await pagina.setInputFiles('#inputDatos', [p3]);
+  await pagina.getByText('¿Dónde guardar esta copia?').waitFor();
+  await pagina.check('input[name="destino"][value="nuevo"]');
+  await pagina.fill('#nombreNuevo', 'Fase 3');
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByText('Importación completada').waitFor();
+  await pagina.click('[data-accion="cerrar"]');
+  await pagina.evaluate(() => { location.hash = '#resumen'; });
+  await pagina.getByText('Lo más relevante').waitFor();
+  assert.equal(await pagina.locator('article.conclusion').count(), 3);
+  const titulos = await pagina.locator('article.conclusion h4').allTextContents();
+  assert.deepEqual(titulos, ['Intentos agotados en Press banca con barra', 'Muchos días con el estado para entrenar bajo', 'Entrenaste 11 de 12 días previstos']);
+  await pagina.getByText('Constancia', { exact: true }).waitFor();
+  await pagina.getByText('Evolución de tus ejercicios').waitFor();
+  await pagina.getByText('Peso y fase').waitFor();
+  await foto('14-resumen-conclusiones.png');
+  const primera = pagina.locator('article.conclusion').first();
+  await primera.locator('summary', { hasText: 'Datos que la respaldan' }).click();
+  await primera.locator('summary', { hasText: 'Limitaciones' }).click();
+  await foto('15-conclusion-datos.png');
+  // Una fecha de los datos abre la sesión completa (solo lectura).
+  await primera.locator('button[data-sesion]').last().click();
+  await pagina.locator('#modalCaja').getByText('Press banca con barra').first().waitFor();
+  assert.match(await pagina.textContent('#modalCaja'), /Día A/);
+  await pagina.keyboard.press('Escape');
+  // El enlace lleva a la ficha, con el porqué del estado.
+  await primera.getByRole('button', { name: 'Ver la ficha del ejercicio' }).click();
+  await pagina.waitForFunction(() => location.hash === '#entrenamiento/ejercicios/Press%20banca%20con%20barra');
+  await pagina.getByText('Intentos agotados', { exact: true }).first().waitFor();
+  await pagina.locator('summary', { hasText: 'Por qué este estado' }).click();
+  assert.equal(await pagina.locator('text=Cuenta como intento').count(), 5);
+  for (const t of ['Tus últimas semanas', 'Mejores marcas', 'Comparar dos sesiones']) await pagina.getByText(t, { exact: true }).waitFor();
+  await foto('16-ficha-porque.png');
+  ok('mi resumen: tres conclusiones priorizadas que llevan a sus datos, a la sesión y a la ficha');
+
+  // Comparación de dos sesiones: se elige con el teclado y el foco no se pierde.
+  const opciones = await pagina.locator('#compA option').evaluateAll(os => os.map(o => o.value));
+  await pagina.selectOption('#compA', opciones[opciones.length - 1]);
+  await pagina.waitForFunction(() => document.activeElement && document.activeElement.id === 'compA');
+  const tablaComp = await pagina.locator('.card', { hasText: 'Comparar dos sesiones' }).textContent();
+  assert.match(tablaComp, /rutinas distintas/);
+  assert.match(tablaComp, /Serie 1/);
+  await pagina.locator('.card', { hasText: 'Comparar dos sesiones' }).scrollIntoViewIfNeeded();
+  await foto('17-ficha-comparar.png');
+  // Cambiar de ejercicio reinicia la comparación.
+  await pagina.evaluate(() => { location.hash = '#entrenamiento/ejercicios/Sentadilla%20con%20barra'; });
+  await pagina.getByText('primera referencia').first().waitFor();
+  assert.equal(await pagina.evaluate(() => Escritorio.estado.st.compA), null);
+  await pagina.getByText('Al alza', { exact: true }).first().waitFor();
+  ok('ficha: comparación de dos sesiones con avisos de compatibilidad, marcas y evolución reciente');
+
+  await pagina.setViewportSize({ width: 420, height: 900 });
+  for (const h of ['#resumen', '#entrenamiento/ejercicios/Press%20banca%20con%20barra']){
+    await pagina.evaluate(x => { location.hash = x; }, h);
+    await pagina.waitForTimeout(80);
+    assert.equal(await pagina.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, `desborda en ${h}`);
+  }
+  await foto('18-estrecha-resumen.png');
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  const noBotones3 = await pagina.evaluate(() => [...document.querySelectorAll('[data-ir],[data-sesion],[data-ejercicio]')].filter(el => el.tagName !== 'BUTTON').length);
+  assert.equal(noBotones3, 0);
+  ok('resumen y ficha sin desbordamiento en ventana estrecha y todo lo pulsable es un botón');
 
   // --- 15. Aislamiento y privacidad ---
   assert.equal(await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes')), carteraAntes);

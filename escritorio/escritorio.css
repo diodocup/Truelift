@@ -109,3 +109,26 @@ td .chip,th .chip{margin:1px 2px 1px 0}
   .subnav{width:auto}
 }
 img[data-mini]:not([src]){visibility:hidden}
+
+/* ---------- Mi resumen y ficha por ejercicio (fase 3) ---------- */
+.resumen-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:14px;margin-bottom:14px}
+.resumen-grid > .card{margin:0}
+.conclusiones{display:grid;gap:10px}
+.conclusion{padding:12px 14px;border:1px solid var(--borde);border-left:4px solid var(--txt4);border-radius:var(--radio-sm);background:var(--sup2)}
+.conclusion h4{margin:0 0 4px;font:800 15px var(--sans);color:var(--txt)}
+.conclusion p{margin:4px 0}
+.conclusion .periodo{font-size:12.5px}
+.conclusion.tono-verde{border-left-color:var(--lima)}
+.conclusion.tono-ambar{border-left-color:var(--ambar)}
+.conclusion.tono-rojo{border-left-color:var(--rojo)}
+.conclusion.tono-azul{border-left-color:var(--azul)}
+.serie{white-space:nowrap;font:500 12.5px var(--mono)}
+.sep-serie{color:var(--txt4)}
+.tabla-series td:nth-child(3){white-space:normal;min-width:220px}
+.comparar-sel{display:flex;gap:16px;flex-wrap:wrap}
+.comparar-sel .mod-fila{margin:4px 0}
+.comparar-sel select{max-width:100%}
+@media (max-width:640px){
+  .tabla-series td:nth-child(3){min-width:160px}
+}
+.resumen-grid td .chip{white-space:normal;text-align:center}

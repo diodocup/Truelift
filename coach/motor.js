@@ -414,6 +414,28 @@ const Motor = {
   },
 
   // ---------------------------------------------------------------
+  // Progreso de un ejercicio en un periodo (lib/resumen_mensual.dart
+  // `_extremosComparables` y los cortes de lib/informe_mensual.dart)
+  // ---------------------------------------------------------------
+
+  /* Media de los dos primeros y de los dos últimos valores; con dos o tres,
+     el primero y el último; con menos, sin variación que medir. */
+  extremosComparables(serie){
+    if (!serie || serie.length < 2) return [null, null];
+    if (serie.length < 4) return [serie[0], serie[serie.length - 1]];
+    return [(serie[0] + serie[1]) / 2, (serie[serie.length - 2] + serie[serie.length - 1]) / 2];
+  },
+  /* El informe mensual da por «parado» lo que cambia menos de un 1 % y por
+     «en retroceso» lo que cae más de un 1 %. */
+  PROGRESO_PARADO_PCT: 1,
+  lecturaProgreso(deltaPct){
+    if (deltaPct == null) return null;
+    if (deltaPct >= this.PROGRESO_PARADO_PCT) return 'sube';
+    if (deltaPct < -this.PROGRESO_PARADO_PCT) return 'baja';
+    return 'sinCambios';
+  },
+
+  // ---------------------------------------------------------------
   // Volumen real por grupo (lib/volumen_historico.dart)
   // ---------------------------------------------------------------
 

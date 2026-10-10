@@ -21,7 +21,7 @@ const E = {
   urls: new Set(), urlModal: null, obs: null, canal: null,
   estimacion: null, persistido: null, origenModal: null,
   M: null, errorModelo: null,
-  st: { sub: null, ejercicio: null, busca: '', verTodas: false },
+  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null },
 };
 
 const SECCIONES = {
@@ -850,7 +850,10 @@ function irA(destino, { foco = true, historial = true } = {}){
   const cambiaSec = sec !== E.seccion;
   if (cambiaSec || sub !== E.st.sub) E.st.verTodas = false;
   E.st.sub = sub || null;
-  E.st.ejercicio = resto.length ? (() => { try { return decodeURIComponent(resto[0]); } catch (_) { return resto[0]; } })() : null;
+  const ejercicio = resto.length ? (() => { try { return decodeURIComponent(resto[0]); } catch (_) { return resto[0]; } })() : null;
+  // Las sesiones elegidas para comparar son de un ejercicio concreto.
+  if (ejercicio !== E.st.ejercicio){ E.st.compA = null; E.st.compB = null; }
+  E.st.ejercicio = ejercicio;
   if (historial){
     const h = '#' + [sec, sub, E.st.ejercicio && encodeURIComponent(E.st.ejercicio)].filter(Boolean).join('/');
     if (location.hash !== h) history.pushState(null, '', h);
@@ -1044,6 +1047,18 @@ function init(){
     if (b){ b.focus(); try { b.setSelectionRange(pos, pos); } catch (_) { /* tipo search */ } }
   });
   $('#contenido').addEventListener('change', async ev => {
+    // Comparar dos sesiones de la ficha: se vuelve a pintar y el foco sigue
+    // en el mismo selector.
+    if (ev.target.id === 'compA' || ev.target.id === 'compB'){
+      const id = ev.target.id;
+      const a = $('#compA'), b = $('#compB');
+      E.st.compA = Number(a.value); E.st.compB = Number(b.value);
+      render();
+      const sel = $(`#${id}`);
+      if (sel) sel.focus();
+      anunciar('Comparación actualizada');
+      return;
+    }
     if (ev.target.id === 'selEspacio'){
       await guardarSimple([{ almacen: 'meta', put: { clave: 'espacioActivo', valor: ev.target.value } }], 'Espacio cambiado.');
     }

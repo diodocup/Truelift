@@ -125,8 +125,10 @@ const Charts = {
      series: [{nombre, color, puntos:[{x:Date, y:num, c?:colorPunto}],
                 dash?: '5 4', soloPuntos?: bool, grosor?: num,
                 eje?: 'der', unidad?: string}]
-     banda: {min, max, label?} franja de referencia · lineaBase: {y, label, color} */
-  lineas({ series, banda = null, lineaBase = null, w = 680, h = 240 }){
+     banda: {min, max, label?} franja de referencia · lineaBase: {y, label, color}
+     marcas: [{x:Date, tipo, label, color}] líneas verticales de contexto
+     (descarga, cambio de rutina…); solo las que caen dentro del rango. */
+  lineas({ series, banda = null, lineaBase = null, marcas = [], w = 680, h = 240 }){
     const padL = 46, padT = 16, padB = 26;
     const pts = series.flatMap(s => s.puntos).filter(p => p.y != null);
     if (!pts.length) return `<div class="muted" style="padding:20px">Sin datos en el rango.</div>`;
@@ -189,6 +191,16 @@ const Charts = {
     if (lineaBase && lineaBase.y != null)
       svg += this._referencia(padL, w-padR, YIzq(lineaBase.y), lineaBase.color || TL.txt3);
 
+    const tiposMarca = new Map();
+    (marcas || []).forEach(m => {
+      const x = +m.x;
+      if (!(x >= xMin && x <= xMax)) return;
+      const px = X(x).toFixed(1);
+      svg += `<line x1="${px}" x2="${px}" y1="${padT}" y2="${h-padB}" style="stroke:${this._c(m.color)}" `
+           + `stroke-dasharray="2 4" stroke-width="1.6" opacity="0.8" data-tt="${esc(m.label || m.tipo)} · ${fmtFecha(new Date(x))}"/>`;
+      if (!tiposMarca.has(m.tipo)) tiposMarca.set(m.tipo, m.color);
+    });
+
     series.forEach(s => {
       const p = s.puntos.filter(q => q.y != null).sort((a,b) => a.x - b.x);
       if (!p.length) return;
@@ -213,7 +225,8 @@ const Charts = {
       ? this._ley(lineaBase.color || TL.txt3, lineaBase.label, 'trazo') : '';
     const leyBanda = (banda && banda.min != null && banda.max != null)
       ? this._ley(TL.lima, banda.label || 'banda', 'linea', '', 0.35) : '';
-    return `${svg}<div class="leyenda">${ley}${leyBase}${leyBanda}</div>`;
+    const leyMarcas = [...tiposMarca].map(([t, c]) => this._ley(c, t, 'trazo')).join('');
+    return `${svg}<div class="leyenda">${ley}${leyBase}${leyBanda}${leyMarcas}</div>`;
   },
 
   /* Barras diarias coloreadas (estado para entrenar 0-100). */

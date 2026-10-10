@@ -14,7 +14,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 | 0. Auditoría y diseño | Hecha | Este documento + `CONTRATO_DATOS.md` |
 | 1. Importación fiable y persistencia | Hecha (ver «Fase 1» abajo) | `tests/*.test.mjs` (Node) + `tests/e2e.mjs` (Chromium/Playwright) |
 | 2. Experiencia personal y métricas | Hecha (ver «Fase 2» abajo) | `tests/motor*.test.mjs`, `tests/analisis.test.mjs` + e2e (Chromium) |
-| 3. Resumen y ficha por ejercicio | Pendiente | — |
+| 3. Resumen y ficha por ejercicio | Hecha (ver «Fase 3» abajo) | `tests/resumen.test.mjs` + e2e (Chromium) |
 | 4. Comparación de periodos | Pendiente | — |
 | 5. Evolución física | Pendiente | — |
 | 6. Planificador personal | Pendiente | — |
@@ -299,3 +299,83 @@ Sin verificar / pendiente:
 - El diagnóstico simplificado del Coach sigue en el Coach (fuera de alcance).
 - `coach/catalogo.js` puede quedarse atrás de la biblioteca de la app (ya
   documentado en sus pruebas); el volumen avisa de ejercicios sin grupo.
+
+## Fase 3 — Resumen personal y análisis por ejercicio
+
+### Decisiones
+
+- **Conclusiones = reglas fijas.** `Analisis.conclusiones(M)` genera
+  candidatas con prioridad; Mi resumen enseña las tres primeras. Cada una
+  trae observación, periodo, datos que la respaldan (filas con la sesión de
+  origen: la fecha abre su detalle), limitaciones y enlace al detalle.
+  Reglas y prioridades: `METRICAS.md` §Fase 3.
+- **Prioridad de fuentes** (igual que la fase 2): primero las lecturas de la
+  app (valoración, contador de intentos, estado para entrenar, VFC baja
+  sostenida); después reglas reproducidas (cortes del informe mensual) con
+  exclusiones más estrictas; nunca un estancamiento deducido.
+- **Sin adherencia con la frecuencia actual.** Lo previsto de cada semana
+  sale de los días por semana anotados en las propias sesiones (identidad
+  de rutina). Si una semana no tiene la rutina acotada por sesiones de la
+  misma rutina antes y después (o, al final, por la rutina actual igual a la
+  de la última sesión), queda «sin calcular». La semana en curso no se valora.
+- **Ejercicios comparables:** 1RM estimado de marca (tope de reps de la
+  app) solo de sesiones en verde, sin descarga, molestias ni cambio de un
+  día, y con la misma modalidad que la última sesión válida (normal, top +
+  back-off, drop set, rest-pause). Extremos y cortes del informe mensual de
+  la app (`Motor.extremosComparables`, `Motor.lecturaProgreso`). Una lectura
+  solo se convierte en conclusión si es «firme» (varias sesiones y las dos
+  últimas del mismo lado que el arranque): una sola sesión floja no basta.
+  Nunca se infiere progreso por tonelaje ni por repeticiones totales.
+- **Sin duplicar:** un ejercicio con intentos agotados no se repite como «1RM
+  a la baja»; se añade a la misma conclusión.
+- **Ficha:** series una a una (kg × reps @RIR con back-off, drops y series
+  tras la pausa), «Por qué este estado» (las oportunidades que cuenta el
+  móvil), evolución reciente con la misma regla del resumen, historial de
+  marcas válidas, comparación de dos sesiones con avisos (modalidad,
+  número de series, rutina, día, descarga/molestias/no verde, series sin
+  anotar; sin diferencia de 1RM si la modalidad cambia) y marcas verticales
+  de descarga, molestias y cambio de rutina en la gráfica.
+- **Coach:** cambios aditivos: `Charts.lineas({ marcas })` y en `motor.js`
+  `extremosComparables` / `lecturaProgreso`. SW del Coach a v15.
+
+### Registro
+
+- 10/10/2026: fase 3 implementada y verificada (ver abajo).
+
+### Verificación (fase 3, 10/10/2026)
+
+Implementado y comprobado:
+
+- `node --test escritorio/tests/*.test.mjs` → **79/79** (66 previas + 13 de
+  `resumen.test.mjs`): cortes del informe mensual, constancia con la rutina
+  de cada semana (y sin calcular alrededor de un cambio o tras un cambio sin
+  sesiones), exclusiones y modalidad de los comparables, firmeza (una sola
+  sesión floja no genera conclusión), prioridad y trazabilidad (cada fila
+  apunta a una sesión real del mismo día; los enlaces, a ejercicios que
+  existen), descarga, cambio de recuperación, peso sin extrapolar, series
+  por serie (drop set, asistencia en positivo), marcas iguales a las del
+  móvil, avisos de la comparación, escape de nombres importados, ayudas sin
+  cifras del algoritmo y copias mínimas o antiguas.
+- `node escritorio/tests/e2e.mjs` en **Chromium 141** → **28/28** (25
+  previas + 3): resumen con tres conclusiones en el orden esperado, «Datos
+  que la respaldan» → sesión → ficha con «Por qué este estado» (cinco
+  intentos), comparación de sesiones con el teclado sin perder el foco y con
+  aviso de rutinas distintas, reinicio al cambiar de ejercicio, 420 px sin
+  desbordamiento. Cero peticiones externas y cero errores JS. Se hizo
+  robusta una espera previa de la fase 1 que podía coincidir con la región
+  `aria-live` («Importación cancelada»).
+- Capturas sintéticas revisadas (resumen, conclusión desplegada, ficha,
+  comparación, 420 px).
+- Coach: `node --test coach/tests/*.mjs` sigue en 75/83 con los mismos 8
+  fallos previos.
+
+Sin verificar / pendiente:
+
+- Equivalencia con una copia real del móvil (los casos son sintéticos).
+- Firefox y Safari.
+- Rendimiento con historiales de varios años: `comparables` y
+  `conclusiones` recorren cada ejercicio una vez por render de Mi resumen;
+  no medido con miles de sesiones (fase 7).
+- El informe mensual del móvil incluye en su progreso sesiones con molestias
+  o descarga; el escritorio las excluye (diferencia documentada en
+  `METRICAS.md`).

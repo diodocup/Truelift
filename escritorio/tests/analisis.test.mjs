@@ -81,7 +81,8 @@ test('valoración: misma ventana y regla que Progreso', () => {
 
 test('recuperación: días con estado bajo en las dos semanas previas', () => {
   const M = Analisis.preparar(copiaRica(), resumen);
-  assert.deepEqual({ ...M.recuperacion }, { activo: true, bajos: 1, registrados: 5, lectura: 'buena' });
+  const { activo, bajos, registrados, lectura } = M.recuperacion;
+  assert.deepEqual({ activo, bajos, registrados, lectura }, { activo: true, bajos: 1, registrados: 5, lectura: 'buena' });
 });
 
 test('volumen planificado con el reparto del móvil', () => {
