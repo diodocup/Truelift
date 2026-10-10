@@ -92,6 +92,11 @@ pausaRpSeg`. Las copias antiguas no traen las modalidades.
 - Arrastre de contornos para una foto: `diasArrastreContornoFoto = 30`; la
   medida vigente es la del día o la última **anterior** (nunca futura); si
   ambos extremos resuelven al mismo registro no hay cambio (`compararContornos`).
+- En fase 5 se volvió a verificar este contrato contra App-PRO/main:
+  referencias exactas y política para duplicados anómalos en
+  `EVOLUCION_FISICA.md`. La tendencia de contornos usa `tendenciaDe`
+  (mínimos cuadrados, al menos 3 puntos y 21 días). Los metadatos del ZIP
+  sin binario también se conservan como pendientes si no existe índice JSON.
 
 ## 3. ZIP de fotos (Ajustes → Copia → Exportar fotos)
 

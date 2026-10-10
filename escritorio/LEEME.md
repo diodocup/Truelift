@@ -4,8 +4,8 @@ Versión de escritorio de TrueLift para la persona que entrena: importa en el
 ordenador la copia de seguridad de la app y, si quieres, tus fotos de
 progreso, para consultar tu evolución en pantalla grande.
 
-**Estado:** en desarrollo (fases 1 a 4 de 8: importación, almacenamiento,
-secciones personales, resumen con conclusiones, ficha por ejercicio y comparación de periodos). Informes y el editor de rutina llegan en fases
+**Estado:** en desarrollo (fases 1 a 5 de 8: importación, almacenamiento,
+secciones personales, resumen con conclusiones, ficha por ejercicio, comparación de periodos y evolución física). Informes y el editor de rutina llegan en fases
 posteriores. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`.
 
 ## Secciones
@@ -21,7 +21,7 @@ posteriores. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`.
   estado, evolución reciente, mejores marcas y comparación de dos
   sesiones), rendimiento por sesión, volumen por grupo muscular y semana y comparación de dos periodos.
 - **Evolución física:** peso tendencia y fase, composición (estimación),
-  contornos y galería de fotos.
+  contornos con gráficas y tablas, galería por fecha/pose y comparación de fotos.
 - **Recuperación:** estado para entrenar, cuestionarios, VFC, FC en reposo y
   datos del reloj.
 - **Mi rutina:** la rutina guardada en tu copia y sus series por grupo.
@@ -91,6 +91,36 @@ historiales. Tus fotos no se tocan.
 - No hay selector automático de bloques: las sesiones identifican la rutina
   utilizada, pero la copia no guarda sus límites históricos exactos. Indica
   manualmente las fechas de los bloques que quieras revisar.
+
+## Comparar fotos y medidas (fase 5)
+
+1. Abre **Evolución física**. Elige una pose y dos fotos distintas. Si falta
+   una imagen, importa el ZIP; la ficha y sus datos se conservan.
+2. Usa **Lado a lado**, **Cortina** o **Superposición**. Los deslizadores
+   admiten las flechas del teclado, Inicio y Fin.
+3. En **Ajustar encuadre** puedes ampliar uniformemente y mover cada imagen.
+   **Restablecer A/B** vuelve al encuadre original. **Guardar encuadres en
+   este navegador** conserva los ajustes al cerrar; no modifica las fotos.
+4. Revisa peso guardado, fase histórica y tabla de contornos asociados.
+   Cada medida enseña su fecha real: hasta 30 días antes, nunca futura.
+   Si se usa la misma medida para ambas fotos, no se calcula un cambio.
+5. Filtra la galería por pose y avanza por páginas. Debajo puedes consultar
+   las gráficas y tablas de peso, composición estimada y contornos.
+
+Las correcciones de fecha o pose hechas en el móvil llegan con la siguiente
+copia JSON. No necesitas reimportar la imagen si conserva su nombre.
+Los encuadres se mantienen en tu espacio aunque actualices la copia.
+El ZIP también permite consultar fotos y contornos sin JSON, si tiene índice;
+para los entrenamientos y fases históricas necesitas la copia JSON.
+
+La perspectiva, la luz y la postura afectan a la comparación; los ajustes
+no corrigen esas diferencias. Masa magra estimada no equivale a músculo.
+
+## Rutinas
+
+En esta fase **Mi rutina** es de consulta. El editor personal y la exportación
+Excel se adaptarán en la fase 6. No hay cambios de rutina aplicados al móvil
+por importar o consultar esta web.
 
 ## Dónde se guardan los datos
 
