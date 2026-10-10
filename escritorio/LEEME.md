@@ -4,9 +4,28 @@ Versión de escritorio de TrueLift para la persona que entrena: importa en el
 ordenador la copia de seguridad de la app y, si quieres, tus fotos de
 progreso, para consultar tu evolución en pantalla grande.
 
-**Estado:** en desarrollo (fase 1 de 8: importación y almacenamiento). Las
-secciones de análisis aparecen en la navegación pero aún están en
-preparación. Ver `PLAN.md`.
+**Estado:** en desarrollo (fases 1 y 2 de 8: importación, almacenamiento y
+secciones personales). Informes y el editor de rutina llegan en fases
+posteriores. Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`.
+
+## Secciones
+
+- **Mi resumen:** antigüedad de tus datos, constancia reciente, la misma
+  valoración de progreso que la app, estado de tus ejercicios y recuperación.
+- **Entrenamiento:** sesiones (de consulta, con cada serie), ejercicios con
+  su estado de progresión y su ficha, rendimiento por sesión y volumen por
+  grupo muscular y semana.
+- **Evolución física:** peso tendencia y fase, composición (estimación),
+  contornos y galería de fotos.
+- **Recuperación:** estado para entrenar, cuestionarios, VFC, FC en reposo y
+  datos del reloj.
+- **Mi rutina:** la rutina guardada en tu copia y sus series por grupo.
+- **Informes:** en preparación.
+- **Mis datos:** importación, almacenamiento, fotos con incidencias e
+  historial de importaciones.
+
+Teclado: Alt + 1…7 cambia de sección; Atrás y Adelante del navegador
+funcionan entre secciones.
 
 ## Importar tus datos
 

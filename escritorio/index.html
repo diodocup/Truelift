@@ -6,7 +6,7 @@
 <!-- Nada sale de esta página: sin conexiones a terceros (connect-src 'self'),
      sin scripts externos y sin formularios que envíen datos. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>TrueLift · Escritorio</title>
+<title>TrueLift Escritorio</title>
 <meta name="description" content="Analiza en el ordenador tu evolución en TrueLift a partir de tu copia de seguridad.">
 <meta name="theme-color" content="#0A0C0B">
 <meta name="robots" content="noindex">
@@ -34,7 +34,7 @@
   <input type="file" id="inputFotos" accept=".zip,application/zip" hidden>
 </header>
 
-<nav id="tabs" aria-label="Secciones">
+<nav id="tabs" aria-label="Secciones (atajos: Alt + 1 a 7)">
   <button type="button" data-seccion="resumen">Mi resumen</button>
   <button type="button" data-seccion="entrenamiento">Entrenamiento</button>
   <button type="button" data-seccion="fisica">Evolución física</button>
@@ -61,11 +61,17 @@
 
 <div id="vivo" class="sr-only" aria-live="polite"></div>
 
+<script src="../coach/motor.js"></script>
 <script src="../coach/data.js"></script>
+<script src="../coach/nutricion.js"></script>
+<script src="../coach/charts.js"></script>
+<script src="../coach/catalogo.js"></script>
 <script src="importar.js"></script>
 <script src="zip-seguro.js"></script>
 <script src="fotos.js"></script>
 <script src="almacen.js"></script>
+<script src="analisis.js"></script>
+<script src="vistas.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

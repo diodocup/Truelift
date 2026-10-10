@@ -13,7 +13,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 |---|---|---|
 | 0. Auditoría y diseño | Hecha | Este documento + `CONTRATO_DATOS.md` |
 | 1. Importación fiable y persistencia | Hecha (ver «Fase 1» abajo) | `tests/*.test.mjs` (Node) + `tests/e2e.mjs` (Chromium/Playwright) |
-| 2. Experiencia personal y métricas | Pendiente | — |
+| 2. Experiencia personal y métricas | Hecha (ver «Fase 2» abajo) | `tests/motor*.test.mjs`, `tests/analisis.test.mjs` + e2e (Chromium) |
 | 3. Resumen y ficha por ejercicio | Pendiente | — |
 | 4. Comparación de periodos | Pendiente | — |
 | 5. Evolución física | Pendiente | — |
@@ -83,7 +83,10 @@ Truelift/
     zip-seguro.js lector ZIP con límites, rutas seguras, CRC y cancelación
     fotos.js      resolución foto↔índice (prioridades del contrato §5) y plan de importación
     almacen.js    IndexedDB versionada, transacciones atómicas, cuota, modo temporal
-    app.js        interfaz
+    analisis.js   modelo personal (fase 2): sesiones, ejercicios, estado, valoración, volumen
+    vistas.js     HTML de las secciones personales (fase 2)
+    app.js        interfaz, navegación y «Mis datos»
+  coach/motor.js  reglas del motor portadas del móvil (compartidas por las dos herramientas)
 ```
 
 - **Aislamiento:** otra carpeta, otra página, otra base de datos
@@ -221,3 +224,78 @@ Sin verificar / pendiente:
   archivo generado por un móvil).
 - Rendimiento con miles de fotos (probado con 150 entradas y cancelación).
 - Funcionamiento sin conexión: no hay service worker en el escritorio (fase 7).
+
+## Fase 2 — Experiencia personal y coherencia de métricas
+
+### Decisiones
+
+- **Una sola lógica de cálculo:** las reglas del móvil se portan a
+  `coach/motor.js` (funciones puras sobre los mapas crudos de la copia). El
+  escritorio las usa; el Coach lo carga para leer los nombres fusionados.
+  Definiciones, fuentes y diferencias: `METRICAS.md`.
+- **Prioridad de resultados:** primero lo guardado por la app (rendimiento,
+  valoración, marcas por ejercicio); después reglas reproducidas con los
+  casos de prueba del móvil; si no, «datos insuficientes» o descripción
+  neutra. El diagnóstico simplificado del Coach (`Metricas.diagnostico`) no
+  se usa: puede declarar estancamientos que el móvil no ve.
+- **Fecha de referencia = último registro** de la copia; la antigüedad de
+  los datos se enseña en Mi resumen.
+- **Rutina en uso:** `planMod` con `planModKey` igual a la combinación actual.
+  Si no, no se valora la progresión (no se tienen las prefijadas ni el estado
+  PRO).
+- **Sin adherencia histórica:** la copia no guarda la planificación pasada;
+  se muestran sesiones hechas y, aparte, los días de la rutina actual.
+- **Navegación:** Mi resumen · Entrenamiento (Sesiones, Ejercicios,
+  Rendimiento, Volumen) · Evolución física · Recuperación · Mi rutina ·
+  Informes · Mis datos. Hash en la URL (`#entrenamiento/ejercicios/<nombre>`)
+  para Atrás/Adelante y recarga; atajos Alt + 1…7; todo lo pulsable es un
+  botón; cada gráfica tiene su tabla.
+- **Nutrición integrada** donde da contexto: fase y ritmo en Mi resumen;
+  peso tendencia, objetivo y composición (marcada como estimación) en
+  Evolución física.
+- **Sin lenguaje del Coach** (cartera, clientes, triaje, notas del
+  entrenador): no se cargan sus vistas; los textos son nuevos.
+- **Galería:** pasa a Evolución física; «Mis datos» enseña recuentos y solo
+  las fotos con incidencias.
+- **Coach:** cambios mínimos y aditivos en `coach/data.js` (claves nuevas
+  del motor, `sustitucion` no evaluable, huecos `displayBaselinePoint`,
+  `normalizar(raw, {hoy})`), `motor.js` cargado en `coach/index.html` y en la
+  lista del SW (versión v14).
+
+### Registro
+
+- 10/10/2026: auditoría de métricas, `motor.js`, modelo, vistas y
+  navegación. Ver «Verificación (fase 2)».
+
+### Verificación (fase 2, 10/10/2026)
+
+Implementado y comprobado:
+
+- `node --test escritorio/tests/*.test.mjs` → **66/66** (31 de la fase 1 +
+  22 de equivalencia con el móvil, 2 de sincronía de listas con App-PRO y 11
+  del modelo y las vistas). Los casos de `motor.test.mjs` reproducen con sus
+  mismos datos los de `estancamiento_test`, `sesion_a_medias_test`,
+  `ejercicio_molestias_test`, `cambio_ejercicio_solo_hoy_test`,
+  `rest_pause_test`, `drop_set_test`, `dominada_lastre_test`,
+  `dominada_asistida_test` y `valoracion_progreso_test`.
+- `node escritorio/tests/e2e.mjs` en **Chromium 141** → **25/25**: las 19 de
+  la fase 1 (la de miniaturas ahora se hace en Evolución física y ya no pasa
+  en vacío) y 6 nuevas: resumen con valoración y antigüedad, Alt+2, ficha
+  con el estado del móvil, Atrás del navegador, detalle de sesión con nota
+  escapada, todas las secciones, recarga en la misma sección y 420 px sin
+  desbordamiento en seis vistas. Cero peticiones externas y cero errores.
+- Capturas sintéticas revisadas a mano (resumen, ejercicios, ficha, sesión,
+  rendimiento, volumen, física, recuperación, rutina, estrecha).
+- Coach: `node --test coach/tests/*.mjs` sigue en 75/83 con los mismos 8
+  fallos previos.
+
+Sin verificar / pendiente:
+
+- **Equivalencia con una copia real**: los casos son sintéticos y las
+  pruebas Dart no se han podido ejecutar aquí (no hay SDK de Dart/Flutter);
+  la equivalencia se apoya en portar sus entradas y resultados esperados.
+- Firefox y Safari.
+- Rendimiento con historiales de varios años (no medido).
+- El diagnóstico simplificado del Coach sigue en el Coach (fuera de alcance).
+- `coach/catalogo.js` puede quedarse atrás de la biblioteca de la app (ya
+  documentado en sus pruebas); el volumen avisa de ejercicios sin grupo.

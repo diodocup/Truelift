@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
-import { copiaSintetica, crearZip } from './comun.mjs';
+import { copiaSintetica, copiaRica, crearZip } from './comun.mjs';
 
 const require = createRequire(import.meta.url);
 let pw;
@@ -121,9 +121,14 @@ try {
     ['foto_20260801_frente.jpg', '2026-07-25', 'perfil', true, 'json'],
     ['foto_20260801_espalda.jpg', '2026-08-01', 'espalda', false, 'json'],
   ]);
-  await pagina.waitForFunction(() => [...document.querySelectorAll('img[data-mini]')].every(i => i.complete && i.naturalWidth > 0));
-  ok('la ficha corregida en el móvil manda sobre el ZIP y el nombre; la foto ausente queda pendiente');
   await foto('03-mis-datos.png');
+  await pagina.click('#tabs [data-seccion="fisica"]');
+  await pagina.waitForSelector('img[data-mini]', { state: 'attached' });
+  await pagina.locator('.galeria').last().scrollIntoViewIfNeeded();
+  await pagina.waitForFunction(() => { const i = [...document.querySelectorAll('img[data-mini]')]; return i.length > 0 && i.every(x => x.complete && x.naturalWidth > 0); });
+  await pagina.getByText('Imagen no importada').first().waitFor();
+  ok('la ficha corregida en el móvil manda sobre el ZIP y el nombre; la foto ausente queda pendiente');
+  await pagina.click('#tabs [data-seccion="datos"]');
 
   // --- 2. Recarga: persiste ---
   await pagina.reload();
@@ -287,6 +292,76 @@ try {
   await pagina.click('[data-accion="confirmar-borrar-todo"]');
   await pagina.getByText('Tu entrenamiento, en grande').waitFor();
   ok('borrar un espacio elimina sus imágenes; borrar todo vuelve al estado inicial');
+
+  // --- Fase 2: recorrido personal con una copia rica ---
+  const pR = escribir('copia_truelift_2026-07-02.json', JSON.stringify(copiaRica()));
+  await pagina.setInputFiles('#inputDatos', [pR]);
+  await pagina.getByText('Revisa la importación').waitFor();
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByText('Importación completada').waitFor();
+  await pagina.click('[data-accion="cerrar"]');
+  await pagina.click('#tabs [data-seccion="resumen"]');
+  await pagina.getByText('Rendimiento irregular').waitFor();
+  const res = await pagina.textContent('#contenido');
+  assert.match(res, /Tus datos llegan hasta el\s*2 jul 2026/);
+  assert.match(res, /Tus últimas 4 sesiones alternan días buenos y flojos/);
+  assert.doesNotMatch(res, /cliente|entrenador|cartera/i);
+  assert.equal(await pagina.title(), 'Mi resumen · TrueLift Escritorio');
+  await foto('07-resumen.png');
+  ok('mi resumen: valoración igual que la app, antigüedad de los datos y sin lenguaje del Coach');
+
+  await pagina.keyboard.press('Alt+2');
+  await pagina.waitForFunction(() => location.hash === '#entrenamiento');
+  await pagina.getByRole('button', { name: 'Ejercicios', exact: true }).click();
+  await pagina.getByText('En tu rutina actual').waitFor();
+  await foto('08-ejercicios.png');
+  await pagina.getByRole('button', { name: 'Sentadilla con barra' }).first().click();
+  await pagina.getByText('Buscando el objetivo (3 de 4 intentos)').first().waitFor();
+  assert.match(await pagina.textContent('#contenido'), /1RM estimado/);
+  await foto('09-ficha.png');
+  await pagina.goBack();
+  await pagina.getByText('En tu rutina actual').waitFor();
+  ok('teclado (Alt+2), ficha de ejercicio con el estado del móvil y Atrás del navegador');
+
+  await pagina.getByRole('button', { name: 'Sesiones', exact: true }).click();
+  await pagina.getByRole('button', { name: '17 jun 2026' }).click();
+  await pagina.getByText('Rodilla <b>molesta</b>').waitFor();
+  assert.equal(await pagina.locator('#modalCaja b:text-is("molesta")').count(), 0);
+  await foto('10-sesion.png');
+  await pagina.keyboard.press('Escape');
+  ok('detalle de sesión de solo lectura; las notas importadas se muestran como texto');
+
+  for (const [sec, texto] of [['fisica', 'Contornos (cm)'], ['recuperacion', 'Estado para entrenar'], ['rutina', 'Series planificadas por semana'], ['informes', 'Informe de un periodo']]){
+    await pagina.click(`#tabs [data-seccion="${sec}"]`);
+    await pagina.getByText(texto).first().waitFor();
+    await foto(`11-${sec}.png`);
+  }
+  for (const sub of ['rendimiento', 'volumen']){
+    await pagina.evaluate(s => { location.hash = `#entrenamiento/${s}`; }, sub);
+    await pagina.waitForSelector('.subnav button.activa');
+    await foto(`12-${sub}.png`);
+  }
+  // Todo lo que se puede pulsar en las secciones es un botón (alcanzable con teclado).
+  const noBotones = await pagina.evaluate(() => [...document.querySelectorAll('[data-ir],[data-sesion],[data-ejercicio],[data-ver]')].filter(el => el.tagName !== 'BUTTON').length);
+  assert.equal(noBotones, 0);
+  ok('evolución física, recuperación, rutina, informes, rendimiento y volumen se muestran');
+
+  await pagina.reload();
+  await pagina.waitForSelector('html[data-listo="1"]');
+  assert.equal(await pagina.evaluate(() => location.hash), '#entrenamiento/volumen');
+  await pagina.waitForSelector('.subnav button.activa');
+  ok('la recarga vuelve a la misma sección');
+
+  await pagina.setViewportSize({ width: 420, height: 900 });
+  for (const h of ['#resumen', '#entrenamiento/sesiones', '#entrenamiento/ejercicios/Sentadilla%20con%20barra', '#fisica', '#recuperacion', '#rutina']){
+    await pagina.evaluate(x => { location.hash = x; }, h);
+    await pagina.waitForTimeout(80);
+    const anchoCuerpo = await pagina.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    assert.equal(anchoCuerpo, false, `desborda en ${h}`);
+  }
+  await foto('13-estrecha-ficha.png');
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+  ok('secciones personales sin desbordamiento horizontal en ventana estrecha');
 
   // --- 15. Aislamiento y privacidad ---
   assert.equal(await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes')), carteraAntes);

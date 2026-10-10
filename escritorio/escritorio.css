@@ -79,3 +79,33 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 #contenido > .card,#contenido > .grid{margin-bottom:14px}
 #contenido > .grid > .card{margin-bottom:0}
 #modalCaja h2:focus{outline:none}
+
+/* ---------- Secciones personales (fase 2) ---------- */
+.cabecera-seccion{margin:4px 0 12px}
+.cabecera-seccion h1{font:900 26px var(--sans);letter-spacing:-.02em;color:var(--txt);margin:0 0 4px}
+.cabecera-seccion p{margin:0;font-size:13.5px}
+.subnav{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 12px;padding:4px;background:var(--sup1);border:1px solid var(--borde);border-radius:var(--radio-sm);width:max-content;max-width:100%}
+.subnav button{border:0;background:none;color:var(--txt3);font:700 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border-radius:6px;cursor:pointer}
+.subnav button:hover{color:var(--txt2)}
+.subnav button.activa{background:var(--lima-14);color:var(--lima)}
+button.enlace{border:0;background:none;padding:0;color:var(--txt);font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--borde-campo);text-underline-offset:3px}
+button.enlace:hover{color:var(--lima);text-decoration-color:var(--lima)}
+.btn-enlace{font-size:12px}
+.sub-h{margin:14px 0 4px;font:700 12px var(--mono);letter-spacing:.06em;color:var(--txt3);text-transform:uppercase}
+.valoracion{font-size:15px;line-height:1.5}
+.valoracion .chip{margin-right:6px;vertical-align:1px}
+details.ayuda summary{font-size:12.5px;color:var(--txt3)}
+.nota{font-size:12px;color:var(--txt2);white-space:pre-wrap}
+table tbody th[scope="row"]{padding:8px 10px;font:500 13px var(--sans);letter-spacing:0;text-transform:none;color:var(--txt);border-bottom:1px solid var(--sep);vertical-align:top;white-space:nowrap}
+table tbody tr:last-child th[scope="row"]{border-bottom:none}
+th button.enlace{font:inherit}
+td .chip,th .chip{margin:1px 2px 1px 0}
+.rutina-dias{grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));margin-bottom:14px}
+.rutina-dias > .card{margin:0}
+:focus-visible{outline:2px solid var(--lima);outline-offset:2px}
+.subnav button:focus-visible,#tabs button:focus-visible{outline-offset:-2px}
+@media (max-width:640px){
+  .cabecera-seccion h1{font-size:22px}
+  .subnav{width:auto}
+}
+img[data-mini]:not([src]){visibility:hidden}
