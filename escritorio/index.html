@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Nada sale de esta página: sin conexiones a terceros (connect-src 'self'),
+     sin scripts externos y sin formularios que envíen datos. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>TrueLift · Escritorio</title>
+<meta name="description" content="Analiza en el ordenador tu evolución en TrueLift a partir de tu copia de seguridad.">
+<meta name="theme-color" content="#0A0C0B">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="../coach/media/icono.png">
+<link rel="preload" href="../fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/jetbrainsmono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../coach/styles.css">
+<link rel="stylesheet" href="escritorio.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<div id="cabecera" class="no-print">
+<header id="topbar">
+  <div class="brand"><span class="wordmark"><svg class="wordmark-t" viewBox="26.2 32 55.6 44" aria-hidden="true" focusable="false"><path class="wm-brazo" d="M28 32H44A2 2 0 0 1 46 34V42A2 2 0 0 1 44 44H32.2A2.8 2.8 0 0 1 29.7 42.5L26.2 35.5A2.4 2.4 0 0 1 28 32Z"/><path class="wm-brazo" d="M80 32H64A2 2 0 0 0 62 34V42A2 2 0 0 0 64 44H75.8A2.8 2.8 0 0 0 78.3 42.5L81.8 35.5A2.4 2.4 0 0 0 80 32Z"/><path class="wm-pie" d="M50 32H58A2 2 0 0 1 60 34V71.2A3 3 0 0 1 59.1 73.3L56.4 75.6A2 2 0 0 1 55.1 76H50A2 2 0 0 1 48 74V34A2 2 0 0 1 50 32Z"/></svg>RUE<span class="wm-lift">LIFT</span></span><span class="brand-coach">Escritorio</span></div>
+
+  <span id="espacioActual" class="muted"></span>
+
+  <div class="spacer"></div>
+
+  <button id="btnImportarDatos" class="btn pri" type="button">Importar datos de TrueLift</button>
+  <button id="btnImportarFotos" class="btn sec" type="button">Importar fotos de TrueLift</button>
+  <input type="file" id="inputDatos" accept=".json,application/json" multiple hidden>
+  <input type="file" id="inputFotos" accept=".zip,application/zip" hidden>
+</header>
+
+<nav id="tabs" aria-label="Secciones">
+  <button type="button" data-seccion="resumen">Mi resumen</button>
+  <button type="button" data-seccion="entrenamiento">Entrenamiento</button>
+  <button type="button" data-seccion="fisica">Evolución física</button>
+  <button type="button" data-seccion="recuperacion">Recuperación</button>
+  <button type="button" data-seccion="rutina">Mi rutina</button>
+  <button type="button" data-seccion="informes">Informes</button>
+  <button type="button" data-seccion="datos">Mis datos</button>
+</nav>
+</div>
+
+<aside class="privacy-notice no-print" aria-label="Aviso de privacidad">
+  <strong>Privacidad</strong> tus archivos se procesan y se guardan solo en este navegador; TrueLift no
+  los recibe. Conserva tus copias JSON y ZIP originales: son tu respaldo.
+  <a href="../privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.
+</aside>
+
+<div id="avisoGlobal" class="no-print"></div>
+
+<main id="contenido" tabindex="-1"></main>
+
+<div id="dropzone" class="oculto no-print">Suelta aquí tu copia JSON, tu ZIP de fotos o los dos</div>
+
+<div id="modal" class="oculto no-print"><div id="modalCaja" role="dialog" aria-modal="true" aria-labelledby="modalTitulo"></div></div>
+
+<div id="vivo" class="sr-only" aria-live="polite"></div>
+
+<script src="../coach/data.js"></script>
+<script src="importar.js"></script>
+<script src="zip-seguro.js"></script>
+<script src="fotos.js"></script>
+<script src="almacen.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

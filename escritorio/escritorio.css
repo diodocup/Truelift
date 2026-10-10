@@ -1,0 +1,81 @@
+/* ==========================================================================
+   TrueLift Escritorio — estilos propios.
+   Parte del sistema de diseño del Coach (../coach/styles.css): mismos
+   tokens, botones, tarjetas, alertas y modal. Aquí solo lo que es nuevo.
+   ========================================================================== */
+
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.saltar{position:absolute;left:12px;top:-60px;z-index:200;padding:8px 12px;background:var(--lima);color:#0A0C0B;border-radius:8px;font:700 12px var(--mono)}
+.saltar:focus{top:12px}
+
+#espacioActual{font:500 12px var(--mono);letter-spacing:.04em}
+#tabs button[aria-disabled="true"]{color:var(--txt4)}
+#avisoGlobal{max-width:var(--ancho);margin:0 auto;padding:0 24px}
+#avisoGlobal:empty{display:none}
+#avisoGlobal .alerta{margin-top:12px}
+
+/* Modal más ancho para la vista previa de importación. */
+#modalCaja.ancho{width:min(820px,100%)}
+#modalCaja h3{margin:16px 0 8px;font:800 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--txt3)}
+#modalCaja .opcion{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;margin:6px 0;border:1px solid var(--borde-campo);border-radius:var(--radio-sm);cursor:pointer}
+#modalCaja .opcion:hover{border-color:rgba(255,255,255,.22)}
+#modalCaja .opcion input{margin-top:3px}
+#modalCaja .opcion small{display:block;color:var(--txt3);margin-top:2px}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+
+/* Cifras en rejilla (vista previa y tarjeta de datos). */
+.cifras{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}
+.cifra{padding:10px 12px;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm)}
+.cifra b{display:block;font:800 18px var(--mono);color:var(--txt)}
+.cifra span{font-size:12px;color:var(--txt3)}
+.cifra.aviso b{color:var(--ambar)}
+
+.lista-plana{margin:6px 0;padding-left:18px}
+.lista-plana li{margin:2px 0}
+.lista-plana code,.mono-peq{font:500 12px var(--mono);color:var(--txt2);word-break:break-all}
+details.detalle{margin:6px 0}
+details.detalle summary{cursor:pointer;color:var(--txt2)}
+
+/* Progreso de procesamiento. */
+.progreso{height:8px;background:var(--sup3);border-radius:6px;overflow:hidden;margin:12px 0 6px}
+.progreso i{display:block;height:100%;width:0;background:var(--lima);transition:width .15s}
+
+/* Estado vacío y primeros pasos. */
+.bienvenida{max-width:720px;margin:24px auto;text-align:left}
+.bienvenida h1{font:900 30px var(--sans);letter-spacing:-.02em;color:var(--txt);margin:0 0 8px}
+.pasos{counter-reset:paso;list-style:none;padding:0;margin:16px 0}
+.pasos li{counter-increment:paso;position:relative;padding:8px 0 8px 38px}
+.pasos li::before{content:counter(paso);position:absolute;left:0;top:6px;width:26px;height:26px;border-radius:50%;background:var(--lima-14);color:var(--lima);font:800 13px var(--mono);display:flex;align-items:center;justify-content:center}
+.fila-botones{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+
+/* Galería de fotos. */
+.galeria-dia{margin:14px 0}
+.galeria-dia h4{margin:0 0 8px;font:700 12px var(--mono);letter-spacing:.06em;color:var(--txt3)}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.foto{margin:0;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm);overflow:hidden}
+.foto button{display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:left}
+.foto .marco{aspect-ratio:3/4;background:var(--sup3);display:flex;align-items:center;justify-content:center}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto .hueco{padding:10px;text-align:center;font-size:12px;color:var(--txt3)}
+.foto figcaption{padding:6px 8px;font-size:12px;display:flex;flex-direction:column;gap:3px}
+.foto figcaption .chip{align-self:flex-start;font-size:9px}
+.foto-grande{max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:10px}
+
+/* Tablas de historial. */
+.tabla-scroll{overflow-x:auto}
+
+@media (max-width:900px){
+  #avisoGlobal{padding:0 12px}
+  #topbar .btn{padding-left:10px;padding-right:10px}
+}
+@media (max-width:640px){
+  .bienvenida h1{font-size:24px}
+  .galeria{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+}
+
+/* Separación entre tarjetas apiladas y foco del título del modal (recibe el
+   foco por programa para que el lector de pantalla lo anuncie; el contorno
+   lima ahí solo distrae). */
+#contenido > .card,#contenido > .grid{margin-bottom:14px}
+#contenido > .grid > .card{margin-bottom:0}
+#modalCaja h2:focus{outline:none}
