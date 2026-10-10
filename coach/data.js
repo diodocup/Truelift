@@ -62,7 +62,11 @@ function pareceTrueLift(raw){
          (Array.isArray(raw.logs) || Array.isArray(raw.planMod));
 }
 
-function normalizar(raw){
+/* `hoy`: fecha con la que se evalúa el estado de la nutrición (días desde la
+   última medición, fase en curso…). Por defecto, la de hoy (Coach); el
+   escritorio pasa la del último registro de la copia, que es lo más
+   reciente que se sabe de esa persona. */
+function normalizar(raw, { hoy = new Date() } = {}){
   const perfil = {
     sexo: raw.sexo ?? null,
     sistema: raw.sistema ?? null,
@@ -123,7 +127,12 @@ function normalizar(raw){
       const rir = Array.isArray(e.rir) ? e.rir : [];
       const kgSets = Array.isArray(e.kgSets) ? e.kgSets : null;
       return {
-        slot: e.slot ?? null, ejercicio: e.ejercicio ?? '—',
+        slot: e.slot ?? null,
+        // Ejercicios retirados por duplicados: el móvil los lee con el nombre
+        // del que los sustituye (`nombreEjercicioVigente`), así su historial
+        // sigue en el mismo ejercicio. Sin motor.js se lee tal cual.
+        ejercicio: e.ejercicio == null ? '—'
+          : (typeof Motor === 'object' ? Motor.nombreVigente(String(e.ejercicio)) : e.ejercicio),
         kg: (typeof e.kg === 'number') ? e.kg : null,
         kgSets, reps, rir,
         obs: (e.obs ?? '').trim(),
@@ -136,6 +145,20 @@ function normalizar(raw){
         // Clave aditiva: las copias anteriores a esta versión no la traen.
         molestias: e.molestias === true,
         noDisponible: e.noDisponible === true,
+        // Claves aditivas del motor (las copias anteriores no las traen):
+        // cambio de ejercicio solo por hoy (no se evalúa, como las molestias),
+        // modalidad de las series (en drop y rest-pause solo la primera vale
+        // para rendimiento y marcas), color con que se entrenó el ejercicio
+        // con el día repartido por trenes y marcas de progresión.
+        sustitucion: e.sustitucion === true,
+        ejercicioPlan: (typeof e.ejercicioPlan === 'string' && e.ejercicioPlan.trim()) ? e.ejercicioPlan.trim() : null,
+        dropSet: e.dropSet === true,
+        restPause: e.restPause === true,
+        superserie: (typeof e.superserie === 'number') ? e.superserie : null,
+        estadoEjercicio: ['verde','ambar','rojo'].includes(e.estadoEjercicio) ? e.estadoEjercicio : null,
+        progresionPausada: e.progresionPausada === true,
+        neutra: e.neutra === true,
+        estancamientoRecurrente: e.estancamientoRecurrente === true,
         nSeries: Math.max(reps.length, rir.length, kgSets ? kgSets.length : 0),
       };
     });
@@ -146,6 +169,13 @@ function normalizar(raw){
       // (la `semana` no vale: se reinicia con cada bloque, no solo al cambiar).
       variante: l.variante ?? null,
       diasSem: l.dias ?? null,
+      rutinaRevision: (typeof l.rutinaRevision === 'number') ? l.rutinaRevision : 0,
+      // Semáforo global congelado al guardar (aditivo; sin él, la compuerta).
+      semaforo: l.estadoSemaforo ?? null,
+      // Sesión guardada sin base comparable: su 0 % es un convenio, no «clavaste
+      // tu nivel». La app la deja como hueco en las gráficas.
+      sinBase: l.displayBaselinePoint === true,
+      sinBaseNeto: l.netDisplayBaselinePoint === true,
       semana: (typeof l.semana === 'number') ? l.semana : null,
       compuerta: l.estadoCompuerta ?? null,           // verde | ambar | rojo | null
       descarga: l.descarga === true,
@@ -196,7 +226,7 @@ function normalizar(raw){
   // bandas, reparto…) para no recalcular el filtro en cada render: como el
   // resto de lo normalizado, vive en normCache hasta que se reimporta.
   const nutricion = normalizarNutricion(raw);
-  const nut = Nutricion.contexto(nutricion);
+  const nut = Nutricion.contexto(nutricion, { hoy });
 
   // Reloj conectado (clave `saludDiaria`, aditiva desde la versión con Health
   // Connect / Apple Salud). Un día solo trae lo que la plataforma dio: todo
@@ -444,7 +474,9 @@ const Metricas = {
      entrenando suave por una tendinitis se leían aquí como un estancamiento y
      el entrenador bajaba una carga que no había que tocar. */
   evaluables(hist){
-    return hist.filter(p => !p.entrada.molestias && !p.entrada.noDisponible);
+    // El cambio de ejercicio solo por hoy (`sustitucion`) tiene el mismo trato
+    // en la app que las molestias: se registra, pero no se evalúa.
+    return hist.filter(p => !p.entrada.molestias && !p.entrada.sustitucion && !p.entrada.noDisponible);
   },
 
   // Diagnóstico de progresión de un ejercicio
@@ -542,6 +574,7 @@ const Metricas = {
 
   // % de rendimiento unificado (antiguo ~100 / nuevo ±% → base 100)
   pctSesion(s){
+    if (s.sinBase && s.rendPctAbs == null && (s.rendPctNet == null || s.sinBaseNeto)) return null;
     if (s.rendPctAbs != null) return s.rendPctAbs;
     if (s.rendPctNet != null) return Math.round((100 + s.rendPctNet) * 10) / 10;
     return null;
@@ -549,6 +582,7 @@ const Metricas = {
 
   // Rendimiento BRUTO de sesión en base 100 (antiguo rendimientoPct / nuevo rawSessionPct)
   pctBruto(s){
+    if (s.sinBase) return null;   // hueco, como en la gráfica de la app
     if (s.rendPctAbs != null) return s.rendPctAbs;
     if (s.rendPctRaw != null) return Math.round((100 + s.rendPctRaw) * 10) / 10;
     return null;
@@ -556,6 +590,7 @@ const Metricas = {
 
   // Rendimiento NETO diario en base 100 (solo formato nuevo)
   pctNeto(s){
+    if (s.sinBaseNeto) return null;
     if (s.rendPctNet != null) return Math.round((100 + s.rendPctNet) * 10) / 10;
     return null;
   },

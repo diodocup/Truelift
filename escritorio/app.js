@@ -2,9 +2,10 @@
 /* ================================================================
    TrueLift Escritorio — app.js
    Interfaz: importación de la copia JSON y del ZIP de fotos con vista
-   previa y decisión explícita, persistencia local y la sección
-   «Mis datos». Las secciones de análisis llegan en fases posteriores
-   (escritorio/PLAN.md).
+   previa y decisión explícita, persistencia local, navegación entre
+   las secciones personales y «Mis datos». El cálculo vive en
+   analisis.js (sobre ../coach/motor.js) y el HTML de las secciones en
+   vistas.js. Estado del trabajo: escritorio/PLAN.md.
 
    Reutiliza de ../coach/data.js: esc, $, $$, parseFecha, MESES,
    DIAS_SEM, diasEntre, uuid. Todo se encierra en una IIFE para no
@@ -19,6 +20,8 @@ const E = {
   seccion: 'datos', ocupado: false, abort: null, P: null,
   urls: new Set(), urlModal: null, obs: null, canal: null,
   estimacion: null, persistido: null, origenModal: null,
+  M: null, errorModelo: null,
+  st: { sub: null, ejercicio: null, busca: '', verTodas: false },
 };
 
 const SECCIONES = {
@@ -81,7 +84,7 @@ async function cargarEstado(){
   const id = meta && E.espacios.some(e => e.id === meta.valor) ? meta.valor : (E.espacios[0]?.id ?? null);
   E.espacio = E.espacios.find(e => e.id === id) || null;
   E.inst = null; E.raw = null; E.rawError = null; E.indiceJson = null;
-  E.fotosMeta = []; E.galeria = []; E.importaciones = [];
+  E.fotosMeta = []; E.galeria = []; E.importaciones = []; E.M = null; E.errorModelo = null;
   if (E.espacio){
     if (E.espacio.instantaneaId){
       E.inst = await Almacen.leer('instantaneas', E.espacio.instantaneaId);
@@ -95,6 +98,11 @@ async function cargarEstado(){
     E.fotosMeta = await Almacen.todos('fotos', E.espacio.id);
     E.galeria = FotosTL.resolver({ indiceJson: E.indiceJson, guardadas: E.fotosMeta });
     E.importaciones = (await Almacen.todos('importaciones', E.espacio.id)).sort((a, b) => b.id - a.id);
+    // Modelo de análisis: se recalcula desde el texto original en cada carga.
+    if (E.raw){
+      try { E.M = Analisis.preparar(E.raw, E.inst.resumen); }
+      catch (e) { E.errorModelo = e && e.message ? e.message : String(e); console.error(e); }
+    }
   }
   E.estimacion = await Almacen.estimacion();
   E.persistido = await Almacen.persistido();
@@ -560,7 +568,7 @@ async function confirmarImportacion(){
   E.ocupado = false;
   if (E.canal) E.canal.postMessage({ tipo: 'cambio' });
   await cargarEstado();
-  setSeccion('datos', false);
+  irA('datos', { foco: false });
   const piezas = [];
   if (registro.datos) piezas.push('datos de entrenamiento actualizados');
   if (registro.fotos && registro.fotos.guardadas) piezas.push(plural(registro.fotos.guardadas, 'foto guardada', 'fotos guardadas'));
@@ -574,7 +582,7 @@ function renderDatos(){
   if (!E.espacio) return renderBienvenida();
   const out = [];
   out.push(`<div class="grid cols2" style="align-items:start">${tarjetaDatos()}${tarjetaAlmacen()}</div>`);
-  out.push(tarjetaFotos());
+  out.push(tarjetaFotos('resumen'));
   out.push(tarjetaHistorial());
   return out.join('');
 }
@@ -645,7 +653,10 @@ function tarjetaAlmacen(){
     </div></div>`;
 }
 
-function tarjetaFotos(){
+/* modo 'galeria' (Evolución física): todas las fotos por fecha.
+   modo 'resumen' (Mis datos): recuentos y solo las fotos con alguna
+   incidencia (sin imagen, deducidas del nombre, fuera de la copia). */
+function tarjetaFotos(modo = 'galeria'){
   const g = E.galeria;
   const con = g.filter(f => f.tieneImagen).length;
   const pend = g.length - con;
@@ -658,8 +669,9 @@ function tarjetaFotos(){
       Puedes importar el ZIP que exporta la app desde Ajustes → Copia de seguridad → Exportar fotos.</p>
       <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button></div></div>`;
   }
+  const visibles = modo === 'resumen' ? g.filter(f => !f.tieneImagen || f.fuente === 'nombre' || f.fueraDeCopia) : g;
   const porDia = new Map();
-  g.forEach(f => { if (!porDia.has(f.fecha)) porDia.set(f.fecha, []); porDia.get(f.fecha).push(f); });
+  visibles.forEach(f => { if (!porDia.has(f.fecha)) porDia.set(f.fecha, []); porDia.get(f.fecha).push(f); });
   const dias = [...porDia.keys()].sort().reverse();
   return `<div class="card"><h3>Fotos de progreso</h3>
     <div class="cifras">
@@ -670,7 +682,9 @@ function tarjetaFotos(){
       ${disc ? cifra(disc, 'con otra ficha en el ZIP') : ''}
     </div>
     ${pend ? '<p class="muted" style="font-size:12.5px">Las fotos sin imagen están registradas en tu copia de datos, pero su archivo no se ha importado. Importa el ZIP de fotos para verlas; sus datos no se borran.</p>' : ''}
-    <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button></div>
+    <div class="fila-botones"><button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button>
+      ${modo === 'resumen' ? '<button class="btn sec" type="button" data-ir="fisica">Ver la galería</button>' : ''}</div>
+    ${modo === 'resumen' && visibles.length ? '<h4 class="sub-h">Fotos que conviene revisar</h4>' : ''}
     ${dias.map(d => `<section class="galeria-dia"><h4>${fmtDia(d)}</h4><div class="galeria">
       ${porDia.get(d).map(fotoHtml).join('')}</div></section>`).join('')}
   </div>`;
@@ -823,6 +837,27 @@ function pedirRenombrar(){
 }
 
 // ---------- render ----------
+/* Destino «seccion[:apartado]». La sección y el apartado viajan en el
+   hash (#entrenamiento/ejercicios/Press%20banca) para que Atrás y Adelante
+   del navegador funcionen y una recarga vuelva al mismo sitio. */
+function irA(destino, { foco = true, historial = true } = {}){
+  // Solo los dos primeros separadores parten: el nombre de un ejercicio
+  // puede llevar «:» o «/».
+  const m = String(destino || '').match(/^([^:/]*)(?:[:/]([^:/]*)(?:[:/](.*))?)?$/) || [];
+  const [sec, sub] = [m[1], m[2]];
+  const resto = m[3] != null && m[3] !== '' ? [m[3]] : [];
+  if (!SECCIONES[sec]) return;
+  const cambiaSec = sec !== E.seccion;
+  if (cambiaSec || sub !== E.st.sub) E.st.verTodas = false;
+  E.st.sub = sub || null;
+  E.st.ejercicio = resto.length ? (() => { try { return decodeURIComponent(resto[0]); } catch (_) { return resto[0]; } })() : null;
+  if (historial){
+    const h = '#' + [sec, sub, E.st.ejercicio && encodeURIComponent(E.st.ejercicio)].filter(Boolean).join('/');
+    if (location.hash !== h) history.pushState(null, '', h);
+  }
+  setSeccion(sec, foco);
+}
+
 function setSeccion(s, foco = true){
   E.seccion = s;
   $$('#tabs button').forEach(b => {
@@ -831,6 +866,7 @@ function setSeccion(s, foco = true){
     if (activa) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   render();
+  document.title = `${SECCIONES[s]} · TrueLift Escritorio`;
   if (foco) $('#contenido').focus({ preventScroll: true });
 }
 
@@ -847,9 +883,62 @@ function render(){
     activarMiniaturas();
     return;
   }
-  cont.innerHTML = `<section class="card"><h3>${esc(SECCIONES[E.seccion])}</h3>
-    <p>Esta sección está en preparación. De momento puedes importar y revisar tus archivos en <b>Mis datos</b>.</p>
-    <div class="fila-botones"><button class="btn sec" type="button" data-seccion-ir="datos">Ir a Mis datos</button></div></section>`;
+  cont.innerHTML = renderSeccion();
+  activarMiniaturas();
+}
+
+function sinCopiaHtml(){
+  return `<section class="card"><h3>${esc(SECCIONES[E.seccion])}</h3>
+    <p>${E.rawError || E.errorModelo
+      ? `No se pudo leer tu copia de datos${E.errorModelo ? ` (${esc(E.errorModelo)})` : ''}. Revisa «Mis datos».`
+      : 'Para ver esta sección importa tu copia de datos de TrueLift (el archivo <code>.json</code>). Las fotos solas no traen tus entrenamientos.'}</p>
+    <div class="fila-botones"><button class="btn pri" type="button" data-accion="importar-datos">Importar datos de TrueLift</button>
+      <button class="btn sec" type="button" data-ir="datos">Ir a Mis datos</button></div></section>`;
+}
+
+function renderSeccion(){
+  const M = E.M;
+  if (E.seccion === 'fisica' && !M){
+    return `<div class="cabecera-seccion"><h1>Evolución física</h1></div>${sinCopiaHtml()}${tarjetaFotos('galeria')}`;
+  }
+  if (!M) return sinCopiaHtml();
+  const ctx = { inst: E.inst, galeriaHtml: () => tarjetaFotos('galeria') };
+  switch (E.seccion){
+    case 'resumen': return VistasEsc.resumen(M, ctx);
+    case 'entrenamiento': return VistasEsc.entrenamiento(M, E.st);
+    case 'fisica': return VistasEsc.fisica(M, ctx);
+    case 'recuperacion': return VistasEsc.recuperacion(M);
+    case 'rutina': return VistasEsc.rutina(M);
+    case 'informes': return VistasEsc.informes(M);
+  }
+  return '';
+}
+
+function verSesion(indice){
+  const html = E.M && VistasEsc.detalleSesionHtml(E.M, indice);
+  if (!html) return;
+  abrirModal(`${html}<div class="mod-acciones"><button class="btn pri" type="button" data-accion="cerrar" autofocus>Cerrar</button></div>`, { ancho: true });
+}
+
+/* Tooltip de las gráficas (mismo comportamiento que en el Coach). */
+function initTooltip(){
+  const tip = document.createElement('div');
+  tip.id = 'chartTip';
+  tip.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(tip);
+  const ocultar = () => { tip.style.display = 'none'; };
+  document.addEventListener('mousemove', ev => {
+    const el = ev.target.closest ? ev.target.closest('[data-tt]') : null;
+    if (!el){ if (tip.style.display === 'block') ocultar(); return; }
+    tip.textContent = el.getAttribute('data-tt');
+    tip.style.display = 'block';
+    const m = 14, r = tip.getBoundingClientRect();
+    let x = ev.clientX + m, y = ev.clientY + m;
+    if (x + r.width > window.innerWidth) x = ev.clientX - m - r.width;
+    if (y + r.height > window.innerHeight) y = ev.clientY - m - r.height;
+    tip.style.left = `${Math.max(4, x)}px`; tip.style.top = `${Math.max(4, y)}px`;
+  });
+  document.addEventListener('mouseleave', ocultar);
 }
 
 // ---------- eventos ----------
@@ -905,7 +994,7 @@ async function accion(nombre, el){
 }
 
 function init(){
-  $$('#tabs button').forEach(b => b.addEventListener('click', () => setSeccion(b.dataset.seccion)));
+  $$('#tabs button').forEach(b => b.addEventListener('click', () => irA(b.dataset.seccion)));
   $('#btnImportarDatos').addEventListener('click', () => $('#inputDatos').click());
   $('#btnImportarFotos').addEventListener('click', () => $('#inputFotos').click());
   // El selector de datos admite elegir la copia JSON y el ZIP a la vez.
@@ -919,8 +1008,20 @@ function init(){
   document.addEventListener('click', ev => {
     const a = ev.target.closest('[data-accion]');
     if (a && !a.disabled){ accion(a.dataset.accion, a); return; }
-    const ir = ev.target.closest('[data-seccion-ir]');
-    if (ir){ setSeccion(ir.dataset.seccionIr); return; }
+    const ir = ev.target.closest('[data-ir]');
+    if (ir){
+      if (!$('#modal').classList.contains('oculto')) cerrarModal();
+      irA(ir.dataset.ir); return;
+    }
+    const ses = ev.target.closest('[data-sesion]');
+    if (ses){ verSesion(Number(ses.dataset.sesion)); return; }
+    const ej = ev.target.closest('[data-ejercicio]');
+    if (ej){
+      if (!$('#modal').classList.contains('oculto')) cerrarModal();
+      irA(`entrenamiento:ejercicios:${encodeURIComponent(ej.dataset.ejercicio)}`); return;
+    }
+    const av = ev.target.closest('[data-accion-vista]');
+    if (av && av.dataset.accionVista === 'ver-todas'){ E.st.verTodas = true; render(); return; }
     const ver = ev.target.closest('[data-ver]');
     if (ver){ verFoto(ver.dataset.ver); return; }
   });
@@ -933,12 +1034,30 @@ function init(){
   $('#modal').addEventListener('input', ev => {
     if (E.P && ev.target.id === 'nombreNuevo') E.P.nombreNuevo = ev.target.value;
   });
+  // Buscador de ejercicios: se filtra al escribir sin perder el foco.
+  $('#contenido').addEventListener('input', ev => {
+    if (ev.target.id !== 'buscaEj') return;
+    E.st.busca = ev.target.value;
+    const pos = ev.target.selectionStart;
+    render();
+    const b = $('#buscaEj');
+    if (b){ b.focus(); try { b.setSelectionRange(pos, pos); } catch (_) { /* tipo search */ } }
+  });
   $('#contenido').addEventListener('change', async ev => {
     if (ev.target.id === 'selEspacio'){
       await guardarSimple([{ almacen: 'meta', put: { clave: 'espacioActivo', valor: ev.target.value } }], 'Espacio cambiado.');
     }
   });
   document.addEventListener('keydown', trampaFoco);
+  // Atajos: Alt + 1…7 para las secciones (sin modal abierto).
+  const orden = Object.keys(SECCIONES);
+  document.addEventListener('keydown', ev => {
+    if (!ev.altKey || ev.ctrlKey || ev.metaKey || !$('#modal').classList.contains('oculto')) return;
+    const n = Number(ev.key);
+    if (n >= 1 && n <= orden.length){ ev.preventDefault(); irA(orden[n - 1]); }
+  });
+  window.addEventListener('hashchange', () => irA(location.hash.slice(1) || (E.inst ? 'resumen' : 'datos'), { historial: false, foco: false }));
+  initTooltip();
 
   // Arrastrar y soltar (JSON, ZIP o los dos).
   let n = 0;
@@ -975,7 +1094,10 @@ async function arrancar(){
     $('#contenido').innerHTML = `<div class="alerta rojo"><span class="tag">Error</span><span>No se pudieron leer los datos guardados: ${esc(e.message || String(e))}</span></div>`;
     return;
   }
-  setSeccion(E.espacio ? 'datos' : 'datos', false);
+  // Con datos se abre el resumen (o la sección del enlace); sin ellos, el
+  // estado vacío con los pasos para importar.
+  const h = location.hash.slice(1);
+  irA(h && SECCIONES[h.split('/')[0]] ? h : (E.inst ? 'resumen' : 'datos'), { foco: false, historial: false });
   document.documentElement.dataset.listo = '1';
 }
 
