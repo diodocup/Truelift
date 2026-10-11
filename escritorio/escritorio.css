@@ -92,7 +92,7 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 }
 
 /* Tablas de historial. */
-.tabla-scroll{overflow-x:auto}
+.tabla-scroll{position:relative;overflow-x:auto}
 
 @media (max-width:900px){
   #avisoGlobal{padding:0 12px}

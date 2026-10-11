@@ -10,7 +10,7 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v1`;
+const VERSION = `${PREFIJO}v2`;
 const ARCHIVOS = [
   './',
   'index.html',
@@ -47,12 +47,17 @@ self.addEventListener('fetch', ev => {
   const url = new URL(req.url);
   url.search = ''; url.hash = '';
   if (!URLS.has(url.href)) return;
+  const respaldo = async () => (await (await caches.open(VERSION)).match(url.href)) || Response.error();
   ev.respondWith(
     fetch(req)
-      .then(resp => {
-        if (resp.ok){ const copia = resp.clone(); caches.open(VERSION).then(c => c.put(url.href, copia)); }
+      .then(async resp => {
+        // Un 503/404 también puede ser un fallo transitorio del despliegue.
+        // No sustituye una copia útil por una respuesta de error.
+        if (!resp.ok) return (await (await caches.open(VERSION)).match(url.href)) || resp;
+        try { await (await caches.open(VERSION)).put(url.href, resp.clone()); }
+        catch (_) { /* La red sigue siendo utilizable si la caché no cabe. */ }
         return resp;
       })
-      .catch(() => caches.match(url.href).then(r => r || Response.error()))
+      .catch(respaldo)
   );
 });

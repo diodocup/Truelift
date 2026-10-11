@@ -142,6 +142,20 @@ const FotosTL = {
     return indiceZip.registros.filter(r => deJson.get(`${r.fecha}|${r.sitio}`) !== r.cm).length;
   },
 
+  /* Compara el contenido válido, sin depender del orden del JSON. Un ZIP
+     no lleva una fecha de exportación fiable: cualquier cambio respecto al
+     índice guardado requiere elección explícita, también si solo cambia
+     la fecha/pose de una imagen cuyos bytes ya estaban guardados. */
+  cambioIndice(actual, entrante){
+    if (!entrante) return { cambia: false, confirmar: false };
+    const firma = i => JSON.stringify({
+      fotos: [...i.fotos.values()].map(f => [f.archivo, f.fecha, f.pose, f.pesoKg]).sort(),
+      registros: i.registros.map(r => [r.fecha, r.sitio, r.cm]).sort(),
+    });
+    const cambia = !actual || firma(actual) !== firma(entrante);
+    return { cambia, confirmar: !!actual && cambia };
+  },
+
   /* Galería efectiva de un espacio: fotos con imagen guardada y fotos del
      índice cuya imagen falta. Ordenada por fecha, pose y archivo. */
   resolver({ indiceJson = null, indiceZip = null, guardadas = [] }){
@@ -149,7 +163,7 @@ const FotosTL = {
     const vistas = new Set();
     for (const g of guardadas){
       vistas.add(g.archivo);
-      const a = this.asociar(g.archivo, { indiceJson, metaZip: g.metaZip || null });
+      const a = this.asociar(g.archivo, { indiceJson, metaZip: indiceZip?.fotos.get(g.archivo) || g.metaZip || null });
       if (!a.ficha) continue; // no debería ocurrir: no se guardan sin ficha
       out.push({ ...a.ficha, archivo: g.archivo, fuente: a.fuente, fueraDeCopia: a.fueraDeCopia,
                  discrepancia: a.discrepancia, tieneImagen: true });
