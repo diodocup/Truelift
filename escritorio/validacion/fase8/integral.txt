@@ -1,0 +1,15 @@
+# Chromium 141.0.7390.0 · Node v24.19.0
+ok 1 - ZIP solo con índice: conserva medidas y fotos ausentes aunque no traiga imágenes
+ok 2 - un espacio con solo metadatos también exige elegir actualizar o separar la copia JSON
+ok 3 - corregir fecha/pose sin renombrar ni cambiar bytes actualiza el índice sin duplicar imágenes
+ok 4 - ZIP idéntico no escribe; volver a un índice antiguo exige confirmación y cancelar lo conserva
+ok 5 - error asíncrono real: rollback íntegro de ocho almacenes, borrador y bytes de fotos incluidos
+ok 6 - recarga y cierre/reapertura del proceso Chromium conservan exactamente el estado anterior
+ok 7 - reintento tras fallo guarda la instantánea nueva y preserva el borrador
+ok 8 - axe WCAG 2.1 A/AA: siete secciones a 1366 y 420 px sin infracciones ni desbordamiento
+ok 9 - actualizar service worker renueva su caché sin borrar cachés ajenas ni IndexedDB
+ok 10 - HTTP 503: la copia de caché mantiene utilizable el escritorio y los datos
+ok 11 - sin conexión tras actualizar: reapertura con datos, fotos y borrador intactos
+ok 12 - fallo de acceso a IndexedDB: aviso explícito y modo temporal recuperable
+ok 13 - cero solicitudes externas, cero envíos de datos y cero errores JavaScript
+# 13 comprobaciones integrales superadas

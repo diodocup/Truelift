@@ -5,6 +5,37 @@ import { cargar, crearZip, jpegFalso, copiaSintetica } from './comun.mjs';
 const { ZipSeguro: Z, FotosTL: F, ImportarJSON: I } = cargar('importar.js', 'zip-seguro.js', 'fotos.js');
 const blob = u8 => new Blob([u8]);
 
+test('índice reimportado: metadatos corregidos y posible retroceso necesitan elección; el orden no cuenta', () => {
+  const inicial = { fotos: [{ archivo: 'foto_20260801_frente.jpg', fecha: '2026-08-01', pose: 'frente', pesoKg: 80 }],
+    registros: [{ fecha: '2026-08-01', sitio: 'cintura', cm: 84 }, { fecha: '2026-08-02', sitio: 'cintura', cm: 83 }] };
+  const corregido = structuredClone(inicial);
+  Object.assign(corregido.fotos[0], { fecha: '2026-07-25', pose: 'perfil', pesoKg: 79 });
+  const a = F.leerIndice(inicial), b = F.leerIndice(corregido);
+  assert.deepEqual(F.cambioIndice(a, b), { cambia: true, confirmar: true });
+  assert.deepEqual(F.cambioIndice(b, a), { cambia: true, confirmar: true });
+  assert.deepEqual(F.cambioIndice(null, b), { cambia: true, confirmar: false });
+  assert.deepEqual(F.cambioIndice(a, null), { cambia: false, confirmar: false });
+  inicial.registros.reverse();
+  assert.deepEqual(F.cambioIndice(a, F.leerIndice(inicial)), { cambia: false, confirmar: false });
+  const guardadas = [{ archivo: inicial.fotos[0].archivo, metaZip: inicial.fotos[0] }];
+  const res = F.resolver({ indiceZip: b, guardadas });
+  assert.equal(res[0].fecha, '2026-07-25');
+  assert.equal(res[0].pose, 'perfil');
+  assert.equal(res[0].pesoKg, 79);
+  assert.equal(res[0].tieneImagen, true);
+  assert.equal(F.resolver({ indiceJson: a, indiceZip: b, guardadas })[0].fecha, '2026-08-01');
+});
+
+test('límites globales del ZIP: tamaño comprimido y suma descomprimida', async () => {
+  // Se rechaza antes de leer o reservar el contenido de un archivo enorme.
+  await assert.rejects(Z.listar({ size: Z.LIMITES.bytesArchivo + 1, slice(){ assert.fail('no debe leerse'); } }), e => e.codigo === 'grande');
+  const anterior = Z.LIMITES.bytesTotal;
+  try {
+    Z.LIMITES.bytesTotal = 300;
+    await assert.rejects(Z.listar(blob(crearZip([1, 2].map(n => ({ nombre: `foto${n}.jpg`, datos: jpegFalso(n, 200), metodo: 0 }))))), e => e.codigo === 'grande');
+  } finally { Z.LIMITES.bytesTotal = anterior; }
+});
+
 async function leerTodo(u8){
   const b = blob(u8);
   const { entradas, problemas } = await Z.listar(b);

@@ -1,0 +1,503 @@
+✔ todo ejercicio con ficha se puede elegir en algún patrón (4.508907ms)
+✔ todo ejercicio de un desplegable tiene ficha y grupo (3.21019ms)
+✔ el patrón de cada ficha es uno de los del desplegable de PATRÓN (2.017449ms)
+✔ cada dibujo anunciado en la ficha está en media/ejercicios/ (3.678872ms)
+✔ no quedan dibujos huérfanos de ejercicios que ya no están (2.222462ms)
+✔ imagenEjercicio codifica la ruta y calla ante lo que no conoce (1.811455ms)
+✔ los objetivos de volumen cubren todos los grupos de la biblioteca (1.711998ms)
+✔ el JSON añade ejercicios nuevos a la biblioteca sin duplicados (3.434161ms)
+✔ el Excel incluye solo personalizados del cliente o usados en la rutina (2.324282ms)
+✔ Listas conserva una sola marca y elimina el catálogo heredado (1.951742ms)
+✔ sin personalizados conserva la marca y no inventa W102 (0.858667ms)
+✔ el planificador reordena ejercicios dentro del mismo día (1.246089ms)
+✔ el planificador usa arrastre y los nuevos nombres de importación y exportación (1.319978ms)
+✖ normaliza fcReposo y la ofrece en el comparador de series (24.351679ms)
+✔ FC alta usa mediana y MAD robustos, descarta noches y exige un mínimo de 14 (3.995779ms)
+✔ FC alta limita la base a 30 noches y aplica el suelo MAD del 3% (2.802187ms)
+✔ el botón de Readiness muestra la FC en reposo como línea con puntos unidos (4.099913ms)
+✔ la gráfica de líneas crea un eje vertical derecho independiente (4.121475ms)
+✖ Readiness y el comparador pintan FC alta al alcanzar 14 noches válidas (5.167289ms)
+✔ la marca se lee del JSON y las copias antiguas siguen valiendo (4.361099ms)
+✔ una racha con molestias no se diagnostica como estancamiento (3.680174ms)
+✔ sin ninguna sesión evaluable el diagnóstico lo dice, no inventa (1.23998ms)
+✔ el RIR alto sostenido ignora las sesiones con molestias (1.288563ms)
+✔ molestiasMarcadas y molestiasRecurrentes no se pisan con el rastreo de texto (2.569975ms)
+✔ una sesión con molestias no puede ser el mejor e1RM (1.147334ms)
+✔ una copia sin capa de nutrición no rompe nada (21.116929ms)
+✔ normaliza el bloque nutricion completo (11.873921ms)
+✖ deduplica pesajes y mediciones del mismo día conservando el primero (6.007751ms)
+✔ el filtro converge al peso-tendencia y al ritmo reales (4.550849ms)
+✔ el enmascaramiento cubre el refeed y los días extra (§3.4) (1.839886ms)
+✖ la duración del ciclo es la mediana de los intervalos válidos (§3.5) (1.988847ms)
+✔ las bandas de déficit reproducen las tablas del tramo medio (1.854708ms)
+✔ el tramo de % graso alto abre banda verde más ancha y rojo por encima de 1,25 (1.640081ms)
+✔ las bandas de superávit dependen de la experiencia declarada (1.870561ms)
+✔ la partición interpola entre anclas y desplaza los umbrales de mujer (1.765036ms)
+✔ el reparto valora el último tramo y explica cuándo se calla (2.884579ms)
+✔ el tope ampliado de déficit lo habilita el % graso vigente, no el caducado (2.068043ms)
+✔ el tope del ajuste acumulado usa la ingesta declarada y, si no, la estimada (1.694222ms)
+✔ el asentamiento exige menos a una fase declarada como ya en curso (§3.3) (1.819336ms)
+✔ el semáforo de duración de bloque usa las bandas de su tipo (1.453716ms)
+✔ la proyección encadena bloques y el puente conserva peso y grasa (2.636232ms)
+✔ el contexto reúne fase, ritmo, topes y reparto (4.018834ms)
+✖ el acumulado del lazo suma los ajustes y omite los refeeds (4.744795ms)
+✖ el comparador de series ofrece peso, ritmo, % graso y ajuste acumulado (9.73888ms)
+✔ la adherencia al pesaje mide ritmo semanal y hueco máximo (2.778863ms)
+✔ la vista de Nutrición se renderiza con los datos clave (8.237001ms)
+✔ la vista explica su ausencia en vez de romperse (3.434221ms)
+✔ las alertas de nutrición entran en el triaje del entrenador (8.42551ms)
+✔ sin pesajes recientes la alerta sube a roja: el lazo está parado (5.48623ms)
+✔ una propuesta de bajar el objetivo sin aceptar se señala aparte (7.310484ms)
+✔ la plantilla embebida solo documentaba el top+back (5.591675ms)
+✔ al exportar se añade la explicación de superserie y drop set (2.665105ms)
+✔ las columnas L (drop set) y N (rest-pause) estrenan su desplegable sí/no (4.564119ms)
+✔ la plantilla embebida se había quedado corta de ejercicios (8.896124ms)
+✔ el catálogo entero entra en los desplegables del Excel exportado (39.812432ms)
+✔ «Punto débil opcional» ya no es un patrón de la plantilla (1.993704ms)
+✔ es aditivo: conserva la curación de la plantilla y no repite (21.405936ms)
+✔ la fila vacía trae rest-pause apagado y 20 s de pausa (3.289057ms)
+✔ _sanearModalidades: el rest-pause cede ante T+B y drop set (1.984ms)
+✔ _sanearModalidades suelta la superserie si hay rest-pause a algún lado (0.857836ms)
+✔ analiza avisa de rest-pause de 1 serie, de la exclusión y de la superserie (1.522317ms)
+✔ la duración estimada de un rest-pause solo cuenta la pausa corta (4.675062ms)
+✔ el Excel escribe N/O y no los escribe si manda T+B (2.570255ms)
+✔ desdePlanMod conserva el rest-pause del JSON de la app (1.258999ms)
+✔ la biblioteca del Excel escribe y lee AD solo para ejercicios por tiempo (1.975757ms)
+✔ prepararExportacion no muta la rutina y conserva secundarios y tiempo de los ejercicios propios (2.072821ms)
+✔ planner.js se puede cargar sin la tabla de vistas del Coach (1.069459ms)
+✔ saludDiaria se normaliza con la noche y sus fases (7.358625ms)
+✔ una copia antigua sin saludDiaria no rompe nada (1.998681ms)
+✔ el cardio del reloj conserva FC, kcal y distancia (3.146356ms)
+✔ la sugerencia de sueño del reloj viaja con la respuesta (1.96493ms)
+✔ el objetivo de pasos sale del plan cuando la fase pide extra (4.356332ms)
+✔ sin fase de nutrición manda la referencia general (3.233945ms)
+✔ el factor de actividad exige 7 días completos y se acota (2.05272ms)
+✔ la vista Readiness pinta sueño y pasos del reloj (18.930966ms)
+✔ la vista Sesiones distingue el cardio del reloj (2.367535ms)
+✔ la fila vacía trae las claves nuevas con sus valores por defecto (2.923256ms)
+✔ los grupos de superserie son cadenas contiguas y se numeran por día (2.381266ms)
+✔ analiza avisa de drop sets de 1 serie y de la exclusión con T+B (1.650147ms)
+✔ el Excel escribe K/L/M y la lectura reconstruye los enlaces (3.118014ms)
+✔ un drop set marcado a la vez que T+B no escribe L/M (manda T+B) (1.652791ms)
+✔ desdePlanMod conserva las claves nuevas del JSON de la app (5.527541ms)
+✔ la duración estimada de un drop set solo cuenta un descanso (1.011183ms)
+✔ _sanearModalidades suelta el enlace si hay T+B o drop set a algún lado (0.876645ms)
+✔ _sanearModalidades respeta una superserie de series rectas (0.931165ms)
+✔ reordenar dentro del día rehace la exclusión (1.339749ms)
+✔ analiza avisa en rojo de una superserie con T+B o drop set (1.051983ms)
+✔ exportar rompe el enlace que quede sobre una fila con carga por serie (1.206271ms)
+✔ el umbral nocturno de VFC es el de cada fecha, no el de hoy (11.677703ms)
+✖ la gráfica de VFC pinta cada noche contra el umbral de su fecha (23.344768ms)
+✔ el comparador dibuja el umbral de VFC día a día (4.229555ms)
+✔ la banda de FC en reposo también es la de cada fecha (5.347726ms)
+✖ dobleEje pinta el umbral por día como línea discontinua (3.618242ms)
+ℹ tests 93
+ℹ suites 0
+ℹ pass 85
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 238.112296
+
+✖ failing tests:
+
+test at coach/tests/fc-reposo.test.mjs:71:1
+✖ normaliza fcReposo y la ofrece en el comparador de series (24.351679ms)
+  AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:
+  
+  []
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/fc-reposo.test.mjs:89:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at coach/tests/fc-reposo.test.mjs:164:1
+✖ Readiness y el comparador pintan FC alta al alcanzar 14 noches válidas (5.167289ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /FC alta de cada fecha \(mediana \+ MAD; la última, 51,5 ppm con 14 noches válidas\)/. Input:
+  
+  '\n' +
+    '      \n' +
+    '      <div class="card" style="margin-bottom:14px"><h3>Rendimiento vs readiness</h3>\n' +
+    '        \n' +
+    '    <div class="chart-caja"></div>\n' +
+    '    \n' +
+    '      </div>\n' +
+    '      \n' +
+    '      <div class="card" style="margin-bottom:14px"><h3>Estado para entrenar (0–100)</h3>\n' +
+    '        <div class="chart-caja"></div>\n' +
+    '        <div class="muted" style="font-size:12px">0–39 naranja · 40–69 ámbar · 70–100 lima.\n' +
+    '          Letra sobre la barra = zona de las señales del día: G general · I tren inferior · S tren superior.</div>\n' +
+    '      </div>\n' +
+    '      \n' +
+    '      <div class="card" style="margin-bottom:14px">\n' +
+    '        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">\n' +
+    '          <h3 style="margin:0">VFC (HRV)</h3>\n' +
+    '          <button class="btn sec" id="btnToggleFcReposo" type="button" aria-pressed="true">Ocultar FC en reposo</button>\n' +
+    '        </div>\n' +
+    '        <div class="chart-caja"><svg data-test="lineas"></svg></div>\n' +
+    '        <div class="muted" style="font-size:12px">\n' +
+    '          Cada punto es una noche.\n' +
+    '          La media de 7 días es la que se lee; el umbral discontinuo marca dónde la VFC empieza a considerarse baja.\n' +
+    '           FC alta = mediana + MAD de cada fecha (la última, 51,5 ppm sobre 14 noches válidas).\n' +
+    '          \n' +
+    '          \n' +
+    '        </div>\n' +
+    '      </div>\n' +
+    '      <div class="card"><h3>Detalle diario</h3>\n' +
+    '        <div class="muted" style="font-size:12px;margin-bottom:8px">\n' +
+    '          Lima = perfecto, ámbar = atención, naranja = señal fuerte. En sueño y ánimo el 4 es lo mejor;\n' +
+    '          en agujetas, dolor y estrés lo mejor es el 1. Fatiga = días con señales en la ventana de 7 días.\n' +
+    '          La columna «Sueño reloj» es lo que midió la plataforma de salud esa noche; junto al sueño respondido\n' +
+    '          aparece la propuesta del reloj cuando el cliente la corrigió.\n' +
+    '        </div>\n' +
+    '        <div style="overflow-x:auto"><table>\n' +
+    '          <thead><tr><th>Fecha</th><th>Estado</th><th>Sueño</th><th>Sueño reloj</th><th>Ánimo/energía</th><th>Agujetas</th><th>Dolor</th><th>Estrés</th><th>Fatiga</th><th>Enfermo</th><th class="num">VFC</th><th class="num">FC reposo (ppm)</th></tr></thead>\n' +
+    '          <tbody><tr>\n' +
+    '        <td>dom 14 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">71</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>sáb 13 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">70</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>vie 12 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">71</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>jue 11 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">70</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>mié 10 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">71</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>mar 9 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">70</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>lun 8 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">71</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>dom 7 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">70</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>sáb 6 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">71</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>vie 5 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">70</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>jue 4 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">71</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>mié 3 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">70</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>mar 2 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">no</span></td>\n' +
+    '        <td class="num">71</td>\n' +
+    '        <td class="num">50</td>\n' +
+    '      </tr><tr>\n' +
+    '        <td>lun 1 jun</td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><span class="muted">—</span></td>\n' +
+    '        <td><spa'... 242 more characters
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/fc-reposo.test.mjs:196:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n      \n      <div class="card" style="margin-bottom:14px"><h3>Rendimiento vs readiness</h3>\n        \n    <div class="chart-caja"></div>\n    \n      </div>\n      \n      <div class="card" style="margin-bottom:14px"><h3>Estado para entrenar (0–100)</h3>\n        <div class="chart-caja"></div>\n        <div class="muted" style="font-size:12px">0–39 naranja · 40–69 ámbar · 70–100 lima.\n          Letra sobre la barra = zona de las señales del día: G general · I tren inferior · S tren superior.</div>\n      </div>\n      \n      <div class="card" style="margin-bottom:14px">\n        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">\n          <h3 style="margin:0">VFC (HRV)</h3>\n          <button class="btn sec" id="btnToggleFcReposo" type="button" aria-pressed="true">Ocultar FC en reposo</button>\n        </div>\n        <div class="chart-caja"><svg data-test="lineas"></svg></div>\n        <div class="muted" style="font-size:12px">\n          Cada punto es una noche.\n          La media de 7 días es la que se lee; el umbral discontinuo marca dónde la VFC empieza a considerarse baja.\n           FC alta = mediana + MAD de cada fecha (la última, 51,5 ppm sobre 14 noches válidas).\n          \n          \n        </div>\n      </div>\n      <div class="card"><h3>Detalle diario</h3>\n        <div class="muted" style="font-size:12px;margin-bottom:8px">\n          Lima = perfecto, ámbar = atención, naranja = señal fuerte. En sueño y ánimo el 4 es lo mejor;\n          en agujetas, dolor y estrés lo mejor es el 1. Fatiga = días con señales en la ventana de 7 días.\n          La columna «Sueño reloj» es lo que midió la plataforma de salud esa noche; junto al sueño respondido\n          aparece la propuesta del reloj cuando el cliente la corrigió.\n        </div>\n        <div style="overflow-x:auto"><table>\n          <thead><tr><th>Fecha</th><th>Estado</th><th>Sueño</th><th>Sueño reloj</th><th>Ánimo/energía</th><th>Agujetas</th><th>Dolor</th><th>Estrés</th><th>Fatiga</th><th>Enfermo</th><th class="num">VFC</th><th class="num">FC reposo (ppm)</th></tr></thead>\n          <tbody><tr>\n        <td>dom 14 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">71</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>sáb 13 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">70</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>vie 12 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">71</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>jue 11 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">70</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>mié 10 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">71</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>mar 9 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">70</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>lun 8 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">71</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>dom 7 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">70</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>sáb 6 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">71</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>vie 5 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">70</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>jue 4 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">71</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>mié 3 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="chip verde" title="0 de los últimos 7 días con señales de fatiga">0/7d</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">70</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>mar 2 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">no</span></td>\n        <td class="num">71</td>\n        <td class="num">50</td>\n      </tr><tr>\n        <td>lun 1 jun</td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><span class="muted">—</span></td>\n        <td><spa'... 242 more characters,
+    expected: /FC alta de cada fecha \(mediana \+ MAD; la última, 51,5 ppm con 14 noches válidas\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at coach/tests/nutricion.test.mjs:150:1
+✖ deduplica pesajes y mediciones del mismo día conservando el primero (6.007751ms)
+  AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:
+  
+  [
+    80,
+    79.8
+  ]
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/nutricion.test.mjs:163:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 80, 79.8 ],
+    expected: [ 80, 79.8 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at coach/tests/nutricion.test.mjs:198:1
+✖ la duración del ciclo es la mediana de los intervalos válidos (§3.5) (1.988847ms)
+  AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:
+  
+  {
+    ciclosMedidos: 0,
+    dias: 28
+  }
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/nutricion.test.mjs:200:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { dias: 28, ciclosMedidos: 0 },
+    expected: { dias: 28, ciclosMedidos: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at coach/tests/nutricion.test.mjs:380:1
+✖ el acumulado del lazo suma los ajustes y omite los refeeds (4.744795ms)
+  AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:
+  
+  [
+    -110,
+    -110,
+    -110,
+    -230
+  ]
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/nutricion.test.mjs:383:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ -110, -110, -110, -230 ],
+    expected: [ -110, -110, -110, -230 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at coach/tests/nutricion.test.mjs:386:1
+✖ el comparador de series ofrece peso, ritmo, % graso y ajuste acumulado (9.73888ms)
+  AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:
+  
+  [
+    'nut_acumulado',
+    'nut_grasa',
+    'nut_magra',
+    'nut_pesajes',
+    'nut_ritmo',
+    'nut_tendencia'
+  ]
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/nutricion.test.mjs:392:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'nut_acumulado', 'nut_grasa', 'nut_magra', 'nut_pesajes', 'nut_ritmo', 'nut_tendencia' ],
+    expected: [ 'nut_acumulado', 'nut_grasa', 'nut_magra', 'nut_pesajes', 'nut_ritmo', 'nut_tendencia' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at coach/tests/umbral-por-dia.test.mjs:94:1
+✖ la gráfica de VFC pinta cada noche contra el umbral de su fecha (23.344768ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '#E0A92E'
+  - '#e0a63c'
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/umbral-por-dia.test.mjs:101:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '#E0A92E',
+    expected: '#e0a63c',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at coach/tests/umbral-por-dia.test.mjs:156:1
+✖ dobleEje pinta el umbral por día como línea discontinua (3.618242ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /stroke="#e0a63c" stroke-dasharray="3 4"/. Input:
+  
+  '<svg viewBox="0 0 960 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"><line x1="52" x2="908" y1="252.0" y2="252.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="256" text-anchor="end" style="fill:#c792ea">79</text><line x1="52" x2="908" y1="193.0" y2="193.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="197.00000000000009" text-anchor="end" style="fill:#c792ea">84</text><line x1="52" x2="908" y1="134.0" y2="134.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="138" text-anchor="end" style="fill:#c792ea">89</text><line x1="52" x2="908" y1="75.0" y2="75.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="78.99999999999991" text-anchor="end" style="fill:#c792ea">93</text><line x1="52" x2="908" y1="16.0" y2="16.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="20" text-anchor="end" style="fill:#c792ea">98</text><path d="M52.0,32.3 L908.0,235.7" fill="none" style="stroke:#e0a63c" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 5"/><path d="M52.0,116.0 L908.0,56.2" fill="none" style="stroke:#c792ea" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="52.0" cy="116.0" r="3.6" stroke-width="1.5" style="fill:#c792ea;stroke:var(--sup2)" data-tt="VFC (HRV) · jue 1 ene · 90 ms"/><circle cx="908.0" cy="56.2" r="3.6" stroke-width="1.5" style="fill:#c792ea;stroke:var(--sup2)" data-tt="VFC (HRV) · vie 2 ene · 95 ms"/><text x="52.0" y="272" text-anchor="middle">1 ene</text><text x="908.0" y="272" text-anchor="middle">2 ene</text></svg><div class="leyenda"><span><i style="background:#c792ea"></i>VFC (HRV) <span class="muted">(ms, eje izq.)</span></span><span><i style="background:#e0a63c;height:3px;margin-bottom:3px"></i>VFC baja (umbral de cada noche)</span></div>'
+  
+      at TestContext.<anonymous> (file://<repo>/coach/tests/umbral-por-dia.test.mjs:165:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<svg viewBox="0 0 960 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"><line x1="52" x2="908" y1="252.0" y2="252.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="256" text-anchor="end" style="fill:#c792ea">79</text><line x1="52" x2="908" y1="193.0" y2="193.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="197.00000000000009" text-anchor="end" style="fill:#c792ea">84</text><line x1="52" x2="908" y1="134.0" y2="134.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="138" text-anchor="end" style="fill:#c792ea">89</text><line x1="52" x2="908" y1="75.0" y2="75.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="78.99999999999991" text-anchor="end" style="fill:#c792ea">93</text><line x1="52" x2="908" y1="16.0" y2="16.0" style="stroke:var(--reticula)" stroke-width="1"/><text x="46" y="20" text-anchor="end" style="fill:#c792ea">98</text><path d="M52.0,32.3 L908.0,235.7" fill="none" style="stroke:#e0a63c" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 5"/><path d="M52.0,116.0 L908.0,56.2" fill="none" style="stroke:#c792ea" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="52.0" cy="116.0" r="3.6" stroke-width="1.5" style="fill:#c792ea;stroke:var(--sup2)" data-tt="VFC (HRV) · jue 1 ene · 90 ms"/><circle cx="908.0" cy="56.2" r="3.6" stroke-width="1.5" style="fill:#c792ea;stroke:var(--sup2)" data-tt="VFC (HRV) · vie 2 ene · 95 ms"/><text x="52.0" y="272" text-anchor="middle">1 ene</text><text x="908.0" y="272" text-anchor="middle">2 ene</text></svg><div class="leyenda"><span><i style="background:#c792ea"></i>VFC (HRV) <span class="muted">(ms, eje izq.)</span></span><span><i style="background:#e0a63c;height:3px;margin-bottom:3px"></i>VFC baja (umbral de cada noche)</span></div>',
+    expected: /stroke="#e0a63c" stroke-dasharray="3 4"/,
+    operator: 'match',
+    diff: 'simple'
+  }

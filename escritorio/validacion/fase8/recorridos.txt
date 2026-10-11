@@ -1,0 +1,56 @@
+ok 1 - estado vacío con instrucciones
+ok 2 - vista previa conjunta: periodo, recuentos, discrepancia, fuera de copia y ausentes
+ok 3 - la ficha corregida en el móvil manda sobre el ZIP y el nombre; la foto ausente queda pendiente
+ok 4 - cerrar y reabrir conserva datos y fotos
+ok 5 - copia idéntica y ZIP repetido se detectan y no duplican
+ok 6 - actualizar sustituye la instantánea sin tocar las fotos
+ok 7 - retroceso avisado y confirmado; se puede volver a la copia anterior
+ok 8 - error de cuota durante la escritura: transacción abortada sin pérdida ni cambios parciales
+ok 9 - conflicto de nombre solo se sustituye con elección explícita; la foto pendiente se completa
+ok 10 - espacio personal nuevo: datos separados y sin fotos ajenas
+ok 11 - ZIP sin índice: solo se adoptan nombres con el patrón de la app, marcados como deducidos
+ok 12 - JSON roto y ZIP corrupto se rechazan; Escape cierra la vista previa
+ok 13 - cancelar durante el procesamiento no guarda nada
+ok 14 - cada espacio conserva sus propias fotos
+ok 15 - ventana pequeña sin desbordamiento horizontal
+ok 16 - borrar un espacio elimina sus imágenes; borrar todo vuelve al estado inicial
+ok 17 - mi resumen: valoración igual que la app, antigüedad de los datos y sin lenguaje del Coach
+ok 18 - teclado (Alt+2), ficha de ejercicio con el estado del móvil y Atrás del navegador
+ok 19 - detalle de sesión de solo lectura; las notas importadas se muestran como texto
+ok 20 - evolución física, recuperación, rutina, informes, rendimiento y volumen se muestran
+ok 21 - la recarga vuelve a la misma sección
+ok 22 - secciones personales sin desbordamiento horizontal en ventana estrecha
+ok 23 - mi resumen: tres conclusiones priorizadas que llevan a sus datos, a la sesión y a la ficha
+ok 24 - ficha: comparación de dos sesiones con avisos de compatibilidad, marcas y evolución reciente
+ok 25 - resumen y ficha sin desbordamiento en ventana estrecha y todo lo pulsable es un botón
+ok 26 - comparador: periodos desiguales, contexto y muestras; recarga conserva fechas y foco
+ok 27 - comparador: sesiones de origen, ficha de ejercicio y Atrás accesibles
+ok 28 - comparador: fechas invertidas y fallo de cuota preservan selección; parcial y solapamiento explícitos
+ok 29 - comparador: 420 px sin desbordamiento, fechas separadas por espacio y restauración de selección
+ok 30 - comparador: actualizar la instantánea y cerrar/reabrir conserva las fechas
+ok 31 - fotos: misma pose, ficha corregida, peso guardado, fases y fechas reales; sin contornos futuros ni antiguos
+ok 32 - fotos: cortina y opacidad con teclado; ambos marcos mantienen proporciones
+ok 33 - fotos: encuadres guardados tras recarga y cierre/reapertura; hashes y JSON originales intactos
+ok 34 - fotos: restablecer es reversible; fallo de escritura conserva encuadres previos e imágenes
+ok 35 - fotos: ausentes, idénticas, pose sin pareja, paginación, tablas y 420 px sin desbordamiento
+ok 36 - fotos: cambio de sección libera object URLs de originales y miniaturas, también con lecturas en curso
+ok 37 - fotos: nueva corrección JSON cambia fecha/pose y selección sin renombrar, duplicar o perder encuadres
+ok 38 - fotos: ZIP independiente conserva medidas, metadatos ausentes y separación de encuadres entre espacios
+ok 39 - rutina: borrador desde el móvil con teclado; series, modalidad, ejercicio nuevo y orden; cambios, avisos y grupos
+ok 40 - rutina: deshacer, rehacer y volver a la rutina de partida (también deshacible)
+ok 41 - rutina: fallo de cuota conserva el borrador guardado; la recarga lo recupera
+ok 42 - rutina: exportar descarga un Excel compatible, se anota «sin comprobar» y al reabrirlo produce la misma rutina
+ok 43 - rutina: actualizar la copia conserva los borradores; reconoce la rutina a prueba y luego aplicada; la discrepancia se resuelve
+ok 44 - rutina: sin días suficientes no se exporta; eliminar un borrador pide confirmación
+ok 45 - rutina: 420 px sin desbordamiento; cerrar y reabrir conserva borradores y el activo
+ok 46 - informe: Alt + 6 abre el último mes completo con todas sus secciones, contornos sin arrastre y sin fotos
+ok 47 - informe: fechas con teclado, rechazo sin guardar y foco en el informe; el estado actual solo con el último registro
+ok 48 - informe: fotos solo por elección (del periodo y con imagen); imprimir espera a las fotos y propone el nombre del PDF
+ok 49 - informe: la impresión deja solo el documento sobre blanco y genera un PDF
+ok 50 - informe: la recarga conserva el periodo y vuelve sin fotos; actualizar la copia no lo borra
+ok 51 - informe: comparar con el periodo anterior prepara las fechas; 420 px sin desbordamiento
+ok 52 - sin conexión: tras una visita la página abre con sus datos e informe sin red; solo se crean y gestionan sus cachés
+ok 53 - la cartera del Coach queda intacta y el Coach sigue abriendo
+ok 54 - ninguna petición a servicios externos
+ok 55 - sin errores de JavaScript
+# 55 comprobaciones superadas

@@ -138,3 +138,13 @@ pausaRpSeg`. Las copias antiguas no traen las modalidades.
 Discrepancias entre 1 y 2 para el mismo archivo se informan y gana 1. La
 resolución se calcula al leer (no se congela), de modo que importar una copia
 JSON nueva corrige fechas y poses sin tocar las imágenes.
+
+Desde la validación de fase 8, el índice vigente del ZIP se consulta también
+para imágenes ya guardadas, antes que la ficha congelada al importar el binario.
+Reimportar los mismos bytes con fecha, pose, peso o medidas corregidos permite
+actualizar únicamente el índice. Un cambio frente al índice ZIP guardado exige
+confirmación explícita: el formato no permite determinar qué ZIP es posterior.
+Un índice idéntico (independientemente del orden de sus entradas) no se guarda
+de nuevo. También se admite un ZIP cuyo índice solo describe imágenes ausentes.
+Las imágenes guardadas que no figuran en el nuevo índice se conservan con su
+ficha previa; sustituir un índice no borra binarios. El JSON mantiene prioridad.

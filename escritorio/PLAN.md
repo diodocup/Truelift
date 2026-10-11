@@ -19,7 +19,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 | 5. Evolución física | Hecha (ver «Fase 5») | 18 casos nuevos + 41 comprobaciones e2e Chromium |
 | 6. Planificador personal | Hecha (ver «Fase 6») | 10 casos nuevos (uno con el lector real de la app en Dart) + 7 comprobaciones e2e Chromium + 3 del Coach |
 | 7. Informes y acabado | Hecha (ver «Fase 7») | 11 casos del informe + 2 de la caché + 1 de ayudas; 7 comprobaciones e2e nuevas (Chromium); axe-core sin incidencias; medición con 3 años de historial |
-| 8. Validación integral | Pendiente | — |
+| 8. Validación integral | Verificada en Chromium y Dart; revisión y matriz multiplataforma pendientes | 137/137 módulos, 55/55 recorridos + 13/13 integrales; ver `VALIDACION.md` |
 
 ## Fase 0 — Auditoría
 
@@ -749,3 +749,91 @@ modelo de contornos, sus claves estables y sus unidades canónicas.
   publicada ni tras una actualización real de versión.
 - Fase 8 (validación integral) pendiente. No fusionar ni desplegar sin
   autorización.
+
+## Fase 8 — Validación integral y entrega (10/10/2026)
+
+### Base, alcance y decisión de entrega
+
+- Rama dedicada `codex/escritorio-fase8-validacion`, desde `main` en
+  `6c12707d720691f09effa08d03ff2660934f7c32` (fases 0–7 integradas).
+- No hay `AGENTS.md` ni `CLAUDE.md` en Truelift. Se leyó el `AGENTS.md` de
+  App-PRO (mantener iOS/Android) y su `CLAUDE.md` referido por la fase 7.
+  App-PRO solo se consulta: fuentes de referencia del commit
+  `8d8a43fc3820f99e9ee79a1b61b6e3bed5213e74`, sin editar ese repositorio.
+- No se publica, fusiona ni modifica PRO. La fase está validada en el
+  entorno disponible, **no se declara cerrado el proyecto multiplataforma**.
+- Entrega y matriz de los 16 requisitos: `VALIDACION.md`. Manual actualizado:
+  `LEEME.md`. Las entradas de «pendiente» anteriores son registros históricos;
+  el estado vigente es esta sección y la tabla del principio.
+
+### Fallos corregidos
+
+- `almacen.js`: un error asíncrono de petición ya no puede confirmar las otras
+  operaciones de la importación. Abort explícito, espera al rollback y
+  conservación del error original. El acceso a `indexedDB` que lance
+  `SecurityError` también entra en modo temporal con aviso.
+- `fotos.js` y `app.js`: actualización de índice ZIP aun con bytes idénticos
+  o todas las imágenes ausentes; prioridad JSON > índice ZIP vigente > ficha
+  binaria previa > nombre. Confirmación ante cambios del índice guardado,
+  porque no se conoce la fecha de exportación. Sin duplicar ni borrar binarios.
+  Elección de espacio también cuando solo se han guardado metadatos.
+- `sw.js`: versión v2, caché propia como respaldo ante errores HTTP, manejo
+  del fallo al guardar en caché sin perder una respuesta válida de red.
+- `escritorio.css`: etiqueta accesible contenida en la tabla desplazable,
+  evitando desbordamiento horizontal en Mi resumen a 420 px.
+- Sin cambios en algoritmos compartidos, Coach, esquema de IndexedDB ni
+  dependencias de ejecución.
+
+### Verificación ejecutada
+
+- `DART=… node --test escritorio/tests/*.test.mjs`: **137/137**, sin omisiones.
+  Incluye sincronía con App-PRO y lectura de dos Excel con el lector real de
+  la app en Dart 3.13.5. Dos casos puros nuevos sobre índices y límites ZIP.
+- `tests/e2e.mjs`: **55/55** en Chromium 141.0.7390.0. Nuevamente JSON/ZIP,
+  retroceso, cuota simulada, perfiles, métricas, periodos, fotos, borradores,
+  Excel, informe/PDF, teclado, recarga, offline y aislamiento del Coach.
+- Nuevo `tests/integral.e2e.mjs`: **13/13**, con error asíncrono real de
+  IndexedDB en la última operación; compara los ocho almacenes y bytes;
+  cierra/reabre el proceso Chromium; reintenta; importa índice sin originales,
+  corrección ZIP sin renombrar y rechazo de retroceso no confirmado;
+  actualiza el worker y prueba 503/offline; falla la apertura de IndexedDB.
+- axe-core 4.14.0: siete secciones a 1366/420 px, **0 infracciones WCAG 2.1
+  A/AA**, sin desbordamiento. Cero solicitudes externas en ambos recorridos;
+  integral verifica además solo GET sin cuerpos de solicitud. Cero errores JS.
+- Coach: **85/93**, mismos ocho fallos de la base. Detalle en `VALIDACION.md`
+  y `validacion/fase8/coach.txt`; no se han cambiado pruebas ajenas.
+- Capturas sintéticas inspeccionadas y registros: `validacion/fase8/`.
+  Sintaxis de scripts y `git diff --check` correctos.
+
+### Continuación y límites
+
+1. Revisar la PR en borrador y el delta respecto a la base.
+2. Completar Firefox/Safari/Edge y una transferencia JSON/ZIP/Excel con
+   móviles iOS/Android reales. El arnés Dart no certifica el flujo completo
+   de la app ni permisos PRO.
+3. Pendientes cuota física, miles de fotos originales grandes, lector de
+   pantalla real y actualización en producción. No se ha medido rendimiento
+   nuevamente: las cifras de la fase 7 siguen identificadas como tales.
+4. No fusionar ni desplegar sin autorización específica. La documentación
+   indica cómo revisar localmente, importar, exportar y recuperarse de fallos.
+
+### Bloqueo de entrega remota
+
+- Código, pruebas y evidencias confirmados localmente en `57316f2`.
+- La revisión automática rechazó el `git push` de la rama dedicada,
+  interpretando la prohibición de publicación como prohibición de subir
+  código al remoto. No se ha probado una vía alternativa para eludirla.
+- Pendiente autorización explícita para subir
+  `codex/escritorio-fase8-validacion` y abrir una PR en borrador; no hay PR
+  creada por esta fase. No se ha fusionado ni desplegado nada.
+- Para continuar, revisar estado y cabecera remota, subir la rama existente
+  tras autorización y abrir la PR usando `VALIDACION.md` como evidencia.
+  No hace falta repetir las baterías si el código no cambia.
+
+### Autorización de entrega (11/10/2026)
+
+- El usuario autoriza subir la rama y abrir una PR en borrador, sin fusionar
+  ni desplegar. El bloqueo de autorización anterior queda resuelto.
+- La CLI local no dispone de credenciales GitHub. Se usa la conexión
+  autenticada de GitHub para entregar exactamente el árbol validado y las
+  evidencias, conservando `main` sin cambios.

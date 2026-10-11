@@ -32,10 +32,12 @@ const Almacen = {
   // ---------- apertura y migraciones ----------
 
   async abrir(){
-    if (typeof indexedDB === 'undefined'){
-      return this._temporal('Este navegador no permite guardar datos de forma local.');
-    }
     try {
+      // Incluso acceder a la propiedad puede lanzar SecurityError cuando
+      // el navegador bloquea el almacenamiento para este origen.
+      if (typeof indexedDB === 'undefined'){
+        return this._temporal('Este navegador no permite guardar datos de forma local.');
+      }
       this.db = await new Promise((ok, ko) => {
         const req = indexedDB.open(this.NOMBRE, this.VERSION);
         req.onupgradeneeded = ev => this._migrar(req.result, ev.oldVersion, req.transaction);
@@ -150,8 +152,17 @@ const Almacen = {
       try { tx = this.db.transaction(nombres, 'readwrite', { durability: 'strict' }); }
       catch (e) { ko(e); return; }
       tx.oncomplete = () => ok();
-      tx.onabort = () => ko(tx.error || this._errorSimulado(simulado || 'AbortError'));
-      tx.onerror = ev => { ev.preventDefault(); };
+      let errorEscritura = null;
+      tx.onabort = () => ko(errorEscritura || tx.error || this._errorSimulado(simulado || 'AbortError'));
+      tx.onerror = ev => {
+        // Cancelar solo el evento permitiría confirmar las otras peticiones
+        // de la transacción. Abortar explícitamente y conservar la causa
+        // original (cuota, restricción, disco) hasta que termine el rollback.
+        const causa = ev.target.error || tx.error;
+        if (causa?.name !== 'AbortError') errorEscritura ||= causa;
+        ev.preventDefault();
+        try { tx.abort(); } catch (_) { /* ya abortada */ }
+      };
       try {
         for (const op of ops){
           const st = tx.objectStore(op.almacen);

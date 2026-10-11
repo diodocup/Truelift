@@ -4,10 +4,11 @@ Versión de escritorio de TrueLift para la persona que entrena: importa en el
 ordenador la copia de seguridad de la app y, si quieres, tus fotos de
 progreso, para consultar tu evolución en pantalla grande.
 
-**Estado:** en desarrollo (fases 1 a 7 de 8: importación, almacenamiento,
-secciones personales, resumen con conclusiones, ficha por ejercicio, comparación de periodos, evolución física, planificador de rutina, informes y acabado). Falta la
-validación integral (fase 8). Ver `PLAN.md`; definiciones de las métricas en `METRICAS.md`; el
-planificador, en `PLANIFICADOR.md`.
+**Estado:** fases 0–8 implementadas y validadas en el entorno indicado en
+`VALIDACION.md`. Pendiente de revisión, comprobación en Safari/Firefox y prueba
+de transferencia en dispositivos iOS/Android reales. Esta entrega no publica
+ni fusiona cambios. Ver `PLAN.md`; definiciones en `METRICAS.md` y contrato
+del planificador en `PLANIFICADOR.md`.
 
 ## Secciones
 
@@ -44,7 +45,11 @@ funcionan entre secciones.
 2. Opcional: en la misma pantalla, **Exportar fotos** (archivo
    `truelift_fotos_AAAA-MM-DD.zip`).
 3. Pasa los archivos al ordenador y abre `escritorio/` (desde la web o con
-   doble clic en `index.html`; Chrome o Edge recomendados).
+   un servidor local). El navegador probado en esta entrega es Chromium;
+   Edge, Firefox y Safari están pendientes. Para revisar la rama localmente,
+   ejecuta `python3 -m http.server 8000` desde la raíz del repositorio y abre
+   `http://localhost:8000/escritorio/`. No hace falta importar datos personales
+   para abrirla.
 4. Pulsa **Importar datos de TrueLift** (puedes elegir el JSON y el ZIP a la
    vez) o **Importar fotos de TrueLift**, o arrastra los archivos a la
    ventana.
@@ -73,6 +78,12 @@ historiales. Tus fotos no se tocan.
   un nombre que ya tienes, se conserva la tuya salvo que elijas sustituirla.
 - Las fotos del ZIP que tu copia de datos no conoce (quizá las borraste en el
   móvil) no se importan salvo que lo indiques.
+- Si los bytes son los mismos pero cambian fecha, pose o medidas en el índice
+  del ZIP, puedes actualizar solo los metadatos. **Usar los metadatos de este
+  ZIP** pide confirmación cuando difieren de los guardados; comprueba que sea
+  el archivo que quieres conservar. La copia JSON mantiene su prioridad.
+- Un ZIP con índice y sin las imágenes también es útil: conserva las fichas
+  pendientes. Un índice idéntico no vuelve a guardarse.
 
 ## Comparar dos periodos (fase 4)
 
@@ -175,10 +186,13 @@ no corrigen esas diferencias. Masa magra estimada no equivale a músculo.
 
 ## Sin conexión
 
-Tras abrir el escritorio una vez con conexión desde la web, el navegador
-guarda sus archivos y la página se puede volver a abrir sin conexión con tus
+Tras abrir el escritorio con conexión y completar la preparación de su caché,
+el navegador guarda sus archivos y la página se puede volver a abrir sin conexión con tus
 datos (que ya estaban en el navegador). **Mis datos → Sin conexión** indica si
 está listo. Abierto como archivo local (`file://`) no está disponible.
+Se ha comprobado en Chromium por HTTP local, incluida una actualización del
+service worker y un fallo HTTP 503. No se ha comprobado en producción ni se
+anuncia instalación como aplicación.
 
 ## Dónde se guardan los datos
 
@@ -197,6 +211,9 @@ pierde al cerrar.
   anteriores siguen intactos.
 - Si actualizaste con la copia equivocada: **Mis datos → Volver a la copia
   anterior** (se guardan la copia vigente y la anterior).
+- La vuelta atrás recupera el JSON; no deshace una sustitución explícita de
+  imágenes o del índice ZIP. Para estos, vuelve a importar el ZIP original
+  correcto y revisa las confirmaciones de imagen e índice.
 - Si falta espacio: borra un espacio que no uses o importa solo la copia de
   datos sin el ZIP.
 - Como último recurso: **Borrar todos los datos del escritorio** y volver a
@@ -211,6 +228,8 @@ pierde al cerrar.
 node --test escritorio/tests/*.test.mjs     # módulos (Node 20+)
 PLAYWRIGHT_MODULE=/ruta/playwright node escritorio/tests/e2e.mjs   # si no está en node_modules
 node escritorio/tests/e2e.mjs [capturas/]   # navegador (requiere Playwright)
+PLAYWRIGHT_MODULE=/ruta/playwright AXE_MODULE=/ruta/axe-core/axe.min.js node escritorio/tests/integral.e2e.mjs [capturas/]
+                                            # fase 8: persistencia real, proceso, ZIP, caché, accesibilidad
 DART=/ruta/dart node --test escritorio/tests/planificador.test.mjs
                                             # + lector real del Excel de la app (App-PRO al lado)
 ```

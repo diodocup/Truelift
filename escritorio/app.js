@@ -266,7 +266,7 @@ async function prepararImportacion({ json, zip, rechazados = [] }){
   try {
     const P = { json: null, zip: null, rechazados, destino: null, comp: null,
                 nombreNuevo: E.espacios.length ? `Espacio ${E.espacios.length + 1}` : 'Mis datos',
-                op: { sustituir: false, incluirFuera: false, retroceso: false } };
+                op: { sustituir: false, incluirFuera: false, retroceso: false, indiceZip: false } };
     if (json){
       const texto = json.size > ImportarJSON.LIMITE_BYTES ? null : await json.text();
       cancelado(ac.signal);
@@ -280,7 +280,7 @@ async function prepararImportacion({ json, zip, rechazados = [] }){
 
     if (P.json && P.json.ok && E.raw)
       P.comp = ImportarJSON.comparar(E.raw, P.json.raw, { shaActual: E.inst.sha256, shaNuevo: P.json.sha256 });
-    const hayDatos = !!(E.espacio && (E.inst || E.fotosMeta.length));
+    const hayDatos = !!(E.espacio && (E.inst || E.fotosMeta.length || E.espacio.indiceZip));
     if (!E.espacio) P.destino = 'nuevo';
     else if (!(P.json && P.json.ok)) P.destino = 'actualizar';
     else if (P.comp && P.comp.identica) P.destino = 'actualizar';
@@ -314,6 +314,7 @@ function planFotos(P){
   const existentes = actualiza ? new Map(E.fotosMeta.map(f => [f.archivo, f])) : new Map();
   const plan = FotosTL.planificar({ candidatas: P.zip.candidatas, indiceJson, indiceZip: P.zip.indice, existentes });
   plan.indiceJson = indiceJson;
+  plan.cambioIndice = FotosTL.cambioIndice(actualiza ? FotosTL.leerIndice(E.espacio.indiceZip) : null, P.zip.indice);
   plan.registrosDistintos = FotosTL.registrosDistintos(indiceJson, P.zip.indice);
   const enZip = new Set(P.zip.candidatas.map(c => c.nombre));
   plan.indiceSinImagen = P.zip.indice ? [...P.zip.indice.fotos.keys()].filter(a => !enZip.has(a)).length : 0;
@@ -456,6 +457,13 @@ function fotosPreviaHtml(P){
   }
   const c = plan.cuentas;
   const guardar = plan.aGuardar.length;
+  if (plan.cambioIndice.confirmar){
+    out.push(`<div class="alerta ambar"><span class="tag">Metadatos diferentes</span><span>Este ZIP cambia el índice de fotos o las medidas del ZIP guardado. No se puede saber cuál se exportó después. Un ZIP antiguo podría recuperar fechas, poses o medidas anteriores. Tu copia JSON sigue teniendo prioridad.</span></div>
+      <label class="opcion"><input type="checkbox" data-op="indiceZip" ${P.op.indiceZip ? 'checked' : ''}>
+      <span><b>Usar los metadatos de este ZIP</b><small>Confirma que quieres sustituir el índice guardado. Los archivos de imagen existentes se conservan salvo que elijas sustituirlos.</small></span></label>`);
+  } else if (plan.cambioIndice.cambia){
+    out.push('<p style="font-size:13px">Se guardará el índice de fotos y medidas, también las fichas cuyo archivo de imagen falta.</p>');
+  }
   out.push(`<div class="cifras">
     ${cifra(guardar, 'se guardarán')}
     ${cifra(c.duplicada, 'ya estaban (no se duplican)')}
@@ -505,12 +513,15 @@ function estadoConfirmacion(P){
   if (P.comp && P.comp.retroceso && P.destino === 'actualizar' && jsonAplicable(P) && !P.op.retroceso)
     return { puede: false, texto: 'Importar', nota: 'Confirma que quieres usar una copia más antigua.' };
   const plan = planFotos(P);
+  if (plan?.cambioIndice.confirmar && !P.op.indiceZip)
+    return { puede: false, texto: 'Importar', nota: 'Revisa y confirma qué metadatos del ZIP quieres conservar.' };
   const hayFotos = !!(plan && plan.aGuardar.length);
+  const hayIndice = !!plan?.cambioIndice.cambia;
   const hayJson = jsonAplicable(P);
-  if (!hayJson && !hayFotos){
+  if (!hayJson && !hayFotos && !hayIndice){
     return { puede: false, texto: 'Importar', nota: (jsonOk || zipOk) ? 'No hay nada nuevo que guardar.' : '' };
   }
-  const texto = hayJson && hayFotos ? 'Importar datos y fotos' : hayJson ? 'Importar datos' : `Importar ${plural(plan.aGuardar.length, 'foto', 'fotos')}`;
+  const texto = hayJson && hayFotos ? 'Importar datos y fotos' : hayJson ? 'Importar datos' : hayFotos ? `Importar ${plural(plan.aGuardar.length, 'foto', 'fotos')}` : 'Importar metadatos de fotos';
   const nota = (P.json && !P.json.ok && hayFotos) ? 'La copia de datos no es válida: solo se importarán las fotos.' : '';
   return { puede: true, texto, nota };
 }
@@ -564,8 +575,8 @@ async function confirmarImportacion(){
   }
   if (P.zip && !P.zip.error){
     registro.archivos.push(P.zip.nombreArchivo);
-    registro.fotos = { guardadas: plan ? plan.aGuardar.length : 0, ...(plan ? plan.cuentas : {}) };
-    if (P.zip.indiceRaw){
+    registro.fotos = { guardadas: plan ? plan.aGuardar.length : 0, ...(plan ? plan.cuentas : {}), indiceActualizado: !!plan?.cambioIndice.cambia };
+    if (P.zip.indiceRaw && plan?.cambioIndice.cambia){
       espacio.indiceZip = P.zip.indiceRaw;
       espacio.indiceZipArchivo = P.zip.nombreArchivo;
       espacio.indiceZipImportado = ahora;
@@ -597,6 +608,7 @@ async function confirmarImportacion(){
   const piezas = [];
   if (registro.datos) piezas.push('datos de entrenamiento actualizados');
   if (registro.fotos && registro.fotos.guardadas) piezas.push(plural(registro.fotos.guardadas, 'foto guardada', 'fotos guardadas'));
+  if (registro.fotos?.indiceActualizado) piezas.push('índice de fotos y medidas actualizado');
   modalMensaje('Importación completada', `<p>${esc(piezas.join(' y ') || 'Hecho')}${nuevo ? ` en el espacio «${esc(espacio.nombre)}»` : ''}.</p>
     <p class="muted" style="font-size:13px">Recuerda conservar tus archivos originales: este navegador no es una copia de seguridad.</p>`);
   anunciar('Importación completada');
