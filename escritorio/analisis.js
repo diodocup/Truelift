@@ -135,6 +135,7 @@ const Analisis = {
       e1rmMarca: (ej.pesoCorporal && M.pc == null) ? null : (marca ? marca.e1rm : null),
       mejor: (ej.pesoCorporal && M.pc == null) ? null : mejor,
       marcaSerie: (ej.pesoCorporal && M.pc == null) ? null : marca,
+      estado: Motor.estadoDeEntrada(s.l, e),
       noVerde: Motor.estadoDeEntrada(s.l, e) !== 'verde',
       evaluable: !e.noDisponible && !Motor.noEvaluable(e) && !s.descarga,
       topBack: kgDistintos && !e.dropSet,

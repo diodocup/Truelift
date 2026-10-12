@@ -413,7 +413,7 @@ function detalleSesionHtml(M, indice){
     if (e.restPause) m.push(chip('gris', 'Rest-pause'));
     if (e.superserie != null) m.push(chip('gris', `Superserie ${e.superserie}`));
     if (e.modulada) m.push(chip('gris', 'Intensidad ajustada'));
-    if (e.estadoEjercicio && e.estadoEjercicio !== s.semaforo) m.push(chip(e.estadoEjercicio === 'verde' ? 'verde' : 'ambar', `Ejercicio en ${e.estadoEjercicio}`));
+    if (e.estadoEjercicio && e.estadoEjercicio !== s.semaforo) m.push(chip(e.estadoEjercicio === 'verde' ? 'verde' : e.estadoEjercicio === 'rojo' ? 'rojo' : 'ambar', `Ejercicio en ${e.estadoEjercicio}`));
     const kgs = e.kgSets.some(k => k != null) && new Set(e.kgSets.filter(k => k != null)).size > 1
       ? F.series(e.kgSets.map(k => Motor.cargaOrientada(e.ejercicio, k))) : (e.kg == null ? '—' : F.num(Motor.cargaOrientada(e.ejercicio, e.kg), 2));
     const unidad = Motor.esPorTiempo(e.ejercicio, M.raw) ? 's' : 'reps';
@@ -521,7 +521,7 @@ function fichaEjercicio(M, nombre, st = {}){
     // La línea solo une sesiones que cuentan; las demás quedan como puntos
     // sueltos para no dibujar caídas que la app no tiene en cuenta.
     const e1 = pts.filter(p => p.e1rm != null);
-    const serie1 = e1.filter(p => p.evaluable).map(p => ({ x: p.fecha, y: Math.round(p.e1rm * 10) / 10, c: p.noVerde ? TL.ambar : TL.lima }));
+    const serie1 = e1.filter(p => p.evaluable).map(p => ({ x: p.fecha, y: Math.round(p.e1rm * 10) / 10, c: p.estado === 'rojo' ? COLOR_ESTADO.rojo : p.noVerde ? TL.ambar : TL.lima }));
     const serieNo = e1.filter(p => !p.evaluable).map(p => ({ x: p.fecha, y: Math.round(p.e1rm * 10) / 10 }));
     const serie2 = pts.filter(p => p.cargaVista != null).map(p => ({ x: p.fecha, y: p.cargaVista }));
     const svg = Charts.lineas({ series: [
@@ -530,7 +530,7 @@ function fichaEjercicio(M, nombre, st = {}){
       { nombre: ej.asistido ? 'Asistencia' : ej.pesoCorporal ? 'Lastre' : 'Carga de la serie principal', color: TL.azul, puntos: serie2, unidad: 'kg', eje: 'der', dash: '5 4' },
     ], marcas: marcasCtx, w: 960, h: 280 });
     out.push(tarjeta('Evolución', grafica(svg, `1RM estimado y carga de ${nombre} por sesión`, tablaHist) +
-      `<p class="muted" style="font-size:12.5px">El 1RM estimado es una estimación a partir de tu mejor serie de cada sesión (en drop set y rest-pause, solo la primera), no una prueba de máximo. Puntos grises sueltos: sesiones que no cuentan para la progresión (descarga, molestias, cambio de un día). Puntos ámbar: entrenado en un día ámbar o rojo. Las líneas verticales marcan descargas, molestias y cambios de rutina.</p>`));
+      `<p class="muted" style="font-size:12.5px">El 1RM estimado es una estimación a partir de tu mejor serie de cada sesión (en drop set y rest-pause, solo la primera), no una prueba de máximo. Puntos grises sueltos: sesiones que no cuentan para la progresión (descarga, molestias, cambio de un día). Puntos ámbar: entrenado en un día ámbar; puntos rojos: en un día rojo. Las líneas verticales marcan descargas, molestias y cambios de rutina.</p>`));
   } else {
     out.push(tarjeta('Historial', tablaHist));
   }
@@ -601,7 +601,7 @@ function marcasPunto(p){
   if (p.sesion.descarga) m.push(chip('azul', 'Descarga'));
   if (p.e.molestias) m.push(chip('ambar', 'Molestias'));
   if (p.e.sustitucion) m.push(chip('gris', 'Cambio de un día'));
-  if (p.noVerde && !p.sesion.descarga) m.push(chip('ambar', 'Día no verde'));
+  if (p.noVerde && !p.sesion.descarga) m.push(p.estado === 'rojo' ? chip('rojo', 'Día rojo') : chip('ambar', 'Día ámbar'));
   if (p.e.dropSet) m.push(chip('gris', 'Drop'));
   if (p.e.restPause) m.push(chip('gris', 'Rest-pause'));
   if (p.topBack) m.push(chip('gris', 'Top + back-off'));
