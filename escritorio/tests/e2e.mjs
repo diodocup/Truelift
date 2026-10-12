@@ -56,8 +56,9 @@ const foto = async n => {
 };
 
 try {
-  // La cartera del Coach del mismo origen no debe tocarse.
-  await pagina.goto(`${origen}/coach/`);
+  // La cartera del antiguo Coach (mismo origen) no debe tocarse aunque el
+  // Coach se haya retirado: se siembra desde otra página del sitio.
+  await pagina.goto(`${origen}/privacidad.html`);
   await pagina.evaluate(() => localStorage.setItem('tlcoach_clientes', JSON.stringify({ clientes: [{ id: 'x', nombre: 'Ficticio', notas: '', fechaImportacion: '2026-08-01T10:00:00.000Z', datos: { sexo: 'hombre', dias: '3', logs: [] } }], clienteActivoId: 'x' })));
   const carteraAntes = await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes'));
 
@@ -1059,7 +1060,7 @@ try {
     pagina = await ctx.newPage();
     await pagina.setViewportSize({ width: 1366, height: 900 });
     // Cachés ajenas del mismo origen (Coach y otra): no se deben borrar.
-    await pagina.goto(`${origen8}/coach/`);
+    await pagina.goto(`${origen8}/privacidad.html`);
     await pagina.evaluate(async () => { await caches.open('tlcoach-v16'); await caches.open('otra-pagina'); });
     await pagina.goto(`${origen8}/escritorio/`);
     await pagina.waitForSelector('html[data-listo="1"]');
@@ -1094,10 +1095,12 @@ try {
 
   // --- 15. Aislamiento y privacidad ---
   assert.equal(await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes')), carteraAntes);
+  // La dirección del Coach retirado lleva al escritorio.
   await pagina.goto(`${origen}/coach/`);
-  await pagina.waitForSelector('#tabs');
+  await pagina.waitForURL(/\/escritorio\/$/);
+  await pagina.waitForSelector('html[data-listo="1"]');
   assert.equal(await pagina.evaluate(() => localStorage.getItem('tlcoach_clientes')), carteraAntes);
-  ok('la cartera del Coach queda intacta y el Coach sigue abriendo');
+  ok('la cartera del Coach queda intacta y su dirección lleva al escritorio');
   assert.deepEqual(externas, []);
   ok('ninguna petición a servicios externos');
   assert.deepEqual(erroresJs, []);

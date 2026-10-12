@@ -79,7 +79,7 @@
     </script>
     <link rel="preload" as="font" type="font/woff2" href="fonts/archivo-latin.woff2" crossorigin>
     <link rel="preload" as="font" type="font/woff2" href="fonts/jetbrainsmono-latin.woff2" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20261002-1">
+    <link rel="stylesheet" href="styles.css?v=20261012-1">
   </head>
   <body>
     <header class="site-header">
@@ -92,6 +92,7 @@
         <a href="#progreso">Progreso</a>
         <a href="#planes">Planes</a>
         <a href="#nutricion">Nutrición</a>
+        <a href="#escritorio">Escritorio</a>
         <a href="#capturas">Capturas</a>
         <a href="#faq">FAQ</a>
       </nav>
@@ -166,9 +167,9 @@
                 Descargar en Google Play
               </a>
               <a class="button primary" href="https://apps.apple.com/es/app/truelift-programaci%C3%B3n-fuerza/id6803201895" target="_blank" rel="noopener">Descargar en la App Store</a>
-              <span class="hero-action-coach">
-                <a class="button primary" href="#coach">TrueLift Coach</a>
-                <span class="hero-action-note">App de escritorio para entrenadores o usuarios que quieran ver sus métricas</span>
+              <span class="hero-action-desk">
+                <a class="button primary" href="#escritorio">TrueLift Escritorio</a>
+                <span class="hero-action-note">Tus métricas de la app en pantalla grande, y algunas más</span>
               </span>
             </div>
 
@@ -457,6 +458,7 @@
                 <li>Volumen semanal, progreso y marcas personales</li>
                 <li>Calculadora de discos, calentamiento y cronómetro</li>
                 <li>Informe mensual y copias de seguridad</li>
+                <li>TrueLift Escritorio: tus datos en el ordenador</li>
               </ul>
               <a class="button secondary" href="https://play.google.com/store/apps/details?id=es.rubensoro.truelift&amp;pcampaignid=web_share" target="_blank" rel="noopener">Descargar en Google Play</a>
               <a class="button secondary" href="https://apps.apple.com/es/app/truelift-programaci%C3%B3n-fuerza/id6803201895" target="_blank" rel="noopener">Descargar en la App Store</a>
@@ -474,7 +476,7 @@
                 <li>Autorregulación por sueño, estrés, molestias y VFC</li>
                 <li>Reloj conectado: Health Connect y Apple Salud</li>
                 <li>Descarga guiada y descarga automática por fatiga</li>
-                <li>Capa de nutrición: temporada por bloques y ajuste semanal</li>
+                <li>Nutrición: temporada, ajuste semanal, calorías, macros y menú con IA</li>
                 <li>Crear ejercicios e importar tu rutina desde Excel</li>
               </ul>
               <a class="button primary" href="#descargar" data-store-cta
@@ -536,6 +538,11 @@
                     <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
+                    <th scope="row">TrueLift Escritorio: tus métricas en el ordenador</th>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                  </tr>
+                  <tr>
                     <th scope="row">Cambiar un ejercicio por otro</th>
                     <td class="yes"><span class="sr-only">Incluido</span></td>
                     <td class="yes"><span class="sr-only">Incluido</span></td>
@@ -585,6 +592,16 @@
                     <td class="no"><span class="sr-only">No incluido</span></td>
                     <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
+                  <tr>
+                    <th scope="row">Gasto estimado, calorías y macros de tu fase</th>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Reparto en comidas y menú semanal con la IA que elijas</th>
+                    <td class="no"><span class="sr-only">No incluido</span></td>
+                    <td class="yes"><span class="sr-only">Incluido</span></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -617,6 +634,177 @@
                 <li>Trabaja con tu peso-tendencia, no con el número de un día suelto.</li>
                 <li>Un semáforo te avisa si el ritmo elegido es sensato para tu punto de partida.</li>
                 <li>La fase de dieta gobierna la progresión: entrenamiento y nutrición van de la mano.</li>
+                <li>Y si prefieres pesar lo que comes: calorías, macros, reparto en comidas y un menú semanal con IA.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="nutri-plate" aria-labelledby="plate-title">
+            <div class="sub-head">
+              <p class="sub-kicker">Calorías, macros y menú <span class="tag-pro">PRO</span></p>
+              <h3 id="plate-title">¿Prefieres pesar lo que comes? También te damos las cifras.</h3>
+              <p>
+                TrueLift convierte tu fase en calorías, macros y comidas, y te ayuda a llevarlo a un menú de verdad.
+                Es una guía para quien mide: tu báscula sigue mandando y el ajuste semanal corrige si hace falta.
+              </p>
+            </div>
+
+            <div class="steps nutri-steps">
+              <article class="step">
+                <div class="device is-pro">
+                  <img src="capturas/es/energia.jpg" data-shot="energia" alt="Tarjeta Energía diaria con el gasto teórico, las calorías ajustadas a tu fase y de dónde sale el gasto" width="800" height="1715" loading="lazy" decoding="async">
+                </div>
+                <div class="step-mark">
+                  <span class="num">1</span>
+                  <span class="rule" aria-hidden="true"></span>
+                </div>
+                <h4>Cuánto gastas y cuánto comer</h4>
+                <p>La app estima lo que gastas con tu cuerpo, tu trabajo, tus pasos y tus entrenos, y te da las calorías para perder, mantener o ganar al ritmo de tu fase. Y te enseña de dónde sale cada parte.</p>
+              </article>
+              <article class="step">
+                <div class="device is-pro">
+                  <img src="capturas/es/macros.jpg" data-shot="macros" alt="Macros del día: proteína y grasa con su deslizador e hidratos que se ajustan solos, en gramos y en gramos por kilo" width="800" height="1715" loading="lazy" decoding="async">
+                </div>
+                <div class="step-mark">
+                  <span class="num">2</span>
+                  <span class="rule" aria-hidden="true"></span>
+                </div>
+                <h4>Tus macros del día</h4>
+                <p>La proteína recomendada para tu fase, la grasa que prefieras dentro de lo recomendado y los hidratos que cuadran el total, en gramos y en g/kg. ¿Quieres comer otra cifra? La corriges a mano.</p>
+              </article>
+              <article class="step">
+                <div class="device is-pro">
+                  <img src="capturas/es/comidas.jpg" data-shot="comidas" alt="Reparto en comidas con las calorías y los gramos de proteína, hidratos y grasa de cada comida y las comidas de antes y después de entrenar" width="800" height="1715" loading="lazy" decoding="async">
+                </div>
+                <div class="step-mark">
+                  <span class="num">3</span>
+                  <span class="rule" aria-hidden="true"></span>
+                </div>
+                <h4>Repartido en tus comidas</h4>
+                <p>Elige 3, 4 o 5 comidas y mira las calorías y los gramos de cada una. Hazlas más grandes o más pequeñas y marca la de antes y la de después de entrenar: llevan más hidratos.</p>
+              </article>
+              <article class="step">
+                <div class="device is-pro">
+                  <img src="capturas/es/menu-ia.jpg" data-shot="menu-ia" alt="Asistente Crea tu menú semanal con IA: país, presupuesto, supermercado y tiempo para cocinar" width="800" height="1715" loading="lazy" decoding="async">
+                </div>
+                <div class="step-mark">
+                  <span class="num">4</span>
+                  <span class="rule" aria-hidden="true"></span>
+                </div>
+                <h4>Tu menú semanal con IA</h4>
+                <p>Responde unas preguntas (país, presupuesto, supermercado, tiempo para cocinar, alergias y gustos) y la app prepara el prompt con tus cifras. Lo pegas en la IA que prefieras y te propone un menú de siete días con cantidades, recetas y lista de la compra.</p>
+              </article>
+            </div>
+
+            <aside class="note-gold" aria-labelledby="ai-note-title">
+              <h4 id="ai-note-title">La IA la eliges tú</h4>
+              <p>
+                TrueLift no se conecta a ninguna IA: el prompt se prepara en tu móvil y solo sale de él cuando tú lo copias o lo compartes.
+                El menú que proponga la IA es orientativo, así que revisa sus recetas y sus cantidades. Está pensado para adultos sanos
+                y no sustituye el consejo de un profesional.
+              </p>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="section desk-section" id="escritorio" aria-labelledby="desk-title">
+        <div class="section-inner" data-reveal>
+          <div class="section-head">
+            <span class="num">07</span>
+            <span class="label">TrueLift Escritorio · novedad</span>
+            <span class="rule" aria-hidden="true"></span>
+          </div>
+          <div class="heading-split">
+            <h2 id="desk-title">Tu progreso, en la pantalla grande.</h2>
+            <p>
+              TrueLift Escritorio es la versión para ordenador de la app. Importas tu copia de seguridad y ves tus métricas
+              con todo detalle, incluidas algunas que no caben en el móvil. Y desde ahí preparas tu próxima rutina.
+            </p>
+          </div>
+
+          <div class="desk-showcase">
+            <figure class="browser">
+              <div class="browser-bar" aria-hidden="true">
+                <span class="browser-dots"><i></i><i></i><i></i></span>
+                <span class="browser-url">truelift.es/escritorio</span>
+              </div>
+              <img src="capturas/escritorio/resumen.jpg" alt="TrueLift Escritorio, sección Mi resumen: días entrenados, valoración general, peso tendencia, estado para entrenar y lo más relevante de tus datos" width="1600" height="1000" loading="lazy" decoding="async">
+            </figure>
+            <figure class="browser desk-float">
+              <img src="capturas/escritorio/linea-tiempo.jpg" alt="Tu bloque en una línea de tiempo: rendimiento por sesión, peso y entrenos sobre las mismas fechas, con las fases de nutrición" width="1400" height="723" loading="lazy" decoding="async">
+              <figcaption><span class="desk-chip">Solo en el escritorio</span> Tu bloque en una línea de tiempo</figcaption>
+            </figure>
+          </div>
+
+          <div class="cards desk-cards">
+            <article class="card">
+              <div class="card-head">
+                <span class="num">01</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+              </div>
+              <h3>Tus métricas, en grande</h3>
+              <p>Lo más relevante de tus datos, tu constancia, tu peso y tu estado para entrenar de un vistazo, con gráficas que se leen sin hacer zoom.</p>
+            </article>
+            <article class="card">
+              <div class="card-head">
+                <span class="num">02</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M3 16l5-6 4 3 5-7 4 4"/><path d="M3 20.5h18"/></svg></span>
+              </div>
+              <h3>Más de lo que cabe en el móvil</h3>
+              <p>Tu bloque en una línea de tiempo, la comparación de dos periodos, cada serie de cada ejercicio y tu recuperación noche a noche.</p>
+            </article>
+            <article class="card">
+              <div class="card-head">
+                <span class="num">03</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/></svg></span>
+              </div>
+              <h3>Configura tu rutina</h3>
+              <p>Edita todos los días a la vista, revisa las series por grupo muscular y exporta la rutina al Excel que importa la app.</p>
+              <p class="card-note"><span class="tag-pro">PRO</span> Para importarla en la app</p>
+            </article>
+            <article class="card">
+              <div class="card-head">
+                <span class="num">04</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-10z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h6"/></svg></span>
+              </div>
+              <h3>Informes y evolución física</h3>
+              <p>Un informe del mes para imprimir o guardar en PDF, tus contornos y tus fotos de progreso comparadas lado a lado.</p>
+            </article>
+          </div>
+
+          <div class="desk-start">
+            <ol class="desk-steps" aria-label="Cómo empezar con TrueLift Escritorio">
+              <li>
+                <span class="desk-step-num" aria-hidden="true">1</span>
+                <div>
+                  <h3>En la app</h3>
+                  <p>Ajustes → Copia de seguridad → Exportar copia. Si quieres, exporta también tus fotos.</p>
+                </div>
+              </li>
+              <li>
+                <span class="desk-step-num" aria-hidden="true">2</span>
+                <div>
+                  <h3>En el ordenador</h3>
+                  <p>Abre TrueLift Escritorio y arrastra el archivo a la ventana.</p>
+                </div>
+              </li>
+              <li>
+                <span class="desk-step-num" aria-hidden="true">3</span>
+                <div>
+                  <h3>Solo en tu navegador</h3>
+                  <p>Tus datos se procesan y se guardan en tu navegador: TrueLift no los recibe.</p>
+                </div>
+              </li>
+            </ol>
+            <div class="desk-cta">
+              <a class="button primary" href="escritorio/">Abrir TrueLift Escritorio</a>
+              <a class="link-mono" href="escritorio/ejemplo/copia_truelift_2026-10-08.json" download="copia_truelift_2026-10-08.json"><span aria-hidden="true">↓</span> Copia de ejemplo</a>
+              <span class="file-note">Para probarlo sin exportar tus datos</span>
+              <ul class="desk-meta" aria-label="Datos de TrueLift Escritorio">
+                <li>Gratis</li>
+                <li>Sin instalar</li>
+                <li>Por ahora, en español</li>
               </ul>
             </div>
           </div>
@@ -645,7 +833,7 @@
       <section class="section is-band" id="capturas" aria-labelledby="screens-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">07</span>
+            <span class="num">08</span>
             <span class="label">Capturas</span>
             <span class="rule" aria-hidden="true"></span>
             <span class="hint" aria-hidden="true">Desliza para ver más →</span>
@@ -693,6 +881,22 @@
               <figcaption>Ajuste semanal · PRO</figcaption>
             </figure>
             <figure>
+              <div class="device"><img src="capturas/es/energia.jpg" data-shot="energia" alt="Tarjeta Energía diaria con el gasto teórico, las calorías ajustadas a tu fase y de dónde sale el gasto" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <figcaption>Energía diaria · PRO</figcaption>
+            </figure>
+            <figure>
+              <div class="device"><img src="capturas/es/macros.jpg" data-shot="macros" alt="Macros del día: proteína y grasa con su deslizador e hidratos que se ajustan solos, en gramos y en gramos por kilo" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <figcaption>Macros del día · PRO</figcaption>
+            </figure>
+            <figure>
+              <div class="device"><img src="capturas/es/comidas.jpg" data-shot="comidas" alt="Reparto en comidas con las calorías y los gramos de proteína, hidratos y grasa de cada comida y las comidas de antes y después de entrenar" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <figcaption>Reparto en comidas · PRO</figcaption>
+            </figure>
+            <figure>
+              <div class="device"><img src="capturas/es/menu-ia.jpg" data-shot="menu-ia" alt="Asistente Crea tu menú semanal con IA: país, presupuesto, supermercado y tiempo para cocinar" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <figcaption>Menú con IA · PRO</figcaption>
+            </figure>
+            <figure>
               <div class="device"><img src="capturas/es/ajustes.jpg" data-shot="ajustes" alt="Ajustes de la app: rutina, material disponible, autorregulación y VFC, nutrición y modo descarga" width="800" height="1715" loading="lazy" decoding="async"></div>
               <figcaption>Ajustes</figcaption>
             </figure>
@@ -703,7 +907,7 @@
       <section class="section" id="faq" aria-labelledby="faq-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">08</span>
+            <span class="num">09</span>
             <span class="label">Preguntas frecuentes</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
@@ -785,6 +989,26 @@
                 </p>
               </details>
               <details>
+                <summary>¿Puedo ver mis datos de TrueLift en el ordenador?</summary>
+                <p>
+                  Sí, con TrueLift Escritorio. Exporta una copia de seguridad desde los ajustes de la app e impórtala en
+                  TrueLift Escritorio desde el navegador de tu ordenador: verás tus métricas en grande, algunas que no caben
+                  en el móvil, y podrás preparar tu rutina y exportarla al Excel que importa la app.
+                </p>
+                <p>
+                  Tus datos se procesan y se guardan solo en tu navegador. Si quieres probarlo antes, en la sección
+                  <a href="#escritorio">TrueLift Escritorio</a> tienes una copia de ejemplo.
+                </p>
+              </details>
+              <details>
+                <summary>¿TrueLift usa IA para calcular mi dieta?</summary>
+                <p>
+                  No. Las calorías, los macros y el reparto en comidas los calcula la app con un método estable, igual que la
+                  progresión. Si quieres un menú semanal, la app prepara un prompt con tus cifras y tus preferencias para que
+                  lo pegues en la IA que prefieras. TrueLift no se conecta a ninguna IA ni le envía nada por su cuenta.
+                </p>
+              </details>
+              <details>
                 <summary>¿Sirve para hipertrofia o solo para fuerza?</summary>
                 <p>
                   Las rutinas de la versión gratuita están orientadas a hipertrofia. En PRO puedes configurar
@@ -823,28 +1047,6 @@
             </a>
             <a class="button primary is-large" href="https://apps.apple.com/es/app/truelift-programaci%C3%B3n-fuerza/id6803201895" target="_blank" rel="noopener">Descargar en la App Store</a>
           </div>
-
-          <div class="coach-card" id="coach">
-            <div>
-              <p class="eyebrow">Para entrenadores</p>
-              <h3>TrueLift Coach</h3>
-              <p>App web para seguir a tus atletas desde el escritorio, a partir del archivo que exportan desde la app.</p>
-            </div>
-            <div class="coach-links">
-              <a class="button secondary" href="coach/">Abrir TrueLift Coach</a>
-              <div class="file-samples">
-                <span class="file-samples-label">Archivos de ejemplo para probarla</span>
-                <span class="file-samples-list">
-                  <a class="link-mono" href="coach/Carlos_2026-08-26.json" download="Carlos_2026-08-26.json"><span aria-hidden="true">↓</span> Carlos</a>
-                  <a class="link-mono" href="coach/Javi_2026-08-26.json" download="Javi_2026-08-26.json"><span aria-hidden="true">↓</span> Javi</a>
-                  <a class="link-mono" href="coach/Laura_2026-08-26.json" download="Laura_2026-08-26.json"><span aria-hidden="true">↓</span> Laura</a>
-                  <a class="link-mono" href="coach/Nuria_2026-08-26.json" download="Nuria_2026-08-26.json"><span aria-hidden="true">↓</span> Nuria</a>
-                  <a class="link-mono" href="coach/Ruben_2026-08-26.json" download="Ruben_2026-08-26.json"><span aria-hidden="true">↓</span> Ruben</a>
-                </span>
-                <span class="file-note">Solo para pruebas: los clientes son ficticios</span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
     </main>
@@ -858,14 +1060,14 @@
         <div class="footer-links">
           <a href="privacidad.html" data-privacy-link>Privacidad y aviso legal</a>
           <a href="Manual_TrueLift.pdf" download data-manual-download>Manual (PDF)</a>
-          <a href="coach/">TrueLift Coach</a>
+          <a href="escritorio/">TrueLift Escritorio</a>
           <a href="https://www.rubensoro.es" target="_blank" rel="noopener">Web del autor</a>
         </div>
       </div>
     </footer>
 
-    <script src="translations-pt-br.js?v=20261002-1"></script>
-    <script src="script.js?v=20261002-1"></script>
+    <script src="translations-pt-br.js?v=20261012-1"></script>
+    <script src="script.js?v=20261012-1"></script>
     <script src="valoraciones.js?v=20261002-1" defer></script>
     <script src="atribucion-tiendas.js?v=20260925-2" defer></script>
   </body>

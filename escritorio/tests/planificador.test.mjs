@@ -68,13 +68,11 @@ test('un borrador sin cambios produce en la app la misma rutina que tiene el mó
     assert.equal(PL.firma(sim.normal), PL.firma(m.normal));
     assert.deepEqual(sim.notas, []);
   }
-  // Copias ficticias del repositorio (las del Coach).
-  for (const f of ['Laura', 'Javi', 'Ruben']){
-    const raw = JSON.parse(fs.readFileSync(new URL(`../../coach/${f}_2026-08-26.json`, import.meta.url), 'utf8'));
-    const m = PL.rutinaMovil(raw);
-    const d = PL.diferencias(m.normal, PL.comoLaApp(m.rutina, raw).normal);
-    assert.equal(d.iguales, true, `${f}: ${JSON.stringify(d.dias.filter(x => x.estado !== 'igual'))}`);
-  }
+  // Copia de ejemplo que se descarga desde la web.
+  const raw = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-10-08.json', import.meta.url), 'utf8'));
+  const m = PL.rutinaMovil(raw);
+  const d = PL.diferencias(m.normal, PL.comoLaApp(m.rutina, raw).normal);
+  assert.equal(d.iguales, true, JSON.stringify(d.dias.filter(x => x.estado !== 'igual')));
 });
 
 test('la simulación reproduce las lecturas y valores por defecto del importador', () => {

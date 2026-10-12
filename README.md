@@ -78,6 +78,31 @@ Si una captura solo existe en algunos idiomas, la `<figure>` de la galería lo i
 Para regenerarlas a partir de capturas del móvil (1220×2712): recortar la barra de estado
 (96 px superiores) y reducir a 800 px de ancho, JPEG de calidad ~82.
 
+Las de nutrición `energia`, `macros`, `comidas` y `menu-ia` salen tanto en la sección de nutrición
+como en la galería. Las de TrueLift Escritorio viven aparte, en `capturas/escritorio/`, y no cambian
+con el idioma porque el escritorio solo está en español: son capturas reales de `escritorio/` con la
+copia de ejemplo importada (ventana de 1440×900 a 1,5×, reducidas a 1600 px y JPEG ~82).
+
+## TrueLift Escritorio
+
+La sección `#escritorio` presenta la versión para ordenador (`escritorio/`, ver su `LEEME.md`): la
+persona importa la copia de seguridad de la app y ve sus métricas en grande, alguna que no está en
+el móvil, sus informes y su rutina, que exporta al Excel que importa la app (importarlo en el móvil es
+PRO, por eso la tarjeta lo marca). El botón del hero lleva a esa sección.
+
+La copia que se descarga para probarlo es `escritorio/ejemplo/copia_truelift_2026-10-08.json`.
+Es la única copia de ejemplo del sitio; la usa también `escritorio/tests/planificador.test.mjs`.
+
+TrueLift Coach se ha retirado de la web: `coach/index.html` solo redirige a `escritorio/`. El resto
+de `coach/` se conserva porque el escritorio carga de ahí su motor y sus estilos.
+
+## Nutrición: calorías, macros y menú con IA
+
+Dentro de `#nutricion`, el bloque «¿Prefieres pesar lo que comes?» enseña en cuatro pasos el gasto
+estimado y las calorías de la fase, los macros del día, el reparto en comidas y el menú semanal con
+IA externa (la app prepara el prompt; TrueLift no llama a ninguna IA). Como en la app, los textos
+explican el qué y el para qué, sin umbrales, porcentajes ni detalles del cálculo.
+
 ## Valoraciones y reseñas de las tiendas
 
 El hero muestra la nota de Google Play y App Store y una tarjeta con reseñas que

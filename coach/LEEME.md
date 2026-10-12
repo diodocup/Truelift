@@ -1,15 +1,21 @@
-# TrueLift Coach
+# TrueLift Coach (retirado)
 
-Herramienta web para entrenadores: visualiza los entrenamientos de tus clientes de TrueLift y crea o revisa sus rutinas. Sin internet, sin instalación.
+**TrueLift Coach ya no se publica.** Su sitio lo ocupa **TrueLift Escritorio**
+(`../escritorio/`), la versión para ordenador de la persona que entrena. La
+dirección `coach/` redirige allí (`index.html`) y la web ya no enlaza al Coach.
 
-## Archivos de ejemplo
+La carpeta se conserva porque el escritorio carga de aquí su motor y sus datos
+(`motor.js`, `data.js`, `nutricion.js`, `charts.js`, `catalogo.js`,
+`canonico.js`, `plantilla.js`, `xlsx.js`, `planner.js`), la hoja de estilos
+(`styles.css`) y el icono (`media/icono.png`). No los borres ni los muevas sin
+actualizar `../escritorio/index.html` y `../escritorio/sw.js`.
 
-En esta carpeta hay cinco copias de prueba para ver el Coach con datos antes de
-importar a nadie: `Carlos_`, `Javi_`, `Laura_`, `Nuria_` y `Ruben_2026-08-26.json`.
-Cubren las combinaciones de sistema y días de la app (simple y doble, de 3 a 5
-días). **Los cinco clientes son ficticios**: nombres, fechas de nacimiento,
-entrenamientos, pesajes y cuestionarios están inventados y no pertenecen a
-ninguna persona.
+Las copias de ejemplo del Coach (cinco clientes ficticios) se han retirado. La
+copia de ejemplo que se descarga desde la web es la del escritorio:
+`../escritorio/ejemplo/copia_truelift_2026-10-08.json`.
+
+Lo que sigue describe el Coach tal como funcionaba, como referencia de los
+módulos compartidos.
 
 ## Uso
 
