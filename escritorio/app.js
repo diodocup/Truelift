@@ -22,7 +22,7 @@ const E = {
   estimacion: null, persistido: null, origenModal: null, sinConexion: null,
   M: null, errorModelo: null, fisica: null, espacioFisica: null,
   fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 },
-  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null },
+  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null, capasOcultas: new Set() },
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
   inf: { conFotos: false, fotos: new Set(), error: null, borrador: null }, espacioInforme: null,
@@ -625,20 +625,40 @@ function renderDatos(){
 }
 
 function renderBienvenida(){
+  const ok = '<svg class="icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   return `<section class="bienvenida">
-    <h1>Tu entrenamiento, en grande</h1>
-    <p>Consulta en el ordenador tu evolución en TrueLift: entrenamientos, ejercicios, peso, medidas y fotos.
-       Tus archivos se leen y se guardan solo en este navegador.</p>
-    <ol class="pasos">
-      <li>En la app, ve a <b>Ajustes → Copia de seguridad</b> y exporta tu <b>copia de seguridad</b> (archivo <code>.json</code>).</li>
-      <li>Si quieres ver tus fotos de progreso, exporta también las <b>fotos</b> (archivo <code>.zip</code>). Es opcional.</li>
-      <li>Pasa los archivos al ordenador e impórtalos aquí, juntos o por separado.</li>
-    </ol>
-    <div class="fila-botones">
-      <button class="btn pri" type="button" data-accion="importar-datos">Importar datos de TrueLift</button>
-      <button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button>
+    <div class="bv-hero">
+      <div class="bv-intro">
+        <span class="chip verde">Complemento de la app TrueLift</span>
+        <h1>Tu entrenamiento, en grande</h1>
+        <p class="bv-lead">En el móvil entrenas y registras. Aquí te sientas con calma a entender tu bloque, comparar periodos y fotos, y preparar tu próxima rutina para llevarla a la app.</p>
+        <p class="bv-privacidad"><svg class="icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <span><b>Tus archivos no salen de este ordenador.</b> Se leen y se guardan solo en este navegador; TrueLift no los recibe. Conserva tus copias originales: son tu respaldo.</span></p>
+      </div>
+      <div class="bv-zona">
+        <span class="bv-zona-ico" aria-hidden="true"><svg class="icono" viewBox="0 0 24 24" focusable="false"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span>
+        <h2>Suelta aquí tu copia de TrueLift</h2>
+        <p>La copia de datos <code>.json</code> y, si quieres, tus fotos <code>.zip</code>. Puedes soltar los dos a la vez.</p>
+        <div class="fila-botones">
+          <button class="btn pri" type="button" data-accion="importar-datos">Importar datos de TrueLift</button>
+          <button class="btn sec" type="button" data-accion="importar-fotos">Importar fotos de TrueLift</button>
+        </div>
+        <p class="muted">Antes de guardar nada verás una vista previa.</p>
+      </div>
     </div>
-    <p class="muted" style="font-size:13px;margin-top:12px">También puedes arrastrar los archivos a esta ventana.</p>
+    <h2 class="bv-h2">Cómo traer tus datos</h2>
+    <ol class="pasos bv-pasos">
+      <li><b>Exporta la copia en la app</b><span>Ajustes → Copia de seguridad → exporta tu <b>copia de seguridad</b> (archivo <code>.json</code>).</span></li>
+      <li><b>Si quieres, exporta tus fotos</b><span>En la misma pantalla, exporta las <b>fotos</b> (archivo <code>.zip</code>). Es opcional.</span></li>
+      <li><b>Pásalos al ordenador e impórtalos aquí</b><span>Juntos o por separado, o arrástralos a esta ventana.</span></li>
+    </ol>
+    <h2 class="bv-h2">Móvil y escritorio, cada uno a lo suyo</h2>
+    <div class="bv-dos">
+      <article class="card"><h3>En el móvil</h3><p class="muted">Para el día a día en el gimnasio</p>
+        <ul><li>Registra cada serie mientras entrenas</li><li>Te propone la carga de la próxima sesión</li><li>Cuestionario diario y datos de tu reloj</li><li>Ajustes de tu dieta según tu fase</li></ul></article>
+      <article class="card bv-escritorio"><h3>En el escritorio</h3><p class="muted">Para entender, comparar y planificar</p>
+        <ul><li>${ok}Rendimiento, peso y entrenos en una sola línea de tiempo</li><li>${ok}Ficha de cada ejercicio, sesión a sesión</li><li>${ok}Periodos y fotos lado a lado</li><li>${ok}Tu próxima rutina con todos los días a la vista, lista para la app</li><li>${ok}Informes para imprimir o guardar en PDF</li></ul></article>
+    </div>
   </section>`;
 }
 
@@ -955,6 +975,7 @@ function setSeccion(s, foco = true){
 function render(){
   liberarUrls();
   $('#espacioActual').textContent = E.espacio && E.espacios.length > 1 ? E.espacio.nombre : '';
+  estadoDatos();
   const aviso = [];
   if (Almacen.modo === 'temporal')
     aviso.push(`<div class="alerta rojo"><span class="tag">Modo temporal</span><span>No se puede guardar en este navegador: lo que importes se perderá al cerrar la pestaña.</span></div>`);
@@ -971,6 +992,22 @@ function render(){
   activarFotosInforme();
   marcarDesplazables();
   rutRestaurarFoco();
+}
+
+/* Antigüedad de los datos en la barra lateral: hasta qué día llegan y cuánto
+   hace. Pasadas dos semanas el punto pasa a ámbar, igual que Mi resumen
+   sugiere entonces exportar una copia nueva. */
+function estadoDatos(){
+  const el = $('#estadoDatos');
+  if (!el) return;
+  const ult = E.inst && E.inst.resumen && E.inst.resumen.ultimoRegistro;
+  el.className = 'lat-estado';
+  // Un solo hijo: el párrafo es flex (punto + texto) y cada nodo suelto
+  // sería una columna.
+  if (!E.espacio){ el.innerHTML = '<span>Aún no has importado tus datos.</span>'; return; }
+  if (!ult){ el.innerHTML = `<span>${E.inst ? 'Tu copia aún no tiene registros.' : 'Solo fotos: falta tu copia de datos.'}</span>`; return; }
+  el.classList.add(diasEntre(parseFecha(ult), new Date()) > 14 ? 'antigua' : 'al-dia');
+  el.innerHTML = `<span>Datos hasta el <b>${esc(fmtDia(ult))}</b> · ${esc(hace(ult))}</span>`;
 }
 
 /* Una tabla más ancha que su caja se desplaza con el teclado: su caja recibe
@@ -1003,7 +1040,7 @@ function renderSeccion(){
     return `<div class="cabecera-seccion"><h1>Evolución física</h1></div>${sinCopiaHtml()}${fisicaFotosHtml()}${VistasEsc.contornos(E.fisica, E.fis)}`;
   }
   if (!M) return sinCopiaHtml();
-  const ctx = { inst: E.inst, galeriaHtml: fisicaFotosHtml, fisica: E.fisica, fis: E.fis };
+  const ctx = { inst: E.inst, galeriaHtml: fisicaFotosHtml, fisica: E.fisica, fis: E.fis, capasOcultas: E.st.capasOcultas };
   switch (E.seccion){
     case 'resumen': return VistasEsc.resumen(M, ctx);
     case 'entrenamiento': return VistasEsc.entrenamiento(M, E.st);
@@ -1428,6 +1465,16 @@ function init(){
     if (ir){
       if (!$('#modal').classList.contains('oculto')) cerrarModal();
       irA(ir.dataset.ir); return;
+    }
+    // Capas de la línea de tiempo: se ocultan con una clase, sin volver a
+    // pintar, y se recuerdan mientras la página siga abierta.
+    const capa = ev.target.closest('[data-capa-btn]');
+    if (capa){
+      const k = capa.dataset.capaBtn, visible = capa.getAttribute('aria-pressed') !== 'true';
+      if (visible) E.st.capasOcultas.delete(k); else E.st.capasOcultas.add(k);
+      capa.setAttribute('aria-pressed', String(visible));
+      $('#lineaTiempo')?.classList.toggle(`oculta-${k}`, !visible);
+      return;
     }
     const ses = ev.target.closest('[data-sesion]');
     if (ses){ verSesion(Number(ses.dataset.sesion)); return; }

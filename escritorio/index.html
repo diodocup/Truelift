@@ -11,8 +11,9 @@
 <meta name="theme-color" content="#0A0C0B">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../coach/media/icono.png">
-<link rel="preload" href="../fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="../fonts/jetbrainsmono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/instrumentsans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/sairacondensed-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/ibmplexmono-500-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../coach/styles.css">
 <link rel="stylesheet" href="escritorio.css">
 </head>
@@ -20,40 +21,51 @@
 
 <a class="saltar" href="#contenido">Saltar al contenido</a>
 
-<div id="cabecera" class="no-print">
+<div id="marco">
+<div id="lateral" class="no-print">
 <header id="topbar">
   <div class="brand"><span class="wordmark"><svg class="wordmark-t" viewBox="26.2 32 55.6 44" aria-hidden="true" focusable="false"><path class="wm-brazo" d="M28 32H44A2 2 0 0 1 46 34V42A2 2 0 0 1 44 44H32.2A2.8 2.8 0 0 1 29.7 42.5L26.2 35.5A2.4 2.4 0 0 1 28 32Z"/><path class="wm-brazo" d="M80 32H64A2 2 0 0 0 62 34V42A2 2 0 0 0 64 44H75.8A2.8 2.8 0 0 0 78.3 42.5L81.8 35.5A2.4 2.4 0 0 0 80 32Z"/><path class="wm-pie" d="M50 32H58A2 2 0 0 1 60 34V71.2A3 3 0 0 1 59.1 73.3L56.4 75.6A2 2 0 0 1 55.1 76H50A2 2 0 0 1 48 74V34A2 2 0 0 1 50 32Z"/></svg>RUE<span class="wm-lift">LIFT</span></span><span class="brand-coach">Escritorio</span></div>
 
-  <span id="espacioActual" class="muted"></span>
-
-  <div class="spacer"></div>
-
-  <button id="btnImportarDatos" class="btn pri" type="button">Importar datos de TrueLift</button>
-  <button id="btnImportarFotos" class="btn sec" type="button">Importar fotos de TrueLift</button>
-  <input type="file" id="inputDatos" accept=".json,application/json" multiple hidden>
-  <input type="file" id="inputFotos" accept=".zip,application/zip" hidden>
+  <section class="lat-datos" aria-label="Tus datos">
+    <div class="lat-datos-cab">
+      <span class="lat-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></svg></span>
+      <div class="lat-datos-txt"><b>Tus datos</b><span id="espacioActual" class="muted"></span></div>
+    </div>
+    <p id="estadoDatos" class="lat-estado"></p>
+    <button id="btnImportarDatos" class="btn sec lat-importar" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Importar datos de TrueLift</button>
+    <button id="btnImportarFotos" class="btn lat-fotos" type="button">Importar fotos de TrueLift</button>
+    <input type="file" id="inputDatos" accept=".json,application/json" multiple hidden>
+    <input type="file" id="inputFotos" accept=".zip,application/zip" hidden>
+  </section>
 </header>
 
 <nav id="tabs" aria-label="Secciones (atajos: Alt + 1 a 7)">
-  <button type="button" data-seccion="resumen">Mi resumen</button>
-  <button type="button" data-seccion="entrenamiento">Entrenamiento</button>
-  <button type="button" data-seccion="fisica">Evolución física</button>
-  <button type="button" data-seccion="recuperacion">Recuperación</button>
-  <button type="button" data-seccion="rutina">Mi rutina</button>
-  <button type="button" data-seccion="informes">Informes</button>
-  <button type="button" data-seccion="datos">Mis datos</button>
+  <span class="tabs-grupo">Analizar</span>
+  <button type="button" data-seccion="resumen" aria-keyshortcuts="Alt+1"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg><span class="tab-txt">Mi resumen</span><kbd aria-hidden="true">Alt 1</kbd></button>
+  <button type="button" data-seccion="entrenamiento" aria-keyshortcuts="Alt+2"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/></svg><span class="tab-txt">Entrenamiento</span><kbd aria-hidden="true">Alt 2</kbd></button>
+  <button type="button" data-seccion="fisica" aria-keyshortcuts="Alt+3"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="4.8" r="2.3"/><path d="M5 9.5l7 1.5 7-1.5M12 11v4.5M9 21l3-5.5 3 5.5"/></svg><span class="tab-txt">Evolución física</span><kbd aria-hidden="true">Alt 3</kbd></button>
+  <button type="button" data-seccion="recuperacion" aria-keyshortcuts="Alt+4"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.4 9c0 5.2-8.4 11-8.4 11S3.6 14.2 3.6 9a4.6 4.6 0 0 1 8.4-2.6A4.6 4.6 0 0 1 20.4 9z"/><path d="M6.5 12h3l1.5-2.5 2 5 1.5-2.5h3"/></svg><span class="tab-txt">Recuperación</span><kbd aria-hidden="true">Alt 4</kbd></button>
+  <span class="tabs-grupo">Planificar y compartir</span>
+  <button type="button" data-seccion="rutina" aria-keyshortcuts="Alt+5"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/></svg><span class="tab-txt">Mi rutina</span><kbd aria-hidden="true">Alt 5</kbd></button>
+  <button type="button" data-seccion="informes" aria-keyshortcuts="Alt+6"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-10z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h6"/></svg><span class="tab-txt">Informes</span><kbd aria-hidden="true">Alt 6</kbd></button>
+  <span class="tabs-sep" aria-hidden="true"></span>
+  <button type="button" data-seccion="datos" aria-keyshortcuts="Alt+7"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></svg><span class="tab-txt">Mis datos</span><kbd aria-hidden="true">Alt 7</kbd></button>
 </nav>
+
+<aside class="privacy-notice" aria-label="Aviso de privacidad">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+  <p><strong>Privacidad</strong> Tus archivos se procesan y se guardan solo en este navegador; TrueLift no
+  los recibe. Conserva tus copias JSON y ZIP originales: son tu respaldo.
+  <a href="../privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.</p>
+</aside>
 </div>
 
-<aside class="privacy-notice no-print" aria-label="Aviso de privacidad">
-  <strong>Privacidad</strong> tus archivos se procesan y se guardan solo en este navegador; TrueLift no
-  los recibe. Conserva tus copias JSON y ZIP originales: son tu respaldo.
-  <a href="../privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.
-</aside>
-
+<div id="principal">
 <div id="avisoGlobal" class="no-print"></div>
 
 <main id="contenido" tabindex="-1"></main>
+</div>
+</div>
 
 <div id="dropzone" class="oculto no-print">Suelta aquí tu copia JSON, tu ZIP de fotos o los dos</div>
 
@@ -77,6 +89,7 @@
 <script src="almacen.js"></script>
 <script src="analisis.js"></script>
 <script src="comparacion.js"></script>
+<script src="graficas.js"></script>
 <script src="vistas.js"></script>
 <script src="fisica-vista.js"></script>
 <script src="planificador.js"></script>
