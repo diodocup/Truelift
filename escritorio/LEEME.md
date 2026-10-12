@@ -38,6 +38,36 @@ del planificador en `PLANIFICADOR.md`.
 Teclado: Alt + 1…7 cambia de sección; Atrás y Adelante del navegador
 funcionan entre secciones.
 
+## Diseño
+
+El escritorio usa la imagen de la app móvil (`lib/tl_design.dart` en App-PRO):
+Saira Condensed para títulos y cifras grandes, Instrument Sans para el texto
+e IBM Plex Mono para toda cifra comparable, autoalojadas en `../fonts/`. El
+lima de la app (`#A3E020`) marca acción o logro y nunca es fondo de bloque;
+naranja y rojo marcan rendimiento bajo y el rojo de error queda para lo
+destructivo. Los colores van en `@media screen`: la hoja de impresión del
+Coach conserva los suyos para el papel.
+
+- **Barra lateral:** secciones agrupadas (Analizar · Planificar y compartir ·
+  Mis datos) con su atajo, hasta qué día llegan tus datos, la importación y el
+  aviso de privacidad. En pantallas estrechas pasa a ser una fila arriba.
+- **Mi resumen:** cuatro cifras clave con mini gráfica, «Lo más relevante» en
+  tarjetas, la **línea de tiempo** del bloque (rendimiento por sesión, peso y
+  entrenos sobre las mismas fechas, con fases y descargas; cada capa se puede
+  ocultar y cada punto enseña su detalle al pasar el ratón), tus ejercicios
+  con su evolución, el volumen por grupo, la recuperación de las últimas
+  semanas y accesos a lo propio del escritorio.
+- **Entrenamiento:** la ficha de un ejercicio lleva al lado la lista de tus
+  ejercicios para pasar de uno a otro. Comparar periodos empieza con una
+  franja de diferencias principales de A a B, sin declarar un ganador.
+- **Mi rutina:** el recorrido móvil → borrador → archivo exportado en tres
+  pasos numerados.
+- **Informes:** en pantalla el documento ya se ve como una hoja de papel, con
+  los mismos colores con los que se imprime.
+
+Las gráficas nuevas están en `graficas.js` (SVG en texto, sin dependencias).
+Todo color de estado va acompañado de altura, posición o texto.
+
 ## Importar tus datos
 
 1. En la app: **Ajustes → Copia de seguridad → Exportar copia** (archivo

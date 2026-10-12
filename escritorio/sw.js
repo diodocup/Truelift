@@ -10,13 +10,13 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v4`;
+const VERSION = `${PREFIJO}v5`;
 const ARCHIVOS = [
   './',
   'index.html',
   'escritorio.css',
   'importar.js', 'zip-seguro.js', 'fotos.js', 'evolucion.js', 'almacen.js', 'analisis.js',
-  'comparacion.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
+  'comparacion.js', 'graficas.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
   'informe.js', 'informe-vista.js', 'app.js',
   '../coach/styles.css',
   '../coach/motor.js', '../coach/data.js', '../coach/nutricion.js', '../coach/charts.js',
@@ -24,6 +24,14 @@ const ARCHIVOS = [
   '../coach/media/icono.png',
   '../fonts/archivo-latin.woff2', '../fonts/archivo-latin-ext.woff2',
   '../fonts/jetbrainsmono-latin.woff2', '../fonts/jetbrainsmono-latin-ext.woff2',
+  // Las tres familias de la app (escritorio.css): títulos, cuerpo y cifras.
+  '../fonts/sairacondensed-600-latin.woff2', '../fonts/sairacondensed-600-latin-ext.woff2',
+  '../fonts/sairacondensed-700-latin.woff2', '../fonts/sairacondensed-700-latin-ext.woff2',
+  '../fonts/sairacondensed-800-latin.woff2', '../fonts/sairacondensed-800-latin-ext.woff2',
+  '../fonts/instrumentsans-latin.woff2', '../fonts/instrumentsans-latin-ext.woff2',
+  '../fonts/ibmplexmono-400-latin.woff2', '../fonts/ibmplexmono-400-latin-ext.woff2',
+  '../fonts/ibmplexmono-500-latin.woff2', '../fonts/ibmplexmono-500-latin-ext.woff2',
+  '../fonts/ibmplexmono-600-latin.woff2', '../fonts/ibmplexmono-600-latin-ext.woff2',
 ];
 const URLS = new Set(ARCHIVOS.map(a => new URL(a, self.registration.scope).href));
 

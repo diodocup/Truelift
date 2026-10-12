@@ -20,6 +20,7 @@ aquí. El contrato de datos verificado está en `CONTRATO_DATOS.md`.
 | 6. Planificador personal | Hecha (ver «Fase 6») | 10 casos nuevos (uno con el lector real de la app en Dart) + 7 comprobaciones e2e Chromium + 3 del Coach |
 | 7. Informes y acabado | Hecha (ver «Fase 7») | 11 casos del informe + 2 de la caché + 1 de ayudas; 7 comprobaciones e2e nuevas (Chromium); axe-core sin incidencias; medición con 3 años de historial |
 | 8. Validación integral | Verificada en Chromium y Dart; revisión y matriz multiplataforma pendientes | 137/137 módulos, 55/55 recorridos + 13/13 integrales; ver `VALIDACION.md` |
+| 9. Rediseño con la marca de la app | Hecho (ver «Fase 9») | 136 módulos (1 omitido), 56/56 recorridos y 13/13 integrales con axe en Chromium |
 
 ## Fase 0 — Auditoría
 
@@ -837,3 +838,49 @@ modelo de contornos, sus claves estables y sus unidades canónicas.
 - La CLI local no dispone de credenciales GitHub. Se usa la conexión
   autenticada de GitHub para entregar exactamente el árbol validado y las
   evidencias, conservando `main` sin cambios.
+
+## Fase 9 — Rediseño con la marca de la app (12/10/2026)
+
+Objetivo: que el escritorio se vea como la app móvil y ordene la información
+para la pantalla grande, aportando lo que el móvil no puede (varias series
+sobre el mismo eje, lista y ficha a la vez, comparación lado a lado, papel).
+
+### Decisiones
+
+- **Tipografía y color de la app** (`lib/tl_design.dart`): Saira Condensed,
+  Instrument Sans e IBM Plex Mono autoalojadas en `../fonts/` (SIL OFL); el
+  lima de la app solo en `@media screen` para no tocar la impresión.
+- **Marco con barra lateral** en lugar de cabecera y pestañas. Se conservan
+  `#topbar`, `#tabs` y sus `data-seccion`, `#btnImportarDatos`,
+  `#btnImportarFotos`, `#espacioActual` y `.privacy-notice`, de los que
+  dependen `app.js` y las pruebas. `#estadoDatos` es nuevo (antigüedad de los
+  datos; ámbar pasadas dos semanas, como el aviso de Mi resumen).
+- **Mi resumen** reordenado: cifras clave → Lo más relevante → línea de
+  tiempo → ejercicios y volumen → constancia, peso y recuperación → accesos.
+  La antigua tarjeta «¿Estoy progresando?» pasa a la cifra «Valoración
+  general» con el mismo texto de la app.
+- **Línea de tiempo** (`graficas.js`): las doce últimas semanas hasta el
+  último registro, o desde el primero si hay menos. El eje del rendimiento se
+  ajusta a lo habitual de la persona y las sesiones fuera de escala se marcan
+  con un triángulo (su valor real está en el detalle). Las descargas se
+  separan del trazo. Las capas se ocultan con una clase, sin volver a pintar.
+- **Ficha de ejercicio** con la lista al lado (oculta por debajo de 1100 px).
+- **Comparar periodos**: franja A → B sin colores de mejor o peor.
+- **Informe**: vista previa en papel en pantalla con variables de color
+  acotadas a `.informe-doc`.
+- **Bienvenida** con zona de importación, pasos y qué aporta cada versión.
+- `sw.js` sube a `v5` y precachea las fuentes nuevas y `graficas.js`; las
+  pruebas que esperaban `v4` se actualizan.
+
+### Verificación (Chromium 141, Node 22)
+
+- `node --test escritorio/tests/*.test.mjs`: 136 superadas, 1 omitida.
+- `node escritorio/tests/e2e.mjs`: 56/56.
+- `node escritorio/tests/integral.e2e.mjs` con axe-core 4.10.2: 13/13
+  (WCAG 2.1 A/AA en las siete secciones a 1366 y 420 px, sin desbordamiento,
+  sin peticiones externas ni errores JavaScript).
+
+### Pendiente
+
+- Revisión visual en Safari y Firefox.
+- El diseño de referencia está en un lienzo de diseño fuera del repositorio.

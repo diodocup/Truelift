@@ -7,10 +7,11 @@ import zlib from 'node:zlib';
 const dir = new URL('../', import.meta.url);
 const cargados = new Set();
 export function cargar(...archivos){
-  for (const a of archivos){
+  // vistas.js usa las gráficas del rediseño: se cargan antes, como en index.html.
+  for (const a of archivos.flatMap(x => x === 'vistas.js' ? ['graficas.js', x] : [x])){
     if (cargados.has(a)) continue;
     const codigo = fs.readFileSync(new URL(a, dir), 'utf8');
-    const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'comparacion.js': 'Comparacion', 'vistas.js': 'VistasEsc',
+    const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'comparacion.js': 'Comparacion', 'vistas.js': 'VistasEsc', 'graficas.js': 'GraficasEsc',
                      'fotos.js': 'FotosTL', 'evolucion.js': 'Evolucion', 'fisica-vista.js': 'FisicaVista', 'almacen.js': 'Almacen',
                      'planificador.js': 'Planificador', 'rutina-vista.js': 'RutinaVista', 'informe.js': 'Informe', 'informe-vista.js': 'InformeVista' }[a];
     vm.runInThisContext(`${codigo}\n;globalThis.${nombre} = ${nombre};`, { filename: a });

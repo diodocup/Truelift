@@ -22,7 +22,7 @@ const F = {
   series(arr){ return arr.map(v => v == null ? '·' : String(v)).join(' / '); },
 };
 
-const tarjeta = (titulo, cuerpo, extra = '') => `<section class="card"${extra}><h2>${esc(titulo)}</h2>${cuerpo}</section>`;
+const tarjeta = (titulo, cuerpo, extra = '', clase = '') => `<section class="card${clase ? ` ${clase}` : ''}"${extra}><h2>${esc(titulo)}</h2>${cuerpo}</section>`;
 const vacio = msg => `<p class="muted">${msg}</p>`;
 const cifra = (valor, etiqueta, aviso = false) =>
   `<div class="cifra${aviso ? ' aviso' : ''}"><b>${esc(valor)}</b><span>${esc(etiqueta)}</span></div>`;
@@ -85,32 +85,193 @@ function resumen(M, ctx){
     out.push(`<div class="cabecera-seccion"><h1>Mi resumen</h1><p class="muted">Tu copia aún no tiene entrenamientos ni registros. Cuando entrenes con la app, exporta una copia nueva e impórtala.</p></div>`);
     return out.join('');
   }
+  const P = Analisis.peso(M);
   out.push(`<div class="cabecera-seccion"><h1>Mi resumen</h1>
     <p class="muted">Tus datos llegan hasta el <b>${F.dia(r.ultimoRegistro)}</b> (${antig}). Último entrenamiento: ${F.dia(r.ultimoEntreno)}. Copia importada el ${F.dia(new Date(ctx.inst.importadoEn))}.
-    ${dias > 14 ? '<br>Para ver lo más reciente, exporta una copia nueva en el móvil e impórtala.' : ''}</p></div>`);
+    ${dias > 14 ? '<br>Para ver lo más reciente, exporta una copia nueva en el móvil e impórtala.' : ''}</p>
+    ${contextoBloque(M, P)}</div>`);
 
-  // --- de un vistazo ---
-  const hasta = soloDia(M.ref), desde = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate() - (Analisis.VENTANA_DIAS - 1));
-  const ult = Analisis.enPeriodo(M.sesiones, desde, hasta);
-  const kcifras = [
-    cifra(String(ult.length), 'sesiones de fuerza en las últimas 4 semanas'),
-    cifra(F.num(ult.length / 4, 1), 'por semana de media'),
-    cifra(M.raw.dias ? `${M.raw.dias}` : '—', 'días por semana en tu rutina actual'),
-    cifra(String(M.sesiones.length), 'sesiones de fuerza en total'),
-  ];
-  const P = Analisis.peso(M);
-  if (P && P.actual) kcifras.push(cifra(F.kg(P.actual.tendenciaKg), `peso tendencia (${F.corta(P.actual.fecha)})`));
-  else if (M.pc) kcifras.push(cifra(F.kg(M.pc), 'peso de tu perfil'));
-  out.push(tarjeta('De un vistazo', `<div class="cifras">${kcifras.join('')}</div>
-    <p class="muted" style="font-size:12.5px">Periodo: ${F.dia(desde)} – ${F.dia(hasta)}. Las últimas semanas terminan en tu último registro, no en el día de hoy.</p>`));
-
+  // --- de un vistazo: cuatro cifras con su mini gráfica ---
+  out.push(cifrasClave(M, P));
   // --- conclusiones priorizadas ---
   out.push(tarjetaConclusiones(M));
-
+  // --- todo el bloque sobre un mismo eje de fechas ---
+  out.push(tarjetaLineaTiempo(M, ctx.capasOcultas || new Set()));
   // --- detalle ---
-  out.push(`<div class="grid resumen-grid">${[tarjetaConstancia(M), tarjetaValoracion(M), tarjetaEjercicios(M),
-    tarjetaComparables(M), tarjetaPeso(M, P), tarjetaRecuperacion(M)].filter(Boolean).join('')}</div>`);
+  out.push(`<div class="resumen-fila"><div class="resumen-principal">${tarjetaComparables(M)}</div>
+    <div class="resumen-lateral">${[tarjetaEjercicios(M), tarjetaVolumenGrupos(M)].filter(Boolean).join('')}</div></div>`);
+  out.push(`<div class="grid resumen-grid">${[tarjetaConstancia(M), tarjetaPeso(M, P), tarjetaRecuperacion(M)].filter(Boolean).join('')}</div>`);
+  out.push(tarjetaSiguiente());
   return out.join('');
+}
+
+/* Rutina y fase en una línea, bajo el título. */
+function contextoBloque(M, P){
+  const partes = [];
+  if (M.raw.dias) partes.push(`Rutina de <b>${esc(M.raw.dias)} días</b> · ${M.sistema === 'simple' ? 'progresión simple' : 'progresión doble'}`);
+  const f = P && P.fase;
+  if (f && f.tipo !== 'MAINTENANCE') partes.push(`fase de <b>${esc((FASE_NUT[f.tipo] || f.tipo).toLowerCase())}</b>${f.inicio ? ` desde el ${F.corta(f.inicio)}` : ''}`);
+  else if (f) partes.push('fase de <b>mantenimiento</b>');
+  return partes.length ? `<p class="resumen-contexto">${partes.join(' · ')}</p>` : '';
+}
+
+// ---------- cifras clave ----------
+const ICONO_TONO = {
+  verde: '<path d="M3.5 16.5l6-6 4 4 7-7"/><path d="M15 7.5h5.5V13"/>',
+  rojo: '<path d="M3.5 7.5l6 6 4-4 7 7"/><path d="M15 16.5h5.5V11"/>',
+  ambar: '<path d="M3 12c2.5-5 5-5 7.5 0s5 5 7.5 0 2.5-3 3-3"/>',
+  gris: '<path d="M4 12h16"/><path d="M15 7l5 5-5 5"/>',
+};
+const icono = (d, clase = '') => `<svg class="icono ${clase}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${d}</svg>`;
+
+function kpi(titulo, cuerpo, { tono = '', id = '' } = {}){
+  return `<article class="card kpi${tono ? ` kpi-${tono}` : ''}"${id ? ` aria-labelledby="${id}"` : ''}><h2${id ? ` id="${id}"` : ''}>${esc(titulo)}</h2>${cuerpo}</article>`;
+}
+const grande = (valor, resto = '', logro = false) => `<p class="kpi-cifra${logro ? ' logro' : ''}">${esc(valor)}${resto ? ` <span>${esc(resto)}</span>` : ''}</p>`;
+
+function cifrasClave(M, P){
+  return `<section class="kpis" aria-label="De un vistazo">${[kpiDias(M), kpiValoracion(M), kpiPeso(M, P), kpiEstado(M)].join('')}</section>`;
+}
+
+function kpiDias(M){
+  const k = Analisis.constancia(M);
+  const primerLunes = M.sesiones.length ? Analisis._lunes(M.sesiones[0].fecha) : null;
+  const semanas = Analisis.constancia(M, { semanas: 8 }).semanas.filter(s => primerLunes && +s.inicio >= +primerLunes);
+  let racha = 0;
+  for (let i = semanas.length - 1; i >= 0 && semanas[i].previstas != null && semanas[i].dias >= semanas[i].previstas; i--) racha++;
+  const barras = GraficasEsc.barrasSemanas(semanas, `Días con sesión por semana: ${semanas.map(s => `${s.dias}${s.previstas != null ? ` de ${s.previstas}` : ''}`).join(', ')}`);
+  const pie = semanas.length ? `<p class="kpi-pie"><span>${F.corta(semanas[0].inicio)}</span><span>${racha > 1 ? `${racha} semanas seguidas con lo previsto` : 'por semana'}</span></p>` : '';
+  if (k.conocidas){
+    return kpi('Días entrenados', `${grande(String(k.hechas), `/ ${k.previstas}`, k.hechas >= k.previstas)}
+      <p class="kpi-txt">días con sesión de los previstos en tus últimas semanas completas</p>${barras}${pie}`, { id: 'kpi-dias' });
+  }
+  const hasta = soloDia(M.ref), desde = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate() - (Analisis.VENTANA_DIAS - 1));
+  const ult = Analisis.enPeriodo(M.sesiones, desde, hasta);
+  return kpi('Días entrenados', `${grande(String(ult.length))}<p class="kpi-txt">sesiones de fuerza en las últimas 4 semanas</p>${barras}${pie}`, { id: 'kpi-dias' });
+}
+
+function kpiValoracion(M){
+  const v = M.valoracion;
+  const enlace = `<div class="kpi-acciones">${ir('entrenamiento:rendimiento', 'Ver rendimiento por sesión')}</div>`;
+  if (v.descarga) return kpi('Valoración general', `<p class="kpi-titular">${icono(ICONO_TONO.gris)}Semana de descarga</p>
+    <p class="kpi-txt">El objetivo ahora es recuperar, así que la app no valora el rendimiento hasta que termine.</p>${enlace}`, { id: 'kpi-valoracion' });
+  if (!v.tendencia) return kpi('Valoración general', `<p class="kpi-titular">${icono(ICONO_TONO.gris)}Datos insuficientes</p>
+    <p class="kpi-txt">Hacen falta más sesiones recientes con rendimiento medido para valorar la tendencia.</p>${enlace}`, { id: 'kpi-valoracion' });
+  const d = VALORACION[v.tendencia];
+  const titulo = d.todos || d[fase(M.raw)];
+  const n = v.ventana.length;
+  const pct = v.ventana.map(p => p.pct);
+  const mini = GraficasEsc.puntosRendimiento(pct, `Rendimiento de las sesiones de la valoración frente a tu nivel: ${pct.map(p => F.signo(p)).join(', ')}`);
+  return kpi('Valoración general', `<p class="kpi-titular">${icono(ICONO_TONO[d.tono] || ICONO_TONO.gris, d.tono)}${esc(titulo)}</p>
+    <p class="kpi-txt">${esc(d.frase(n))}</p>${mini}
+    <p class="kpi-pie"><span>${F.corta(v.ventana[0].fecha)}</span><span>${F.corta(v.ventana[n - 1].fecha)}</span></p>`, { tono: d.tono, id: 'kpi-valoracion' });
+}
+
+function kpiPeso(M, P){
+  if (!P || !P.actual){
+    return kpi('Peso tendencia', M.pc
+      ? `${grande(F.num(M.pc, 1), 'kg')}<p class="kpi-txt">peso de tu perfil. Tu copia no trae pesajes.</p>`
+      : '<p class="kpi-txt">Tu copia no trae pesajes.</p>', { id: 'kpi-peso' });
+  }
+  const N = M.datos.nut, f = P.fase;
+  const cambio = P.cambioKg != null ? `<b class="mono">${P.cambioKg > 0 ? '+' : P.cambioKg < 0 ? '−' : ''}${F.num(Math.abs(P.cambioKg), 1)} kg</b> en las últimas semanas` : 'Sin cambio calculable en las últimas semanas';
+  const ritmo = P.tasaReal != null ? ` · ritmo <b class="mono">${F.signo(P.tasaReal, 1)}</b>/sem` : '';
+  let extra = '';
+  const inicio = f && f.inicio && N.serie && !N.serie.vacia ? N.serie.puntos.find(p => +p.fecha >= +soloDia(f.inicio) && p.tendenciaKg > 0) : null;
+  if (f && f.pesoObjetivoKg > 0 && inicio && Math.abs(inicio.tendenciaKg - f.pesoObjetivoKg) > 0.05){
+    const prog = Math.max(0, Math.min(1, (inicio.tendenciaKg - P.actual.tendenciaKg) / (inicio.tendenciaKg - f.pesoObjetivoKg)));
+    const pctTxt = Math.round(prog * 100);
+    extra = `<div class="kpi-progreso" role="img" aria-label="Llevas el ${pctTxt} % del camino hacia tu peso objetivo"><i style="width:${pctTxt}%"></i></div>
+      <p class="kpi-pie"><span>${F.num(inicio.tendenciaKg, 1)} al empezar la fase</span><span>objetivo <b>${F.num(f.pesoObjetivoKg, 1)}</b></span></p>`;
+  } else if (N.serie && !N.serie.vacia){
+    const desde = +soloDia(M.ref) - 83 * 86400000;
+    const serie = N.serie.puntos.filter(p => p.tendenciaKg > 0 && +p.fecha >= desde && +p.fecha <= +M.ref).map(p => p.tendenciaKg);
+    extra = `<div class="kpi-linea">${GraficasEsc.linea(serie, { w: 230, h: 48, etiqueta: 'Peso tendencia de las últimas semanas' })}</div>`;
+  }
+  return kpi('Peso tendencia', `${grande(F.num(P.actual.tendenciaKg, 1), 'kg')}<p class="kpi-txt">${cambio}${ritmo}</p>${extra}`, { id: 'kpi-peso' });
+}
+
+const BANDA_TXT = { verde: 'Verde', ambar: 'Ámbar', rojo: 'Rojo' };
+function kpiEstado(M){
+  const R = M.datos.readiness.filter(r => r.estadoEntrenar != null && +r.fecha <= +M.ref);
+  if (!R.length) return kpi('Estado para entrenar', `<p class="kpi-txt">${M.raw.readinessActivo === true ? 'Aún no hay cuestionarios diarios en tu copia.' : 'No tienes activado el cuestionario diario en la app.'}</p>`, { id: 'kpi-estado' });
+  const ult = R[R.length - 1];
+  const banda = bandaEstado(ult.estadoEntrenar);
+  const hasta = soloDia(M.ref);
+  const porDia = new Map(R.map(r => [+soloDia(r.fecha), r.estadoEntrenar]));
+  const dias = [];
+  for (let i = 13; i >= 0; i--){ const f = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate() - i); dias.push({ fecha: f, valor: porDia.has(+f) ? porDia.get(+f) : null }); }
+  const mini = GraficasEsc.barrasEstado(dias, `Estado para entrenar de los últimos días: ${dias.map(d => d.valor == null ? 'sin dato' : Math.round(d.valor)).join(', ')}`);
+  return kpi('Estado para entrenar', `<div class="kpi-cab-estado">${grande(String(Math.round(ult.estadoEntrenar)), '/ 100')}${chip(banda === 'verde' ? 'verde' : banda, BANDA_TXT[banda])}</div>
+    <p class="kpi-txt">Tu último cuestionario, el ${F.dia(ult.fecha)}.</p>${mini}
+    <p class="kpi-pie"><span>${F.corta(dias[0].fecha)}</span><span>${F.corta(dias[dias.length - 1].fecha)}</span></p>`, { id: 'kpi-estado' });
+}
+
+// ---------- línea de tiempo ----------
+const CAPAS = [['rend', 'Rendimiento'], ['peso', 'Peso'], ['entrenos', 'Entrenos']];
+function tarjetaLineaTiempo(M, ocultas){
+  const N = M.datos.nut;
+  const pesajes = N && N.pesajes ? N.pesajes.filter(p => !p.enmascarado && p.pesoKg > 0) : [];
+  if (!M.sesiones.length && !pesajes.length) return '';
+  const hasta = soloDia(M.ref);
+  const primeros = [M.sesiones[0] && M.sesiones[0].fecha, pesajes[0] && pesajes[0].fecha].filter(Boolean);
+  const inicio = new Date(Math.min(...primeros.map(d => +soloDia(d))));
+  const desde = new Date(Math.max(+Analisis._dias(Analisis._lunes(hasta), -77), +Analisis._lunes(inicio)));
+  const dentro = f => f && +soloDia(f) >= +desde && +soloDia(f) <= +hasta;
+  const sesiones = M.sesiones.filter(s => dentro(s.fecha)).map(s => ({ fecha: s.fecha, dia: s.dia, valor: s.bruto, descarga: s.descarga, sinBase: s.sinBase }));
+  const peso = pesajes.length ? {
+    tendencia: (N.serie && !N.serie.vacia ? N.serie.puntos : []).filter(p => p.tendenciaKg > 0 && dentro(p.fecha)).map(p => ({ fecha: p.fecha, kg: p.tendenciaKg })),
+    pesajes: pesajes.filter(p => dentro(p.fecha)).map(p => ({ fecha: p.fecha, kg: p.pesoKg })),
+    objetivo: N.fase && N.fase.pesoObjetivoKg > 0 ? N.fase.pesoObjetivoKg : null,
+  } : null;
+  const nutri = M.datos.nutricion || {};
+  const fases = [...(nutri.fasesCerradas || []), ...(nutri.fase ? [nutri.fase] : [])]
+    .filter(f => f && f.inicio && FASE_NUT[f.tipo])
+    .map(f => ({ tipo: f.tipo, texto: FASE_NUT[f.tipo], desde: soloDia(f.inicio), hasta: soloDia(f.fin || hasta) }))
+    .filter(f => +f.hasta >= +desde && +f.desde <= +hasta && +f.hasta >= +f.desde)
+    .map(f => ({ ...f, desde: +f.desde < +desde ? desde : f.desde, hasta: +f.hasta > +hasta ? hasta : f.hasta }));
+  const cardio = (M.datos.cardio || []).map(c => c.fecha).filter(dentro);
+  const botones = CAPAS.map(([k, t]) => `<button type="button" class="lt-capa" data-capa-btn="${k}" aria-pressed="${ocultas.has(k) ? 'false' : 'true'}"><i aria-hidden="true"></i>${t}</button>`).join('');
+  return `<section class="card linea-tiempo${[...ocultas].map(k => ` oculta-${k}`).join('')}" id="lineaTiempo" aria-labelledby="t-linea">
+    <div class="lt-cabecera"><div class="lt-titulo"><h2 id="t-linea">Tu bloque en una línea de tiempo</h2><span class="chip verde">Solo en el escritorio</span>
+      <p class="muted">Rendimiento, peso y entrenos sobre las mismas fechas, para ver cómo se relacionan. Pasa el ratón por un punto para ver su detalle.</p></div>
+      <div class="lt-capas" role="group" aria-label="Capas visibles">${botones}</div></div>
+    <div class="lt-desplazable tabla-scroll"><div class="lt-lienzo">${GraficasEsc.lineaTiempo({ desde, hasta, sesiones, peso, cardio, fases })}</div></div>
+    <p class="muted lt-pie">Del ${F.dia(desde)} al ${F.dia(hasta)}, tu último registro.</p>
+    ${ayuda('Cada punto de arriba es una sesión de fuerza comparada con tu nivel reciente en ese día de la rutina: por encima en lima y por debajo en naranja. Las franjas grises son semanas de descarga, que no cuentan para el rendimiento. El peso es la tendencia que calcula la app, con tus pesajes de fondo.')}
+  </section>`;
+}
+
+// ---------- volumen por grupo ----------
+function tarjetaVolumenGrupos(M){
+  let series, sub;
+  if (M.planConocido && M.planMod.length){
+    series = Analisis.volumenPlan(M, M.planMod).series;
+    sub = 'Series por semana en tu rutina actual';
+  } else {
+    const ult = Analisis.volumen(M, { gran: 'semana' }).cubos.filter(c => !c.enCurso && c.dias === 7).pop();
+    if (!ult) return null;
+    series = ult.series;
+    sub = `Series de tu última semana completa (${F.corta(ult.inicio)}–${F.corta(new Date(+ult.finExclusivo - 86400000))})`;
+  }
+  const filas = [...series].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  if (!filas.length) return null;
+  const max = filas[0][1];
+  return tarjeta('Volumen por grupo', `<p class="muted tarjeta-sub">${sub}</p>
+    <ul class="vol-lista">${filas.map(([g, v]) => `<li><span>${esc(g)}</span><span class="vol-barra" aria-hidden="true"><i style="width:${(v / max * 100).toFixed(1)}%"></i></span><b>${F.num(v, 1).replace(/,0$/, '')}</b></li>`).join('')}</ul>
+    <div class="fila-botones">${ir('entrenamiento:volumen', 'Ver volumen por semana')}${ir('rutina', 'Ajustar en Mi rutina')}</div>`);
+}
+
+// ---------- accesos del escritorio ----------
+const TILES = [
+  ['informes', 'Informe del último mes', 'Tu mes en un documento para imprimir o guardar en PDF', '<path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-10z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h6"/>'],
+  ['entrenamiento:comparar', 'Compara dos periodos', 'Tus últimas semanas frente a las anteriores, lado a lado', '<path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/>'],
+  ['fisica', 'Compara tus fotos', 'Dos fechas lado a lado, con el peso de cada una', '<rect x="3" y="5" width="8" height="14" rx="2"/><rect x="13" y="5" width="8" height="14" rx="2"/>'],
+  ['rutina', 'Prepara tu próximo bloque', 'Todos los días a la vista y exportación a la app', '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/>'],
+];
+function tarjetaSiguiente(){
+  return `<section class="siguiente" aria-labelledby="t-siguiente"><h2 id="t-siguiente">Sigue en el escritorio</h2>
+    <div class="tiles">${TILES.map(([d, t, s, ic]) => `<button type="button" class="tile" data-ir="${d}">${icono(ic, 'tile-ico')}<span class="tile-txt"><b>${t}</b><span>${s}</span></span>${icono('<path d="M9 6l6 6-6 6"/>', 'tile-flecha')}</button>`).join('')}</div></section>`;
 }
 
 const FASE_NUT = { DEFICIT: 'Déficit', SURPLUS: 'Superávit', MAINTENANCE: 'Mantenimiento' };
@@ -184,13 +345,21 @@ const LECTURA = { sube: ['verde', 'Al alza'], baja: ['ambar', 'A la baja'], sinC
 function tarjetaComparables(M){
   const lista = Analisis.comparables(M);
   if (!lista.length) return tarjeta('Evolución de tus ejercicios', vacio('No entrenaste ejercicios con carga en las últimas semanas.'));
+  // Evolución larga (últimas semanas de la línea de tiempo) para la mini
+  // línea; la lectura y el cambio siguen siendo los de la ventana corta.
+  const desdeLargo = +soloDia(M.ref) - 83 * 86400000;
   const filas = lista.map(x => {
     const [cl, txt] = LECTURA[x.lectura];
-    return [`<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}">${esc(x.nombre)}</button>`,
-      `${x.n} <span class="muted">de ${x.enPeriodo}</span>`, x.inicio != null ? F.kg(x.inicio) : '—', x.fin != null ? F.kg(x.fin) : '—',
-      x.deltaPct != null ? F.signo(x.deltaPct) : '—', chip(cl, txt, x.lectura !== 'insuficiente' && !x.firme ? 'Pocas sesiones comparables: no se usa como conclusión' : '')];
+    const serie = x.ej.puntos.filter(p => p.e1rmMarca != null && +p.fecha >= desdeLargo).map(p => p.e1rmMarca);
+    const sub = [x.ej.lineas[0] && x.ej.lineas[0].dia, x.ej.grupo].filter(Boolean).map(esc).join(' · ');
+    return [`<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}">${esc(x.nombre)}</button>${sub ? `<span class="ej-sub">${sub}</span>` : ''}`,
+      GraficasEsc.linea(serie, { etiqueta: serie.length > 1 ? `1RM estimado de ${x.nombre} en las últimas semanas: de ${F.kg(serie[0])} a ${F.kg(serie[serie.length - 1])}` : '' }),
+      `${x.inicio != null && x.fin != null ? `<span class="mono nowrap"><span class="muted">${F.num(x.inicio, 1)} →</span> <b>${F.kg(x.fin)}</b></span>` : '—'}
+        <span class="ej-sub">${x.n} de ${F.plural(x.enPeriodo, 'sesión comparable', 'sesiones comparables')}</span>`,
+      x.deltaPct != null ? `<b class="mono ${x.deltaPct > 0 ? 'sube' : x.deltaPct < 0 ? 'baja' : ''}">${F.signo(x.deltaPct)}</b>` : '—',
+      chip(cl, txt, x.lectura !== 'insuficiente' && !x.firme ? 'Pocas sesiones comparables: no se usa como conclusión' : '')];
   });
-  return tarjeta('Evolución de tus ejercicios', `${tabla(['Ejercicio', 'Sesiones comparables', 'Al principio', 'Al final', 'Cambio', 'Lectura'], filas, { caption: 'Evolución del 1RM estimado en las últimas semanas' })}
+  return tarjeta('Evolución de tus ejercicios', `${tabla(['Ejercicio', 'Evolución', '1RM estimado', 'Cambio', 'Lectura'], filas, { caption: 'Evolución del 1RM estimado en las últimas semanas', clase: 'tabla-ejercicios' })}
     <div class="fila-botones">${ir('entrenamiento:comparar', 'Comparar dos periodos')}</div>
     ${ayuda('Compara el 1RM estimado del principio y del final de tus últimas semanas, solo con las sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias ni cambios de un día) y con la misma modalidad de series. «Sin cambios claros» describe una diferencia pequeña; no significa que estés estancado. Con pocas sesiones comparables la lectura es orientativa y no se usa como conclusión. El 1RM es una estimación a partir de tus series.')}`);
 }
@@ -226,28 +395,17 @@ function tarjetaRecuperacion(M){
       <p class="muted" style="font-size:13px">Periodo anterior (${F.corta(b.desde)}–${F.corta(b.hasta)}): ${txt(b)}${b.registrados ? ` (${b.bajos} de ${F.plural(b.registrados, 'día', 'días')} con estado bajo)` : ''}.</p>`;
   }
   if (rc.vfcBaja.length) cuerpo += `<p>Tu VFC ha estado por debajo de tu referencia de forma sostenida en ${F.plural(rc.vfcBaja.length, 'noche reciente', 'noches recientes')}.</p>`;
+  // Las últimas semanas del estado para entrenar, día a día.
+  const R = M.datos.readiness.filter(r => r.estadoEntrenar != null);
+  if (a.activo && R.length){
+    const hasta = soloDia(M.ref), porDia = new Map(R.map(r => [+soloDia(r.fecha), r.estadoEntrenar]));
+    const dias = [];
+    for (let i = Analisis.VENTANA_DIAS - 1; i >= 0; i--){ const f = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate() - i); dias.push({ fecha: f, valor: porDia.has(+f) ? porDia.get(+f) : null }); }
+    if (dias.some(d => d.valor != null)) cuerpo += `<div class="rec-grafica">${GraficasEsc.estadoPeriodo(dias)}
+      <div class="leyenda"><span><i style="background:var(--lima)"></i>Verde</span><span><i style="background:var(--ambar)"></i>Ámbar</span><span><i style="background:var(--rojo-vivo)"></i>Rojo</span></div></div>`;
+  }
   return tarjeta('Recuperación', `${cuerpo}
     <div class="fila-botones">${ir('recuperacion', 'Ver recuperación')}</div>`);
-}
-
-function tarjetaValoracion(M){
-  const v = M.valoracion;
-  if (v.descarga) return tarjeta('¿Estoy progresando?', `<p><b>Semana de descarga.</b> El objetivo ahora es recuperar, así que la app no valora el rendimiento hasta que termine.</p>`);
-  if (!v.tendencia){
-    return tarjeta('¿Estoy progresando?', `<p><b>Datos insuficientes.</b> Hacen falta más sesiones recientes con rendimiento medido para valorar la tendencia.</p>
-      <p class="muted" style="font-size:12.5px">Periodo revisado: ${F.dia(new Date(+M.ref - Motor.VALORACION_DIAS * 86400000))} – ${F.dia(M.ref)}. Las descargas y las sesiones que la app guardó sin referencia previa no cuentan.</p>
-      <div class="fila-botones">${ir('entrenamiento:rendimiento', 'Ver rendimiento por sesión')}</div>`);
-  }
-  const d = VALORACION[v.tendencia];
-  const titulo = d.todos || d[fase(M.raw)];
-  const n = v.ventana.length;
-  const filas = v.ventana.map(p => [F.dia(p.fecha), esc(p.log.dia || '—'), F.signo(p.pct)]);
-  return tarjeta('¿Estoy progresando?', `<p class="valoracion"><span class="chip ${d.tono}">${esc(titulo)}</span> ${esc(d.frase(n))}</p>
-    <p class="muted" style="font-size:13px">Periodo: ${F.dia(v.ventana[0].fecha)} – ${F.dia(v.ventana[n - 1].fecha)}. Es la misma lectura que la tarjeta de valoración de Progreso en la app, con los datos hasta tu último registro.</p>
-    <details class="detalle"><summary>Datos que la respaldan</summary>
-      ${tabla(['Fecha', 'Sesión', 'Rendimiento frente a tu nivel'], filas, { caption: 'Sesiones de la valoración' })}
-      <p class="muted" style="font-size:12.5px">Cada cifra es el rendimiento que la app calculó y guardó al terminar la sesión. La app puede añadir contexto de tu fase de nutrición que aquí no se reproduce.</p></details>
-    <div class="fila-botones">${ir('entrenamiento:rendimiento', 'Ver rendimiento por sesión')}</div>`);
 }
 
 // ---------------------------------------------------------------
@@ -309,7 +467,20 @@ function compararPeriodos(M, st){
     ['Tiempo por sesión (mediana)', muestra(a.duracion, 'min'), muestra(b.duracion, 'min')],
     ['Rutinas registradas', ...[a, b].map(p => p.rutinas.map(k => esc(rutinaTxt(k))).join('<br>') || '—')],
   ];
-  const out = [selector, tarjeta('Muestra y contexto de entrenamiento',
+  // Franja de diferencias principales: de A a B, sin colores de «mejor» o
+  // «peor» (la comparación no declara ganador).
+  const tileAB = (titulo, va, vb, nota, dif) => `<article class="ab-tile"><h3>${titulo}</h3>
+    <p class="ab-valores"><span class="ab-a">${va}</span><svg class="icono" viewBox="0 0 24 24" aria-label="pasa a" role="img"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="ab-b">${vb}</span></p>
+    <p class="ab-pie"><span>${nota}</span>${dif && dif !== '—' ? `<span class="chip gris">${dif}</span>` : ''}</p></article>`;
+  const constTxt = p => p.conocidas ? `${p.hechasConPlan}/${p.previstas}` : '—';
+  const pesoA = C.contextoA.peso.mediana, pesoB = C.contextoB.peso.mediana;
+  const resumenAB = `<section class="ab-resumen" aria-label="Diferencias principales entre A y B">
+    ${tileAB('Sesiones de fuerza', String(a.sesiones.length), String(b.sesiones.length), `${a.dias} y ${b.dias} días`, diff(a.sesiones.length, b.sesiones.length).replace(/,00$/, ''))}
+    ${tileAB('Por semana completa', numero(a.frecuencia), numero(b.frecuencia), 'sesiones de media', diff(a.frecuencia, b.frecuencia))}
+    ${tileAB('Días previstos', constTxt(a), constTxt(b), 'con sesión, frente a tu rutina', '')}
+    ${tileAB('Peso del periodo', numero(pesoA, 'kg'), numero(pesoB, 'kg'), 'mediana de tus pesajes', diff(pesoA, pesoB, 'kg'))}
+  </section>`;
+  const out = [selector, resumenAB, tarjeta('Muestra y contexto de entrenamiento',
     `<p class="muted">Diferencias descriptivas: no hay un periodo ganador ni se demuestra qué provocó los cambios. «—» significa dato ausente o muestra insuficiente, no cero.</p>
     ${C.avisos.map(t => `<p class="aviso-comparacion">${esc(t)}</p>`).join('')}${tabla(cab, filas, { caption: 'Duración y muestras de los periodos' })}
     ${ayuda('Las semanas son de lunes a domingo. Las medias usan solo semanas completas incluidas en la selección y entre el primer registro disponible y el último. Las semanas sin entrenamientos dentro de esa cobertura cuentan como cero sesiones registradas. La copia puede contener huecos: cero registros no demuestra que no entrenaras. Los días previstos usan la identidad histórica acotada por sesiones, nunca la frecuencia actual sin comprobarla. El tiempo excluye duraciones ausentes, no positivas o marcadas como anómalas.')}`)];
@@ -320,14 +491,16 @@ function compararPeriodos(M, st){
   out.push(tarjeta('Semanas completas y parciales', `<details class="detalle"><summary>Ver semanas y sesiones de origen</summary>
     ${tabla(['Periodo', 'Fechas incluidas', 'Tipo', 'Sesiones (abrir detalle)', 'Días con sesión', 'Días previstos'], [...semanas(a, 'A'), ...semanas(b, 'B')], { caption: 'Semanas y sesiones incluidas en cada periodo' })}</details>`));
 
+  const maxDif = Math.max(5, ...C.ejercicios.comunes.map(e => Math.abs(e.deltaPct || 0)));
   const ejerc = C.ejercicios.comunes.map(e => {
     const motivos = p => Object.entries(p.excluidos).map(([k, n]) => `${n} ${Analisis.MOTIVO_TXT[k] || k}`).join(', ');
     const valor = p => p.n ? `${numero(p.mediana, 'kg')} · n=${p.n} de ${p.registradas}<br><span class="muted">${esc(motivos(p))}</span>` : `— · 0 de ${p.registradas}<br><span class="muted">${esc(motivos(p))}</span>`;
     const avisos = [e.deltaPct == null ? (e.pesoCorporal ? 'Peso corporal histórico no reconstruible: sin diferencia estimada.' : 'No hay sesiones válidas suficientes en los dos periodos con esta modalidad para calcular una diferencia.') : '',
       e.seriesDistintas ? 'Cambió el número de series: no comparar tonelaje ni repeticiones totales.' : '',
       e.cambioRutina ? 'Rutinas distintas; contexto diferente.' : ''].filter(Boolean).join(' ');
+    const barra = e.deltaPct == null ? '' : `<span class="dif-barra" aria-hidden="true"><i class="${e.deltaPct < 0 ? 'neg' : 'pos'}" style="width:${(Math.min(1, Math.abs(e.deltaPct) / maxDif) * 50).toFixed(1)}%"></i></span>`;
     return [`<button type="button" class="enlace" data-ejercicio="${esc(e.nombre)}">${esc(e.nombre)}</button><br><span class="muted">${esc(Analisis.MODALIDAD_TXT[e.config])}</span>`,
-      valor(e.a), valor(e.b), F.signo(e.deltaPct), esc(avisos)];
+      valor(e.a), valor(e.b), `<span class="dif-celda">${barra}<span>${F.signo(e.deltaPct)}</span></span>`, esc(avisos)];
   });
   out.push(tarjeta('Ejercicios comunes · 1RM estimado', `${ejerc.length ? tabla(['Ejercicio / modalidad', 'Mediana A', 'Mediana B', 'Diferencia B − A', 'Limitaciones'], ejerc, { caption: 'Comparación de ejercicios comunes' }) : vacio('No hay ejercicios realizados en ambos periodos.')}
     <p class="muted">Solo A: ${esc(C.ejercicios.soloA.join(', ') || 'ninguno')}. Solo B: ${esc(C.ejercicios.soloB.join(', ') || 'ninguno')}.</p>
@@ -493,7 +666,10 @@ function fichaEjercicio(M, nombre, st = {}){
     return `<p class="sub-h">${esc(s.dia)} · objetivo ${esc(String(s.reps))} reps</p>
       ${tabla(['Fecha', `Carga (${unidadCarga})`, 'Reps de las series principales', 'Objetivo', 'Contador'], filas, { caption: `Sesiones que cuentan para la progresión en ${s.dia}` })}`;
   });
+  const etiquetas = [...new Set(ej.lineas.map(l => l.dia).filter(Boolean)), ej.grupo,
+    ...ej.lineas.slice(0, 1).map(l => [l.series && `${l.series} × ${l.reps || '—'}`, l.rir != null && `RIR ${l.rir}`].filter(Boolean).join(' · '))].filter(Boolean);
   out.push(tarjeta(nombre, `
+    ${etiquetas.length ? `<p class="ficha-etiquetas">${etiquetas.map(t => `<span>${esc(String(t))}</span>`).join('')}</p>` : ''}
     <p>${est.map(({ s, t }) => `${chip(t.clase, t.corto)}${s.dia ? ` <span class="muted">${esc(s.dia)}</span>` : ''}`).join(' · ')}</p>
     ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
     ${porQue.length ? `<details class="detalle"><summary>Por qué este estado</summary>${porQue.join('')}
@@ -503,7 +679,7 @@ function fichaEjercicio(M, nombre, st = {}){
       ${cifra(F.dia(ej.ultimo && ej.ultimo.fecha), 'última')}
       ${!ej.porTiempo ? cifra(ej.marca ? F.kg(ej.marca.valor) : '—', `mejor 1RM estimado${ej.marca ? ` (${F.corta(ej.marca.fecha)})` : ''}`) : ''}
       ${ficha ? cifra(ficha.grupo, 'grupo muscular') : ''}</div>
-    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}`));
+    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}`, '', 'ficha-cab'));
 
   // --- evolución: gráfica con marcas de contexto y tabla por serie ---
   const R = rangoGrafica(M, ej, st.graf);
@@ -546,7 +722,30 @@ function fichaEjercicio(M, nombre, st = {}){
     out.push(tarjetaMarcas(M, ej));
   }
   out.push(tarjetaCompararSesiones(M, ej, st));
-  return out.join('');
+  return `<div class="ficha-layout">${listaLateral(M, nombre)}<div class="ficha-detalle">${out.join('')}</div></div>`;
+}
+
+/* Lista de ejercicios junto a la ficha: se salta de uno a otro sin volver a
+   la tabla. Primero los de la rutina actual, por día; después el resto, del
+   más reciente al más antiguo. En pantallas estrechas se oculta (queda el
+   botón «Todos los ejercicios»). */
+function listaLateral(M, actual){
+  const todos = [...M.ejercicios.values()].filter(ej => ej.sesiones > 0);
+  const dias = [...new Set(M.planMod.map(l => l.dia))];
+  const diaDe = ej => ej.lineas.length ? dias.indexOf(ej.lineas[0].dia) : 99;
+  const enRutina = todos.filter(ej => ej.lineas.length).sort((a, b) => diaDe(a) - diaDe(b) || a.nombre.localeCompare(b.nombre));
+  const otros = todos.filter(ej => !ej.lineas.length).sort((a, b) => (b.ultimo ? +b.ultimo.fecha : 0) - (a.ultimo ? +a.ultimo.fecha : 0));
+  const item = ej => {
+    const serie = ej.puntos.filter(p => p.e1rmMarca != null).slice(-12).map(p => p.e1rmMarca);
+    const sub = [ej.lineas[0] && ej.lineas[0].dia, ej.marca && F.kg(ej.marca.valor)].filter(Boolean).map(esc).join(' · ');
+    const sel = ej.nombre === actual;
+    return `<li><button type="button" class="ficha-item${sel ? ' sel' : ''}" data-ejercicio="${esc(ej.nombre)}"${sel ? ' aria-current="true"' : ''}>
+      <span class="ficha-item-txt"><span class="ficha-item-nom">${esc(ej.nombre)}</span>${sub ? `<span class="ficha-item-sub">${sub}</span>` : ''}</span>
+      ${serie.length > 1 ? GraficasEsc.linea(serie, { w: 64, h: 22 }) : ''}</button></li>`;
+  };
+  const grupo = (titulo, lista) => lista.length ? `<p class="ficha-grupo">${esc(titulo)}</p><ul>${lista.map(item).join('')}</ul>` : '';
+  return `<nav class="card ficha-lista" aria-label="Tus ejercicios">
+    ${M.planConocido ? grupo('En tu rutina', enRutina) + grupo('Otros de tu historial', otros) : grupo('Tus ejercicios', [...enRutina, ...otros])}</nav>`;
 }
 
 /* Rango de fechas de la gráfica de un ejercicio. Los atajos cuentan hacia
