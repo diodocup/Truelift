@@ -795,7 +795,7 @@ function recuperacion(M){
   if (out.length === 1) out.push(tarjeta('Recuperación', vacio('Tu copia no trae datos de recuperación.')));
   return out.join('');
 }
-const COLOR_ESTADO = { verde: TL.lima, ambar: TL.ambar, rojo: TL.naranja };
+const COLOR_ESTADO = { verde: TL.lima, ambar: TL.ambar, rojo: '#F04438' };
 
 // ---------------------------------------------------------------
 // MI RUTINA
