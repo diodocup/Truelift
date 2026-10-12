@@ -38,6 +38,8 @@ const URLS = new Set(ARCHIVOS.map(a => new URL(a, self.registration.scope).href)
 // la estrategia de abajo los guarda a medida que se ven, y quedan
 // disponibles sin conexión.
 const DIBUJOS = new URL('../coach/media/ejercicios/', self.registration.scope).href;
+const dibujoVacio = () => new Response('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>',
+  { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' } });
 
 self.addEventListener('install', ev => {
   ev.waitUntil(caches.open(VERSION).then(c => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));
@@ -60,7 +62,11 @@ self.addEventListener('fetch', ev => {
   const url = new URL(req.url);
   url.search = ''; url.hash = '';
   if (!URLS.has(url.href) && !url.href.startsWith(DIBUJOS)) return;
-  const respaldo = async () => (await (await caches.open(VERSION)).match(url.href)) || Response.error();
+  // Un dibujo que aún no se había visto no está en la caché: sin conexión se
+  // sirve una imagen vacía (queda el recuadro oscuro, sin icono roto ni
+  // error) y el dibujo de verdad llega en cuanto vuelve la red.
+  const sinCopia = () => url.href.startsWith(DIBUJOS) ? dibujoVacio() : Response.error();
+  const respaldo = async () => (await (await caches.open(VERSION)).match(url.href)) || sinCopia();
   ev.respondWith(
     fetch(req)
       .then(async resp => {
