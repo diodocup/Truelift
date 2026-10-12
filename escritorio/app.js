@@ -1508,6 +1508,13 @@ function init(){
     }
     const ses = ev.target.closest('[data-sesion]');
     if (ses){ verSesion(Number(ses.dataset.sesion)); return; }
+    // Dibujo de un ejercicio: abre su ficha ampliada (dibujo grande y lo que
+    // cuenta la app de él). Desde el modal de una sesión sustituye al modal.
+    const dib = ev.target.closest('[data-dibujo]');
+    if (dib){
+      abrirModal(`${DibujosEsc.fichaHtml(dib.dataset.dibujo)}<div class="mod-acciones"><button class="btn pri" type="button" data-accion="cerrar" autofocus>Cerrar</button></div>`);
+      return;
+    }
     const ej = ev.target.closest('[data-ejercicio]');
     if (ej){
       if (!$('#modal').classList.contains('oculto')) cerrarModal();

@@ -670,9 +670,30 @@ b.sube{color:var(--lima)} b.baja{color:var(--naranja)}
 .ficha-item-sub{font:500 11px var(--mono);color:var(--txt3)}
 .ficha-item .linea-svg{flex:none;opacity:.8}
 .ficha-item.sel .linea-svg{opacity:1}
-.card.ficha-cab > h2{margin:0 0 10px;font:700 34px/1.05 var(--display);letter-spacing:.5px;text-transform:none}
+.card.ficha-cab h2{margin:0 0 10px;font:700 34px/1.05 var(--display);letter-spacing:.5px;text-transform:none}
+.ficha-cab-fila{display:flex;gap:22px;align-items:flex-start}
+.ficha-cab-txt{flex:1;min-width:0}
+.ficha-nota{margin:-2px 0 12px}
 .ficha-etiquetas{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .ficha-etiquetas span{padding:3px 10px;border-radius:999px;background:var(--sup2);font-size:12.5px;color:var(--txt2)}
+
+/* ---------- Dibujos de los ejercicios ----------
+   Los de la biblioteca de la app (dibujos.js). La base (.ej-dibujo y sus
+   tamaños, y que no salgan al imprimir) viene de ../coach/styles.css; aquí
+   los tamaños propios y el botón que abre la ficha ampliada. */
+.ej-dibujo-btn{flex:none;display:block;padding:0;border:0;background:none;border-radius:12px;cursor:zoom-in}
+.ej-dibujo-btn:hover .ej-dibujo{border-color:var(--lima)}
+.ej-dibujo-btn:focus-visible{outline:2px solid var(--lima);outline-offset:2px}
+img.ej-dibujo[data-ejercicio]{cursor:pointer}
+.ej-dibujo-cab{width:168px;height:168px;border-radius:14px;font-size:44px}
+.ej-dibujo-rut{width:52px;height:52px;border-radius:9px;font-size:15px}
+.rut-fila-campos > .ej-dibujo-btn,.rut-fila-campos > .ej-dibujo{align-self:flex-end}
+#modalCaja .ej-ficha .ej-dibujo-xl{width:min(360px,100%);height:auto;aspect-ratio:1}
+@media (max-width:640px){
+  .ficha-cab-fila{flex-direction:column-reverse;gap:12px}
+  .ej-dibujo-cab{width:120px;height:120px}
+}
+
 @media (max-width:1100px){
   .ficha-layout{grid-template-columns:minmax(0,1fr)}
   .card.ficha-lista{display:none}

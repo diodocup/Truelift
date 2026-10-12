@@ -352,7 +352,7 @@ function tarjetaComparables(M){
     const [cl, txt] = LECTURA[x.lectura];
     const serie = x.ej.puntos.filter(p => p.e1rmMarca != null && +p.fecha >= desdeLargo).map(p => p.e1rmMarca);
     const sub = [x.ej.lineas[0] && x.ej.lineas[0].dia, x.ej.grupo].filter(Boolean).map(esc).join(' · ');
-    return [`<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}">${esc(x.nombre)}</button>${sub ? `<span class="ej-sub">${sub}</span>` : ''}`,
+    return [DibujosEsc.celda(x.nombre, `<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}">${esc(x.nombre)}</button>${sub ? `<span class="ej-sub">${sub}</span>` : ''}`, { extra: ` data-ejercicio="${esc(x.nombre)}"` }),
       GraficasEsc.linea(serie, { etiqueta: serie.length > 1 ? `1RM estimado de ${x.nombre} en las últimas semanas: de ${F.kg(serie[0])} a ${F.kg(serie[serie.length - 1])}` : '' }),
       `${x.inicio != null && x.fin != null ? `<span class="mono"><span class="muted nowrap">${F.num(x.inicio, 1)} →</span> <b class="nowrap">${F.kg(x.fin)}</b></span>` : '—'}
         <span class="ej-sub">${x.n} de ${F.plural(x.enPeriodo, 'sesión comparable', 'sesiones comparables')}</span>`,
@@ -499,7 +499,7 @@ function compararPeriodos(M, st){
       e.seriesDistintas ? 'Cambió el número de series: no comparar tonelaje ni repeticiones totales.' : '',
       e.cambioRutina ? 'Rutinas distintas; contexto diferente.' : ''].filter(Boolean).join(' ');
     const barra = e.deltaPct == null ? '' : `<span class="dif-barra" aria-hidden="true"><i class="${e.deltaPct < 0 ? 'neg' : 'pos'}" style="width:${(Math.min(1, Math.abs(e.deltaPct) / maxDif) * 50).toFixed(1)}%"></i></span>`;
-    return [`<button type="button" class="enlace" data-ejercicio="${esc(e.nombre)}">${esc(e.nombre)}</button><br><span class="muted">${esc(Analisis.MODALIDAD_TXT[e.config])}</span>`,
+    return [DibujosEsc.celda(e.nombre, `<button type="button" class="enlace" data-ejercicio="${esc(e.nombre)}">${esc(e.nombre)}</button><span class="ej-sub">${esc(Analisis.MODALIDAD_TXT[e.config])}</span>`, { extra: ` data-ejercicio="${esc(e.nombre)}"` }),
       valor(e.a), valor(e.b), `<span class="dif-celda">${barra}<span>${F.signo(e.deltaPct)}</span></span>`, esc(avisos)];
   });
   out.push(tarjeta('Ejercicios comunes · 1RM estimado', `${ejerc.length ? tabla(['Ejercicio / modalidad', 'Mediana A', 'Mediana B', 'Diferencia B − A', 'Limitaciones'], ejerc, { caption: 'Comparación de ejercicios comunes' }) : vacio('No hay ejercicios realizados en ambos periodos.')}
@@ -590,7 +590,7 @@ function detalleSesionHtml(M, indice){
     const kgs = e.kgSets.some(k => k != null) && new Set(e.kgSets.filter(k => k != null)).size > 1
       ? F.series(e.kgSets.map(k => Motor.cargaOrientada(e.ejercicio, k))) : (e.kg == null ? '—' : F.num(Motor.cargaOrientada(e.ejercicio, e.kg), 2));
     const unidad = Motor.esPorTiempo(e.ejercicio, M.raw) ? 's' : 'reps';
-    return [`<button type="button" class="enlace" data-ejercicio="${esc(e.ejercicio)}">${esc(e.ejercicio)}</button>`,
+    return [DibujosEsc.celda(e.ejercicio, `<button type="button" class="enlace" data-ejercicio="${esc(e.ejercicio)}">${esc(e.ejercicio)}</button>`, { extra: ` data-ejercicio="${esc(e.ejercicio)}"` }),
       `${kgs}${Motor.esAsistido(e.ejercicio) ? ' <span class="muted">(asistencia)</span>' : Motor.esPesoCorporal(e.ejercicio) ? ' <span class="muted">(lastre)</span>' : ''}`,
       `${F.series(e.reps)} <span class="muted">${unidad}</span>`, F.series(e.rir), m.join(' '),
       e.raw.obs ? `<span class="nota">${esc(e.raw.obs)}</span>` : ''];
@@ -615,7 +615,7 @@ function listaEjercicios(M, st){
   const orden = (a, b) => (b.ultimo ? +b.ultimo.fecha : 0) - (a.ultimo ? +a.ultimo.fecha : 0);
   const fila = ej => {
     const est = ej.estados.map(estadoTexto);
-    return [`<button type="button" class="enlace" data-ejercicio="${esc(ej.nombre)}">${esc(ej.nombre)}</button>`,
+    return [DibujosEsc.celda(ej.nombre, `<button type="button" class="enlace" data-ejercicio="${esc(ej.nombre)}">${esc(ej.nombre)}</button>`, { extra: ` data-ejercicio="${esc(ej.nombre)}"` }),
       esc(ej.grupo || '—'), String(ej.sesiones), F.dia(ej.ultimo && ej.ultimo.fecha),
       ej.porTiempo ? '—' : ej.marca ? `${F.kg(ej.marca.valor)} <span class="muted">${F.corta(ej.marca.fecha)}</span>` : '—',
       est.map(e => chip(e.clase, e.corto, e.largo)).join(' ')];
@@ -668,7 +668,10 @@ function fichaEjercicio(M, nombre, st = {}){
   });
   const etiquetas = [...new Set(ej.lineas.map(l => l.dia).filter(Boolean)), ej.grupo,
     ...ej.lineas.slice(0, 1).map(l => [l.series && `${l.series} × ${l.reps || '—'}`, l.rir != null && `RIR ${l.rir}`].filter(Boolean).join(' · '))].filter(Boolean);
-  out.push(tarjeta(nombre, `
+  // El dibujo de la biblioteca va a la derecha de la cabecera, como en la
+  // app; pulsarlo abre la ficha ampliada. Debajo del título, la nota técnica.
+  out.push(`<section class="card ficha-cab"><div class="ficha-cab-fila"><div class="ficha-cab-txt"><h2>${esc(nombre)}</h2>
+    ${ficha && ficha.nota ? `<p class="ej-nota ficha-nota">${esc(ficha.nota)}</p>` : ''}
     ${etiquetas.length ? `<p class="ficha-etiquetas">${etiquetas.map(t => `<span>${esc(String(t))}</span>`).join('')}</p>` : ''}
     <p>${est.map(({ s, t }) => `${chip(t.clase, t.corto)}${s.dia ? ` <span class="muted">${esc(s.dia)}</span>` : ''}`).join(' · ')}</p>
     ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
@@ -679,7 +682,8 @@ function fichaEjercicio(M, nombre, st = {}){
       ${cifra(F.dia(ej.ultimo && ej.ultimo.fecha), 'última')}
       ${!ej.porTiempo ? cifra(ej.marca ? F.kg(ej.marca.valor) : '—', `mejor 1RM estimado${ej.marca ? ` (${F.corta(ej.marca.fecha)})` : ''}`) : ''}
       ${ficha ? cifra(ficha.grupo, 'grupo muscular') : ''}</div>
-    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}`, '', 'ficha-cab'));
+    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}</div>
+    ${DibujosEsc.src(nombre) ? DibujosEsc.grande(nombre, { clase: 'ej-dibujo-cab' }) : ''}</div></section>`);
 
   // --- evolución: gráfica con marcas de contexto y tabla por serie ---
   const R = rangoGrafica(M, ej, st.graf);
@@ -740,7 +744,7 @@ function listaLateral(M, actual){
     const sub = [ej.lineas[0] && ej.lineas[0].dia, ej.marca && F.kg(ej.marca.valor)].filter(Boolean).map(esc).join(' · ');
     const sel = ej.nombre === actual;
     return `<li><button type="button" class="ficha-item${sel ? ' sel' : ''}" data-ejercicio="${esc(ej.nombre)}"${sel ? ' aria-current="true"' : ''}>
-      <span class="ficha-item-txt"><span class="ficha-item-nom">${esc(ej.nombre)}</span>${sub ? `<span class="ficha-item-sub">${sub}</span>` : ''}</span>
+      ${DibujosEsc.mini(ej.nombre, { clase: 'ej-dibujo-xs' })}<span class="ficha-item-txt"><span class="ficha-item-nom">${esc(ej.nombre)}</span>${sub ? `<span class="ficha-item-sub">${sub}</span>` : ''}</span>
       ${serie.length > 1 ? GraficasEsc.linea(serie, { w: 64, h: 22 }) : ''}</button></li>`;
   };
   const grupo = (titulo, lista) => lista.length ? `<p class="ficha-grupo">${esc(titulo)}</p><ul>${lista.map(item).join('')}</ul>` : '';
@@ -1057,7 +1061,7 @@ function rutina(M, { sinCabecera = false } = {}){
       if (l.dropSet) mod.push(`Drop set${typeof l.dropPct === 'number' ? ` (−${l.dropPct} %)` : ''}`);
       if (l.restPause) mod.push('Rest-pause');
       if (l.superConAnterior) mod.push('Superserie con el anterior');
-      return [esc(l.ejercicio), esc(l.grupo || '—'), esc(String(l.series ?? '—')), esc(String(l.reps ?? '—')), esc(String(l.rir ?? '—')),
+      return [DibujosEsc.celda(l.ejercicio, esc(l.ejercicio)), esc(l.grupo || '—'), esc(String(l.series ?? '—')), esc(String(l.reps ?? '—')), esc(String(l.rir ?? '—')),
         typeof l.descansoMin === 'number' ? `${F.num(l.descansoMin, 1)} min` : '—', esc(mod.join(' · '))];
     });
     // Sin modalidades especiales en el día, la columna solo ocuparía sitio.

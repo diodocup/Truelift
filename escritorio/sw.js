@@ -10,13 +10,13 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v5`;
+const VERSION = `${PREFIJO}v6`;
 const ARCHIVOS = [
   './',
   'index.html',
   'escritorio.css',
   'importar.js', 'zip-seguro.js', 'fotos.js', 'evolucion.js', 'almacen.js', 'analisis.js',
-  'comparacion.js', 'graficas.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
+  'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
   'informe.js', 'informe-vista.js', 'app.js',
   '../coach/styles.css',
   '../coach/motor.js', '../coach/data.js', '../coach/nutricion.js', '../coach/charts.js',
@@ -34,6 +34,12 @@ const ARCHIVOS = [
   '../fonts/ibmplexmono-600-latin.woff2', '../fonts/ibmplexmono-600-latin-ext.woff2',
 ];
 const URLS = new Set(ARCHIVOS.map(a => new URL(a, self.registration.scope).href));
+// Dibujos de los ejercicios (los del Coach): son cientos y no se precachean;
+// la estrategia de abajo los guarda a medida que se ven, y quedan
+// disponibles sin conexión.
+const DIBUJOS = new URL('../coach/media/ejercicios/', self.registration.scope).href;
+const dibujoVacio = () => new Response('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>',
+  { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' } });
 
 self.addEventListener('install', ev => {
   ev.waitUntil(caches.open(VERSION).then(c => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));
@@ -48,14 +54,19 @@ self.addEventListener('activate', ev => {
 });
 
 /* Red primero con la caché de respaldo, y solo para los archivos de la
-   lista: nada más pasa por la caché (ni otras páginas del sitio ni datos). */
+   lista y los dibujos: nada más pasa por la caché (ni otras páginas del
+   sitio ni datos). */
 self.addEventListener('fetch', ev => {
   const req = ev.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   url.search = ''; url.hash = '';
-  if (!URLS.has(url.href)) return;
-  const respaldo = async () => (await (await caches.open(VERSION)).match(url.href)) || Response.error();
+  if (!URLS.has(url.href) && !url.href.startsWith(DIBUJOS)) return;
+  // Un dibujo que aún no se había visto no está en la caché: sin conexión se
+  // sirve una imagen vacía (queda el recuadro oscuro, sin icono roto ni
+  // error) y el dibujo de verdad llega en cuanto vuelve la red.
+  const sinCopia = () => url.href.startsWith(DIBUJOS) ? dibujoVacio() : Response.error();
+  const respaldo = async () => (await (await caches.open(VERSION)).match(url.href)) || sinCopia();
   ev.respondWith(
     fetch(req)
       .then(async resp => {
