@@ -633,3 +633,83 @@ b.sube{color:var(--lima)} b.baja{color:var(--naranja)}
 .bv-escritorio li{color:var(--txt)}
 .bv-escritorio li::before{display:none}
 .bv-escritorio .icono{width:16px;height:16px;margin-top:3px;color:var(--lima);stroke-width:2.8}
+
+/* ---------- Entrenamiento: lista + ficha (fase 9) ---------- */
+.ficha-layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
+.ficha-detalle{min-width:0}
+.ficha-detalle > .card{margin-bottom:16px}
+.card.ficha-lista{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;padding:14px 10px;margin:0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.16) transparent}
+.ficha-lista ul{list-style:none;margin:0 0 6px;padding:0;display:flex;flex-direction:column;gap:2px}
+.ficha-grupo{margin:6px 8px 6px;font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--txt4)}
+.ficha-item{width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid transparent;border-radius:10px;background:none;text-align:left;color:var(--txt2)}
+.ficha-item:hover{background:var(--sup2);color:var(--txt)}
+.ficha-item.sel{border-color:rgba(163,224,32,.45);background:var(--lima-10);color:var(--txt)}
+.ficha-item-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.ficha-item-nom{font-size:13.5px;font-weight:500;line-height:1.3}
+.ficha-item.sel .ficha-item-nom{font-weight:600}
+.ficha-item-sub{font:500 11px var(--mono);color:var(--txt3)}
+.ficha-item .linea-svg{flex:none;opacity:.8}
+.ficha-item.sel .linea-svg{opacity:1}
+.card.ficha-cab > h2{margin:0 0 10px;font:700 34px/1.05 var(--display);letter-spacing:.5px;text-transform:none}
+.ficha-etiquetas{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.ficha-etiquetas span{padding:3px 10px;border-radius:999px;background:var(--sup2);font-size:12.5px;color:var(--txt2)}
+@media (max-width:1100px){
+  .ficha-layout{grid-template-columns:minmax(0,1fr)}
+  .card.ficha-lista{display:none}
+}
+
+/* ---------- Comparar periodos (fase 9) ---------- */
+.periodos-sel fieldset{padding:14px 16px 16px;border-radius:12px}
+.periodos-sel fieldset:nth-child(2){border-color:rgba(163,224,32,.45)}
+.periodos-sel legend{padding:0 6px;font:700 17px var(--display);letter-spacing:.5px}
+.ab-resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,215px),1fr));gap:16px;margin-bottom:16px}
+.ab-tile{display:flex;flex-direction:column;gap:8px;padding:18px 20px;border:1px solid var(--borde);border-radius:var(--radio);background:var(--sup1)}
+.ab-tile h3{margin:0;font:700 15px var(--display);letter-spacing:1.4px;text-transform:uppercase;color:var(--txt)}
+.ab-valores{display:flex;align-items:baseline;gap:10px;margin:0;flex-wrap:wrap}
+.ab-a{font:700 26px var(--display);color:var(--txt3)}
+.ab-b{font:800 40px/1 var(--display);color:var(--txt)}
+.ab-valores .icono{width:18px;height:18px;color:var(--vacio);align-self:center}
+.ab-pie{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0;font-size:12.5px;color:var(--txt3)}
+.dif-celda{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.dif-barra{position:relative;flex:none;width:90px;height:8px;border-radius:4px;background:rgba(255,255,255,.05)}
+.dif-barra::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--borde-campo)}
+.dif-barra i{position:absolute;top:0;bottom:0;border-radius:4px;background:var(--azul)}
+.dif-barra i.pos{left:50%}
+.dif-barra i.neg{right:50%}
+
+/* ---------- Mi rutina: de tu móvil a tu móvil (fase 9) ---------- */
+.card.rut-estado{counter-reset:paso;background:none;border:0;padding:0;gap:12px}
+.rut-estado > div{counter-increment:paso;position:relative;padding:18px 20px 18px 62px;border:1px solid var(--borde);border-left:1px solid var(--borde);border-radius:var(--radio);background:var(--sup1)}
+.rut-estado > div::before{content:counter(paso);position:absolute;left:18px;top:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--sup2);border:1px solid var(--borde-campo);font:600 13px var(--mono);color:var(--txt2)}
+.rut-estado > div:nth-child(2){border-color:rgba(163,224,32,.45)}
+.rut-estado > div:nth-child(2)::before{background:var(--lima);border-color:var(--lima);color:#0A0C0B}
+.rut-estado > div:nth-child(3){border-style:dashed;border-color:rgba(255,255,255,.16)}
+.card.rut-estado h2{margin:0 0 4px;font:600 11.5px var(--sans);letter-spacing:.14em;color:var(--txt3)}
+.rut-estado > div:nth-child(2) h2{color:var(--lima)}
+.rut-dias{grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.rut-dia-cab .rut-campo.nombre input{font:700 18px var(--display);letter-spacing:.4px}
+.rut-fila{border-radius:12px}
+
+/* ---------- Informes: vista previa en papel (fase 9) ----------
+   En pantalla el documento ya se ve como sale impreso: hoja clara y los
+   colores de papel de la hoja de impresión. */
+@media screen{
+  .informe-doc{
+    --fondo:#FBFBF7; --sup1:#FBFBF7; --sup2:#F1F3EE; --sup3:#E7EBE4;
+    --txt:#151815; --txt2:#2D332F; --txt3:#5A625C; --txt4:#646C66; --apagado:#646C66; --vacio:#C3C7BF;
+    --lima:#4C6A0A; --lima-10:#F2F7E6; --lima-14:#EAF3D6; --lima-18:#E2EFC4; --lima-30:#B9D472;
+    --ambar:#8A6408; --ambar-14:#F7EFD9; --naranja:#A9520E; --naranja-14:#FAEADB;
+    --rojo:#A2352A; --rojo-vivo:#B3261E; --rojo-vivo-14:#F8E3E1; --azul:#2F6EA3; --azul-14:#E3EEF8;
+    --borde:#DDE1DC; --borde-campo:#CDD2CC; --sep:#E6E9E4; --reticula:#E1E5E0;
+    max-width:900px;margin:22px auto 0;padding:clamp(20px,4vw,52px);border:0;border-radius:8px;
+    background:#FBFBF7;color:var(--txt2);box-shadow:0 24px 70px rgba(0,0,0,.5);
+  }
+  .informe-doc > .card{background:transparent;border:0;border-top:1px solid var(--borde);border-radius:0;padding:18px 0 6px;margin:0 0 6px}
+  .informe-doc .card h3{font:700 16px var(--display);letter-spacing:1.4px;color:var(--txt)}
+  .informe-doc svg text{fill:#5A625C}
+  .informe-doc .inf-cab{padding-bottom:16px;border-bottom:2px solid var(--txt)}
+  .informe-doc .inf-cab h2{color:var(--txt)}
+  .informe-doc .cifra{background:transparent;border:1px solid var(--borde)}
+  .informe-doc .chip.verde{border-color:var(--lima-30)}
+}
+.aviso-comparacion{border-left:0;padding:10px 14px;border:1px solid rgba(224,169,46,.32);border-radius:var(--radio-sm);background:var(--ambar-14);color:var(--txt)}

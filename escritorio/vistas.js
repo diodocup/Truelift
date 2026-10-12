@@ -22,7 +22,7 @@ const F = {
   series(arr){ return arr.map(v => v == null ? '·' : String(v)).join(' / '); },
 };
 
-const tarjeta = (titulo, cuerpo, extra = '') => `<section class="card"${extra}><h2>${esc(titulo)}</h2>${cuerpo}</section>`;
+const tarjeta = (titulo, cuerpo, extra = '', clase = '') => `<section class="card${clase ? ` ${clase}` : ''}"${extra}><h2>${esc(titulo)}</h2>${cuerpo}</section>`;
 const vacio = msg => `<p class="muted">${msg}</p>`;
 const cifra = (valor, etiqueta, aviso = false) =>
   `<div class="cifra${aviso ? ' aviso' : ''}"><b>${esc(valor)}</b><span>${esc(etiqueta)}</span></div>`;
@@ -467,7 +467,20 @@ function compararPeriodos(M, st){
     ['Tiempo por sesión (mediana)', muestra(a.duracion, 'min'), muestra(b.duracion, 'min')],
     ['Rutinas registradas', ...[a, b].map(p => p.rutinas.map(k => esc(rutinaTxt(k))).join('<br>') || '—')],
   ];
-  const out = [selector, tarjeta('Muestra y contexto de entrenamiento',
+  // Franja de diferencias principales: de A a B, sin colores de «mejor» o
+  // «peor» (la comparación no declara ganador).
+  const tileAB = (titulo, va, vb, nota, dif) => `<article class="ab-tile"><h3>${titulo}</h3>
+    <p class="ab-valores"><span class="ab-a">${va}</span><svg class="icono" viewBox="0 0 24 24" aria-label="pasa a" role="img"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="ab-b">${vb}</span></p>
+    <p class="ab-pie"><span>${nota}</span>${dif && dif !== '—' ? `<span class="chip gris">${dif}</span>` : ''}</p></article>`;
+  const constTxt = p => p.conocidas ? `${p.hechasConPlan}/${p.previstas}` : '—';
+  const pesoA = C.contextoA.peso.mediana, pesoB = C.contextoB.peso.mediana;
+  const resumenAB = `<section class="ab-resumen" aria-label="Diferencias principales entre A y B">
+    ${tileAB('Sesiones de fuerza', String(a.sesiones.length), String(b.sesiones.length), `${a.dias} y ${b.dias} días`, diff(a.sesiones.length, b.sesiones.length).replace(/,00$/, ''))}
+    ${tileAB('Por semana completa', numero(a.frecuencia), numero(b.frecuencia), 'sesiones de media', diff(a.frecuencia, b.frecuencia))}
+    ${tileAB('Días previstos', constTxt(a), constTxt(b), 'con sesión, frente a tu rutina', '')}
+    ${tileAB('Peso del periodo', numero(pesoA, 'kg'), numero(pesoB, 'kg'), 'mediana de tus pesajes', diff(pesoA, pesoB, 'kg'))}
+  </section>`;
+  const out = [selector, resumenAB, tarjeta('Muestra y contexto de entrenamiento',
     `<p class="muted">Diferencias descriptivas: no hay un periodo ganador ni se demuestra qué provocó los cambios. «—» significa dato ausente o muestra insuficiente, no cero.</p>
     ${C.avisos.map(t => `<p class="aviso-comparacion">${esc(t)}</p>`).join('')}${tabla(cab, filas, { caption: 'Duración y muestras de los periodos' })}
     ${ayuda('Las semanas son de lunes a domingo. Las medias usan solo semanas completas incluidas en la selección y entre el primer registro disponible y el último. Las semanas sin entrenamientos dentro de esa cobertura cuentan como cero sesiones registradas. La copia puede contener huecos: cero registros no demuestra que no entrenaras. Los días previstos usan la identidad histórica acotada por sesiones, nunca la frecuencia actual sin comprobarla. El tiempo excluye duraciones ausentes, no positivas o marcadas como anómalas.')}`)];
@@ -478,14 +491,16 @@ function compararPeriodos(M, st){
   out.push(tarjeta('Semanas completas y parciales', `<details class="detalle"><summary>Ver semanas y sesiones de origen</summary>
     ${tabla(['Periodo', 'Fechas incluidas', 'Tipo', 'Sesiones (abrir detalle)', 'Días con sesión', 'Días previstos'], [...semanas(a, 'A'), ...semanas(b, 'B')], { caption: 'Semanas y sesiones incluidas en cada periodo' })}</details>`));
 
+  const maxDif = Math.max(5, ...C.ejercicios.comunes.map(e => Math.abs(e.deltaPct || 0)));
   const ejerc = C.ejercicios.comunes.map(e => {
     const motivos = p => Object.entries(p.excluidos).map(([k, n]) => `${n} ${Analisis.MOTIVO_TXT[k] || k}`).join(', ');
     const valor = p => p.n ? `${numero(p.mediana, 'kg')} · n=${p.n} de ${p.registradas}<br><span class="muted">${esc(motivos(p))}</span>` : `— · 0 de ${p.registradas}<br><span class="muted">${esc(motivos(p))}</span>`;
     const avisos = [e.deltaPct == null ? (e.pesoCorporal ? 'Peso corporal histórico no reconstruible: sin diferencia estimada.' : 'No hay sesiones válidas suficientes en los dos periodos con esta modalidad para calcular una diferencia.') : '',
       e.seriesDistintas ? 'Cambió el número de series: no comparar tonelaje ni repeticiones totales.' : '',
       e.cambioRutina ? 'Rutinas distintas; contexto diferente.' : ''].filter(Boolean).join(' ');
+    const barra = e.deltaPct == null ? '' : `<span class="dif-barra" aria-hidden="true"><i class="${e.deltaPct < 0 ? 'neg' : 'pos'}" style="width:${(Math.min(1, Math.abs(e.deltaPct) / maxDif) * 50).toFixed(1)}%"></i></span>`;
     return [`<button type="button" class="enlace" data-ejercicio="${esc(e.nombre)}">${esc(e.nombre)}</button><br><span class="muted">${esc(Analisis.MODALIDAD_TXT[e.config])}</span>`,
-      valor(e.a), valor(e.b), F.signo(e.deltaPct), esc(avisos)];
+      valor(e.a), valor(e.b), `<span class="dif-celda">${barra}<span>${F.signo(e.deltaPct)}</span></span>`, esc(avisos)];
   });
   out.push(tarjeta('Ejercicios comunes · 1RM estimado', `${ejerc.length ? tabla(['Ejercicio / modalidad', 'Mediana A', 'Mediana B', 'Diferencia B − A', 'Limitaciones'], ejerc, { caption: 'Comparación de ejercicios comunes' }) : vacio('No hay ejercicios realizados en ambos periodos.')}
     <p class="muted">Solo A: ${esc(C.ejercicios.soloA.join(', ') || 'ninguno')}. Solo B: ${esc(C.ejercicios.soloB.join(', ') || 'ninguno')}.</p>
@@ -651,7 +666,10 @@ function fichaEjercicio(M, nombre, st = {}){
     return `<p class="sub-h">${esc(s.dia)} · objetivo ${esc(String(s.reps))} reps</p>
       ${tabla(['Fecha', `Carga (${unidadCarga})`, 'Reps de las series principales', 'Objetivo', 'Contador'], filas, { caption: `Sesiones que cuentan para la progresión en ${s.dia}` })}`;
   });
+  const etiquetas = [...new Set(ej.lineas.map(l => l.dia).filter(Boolean)), ej.grupo,
+    ...ej.lineas.slice(0, 1).map(l => [l.series && `${l.series} × ${l.reps || '—'}`, l.rir != null && `RIR ${l.rir}`].filter(Boolean).join(' · '))].filter(Boolean);
   out.push(tarjeta(nombre, `
+    ${etiquetas.length ? `<p class="ficha-etiquetas">${etiquetas.map(t => `<span>${esc(String(t))}</span>`).join('')}</p>` : ''}
     <p>${est.map(({ s, t }) => `${chip(t.clase, t.corto)}${s.dia ? ` <span class="muted">${esc(s.dia)}</span>` : ''}`).join(' · ')}</p>
     ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
     ${porQue.length ? `<details class="detalle"><summary>Por qué este estado</summary>${porQue.join('')}
@@ -661,7 +679,7 @@ function fichaEjercicio(M, nombre, st = {}){
       ${cifra(F.dia(ej.ultimo && ej.ultimo.fecha), 'última')}
       ${!ej.porTiempo ? cifra(ej.marca ? F.kg(ej.marca.valor) : '—', `mejor 1RM estimado${ej.marca ? ` (${F.corta(ej.marca.fecha)})` : ''}`) : ''}
       ${ficha ? cifra(ficha.grupo, 'grupo muscular') : ''}</div>
-    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}`));
+    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}`, '', 'ficha-cab'));
 
   // --- evolución: gráfica con marcas de contexto y tabla por serie ---
   const R = rangoGrafica(M, ej, st.graf);
@@ -704,7 +722,30 @@ function fichaEjercicio(M, nombre, st = {}){
     out.push(tarjetaMarcas(M, ej));
   }
   out.push(tarjetaCompararSesiones(M, ej, st));
-  return out.join('');
+  return `<div class="ficha-layout">${listaLateral(M, nombre)}<div class="ficha-detalle">${out.join('')}</div></div>`;
+}
+
+/* Lista de ejercicios junto a la ficha: se salta de uno a otro sin volver a
+   la tabla. Primero los de la rutina actual, por día; después el resto, del
+   más reciente al más antiguo. En pantallas estrechas se oculta (queda el
+   botón «Todos los ejercicios»). */
+function listaLateral(M, actual){
+  const todos = [...M.ejercicios.values()].filter(ej => ej.sesiones > 0);
+  const dias = [...new Set(M.planMod.map(l => l.dia))];
+  const diaDe = ej => ej.lineas.length ? dias.indexOf(ej.lineas[0].dia) : 99;
+  const enRutina = todos.filter(ej => ej.lineas.length).sort((a, b) => diaDe(a) - diaDe(b) || a.nombre.localeCompare(b.nombre));
+  const otros = todos.filter(ej => !ej.lineas.length).sort((a, b) => (b.ultimo ? +b.ultimo.fecha : 0) - (a.ultimo ? +a.ultimo.fecha : 0));
+  const item = ej => {
+    const serie = ej.puntos.filter(p => p.e1rmMarca != null).slice(-12).map(p => p.e1rmMarca);
+    const sub = [ej.lineas[0] && ej.lineas[0].dia, ej.marca && F.kg(ej.marca.valor)].filter(Boolean).map(esc).join(' · ');
+    const sel = ej.nombre === actual;
+    return `<li><button type="button" class="ficha-item${sel ? ' sel' : ''}" data-ejercicio="${esc(ej.nombre)}"${sel ? ' aria-current="true"' : ''}>
+      <span class="ficha-item-txt"><span class="ficha-item-nom">${esc(ej.nombre)}</span>${sub ? `<span class="ficha-item-sub">${sub}</span>` : ''}</span>
+      ${serie.length > 1 ? GraficasEsc.linea(serie, { w: 64, h: 22 }) : ''}</button></li>`;
+  };
+  const grupo = (titulo, lista) => lista.length ? `<p class="ficha-grupo">${esc(titulo)}</p><ul>${lista.map(item).join('')}</ul>` : '';
+  return `<nav class="card ficha-lista" aria-label="Tus ejercicios">
+    ${M.planConocido ? grupo('En tu rutina', enRutina) + grupo('Otros de tu historial', otros) : grupo('Tus ejercicios', [...enRutina, ...otros])}</nav>`;
 }
 
 /* Rango de fechas de la gráfica de un ejercicio. Los atajos cuentan hacia
