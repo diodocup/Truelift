@@ -22,7 +22,7 @@ const E = {
   estimacion: null, persistido: null, origenModal: null, sinConexion: null,
   M: null, errorModelo: null, fisica: null, espacioFisica: null,
   fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 },
-  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, periodos: null, informe: null },
+  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null },
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
   inf: { conFotos: false, fotos: new Set(), error: null, borrador: null }, espacioInforme: null,
@@ -1442,6 +1442,11 @@ function init(){
       return;
     }
     if (av && av.dataset.accionVista === 'ver-todas'){ E.st.verTodas = true; render(); return; }
+    const gr = ev.target.closest('[data-graf-rango]');
+    if (gr){
+      E.st.graf = { rango: gr.dataset.grafRango };
+      render(); $(`[data-graf-rango="${E.st.graf.rango}"]`)?.focus(); anunciar('Fechas de la gráfica actualizadas'); return;
+    }
     const mf = ev.target.closest('[data-modo-foto]');
     if (mf){ E.fis.modo = mf.dataset.modoFoto; render(); $(`[data-modo-foto="${E.fis.modo}"]`)?.focus(); return; }
     const rest = ev.target.closest('[data-restaurar-foto]');
@@ -1532,6 +1537,14 @@ function init(){
     }
     // Comparar dos sesiones de la ficha: se vuelve a pintar y el foco sigue
     // en el mismo selector.
+    // Fechas de la gráfica del ejercicio: un campo vacío o a medio escribir
+    // no repinta (el navegador deja value en '').
+    if (ev.target.id === 'grafDesde' || ev.target.id === 'grafHasta'){
+      const id = ev.target.id, d = $('#grafDesde').value, h = $('#grafHasta').value;
+      if (!d || !h) return;
+      E.st.graf = { rango: 'fechas', desde: d, hasta: h };
+      render(); $(`#${id}`)?.focus(); anunciar('Fechas de la gráfica actualizadas'); return;
+    }
     if (ev.target.id === 'compA' || ev.target.id === 'compB'){
       const id = ev.target.id;
       const a = $('#compA'), b = $('#compB');
