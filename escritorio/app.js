@@ -1010,11 +1010,20 @@ function estadoDatos(){
   el.innerHTML = `<span>Datos hasta el <b>${esc(fmtDia(ult))}</b> · ${esc(hace(ult))}</span>`;
 }
 
-/* Una tabla más ancha que su caja se desplaza con el teclado: su caja recibe
-   el foco y se anuncia como región con el nombre de la tabla. Solo las que
-   desbordan, para no añadir paradas de tabulación inútiles. */
+/* Ninguna tabla debería necesitar desplazamiento horizontal. Primero sus
+   textos saltan de línea (CSS); si aun así no cabe en su caja, cada fila pasa
+   a ser una ficha con la etiqueta de cada dato (clase «apilada»). Lo que siga
+   desbordando (la línea de tiempo en pantallas muy estrechas) se desplaza con
+   el teclado: su caja recibe el foco y se anuncia como región con el nombre
+   de la tabla. Solo las que desbordan, para no añadir paradas de tabulación
+   inútiles. */
 function marcarDesplazables(){
   $$('.tabla-scroll').forEach(c => {
+    const t = c.querySelector(':scope > table');
+    if (t){
+      c.classList.remove('apilada');
+      if (c.clientWidth && c.scrollWidth > c.clientWidth + 1){ etiquetarCeldas(t); c.classList.add('apilada'); }
+    }
     const desborda = c.scrollWidth > c.clientWidth + 1;
     if (desborda && !c.hasAttribute('tabindex')){
       c.setAttribute('tabindex', '0'); c.setAttribute('role', 'region');
@@ -1023,6 +1032,27 @@ function marcarDesplazables(){
       c.removeAttribute('tabindex'); c.removeAttribute('role'); c.removeAttribute('aria-label');
     }
   });
+}
+/* Para la tabla apilada: cada celda lleva el texto visible de su cabecera
+   (lo pinta el CSS delante del dato) y los roles explícitos, porque algunos
+   navegadores dejan de tratarla como tabla al cambiarle el display. */
+function etiquetarCeldas(t){
+  if (t.dataset.etiquetada) return;
+  t.dataset.etiquetada = '1';
+  const cab = [...t.querySelectorAll(':scope > thead > tr > th')].map(th => {
+    const x = th.cloneNode(true);
+    x.querySelectorAll('.sr-only').forEach(n => n.remove());
+    return x.textContent.replace(/\s+/g, ' ').trim();
+  });
+  t.setAttribute('role', 'table');
+  t.querySelectorAll(':scope > thead, :scope > tbody').forEach(g => g.setAttribute('role', 'rowgroup'));
+  t.querySelectorAll(':scope > thead > tr, :scope > tbody > tr').forEach(tr => tr.setAttribute('role', 'row'));
+  t.querySelectorAll(':scope > thead > tr > th').forEach(th => th.setAttribute('role', 'columnheader'));
+  t.querySelectorAll(':scope > tbody > tr').forEach(tr => [...tr.cells].forEach((celda, i) => {
+    if (celda.tagName === 'TH'){ celda.setAttribute('role', 'rowheader'); return; }
+    celda.setAttribute('role', 'cell');
+    if (cab[i]) celda.dataset.etiqueta = cab[i];
+  }));
 }
 
 function sinCopiaHtml(){

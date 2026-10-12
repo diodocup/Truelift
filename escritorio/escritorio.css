@@ -131,6 +131,22 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 
 /* Tablas de historial. */
 .tabla-scroll{position:relative;overflow-x:auto}
+td .chip{white-space:normal}
+/* Tabla que no cabe ni saltando de línea (marcarDesplazables): cada fila es
+   una ficha con su primera celda de título y el resto de datos en rejilla,
+   con la etiqueta de la columna encima. Solo en pantalla: el papel tiene su
+   propio ancho y ahí la tabla vuelve a ser tabla. */
+@media screen{
+  .tabla-scroll.apilada > table,.tabla-scroll.apilada > table > tbody{display:block}
+  .tabla-scroll.apilada > table > thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .tabla-scroll.apilada > table > tbody > tr{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,96px),1fr));gap:10px 14px;padding:12px 2px}
+  .tabla-scroll.apilada > table > tbody > tr + tr{border-top:1px solid var(--sep)}
+  .tabla-scroll.apilada > table > tbody > tr > *{display:block;min-width:0;padding:0;border:0;overflow-wrap:break-word}
+  .tabla-scroll.apilada > table > tbody > tr > th[scope="row"]{grid-column:1/-1;font-size:14px;font-weight:600}
+  .tabla-scroll.apilada td[data-etiqueta]::before{content:attr(data-etiqueta);content:attr(data-etiqueta) / "";display:block;margin-bottom:3px;font:600 10px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--txt4)}
+  .tabla-scroll.apilada td:empty{display:none}
+  .tabla-scroll.apilada .linea-svg{max-width:100%;height:auto}
+}
 
 @media (max-width:640px){
   .bienvenida h1{font-size:24px}
@@ -160,11 +176,11 @@ button.enlace:hover{color:var(--lima);text-decoration-color:var(--lima)}
 .valoracion .chip{margin-right:6px;vertical-align:1px}
 details.ayuda summary{font-size:12.5px;color:var(--txt3)}
 .nota{font-size:12px;color:var(--txt2);white-space:pre-wrap}
-table tbody th[scope="row"]{padding:8px 10px;font:500 13px var(--sans);letter-spacing:0;text-transform:none;color:var(--txt);border-bottom:1px solid var(--sep);vertical-align:top;white-space:nowrap}
+table tbody th[scope="row"]{padding:8px 10px;font:500 13px var(--sans);letter-spacing:0;text-transform:none;color:var(--txt);border-bottom:1px solid var(--sep);vertical-align:top;min-width:7em}
 table tbody tr:last-child th[scope="row"]{border-bottom:none}
 th button.enlace{font:inherit}
 td .chip,th .chip{margin:1px 2px 1px 0}
-.rutina-dias{grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));margin-bottom:14px}
+.rutina-dias{grid-template-columns:repeat(auto-fit,minmax(min(100%,640px),1fr));margin-bottom:14px}
 .rutina-dias > .card{margin:0}
 :focus-visible{outline:2px solid var(--lima);outline-offset:2px}
 .subnav button:focus-visible,#tabs button:focus-visible{outline-offset:-2px}
@@ -399,7 +415,7 @@ body{font:400 14px/1.45 var(--sans)}
   .lat-datos-cab{flex:1 1 200px}
   .lat-estado{flex:1 1 220px}
   .lat-datos .btn{width:auto;flex:1 1 200px}
-  #lateral #tabs{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px;scrollbar-width:thin}
+  #lateral #tabs{flex-direction:row;flex-wrap:wrap;gap:4px;padding-bottom:4px}
   .tabs-grupo,.tabs-sep,#tabs kbd{display:none}
   #tabs button{flex:none;min-height:40px;padding:0 14px;border-radius:999px}
   #lateral .privacy-notice{margin:0}
@@ -528,7 +544,7 @@ b.sube{color:var(--lima)} b.baja{color:var(--naranja)}
 .lt-capa[aria-pressed="true"] i{background:var(--lima);border-color:var(--lima)}
 .lt-capa[aria-pressed="false"]{color:var(--txt3)}
 .lt-desplazable{margin-top:18px}
-.lt-lienzo{min-width:720px;display:flex;flex-direction:column;gap:4px}
+.lt-lienzo{min-width:600px;display:flex;flex-direction:column;gap:4px}
 .lt-fila{padding-top:10px}
 .lt-fila + .lt-fila:not(.lt-fila-eje){border-top:1px solid var(--sep)}
 .lt-fila-fases{padding-top:0}
@@ -578,6 +594,10 @@ b.sube{color:var(--lima)} b.baja{color:var(--naranja)}
 .resumen-lateral{flex:2 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px}
 .resumen-principal > .card,.resumen-lateral > .card{margin:0}
 .tabla-ejercicios td{vertical-align:middle}
+/* La mini línea encoge con la columna para que la tabla quepa junto a la
+   columna lateral sin desplazarse. */
+.tabla-ejercicios td:nth-child(2){width:120px}
+.tabla-ejercicios .linea-svg{width:100%;min-width:64px;max-width:120px;height:auto}
 .ej-sub{display:block;margin-top:2px;font:400 12px var(--sans);color:var(--txt3)}
 .linea-svg{display:block}
 .linea-trazo{fill:none;stroke:var(--txt2);stroke-width:1.75;stroke-linejoin:round;stroke-linecap:round}

@@ -68,6 +68,15 @@ Coach conserva los suyos para el papel.
 Las gráficas nuevas están en `graficas.js` (SVG en texto, sin dependencias).
 Todo color de estado va acompañado de altura, posición o texto.
 
+**Sin desplazamiento horizontal.** Las tablas dejan que sus textos salten de
+línea y, si aun así no caben en su caja, cada fila pasa a ser una ficha con la
+etiqueta de cada dato (`marcarDesplazables` en `app.js`, clase `apilada`;
+solo en pantalla, al imprimir vuelven a ser tablas). Los días de la rutina van
+en una sola columna cuando no caben dos tablas completas una al lado de otra,
+y la columna «Modalidad» solo aparece si el día tiene alguna. La línea de
+tiempo es lo único que conserva un ancho mínimo (600 px) y se desplaza en
+pantallas de móvil.
+
 ## Importar tus datos
 
 1. En la app: **Ajustes → Copia de seguridad → Exportar copia** (archivo

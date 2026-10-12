@@ -354,9 +354,9 @@ function tarjetaComparables(M){
     const sub = [x.ej.lineas[0] && x.ej.lineas[0].dia, x.ej.grupo].filter(Boolean).map(esc).join(' · ');
     return [`<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}">${esc(x.nombre)}</button>${sub ? `<span class="ej-sub">${sub}</span>` : ''}`,
       GraficasEsc.linea(serie, { etiqueta: serie.length > 1 ? `1RM estimado de ${x.nombre} en las últimas semanas: de ${F.kg(serie[0])} a ${F.kg(serie[serie.length - 1])}` : '' }),
-      `${x.inicio != null && x.fin != null ? `<span class="mono nowrap"><span class="muted">${F.num(x.inicio, 1)} →</span> <b>${F.kg(x.fin)}</b></span>` : '—'}
+      `${x.inicio != null && x.fin != null ? `<span class="mono"><span class="muted nowrap">${F.num(x.inicio, 1)} →</span> <b class="nowrap">${F.kg(x.fin)}</b></span>` : '—'}
         <span class="ej-sub">${x.n} de ${F.plural(x.enPeriodo, 'sesión comparable', 'sesiones comparables')}</span>`,
-      x.deltaPct != null ? `<b class="mono ${x.deltaPct > 0 ? 'sube' : x.deltaPct < 0 ? 'baja' : ''}">${F.signo(x.deltaPct)}</b>` : '—',
+      x.deltaPct != null ? `<b class="mono nowrap ${x.deltaPct > 0 ? 'sube' : x.deltaPct < 0 ? 'baja' : ''}">${F.signo(x.deltaPct)}</b>` : '—',
       chip(cl, txt, x.lectura !== 'insuficiente' && !x.firme ? 'Pocas sesiones comparables: no se usa como conclusión' : '')];
   });
   return tarjeta('Evolución de tus ejercicios', `${tabla(['Ejercicio', 'Evolución', '1RM estimado', 'Cambio', 'Lectura'], filas, { caption: 'Evolución del 1RM estimado en las últimas semanas', clase: 'tabla-ejercicios' })}
@@ -1060,7 +1060,10 @@ function rutina(M, { sinCabecera = false } = {}){
       return [esc(l.ejercicio), esc(l.grupo || '—'), esc(String(l.series ?? '—')), esc(String(l.reps ?? '—')), esc(String(l.rir ?? '—')),
         typeof l.descansoMin === 'number' ? `${F.num(l.descansoMin, 1)} min` : '—', esc(mod.join(' · '))];
     });
-    return tarjeta(d, tabla(['Ejercicio', 'Grupo', 'Series', 'Reps', 'RIR', 'Descanso', 'Modalidad'], filas, { caption: `Ejercicios de ${d}` }));
+    // Sin modalidades especiales en el día, la columna solo ocuparía sitio.
+    const conMod = filas.some(f => f[6]);
+    const cab = ['Ejercicio', 'Grupo', 'Series', 'Reps', 'RIR', 'Descanso', 'Modalidad'];
+    return tarjeta(d, tabla(conMod ? cab : cab.slice(0, 6), conMod ? filas : filas.map(f => f.slice(0, 6)), { caption: `Ejercicios de ${d}` }));
   });
   const vp = Analisis.volumenPlan(M, lineas);
   const filasVol = Motor.GRUPOS_VOLUMEN.filter(g => vp.series.get(g)).map(g => [esc(g), F.num(vp.series.get(g), 1), String(vp.dias.get(g) || 0)]);
