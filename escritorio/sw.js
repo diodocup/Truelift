@@ -10,13 +10,13 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v5`;
+const VERSION = `${PREFIJO}v6`;
 const ARCHIVOS = [
   './',
   'index.html',
   'escritorio.css',
   'importar.js', 'zip-seguro.js', 'fotos.js', 'evolucion.js', 'almacen.js', 'analisis.js',
-  'comparacion.js', 'graficas.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
+  'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
   'informe.js', 'informe-vista.js', 'app.js',
   '../coach/styles.css',
   '../coach/motor.js', '../coach/data.js', '../coach/nutricion.js', '../coach/charts.js',
@@ -34,6 +34,10 @@ const ARCHIVOS = [
   '../fonts/ibmplexmono-600-latin.woff2', '../fonts/ibmplexmono-600-latin-ext.woff2',
 ];
 const URLS = new Set(ARCHIVOS.map(a => new URL(a, self.registration.scope).href));
+// Dibujos de los ejercicios (los del Coach): son cientos y no se precachean;
+// la estrategia de abajo los guarda a medida que se ven, y quedan
+// disponibles sin conexión.
+const DIBUJOS = new URL('../coach/media/ejercicios/', self.registration.scope).href;
 
 self.addEventListener('install', ev => {
   ev.waitUntil(caches.open(VERSION).then(c => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));
@@ -48,13 +52,14 @@ self.addEventListener('activate', ev => {
 });
 
 /* Red primero con la caché de respaldo, y solo para los archivos de la
-   lista: nada más pasa por la caché (ni otras páginas del sitio ni datos). */
+   lista y los dibujos: nada más pasa por la caché (ni otras páginas del
+   sitio ni datos). */
 self.addEventListener('fetch', ev => {
   const req = ev.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   url.search = ''; url.hash = '';
-  if (!URLS.has(url.href)) return;
+  if (!URLS.has(url.href) && !url.href.startsWith(DIBUJOS)) return;
   const respaldo = async () => (await (await caches.open(VERSION)).match(url.href)) || Response.error();
   ev.respondWith(
     fetch(req)

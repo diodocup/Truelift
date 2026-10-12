@@ -147,6 +147,7 @@ function fila(rutina, d, i, f, ss, ctx){
       </span>
     </div>
     <div class="rut-fila-campos">
+      ${DibujosEsc.grande(f.ejercicio, { clase: 'ej-dibujo-rut' })}
       <label class="rut-campo pat" for="${id('patron')}"><span>Patrón</span><select id="${id('patron')}" data-rut="campo" data-d="${d}" data-f="${i}" data-k="patron">
         ${CAT_PATRONES.map(p => { const v = p === '(Ninguno)' ? '' : p; return `<option value="${esc(v)}"${v === (f.patron || '') ? ' selected' : ''}>${esc(p)}</option>`; }).join('')}
         ${f.patron && !CAT_PATRONES.includes(f.patron) ? `<option value="${esc(f.patron)}" selected>${esc(f.patron)}</option>` : ''}</select></label>

@@ -62,10 +62,21 @@ Coach conserva los suyos para el papel.
   franja de diferencias principales de A a B, sin declarar un ganador.
 - **Mi rutina:** el recorrido móvil → borrador → archivo exportado en tres
   pasos numerados.
+- **Dibujos de los ejercicios:** cada ejercicio de la biblioteca lleva el
+  mismo dibujo que en la app: en las tablas de ejercicios, sesiones y
+  comparación, en la lista junto a la ficha, en la cabecera de la ficha (con
+  su nota técnica), en la rutina del móvil y en el editor de borradores.
+  Pulsar el dibujo de la ficha o del editor lo amplía con lo que la app
+  cuenta del ejercicio. Los ejercicios que creaste tú no tienen dibujo: su
+  hueco lleva la inicial. Al imprimir no salen.
 - **Informes:** en pantalla el documento ya se ve como una hoja de papel, con
   los mismos colores con los que se imprime.
 
 Las gráficas nuevas están en `graficas.js` (SVG en texto, sin dependencias).
+Los dibujos (`dibujos.js`) no se duplican: son los que ya publica el Coach en
+`../coach/media/ejercicios/`, así que una biblioteca nueva llega a los dos a
+la vez. No se precachean (son cientos); el service worker los guarda a medida
+que se ven y después salen también sin conexión.
 Todo color de estado va acompañado de altura, posición o texto.
 
 **Sin desplazamiento horizontal.** Las tablas dejan que sus textos salten de
