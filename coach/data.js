@@ -609,6 +609,7 @@ function bandaEstado(v){
 const VFC = {
   MAD_PISO_FRAC: 0.03,   // _vfcMadPisoFrac
   NOCHES_AUTO: 30,       // _vfcNochesAuto
+  NOCHES_VENTANA: 3,     // mínimo de noches dentro de la ventana de 7 días
 
   _mediana(xs){
     if (!xs.length) return 0;
@@ -624,10 +625,13 @@ const VFC = {
       .sort((a,b) => a.fecha - b.fecha);
   },
 
-  /* Serie de tendencia (idéntica a AppState.vfcTendenciaSerie):
+  /* Serie de tendencia (como AppState.vfcTendenciaSerie):
      por noche válida, media móvil de 7 días y umbral = mediana − 0,75·MAD
      de la base previa (últimas 30 noches), con suelo de MAD = 3% de la mediana.
-     Solo hay valor con ≥7 noches en ventana y ≥7 previas. */
+     Hay valor con ≥3 noches medidas dentro de la ventana de 7 días y ≥7 previas.
+     La ventana es de días, no de noches: quien no mide todas las noches tiene
+     huecos, y exigir las 7 dejaba su media y su umbral sin dibujar (la app sí
+     los pinta). Con menos de 3 noches la media no describe una tendencia. */
   tendenciaSerie(readiness){
     const v = this.validas(readiness), n = v.length;
     const serie = new Map(); // clave → {media7, umbral}
@@ -639,7 +643,7 @@ const VFC = {
       if (hiEx < lo) hiEx = lo;
       while (hiEx < n && v[hiEx].fecha <= actual.fecha) hiEx++;
       const ventanaLen = hiEx - lo, baseLen = lo;
-      if (ventanaLen < 7 || baseLen < 7) continue;
+      if (ventanaLen < this.NOCHES_VENTANA || baseLen < 7) continue;
       const desdeBase = baseLen > 30 ? baseLen - 30 : 0;
       const base = [];
       for (let j = desdeBase; j < lo; j++) base.push(v[j].vfc);

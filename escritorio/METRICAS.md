@@ -32,7 +32,7 @@ Prioridad aplicada en todas las vistas:
 | Cambio de rutina | Dato de la copia | Identidad `variante|dias|rutinaRevision` (`rutinaKeyDeLog`). | `analisis.test.mjs` |
 | Recuperación reciente | Reproducida | `recuperacionValoracion`: días con `estadoEntrenar` < 70 en los 14 días previos; ≥ 4 registros; cargada ≥ 50 %, buena ≤ 25 %. Solo con `readinessActivo`. | `analisis.test.mjs` |
 | Peso tendencia, ritmo, fase | `coach/nutricion.js` (port previo del Coach) evaluado en la fecha del último registro | Filtro de peso de la app. El ritmo no se muestra con un solo pesaje. | pruebas del Coach |
-| VFC y FC en reposo | `coach/data.js` (port previo del Coach) | Cada noche con su propia banda. | pruebas del Coach |
+| VFC y FC en reposo | `coach/data.js` (port previo del Coach) | Cada noche con su propia banda. La media de 7 días y el umbral de tendencia se calculan con las noches medidas en la ventana (≥ 3), así que los huecos no cortan la curva. | pruebas del Coach |
 
 ## Estancamiento
 
@@ -117,7 +117,7 @@ misma que la valoración de la app). Código: `escritorio/analisis.js`.
 | Lectura «firme» | Propia del escritorio | ≥ 4 sesiones comparables y las dos últimas por debajo (o por encima) de la media inicial. Solo las firmes se convierten en conclusión. |
 | Marcas | Reproducida (`mejorMarca`) | Cada sesión que supera la mejor marca anterior; la primera fija la referencia. |
 | Recuperación: cambio | Regla de la app aplicada dos veces | `recuperacionValoracion` en los 14 días previos al último registro y en los 14 anteriores. |
-| VFC baja | Reproducida (`tendenciaBajaFechas`) | Noches de los últimos 7 días con la media de 7 noches por debajo del umbral 3 o más días seguidos. |
+| VFC baja | Reproducida (`tendenciaBajaFechas`) | Noches de los últimos 7 días con la media de la ventana de 7 días por debajo del umbral 3 o más días seguidos. La media sale de las noches medidas en esos 7 días (mínimo 3): no hace falta medir todas. |
 | Peso | Filtro de la app (`coach/nutricion.js`) | Tendencia en el último punto del filtro y en el último punto ≤ 28 días antes; cambio solo con ≥ 2 pesajes en la ventana. No se extrapola. |
 
 ### Conclusiones y prioridad
