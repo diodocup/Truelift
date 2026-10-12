@@ -281,3 +281,10 @@ b.baja{color:var(--naranja)}
    superficies oscuras. Solo en el escritorio y solo en pantalla: el Coach y
    la hoja de impresión conservan sus tonos. */
 @media screen{:root{--txt4:#838a86;--rojo:#e5645a}}
+/* "Día rojo" es rojo de verdad en el escritorio. El Coach lo pinta naranja
+   (var(--naranja)); aquí se sobrescribe solo para el estado rojo. */
+:root{--rojo-vivo:#F04438;--rojo-vivo-14:rgba(240,68,56,.14)}
+.chip.rojo{background:var(--rojo-vivo-14);border-color:rgba(240,68,56,.32);color:var(--rojo-vivo)}
+.punto.rojo,.pista-seg.rojo,.barra i.rojo{background:var(--rojo-vivo)}
+.alerta.rojo{border-left-color:var(--rojo-vivo);background:var(--rojo-vivo-14)}
+.alerta.rojo .tag,.esc.rojo .on{color:var(--rojo-vivo)}
