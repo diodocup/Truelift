@@ -158,6 +158,11 @@ img[data-mini]:not([src]){visibility:hidden}
 .comparar-sel{display:flex;gap:16px;flex-wrap:wrap}
 .comparar-sel .mod-fila{margin:4px 0}
 .comparar-sel select{max-width:100%}
+.graf-rango{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+.graf-rango .fila-botones{margin-top:0}
+.graf-rango .fila-botones .btn{padding:6px 10px;font-size:11px}
+.graf-fechas{display:flex;gap:12px;flex-wrap:wrap}
+.graf-fechas .mod-fila{margin:0}
 @media (max-width:640px){
   .tabla-series td:nth-child(3){min-width:160px}
 }

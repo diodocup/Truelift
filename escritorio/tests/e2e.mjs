@@ -430,6 +430,23 @@ try {
   await pagina.getByText('Al alza', { exact: true }).first().waitFor();
   ok('ficha: comparación de dos sesiones con avisos de compatibilidad, marcas y evolución reciente');
 
+  // Fechas de la gráfica: un rango más corto deja menos sesiones en la tabla
+  // de la gráfica, el foco sigue en el campo y «Todo» las devuelve.
+  const filasEvol = () => pagina.locator('.card', { hasText: 'Evolución' }).filter({ has: pagina.locator('#grafDesde') }).locator('.tabla-series tbody tr').count();
+  const todas = await filasEvol();
+  const [min, max] = await pagina.evaluate(() => [document.querySelector('#grafDesde').min, document.querySelector('#grafHasta').max]);
+  assert.equal(await pagina.inputValue('#grafDesde'), min);
+  assert.equal(await pagina.inputValue('#grafHasta'), max);
+  await pagina.fill('#grafDesde', max);
+  await pagina.waitForFunction(() => document.activeElement && document.activeElement.id === 'grafDesde');
+  const pocas = await filasEvol();
+  assert.ok(pocas >= 1 && pocas < todas, `rango corto: ${pocas} de ${todas}`);
+  assert.equal(await pagina.getAttribute('[data-graf-rango="todo"]', 'aria-pressed'), 'false');
+  await pagina.click('[data-graf-rango="todo"]');
+  assert.equal(await filasEvol(), todas);
+  assert.equal(await pagina.getAttribute('[data-graf-rango="todo"]', 'aria-pressed'), 'true');
+  ok('ficha: se eligen las fechas de la gráfica con atajos o desde/hasta');
+
   await pagina.setViewportSize({ width: 420, height: 900 });
   for (const h of ['#resumen', '#entrenamiento/ejercicios/Press%20banca%20con%20barra']){
     await pagina.evaluate(x => { location.hash = x; }, h);

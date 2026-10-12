@@ -506,33 +506,39 @@ function fichaEjercicio(M, nombre, st = {}){
     ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}`));
 
   // --- evolución: gráfica con marcas de contexto y tabla por serie ---
+  const R = rangoGrafica(M, ej, st.graf);
+  const ptsG = pts.filter(p => p.fecha >= R.desde && p.fecha < R.hastaExcl);
+  const selRango = selectorRango(R);
   const marcasCtx = [];
-  pts.forEach(p => {
+  ptsG.forEach(p => {
     if (p.sesion.descarga) marcasCtx.push({ x: p.fecha, tipo: 'Descarga', label: 'Descarga', color: TL.azul });
     if (p.e.molestias) marcasCtx.push({ x: p.fecha, tipo: 'Molestias', label: 'Molestias', color: TL.ambar });
     if (p.sesion.cambioRutina) marcasCtx.push({ x: p.fecha, tipo: 'Cambio de rutina', label: 'Cambio de rutina', color: TL.txt3 });
   });
-  const filas = pts.slice().reverse().map(p => [fechaSesion(p), esc(p.dia), seriesHtml(Analisis.seriesDe(p.e), ej.porTiempo),
+  const filas = ptsG.slice().reverse().map(p => [fechaSesion(p), esc(p.dia), seriesHtml(Analisis.seriesDe(p.e), ej.porTiempo),
     ...(ej.porTiempo ? [] : [p.e1rm != null ? `${F.num(p.e1rm, 1)}${p.e1rmMenosFiable ? ' <span class="muted" title="Muchas repeticiones: estimación menos precisa">≈</span>' : ''}` : '—']),
     marcasPunto(p)]);
   const cabTabla = ['Fecha', 'Sesión', `Series (${unidadCarga} × ${ej.porTiempo ? 'segundos' : 'reps'} @RIR)`, ...(ej.porTiempo ? [] : ['1RM est. (kg)']), 'Marcas'];
   const tablaHist = tabla(cabTabla, filas, { caption: `Historial de ${nombre} por serie`, clase: 'tabla-series' });
-  if (!ej.porTiempo){
+  const avisoVacio = vacio(`No entrenaste este ejercicio entre el ${F.dia(R.desde)} y el ${F.dia(R.hasta)}.`);
+  if (!ptsG.length){
+    out.push(tarjeta(ej.porTiempo ? 'Historial' : 'Evolución', selRango + avisoVacio));
+  } else if (!ej.porTiempo){
     // La línea solo une sesiones que cuentan; las demás quedan como puntos
     // sueltos para no dibujar caídas que la app no tiene en cuenta.
-    const e1 = pts.filter(p => p.e1rm != null);
+    const e1 = ptsG.filter(p => p.e1rm != null);
     const serie1 = e1.filter(p => p.evaluable).map(p => ({ x: p.fecha, y: Math.round(p.e1rm * 10) / 10, c: p.estado === 'rojo' ? COLOR_ESTADO.rojo : p.noVerde ? TL.ambar : TL.lima }));
     const serieNo = e1.filter(p => !p.evaluable).map(p => ({ x: p.fecha, y: Math.round(p.e1rm * 10) / 10 }));
-    const serie2 = pts.filter(p => p.cargaVista != null).map(p => ({ x: p.fecha, y: p.cargaVista }));
+    const serie2 = ptsG.filter(p => p.cargaVista != null).map(p => ({ x: p.fecha, y: p.cargaVista }));
     const svg = Charts.lineas({ series: [
       { nombre: '1RM estimado', color: TL.lima, puntos: serie1, unidad: 'kg' },
       ...(serieNo.length ? [{ nombre: 'Sesiones que no cuentan', color: TL.txt4, puntos: serieNo, soloPuntos: true, unidad: 'kg' }] : []),
       { nombre: ej.asistido ? 'Asistencia' : ej.pesoCorporal ? 'Lastre' : 'Carga de la serie principal', color: TL.azul, puntos: serie2, unidad: 'kg', eje: 'der', dash: '5 4' },
     ], marcas: marcasCtx, w: 960, h: 280 });
-    out.push(tarjeta('Evolución', grafica(svg, `1RM estimado y carga de ${nombre} por sesión`, tablaHist) +
+    out.push(tarjeta('Evolución', selRango + grafica(svg, `1RM estimado y carga de ${nombre} por sesión`, tablaHist) +
       `<p class="muted" style="font-size:12.5px">El 1RM estimado es una estimación a partir de tu mejor serie de cada sesión (en drop set y rest-pause, solo la primera), no una prueba de máximo. Puntos grises sueltos: sesiones que no cuentan para la progresión (descarga, molestias, cambio de un día). Puntos ámbar: entrenado en un día ámbar; puntos rojos: en un día rojo. Las líneas verticales marcan descargas, molestias y cambios de rutina.</p>`));
   } else {
-    out.push(tarjeta('Historial', tablaHist));
+    out.push(tarjeta('Historial', selRango + tablaHist));
   }
 
   if (!ej.porTiempo){
@@ -541,6 +547,39 @@ function fichaEjercicio(M, nombre, st = {}){
   }
   out.push(tarjetaCompararSesiones(M, ej, st));
   return out.join('');
+}
+
+/* Rango de fechas de la gráfica de un ejercicio. Los atajos cuentan hacia
+   atrás desde la fecha de referencia de la copia; «Todo» va de la primera a
+   la última sesión. g = { rango: 'todo'|'3m'|'6m'|'12m'|'fechas', desde, hasta }
+   con desde/hasta en AAAA-MM-DD (solo en 'fechas'). */
+const RANGOS_GRAF = [['todo', 'Todo'], ['3m', '3 meses'], ['6m', '6 meses'], ['12m', '1 año']];
+function rangoGrafica(M, ej, g = null){
+  const pts = ej.puntos.filter(p => p.hechas > 0);
+  const primera = pts.length ? soloDia(pts[0].fecha) : soloDia(M.ref);
+  const ultima = pts.length ? soloDia(pts[pts.length - 1].fecha) : soloDia(M.ref);
+  const tipo = g && (g.rango === 'fechas' || RANGOS_GRAF.some(([k]) => k === g.rango)) ? g.rango : 'todo';
+  let desde = primera, hasta = ultima;
+  if (tipo === 'fechas'){
+    desde = parseFecha(g.desde) ? soloDia(parseFecha(g.desde)) : primera;
+    hasta = parseFecha(g.hasta) ? soloDia(parseFecha(g.hasta)) : ultima;
+    if (hasta < desde) [desde, hasta] = [hasta, desde];
+  } else if (tipo !== 'todo'){
+    hasta = soloDia(M.ref) > ultima ? soloDia(M.ref) : ultima;
+    const meses = { '3m': 3, '6m': 6, '12m': 12 }[tipo];
+    desde = new Date(hasta.getFullYear(), hasta.getMonth() - meses, hasta.getDate() + 1);
+  }
+  const hastaExcl = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate() + 1);
+  return { tipo, desde, hasta, hastaExcl, min: primera, max: ultima };
+}
+function selectorRango(R){
+  const botones = RANGOS_GRAF.map(([k, txt]) => `<button type="button" data-graf-rango="${k}" aria-pressed="${R.tipo === k}" class="btn ${R.tipo === k ? 'pri' : 'sec'}">${txt}</button>`).join('');
+  return `<div class="graf-rango" role="group" aria-label="Fechas de la gráfica">
+      <div class="fila-botones">${botones}</div>
+      <div class="graf-fechas">
+        <div class="mod-fila"><label for="grafDesde">Desde</label><input type="date" id="grafDesde" value="${fmtISO(R.desde)}" min="${fmtISO(R.min)}" max="${fmtISO(R.max)}"></div>
+        <div class="mod-fila"><label for="grafHasta">Hasta</label><input type="date" id="grafHasta" value="${fmtISO(R.hasta)}" min="${fmtISO(R.min)}" max="${fmtISO(R.max)}"></div>
+      </div></div>`;
 }
 
 function tarjetaEvolucionReciente(M, ej){
