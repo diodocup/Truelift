@@ -94,6 +94,11 @@ pantallas de móvil.
    ventana.
 5. Revisa la vista previa y confirma. Hasta que confirmas no se guarda nada.
 
+Para probarlo sin exportar datos propios está la copia de ejemplo
+`ejemplo/copia_truelift_2026-10-08.json`, la misma que se descarga desde la
+sección «TrueLift Escritorio» de la web. Sin ZIP de fotos, las fotos que
+registra aparecen como «Falta la imagen».
+
 ### Actualizar
 
 Exporta una copia nueva en el móvil e impórtala. Como la copia no incluye un

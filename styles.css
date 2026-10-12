@@ -802,10 +802,10 @@ h3 {
   font-size: 14px;
 }
 
-/* El botón de Coach y su aclaración van juntos en columna: el texto explica ese
-   botón, no la fila entera, así que colgarlo del hero-actions completo lo habría
-   dejado leyéndose también como pie de Google Play y de iOS. */
-.hero-action-coach {
+/* El botón de Escritorio y su aclaración van juntos en columna: el texto explica
+   ese botón, no la fila entera, así que colgarlo del hero-actions completo lo
+   habría dejado leyéndose también como pie de Google Play y de iOS. */
+.hero-action-desk {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
@@ -813,7 +813,7 @@ h3 {
 }
 
 .hero-action-note {
-  max-width: 27ch;
+  max-width: 30ch;
   color: var(--dim);
   font: 500 12px var(--sans);
   line-height: 1.4;
@@ -821,39 +821,9 @@ h3 {
   text-transform: none;
 }
 
-/* Las cinco copias de ejemplo del Coach: etiqueta, fila de descargas y aviso.
-   Una por cliente, porque cada archivo cubre una combinación distinta de
-   sistema y días y el entrenador elige cuál quiere abrir. */
-.file-samples {
-  margin-top: 14px;
-}
-
-.file-samples-label {
-  display: block;
-  margin-bottom: 7px;
-  font: 700 10px var(--mono);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--quiet);
-}
-
-.file-samples-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-}
-
-.file-samples-list .link-mono {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-}
-
-/* Que los clientes son inventados se dice aquí, junto a la descarga, y no solo
-   dentro del archivo: quien abra uno ve datos de salud con nombre y fecha de
-   nacimiento, y debe saber de entrada que no son de nadie. */
+/* Aviso pequeño junto a una descarga (la copia de ejemplo del escritorio). */
 .file-note {
   display: block;
-  margin-top: 8px;
   font: 700 9px var(--mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1617,67 +1587,6 @@ h3 {
   gap: 14px;
 }
 
-.coach-card {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px 32px;
-  align-items: center;
-  width: min(100%, 880px);
-  margin: 70px auto 0;
-  padding: 26px 30px;
-  border: 1px solid var(--line-strong);
-  border-radius: 18px;
-  background: rgba(12, 16, 11, 0.8);
-  text-align: left;
-}
-
-.coach-card .eyebrow {
-  margin-bottom: 10px;
-  letter-spacing: 0.22em;
-  font-size: 10px;
-}
-
-.coach-card h3 {
-  margin: 0 0 6px;
-  font: 800 22px var(--sans);
-  letter-spacing: -0.01em;
-}
-
-.coach-card p {
-  margin: 0;
-  color: var(--dim);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.coach-links {
-  display: grid;
-  gap: 10px;
-}
-
-.coach-links .button {
-  min-height: 48px;
-  padding: 0 24px;
-  font-size: 12px;
-}
-
-.coach-links .link-mono {
-  justify-content: center;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-}
-
-/* En la tarjeta, la columna es estrecha y va centrada: la fila de descargas se
-   parte en dos líneas y se centra igual que el botón de arriba. */
-.coach-links .file-samples {
-  margin-top: 2px;
-  text-align: center;
-}
-
-.coach-links .file-samples-list {
-  justify-content: center;
-}
-
 /* ---------- Pie ---------- */
 
 .site-footer {
@@ -1987,6 +1896,393 @@ h3 {
   line-height: 1.5;
 }
 
+/* ---------- Nutrición: calorías, macros y menú ----------
+   Segundo bloque de la sección de nutrición, para quien pesa lo que come. Es PRO,
+   así que los números de paso y la nota llevan el oro; los títulos van en blanco
+   para que los cuatro pasos se lean de un tirón. */
+
+.nutri-plate {
+  margin-top: 76px;
+  padding-top: 60px;
+  border-top: 1px solid var(--line);
+}
+
+.sub-head {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px 56px;
+  align-items: end;
+  margin-bottom: 46px;
+}
+
+.sub-kicker {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.sub-head h3 {
+  margin: 0;
+  font: 900 clamp(26px, 3vw, 38px) var(--sans);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.sub-head > p:last-child {
+  margin: 0;
+  color: var(--dim);
+  font-size: 17px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.nutri-steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.nutri-steps .step .device {
+  width: min(100%, 250px);
+}
+
+.nutri-steps .step-mark .num {
+  border-color: rgba(226, 186, 74, 0.45);
+  background: rgba(226, 186, 74, 0.1);
+  color: var(--gold);
+}
+
+.nutri-steps h4 {
+  margin: 0 0 8px;
+  font: 800 19px var(--sans);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.note-gold {
+  max-width: 860px;
+  margin: 44px 0 0;
+  padding: 18px 22px;
+  border-left: 2px solid var(--gold);
+  background: rgba(226, 186, 74, 0.05);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.note-gold h4 {
+  margin: 0 0 8px;
+  font: 800 11px var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.note-gold p {
+  margin: 0;
+}
+
+/* ---------- TrueLift Escritorio ----------
+   La versión para ordenador: capturas reales dentro de un marco de navegador
+   (el equivalente de los marcos de móvil del resto de la web), cuatro tarjetas
+   y un panel para empezar. Es gratis, así que el acento es el lima. */
+
+.desk-section {
+  background:
+    radial-gradient(ellipse 55% 45% at 12% 0%, rgba(168, 238, 25, 0.07), transparent 70%),
+    var(--bg);
+}
+
+.desk-showcase {
+  position: relative;
+  margin: 0 0 56px;
+  padding-bottom: 84px;
+}
+
+.browser {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: #0a0c0b;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 90px rgba(168, 238, 25, 0.08);
+}
+
+.desk-showcase > .browser:first-child {
+  width: 86%;
+}
+
+.browser img {
+  width: 100%;
+}
+
+.browser-bar,
+.browser figcaption {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.browser-dots {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.browser-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--whisper);
+}
+
+.browser-url {
+  flex: 0 1 300px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 3px 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--quiet);
+  font: 600 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* La línea de tiempo, que solo existe en el escritorio, flota sobre la esquina
+   del resumen. Su rótulo va arriba, como la barra de una segunda ventana. */
+.desk-float {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 47%;
+  border-color: rgba(168, 238, 25, 0.38);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7), 0 0 60px rgba(168, 238, 25, 0.1);
+}
+
+.desk-float figcaption {
+  order: -1;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--bright);
+  font: 700 10px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.desk-chip {
+  padding: 2px 9px;
+  border: 1px solid rgba(168, 238, 25, 0.45);
+  border-radius: 999px;
+  color: var(--lime);
+  font: 800 9px var(--mono);
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+
+/* Lo que necesita PRO dentro de una tarjeta gratuita, en una línea aparte. */
+.card .card-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  color: var(--quiet);
+  font: 700 10px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Cómo empezar y acceso: los pasos a la izquierda y el botón a la derecha. */
+.desk-start {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px);
+  gap: 28px 34px;
+  margin-top: 34px;
+  padding: 28px;
+  border: 1px solid rgba(168, 238, 25, 0.22);
+  border-radius: var(--radius);
+  background: rgba(168, 238, 25, 0.035);
+}
+
+.desk-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.desk-steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.desk-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(168, 238, 25, 0.35);
+  border-radius: 999px;
+  background: rgba(168, 238, 25, 0.1);
+  color: var(--lime);
+  font: 800 13px var(--mono);
+}
+
+.desk-steps h3 {
+  margin: 7px 0 8px;
+  font: 800 11px var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.desk-steps p {
+  margin: 0;
+  color: var(--dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.desk-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding-left: 32px;
+  border-left: 1px solid rgba(168, 238, 25, 0.18);
+  text-align: center;
+}
+
+.desk-cta .link-mono {
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.desk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 12px;
+  margin: 8px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+  font: 700 9px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--quiet);
+}
+
+.desk-meta li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.desk-meta li:not(:last-child)::after {
+  content: "/";
+  color: var(--whisper);
+}
+
+@media (max-width: 1060px) {
+  .nutri-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 44px 28px;
+  }
+
+  .desk-start {
+    grid-template-columns: 1fr;
+  }
+
+  .desk-cta {
+    padding: 24px 0 0;
+    border-left: 0;
+    border-top: 1px solid rgba(168, 238, 25, 0.18);
+  }
+
+  .desk-cta .button {
+    align-self: center;
+    min-width: min(100%, 330px);
+  }
+}
+
+@media (max-width: 700px) {
+  .nutri-plate {
+    margin-top: 56px;
+    padding-top: 46px;
+  }
+
+  /* Cuatro móviles uno debajo de otro serían una pared: en el teléfono los pasos
+     se deslizan en horizontal, como la galería de capturas. */
+  .nutri-steps {
+    display: flex;
+    gap: 18px;
+    margin-right: -18px;
+    padding: 0 18px 14px 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  .nutri-steps .step {
+    flex: 0 0 78%;
+    scroll-snap-align: start;
+  }
+
+  .nutri-steps::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .nutri-steps::-webkit-scrollbar-thumb {
+    background: rgba(226, 186, 74, 0.35);
+    border-radius: 99px;
+  }
+
+  .desk-showcase {
+    margin-bottom: 40px;
+    padding-bottom: 0;
+  }
+
+  .desk-showcase > .browser:first-child {
+    width: 100%;
+  }
+
+  .desk-float {
+    position: static;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .browser-url {
+    display: none;
+  }
+
+  .desk-start {
+    padding: 22px;
+  }
+
+  .desk-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Ajustes de pantalla estrecha ----------
    El grueso del layout es auto-fit y clamp(), así que solo hacen falta unos
    pocos ajustes para que la cabecera y el hero no se coman el móvil. */
@@ -2046,8 +2342,7 @@ h3 {
     border-top: 1px solid rgba(206, 228, 183, 0.14);
   }
 
-  .plan,
-  .coach-card {
+  .plan {
     padding: 24px;
   }
 

@@ -3,90 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TrueLift Coach</title>
-<meta name="description" content="Herramienta para entrenadores: analiza los entrenamientos de tus clientes de TrueLift y crea o revisa sus rutinas.">
-<meta name="theme-color" content="#0A0C0B">
+<!-- TrueLift Coach se ha retirado: quien llegue aquí pasa a TrueLift Escritorio.
+     La carpeta coach/ se conserva porque el escritorio carga de ella su motor,
+     sus datos y su hoja de estilos (ver LEEME.md). -->
+<meta http-equiv="refresh" content="0; url=../escritorio/">
+<title>TrueLift Escritorio</title>
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#0A0C0B">
+<link rel="canonical" href="https://truelift.es/escritorio/">
 <link rel="icon" type="image/png" href="media/icono.png">
-<link rel="apple-touch-icon" href="media/icono-192.png">
-<link rel="preload" href="../fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="../fonts/jetbrainsmono-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="styles.css">
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#050705;color:#f4f7f0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}
+  main{padding:24px}
+  a{color:#a8ee19}
+</style>
 </head>
 <body>
-
-<div id="cabecera" class="no-print">
-<header id="topbar">
-  <div class="brand"><span class="wordmark"><svg class="wordmark-t" viewBox="26.2 32 55.6 44" aria-hidden="true" focusable="false"><path class="wm-brazo" d="M28 32H44A2 2 0 0 1 46 34V42A2 2 0 0 1 44 44H32.2A2.8 2.8 0 0 1 29.7 42.5L26.2 35.5A2.4 2.4 0 0 1 28 32Z"/><path class="wm-brazo" d="M80 32H64A2 2 0 0 0 62 34V42A2 2 0 0 0 64 44H75.8A2.8 2.8 0 0 0 78.3 42.5L81.8 35.5A2.4 2.4 0 0 0 80 32Z"/><path class="wm-pie" d="M50 32H58A2 2 0 0 1 60 34V71.2A3 3 0 0 1 59.1 73.3L56.4 75.6A2 2 0 0 1 55.1 76H50A2 2 0 0 1 48 74V34A2 2 0 0 1 50 32Z"/></svg>RUE<span class="wm-lift">LIFT</span></span><span class="brand-coach">Coach</span></div>
-
-  <label class="campo">
-    <span class="campo-etq">Cliente</span>
-    <select id="selCliente" title="Cliente activo"></select>
-  </label>
-
-  <div class="campo">
-    <span class="campo-etq">Rango</span>
-    <div id="ctrlRango">
-      <select id="selRango" title="Rango de fechas">
-        <option value="bloque">Bloque actual</option>
-        <option value="7">Última semana</option>
-        <option value="28">Últimas 4 semanas</option>
-        <option value="todo">Todo</option>
-        <option value="custom">Personalizado…</option>
-      </select>
-      <span id="rangoCustom" class="oculto">
-        <input type="date" id="fDesde"> <span class="muted">a</span> <input type="date" id="fHasta">
-      </span>
-      <span id="rangoTexto" class="muted"></span>
-    </div>
-  </div>
-
-  <div class="spacer"></div>
-
-  <button id="btnImprimir" class="btn sec" title="Imprimir informe del resumen">Imprimir informe</button>
-  <button id="btnClientes" class="btn sec">Clientes</button>
-  <button id="btnImportar" class="btn pri">+ Importar JSON</button>
-  <input type="file" id="fileInput" accept=".json,application/json" hidden>
-</header>
-
-<nav id="tabs">
-  <button data-tab="cartera" class="activa">Cartera</button>
-  <button data-tab="resumen">Resumen</button>
-  <button data-tab="sesiones">Sesiones</button>
-  <button data-tab="ejercicios">Ejercicios</button>
-  <button data-tab="rutina">Rutina</button>
-  <button data-tab="planificador">Planificador</button>
-  <button data-tab="readiness">Readiness</button>
-  <button data-tab="nutricion">Nutrición</button>
-</nav>
-</div>
-
-<aside class="privacy-notice no-print" aria-label="Aviso de privacidad">
-  <strong>Privacidad</strong> los archivos importados y las notas se guardan solo en este navegador;
-  TrueLift no los recibe. Como entrenador, debes contar con autorización y base jurídica para tratar
-  los datos de cada cliente, especialmente los relativos a la salud, proteger el dispositivo y borrar
-  la información cuando ya no sea necesaria.
-  <a href="../privacidad.html#coach" target="_blank" rel="noopener">Leer la política completa</a>.
-</aside>
-
-<main id="contenido"></main>
-
-<div id="dropzone" class="oculto no-print">Suelta aquí el archivo JSON del cliente</div>
-
-<div id="modal" class="oculto no-print"><div id="modalCaja"></div></div>
-
-<div id="informe"></div>
-
-<script src="motor.js"></script>
-<script src="data.js"></script>
-<script src="nutricion.js"></script>
-<script src="charts.js"></script>
-<script src="views.js"></script>
-<script src="catalogo.js"></script>
-<script src="canonico.js"></script>
-<script src="plantilla.js"></script>
-<script src="xlsx.js"></script>
-<script src="planner.js"></script>
-<script src="app.js"></script>
+<main>
+  <p>TrueLift Coach ahora es <a href="../escritorio/">TrueLift Escritorio</a>.</p>
+</main>
 </body>
 </html>
