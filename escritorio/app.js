@@ -1309,8 +1309,12 @@ async function verInforme(form){
   catch (e) { E.inf.error = e.message; E.inf.borrador = sel; render(); $('#formInforme button[type="submit"]')?.focus(); return; }
   E.inf.error = null; E.inf.borrador = null;
   if (await guardarSimple([{ almacen: 'meta', put: { clave: `informe:${E.espacio.id}`, valor: sel } }], 'Informe actualizado')){
-    const t = $('#informeTitulo');
-    if (t){ t.setAttribute('tabindex', '-1'); t.focus(); }
+    // El informe se pinta debajo de las opciones: se lleva a la vista de
+    // forma explícita (el foco solo no basta en todos los navegadores, y si
+    // el periodo no cambia la pantalla parecería no responder).
+    const doc = $('.informe-doc'), t = $('#informeTitulo');
+    if (doc) doc.scrollIntoView({ block: 'start' });
+    if (t){ t.setAttribute('tabindex', '-1'); t.focus({ preventScroll: true }); }
   }
 }
 
@@ -1482,7 +1486,12 @@ function init(){
     if (b){ b.focus(); try { b.setSelectionRange(pos, pos); } catch (_) { /* tipo search */ } }
   });
   $('#contenido').addEventListener('submit', async ev => {
-    if (ev.target.id === 'formInforme'){ ev.preventDefault(); await verInforme(ev.target); return; }
+    if (ev.target.id === 'formInforme'){
+      ev.preventDefault();
+      try { await verInforme(ev.target); }
+      catch (e) { modalMensaje('No se pudo preparar el informe', `<p>${esc(e.message || String(e))}</p>`); }
+      return;
+    }
     if (ev.target.id !== 'compararPeriodos') return;
     ev.preventDefault();
     const datos = new FormData(ev.target);
