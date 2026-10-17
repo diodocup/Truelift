@@ -73,6 +73,13 @@ const Charts = {
     return out;
   },
 
+  /* Tope redondo para un eje que arranca en 0, de modo que sus `n` marcas
+     caigan en cifras limpias (0, 5.000, 10.000…) y no en 4.400 u 8.799. */
+  _techo(max, n = 4){
+    const bruto = max / n, mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+    return [1, 2, 2.5, 5, 10].find(m => m * mag >= bruto) * mag * n;
+  },
+
   /* Decimales del rótulo del eje según lo estrecho que sea su recorrido.
      Sin esto, un eje de %/semana entre 0 y −1 rotula "0, -0, -0, -1, -1". */
   _decEje(min, max){
@@ -124,11 +131,20 @@ const Charts = {
   /* Gráfica de líneas temporales.
      series: [{nombre, color, puntos:[{x:Date, y:num, c?:colorPunto}],
                 dash?: '5 4', soloPuntos?: bool, grosor?: num,
-                eje?: 'der', unidad?: string}]
+                eje?: 'der', unidad?: string, barras?: bool,
+                bajo?: {ref:[{x,y}], color}}]
+       · barras: la serie se dibuja como barras diarias desde 0 (su eje
+         arranca en 0 y el de fechas se abre medio día por cada lado).
+       · bajo: los tramos de la línea que quedan por debajo de `ref` (una
+         referencia que cambia día a día, como el umbral de VFC) se repintan
+         en `color`, cortando justo donde la línea cruza la referencia.
      banda: {min, max, label?} franja de referencia · lineaBase: {y, label, color}
      marcas: [{x:Date, tipo, label, color}] líneas verticales de contexto
-     (descarga, cambio de rutina…); solo las que caen dentro del rango. */
-  lineas({ series, banda = null, lineaBase = null, marcas = [], w = 680, h = 240 }){
+     (descarga, cambio de rutina…); solo las que caen dentro del rango.
+     leyendaExtra: [{color, texto, tipo?}] entradas de leyenda que no son una
+     serie (puntos o tramos pintados de otro color). */
+  _nClip: 0,
+  lineas({ series, banda = null, lineaBase = null, marcas = [], leyendaExtra = [], w = 680, h = 240 }){
     const padL = 46, padT = 16, padB = 26;
     const pts = series.flatMap(s => s.puntos).filter(p => p.y != null);
     if (!pts.length) return `<div class="muted" style="padding:20px">Sin datos en el rango.</div>`;
@@ -142,13 +158,23 @@ const Charts = {
     let ysIzq = (hayEjeDer ? ptsIzq : pts).map(p => p.y);
     if (banda){ if (banda.min != null) ysIzq.push(banda.min); if (banda.max != null) ysIzq.push(banda.max); }
     if (lineaBase && lineaBase.y != null) ysIzq.push(lineaBase.y);
-    const [yMin, yMax] = this._escala(Math.min(...ysIzq), Math.max(...ysIzq));
-    const [yDerMin, yDerMax] = hayEjeDer
-      ? this._escala(Math.min(...ptsDer.map(p => p.y)), Math.max(...ptsDer.map(p => p.y)))
-      : [null, null];
+    // Un eje con barras arranca en 0: la altura de la barra es el valor.
+    const conBarras = der => series.some(s => s.barras && (s.eje === 'der') === der && s.puntos.some(p => p.y != null));
+    const barrasIzq = hayEjeDer ? conBarras(false) : series.some(s => s.barras);
+    if (barrasIzq) ysIzq.push(0);
+    let [yMin, yMax] = this._escala(Math.min(...ysIzq), Math.max(...ysIzq));
+    if (barrasIzq && Math.min(...ysIzq) >= 0){ yMin = 0; yMax = this._techo(yMax); }
+    const ysDer = ptsDer.map(p => p.y);
+    const barrasDer = hayEjeDer && conBarras(true);
+    if (barrasDer) ysDer.push(0);
+    let [yDerMin, yDerMax] = hayEjeDer ? this._escala(Math.min(...ysDer), Math.max(...ysDer)) : [null, null];
+    if (barrasDer && Math.min(...ysDer) >= 0){ yDerMin = 0; yDerMax = this._techo(yDerMax); }
     const xs = pts.map(p => +p.x);
     let xMin = Math.min(...xs), xMax = Math.max(...xs);
-    if (xMin === xMax){ xMin -= 43200000; xMax += 43200000; }
+    const hayBarras = series.some(s => s.barras && s.puntos.some(p => p.y != null));
+    // Con barras, medio día de aire a cada lado para que la primera y la
+    // última no se salgan del lienzo.
+    if (xMin === xMax || hayBarras){ xMin -= 43200000; xMax += 43200000; }
 
     const X = v => padL + (v - xMin) / (xMax - xMin) * (w - padL - padR);
     const YIzq = v => padT + (yMax - v) / (yMax - yMin) * (h - padT - padB);
@@ -205,9 +231,31 @@ const Charts = {
       const p = s.puntos.filter(q => q.y != null).sort((a,b) => a.x - b.x);
       if (!p.length) return;
       const Y = hayEjeDer && s.eje === 'der' ? YDer : YIzq;
+      if (s.barras){
+        // Las barras van al 72 %, como en `barras`.
+        const bw = Math.max(2, Math.min(22, (w - padL - padR) / ((xMax - xMin) / 86400000) * 0.7));
+        const y0 = Y(hayEjeDer && s.eje === 'der' ? yDerMin : yMin);
+        p.forEach(q => {
+          const yq = Y(q.y);
+          svg += `<rect x="${(X(+q.x) - bw/2).toFixed(1)}" y="${yq.toFixed(1)}" width="${bw.toFixed(1)}" `
+               + `height="${Math.max(0, y0 - yq).toFixed(1)}"${bw > 3 ? ' rx="2"' : ''} style="fill:${this._c(q.c || s.color)}" opacity="0.72" `
+               + `data-tt="${esc(s.nombre)} · ${fmtFecha(q.x)} · ${fmtNum(q.y, Number.isInteger(q.y) ? 0 : 1)}${s.unidad ? ' ' + esc(s.unidad) : ''}"/>`;
+        });
+        return;
+      }
       if (!s.soloPuntos){
         const d = p.map((q,i) => `${i ? 'L' : 'M'}${X(+q.x).toFixed(1)},${Y(q.y).toFixed(1)}`).join(' ');
         svg += this._trazo(d, s.color, s.grosor || 2.2, s.dash);
+        const ref = s.bajo ? (s.bajo.ref || []).filter(q => q.y != null).sort((a,b) => a.x - b.x) : [];
+        if (ref.length){
+          // Zona por debajo de la referencia: el mismo trazo, recortado a ella
+          // y en otro color. El recorte corta exacto en cada cruce.
+          const id = `tl-bajo-${++this._nClip}`;
+          const x0 = X(+ref[0].x).toFixed(1), x1 = X(+ref[ref.length - 1].x).toFixed(1);
+          const borde = ref.map((q,i) => `${i ? 'L' : 'M'}${X(+q.x).toFixed(1)},${Y(q.y).toFixed(1)}`).join(' ');
+          svg += `<defs><clipPath id="${id}"><path d="${borde} L${x1},${h} L${x0},${h} Z"/></clipPath></defs>`
+               + `<g clip-path="url(#${id})">${this._trazo(d, s.bajo.color, s.grosor || 2.2, s.dash)}</g>`;
+        }
       }
       if (!s.sinPuntos){
         p.forEach(q => {
@@ -220,7 +268,8 @@ const Charts = {
 
     svg += `</svg>`;
     const ley = series.map(s => this._ley(s.color, s.nombre, s.dash ? 'trazo' : 'linea',
-      hayEjeDer && s.eje === 'der' ? ' <span class="muted">(eje der.)</span>' : '')).join('');
+      hayEjeDer && s.eje === 'der' ? ' <span class="muted">(eje der.)</span>' : '', s.barras ? 0.72 : null)).join('')
+      + (leyendaExtra || []).map(e => this._ley(e.color, e.texto, e.tipo || 'linea')).join('');
     const leyBase = lineaBase && lineaBase.label
       ? this._ley(lineaBase.color || TL.txt3, lineaBase.label, 'trazo') : '';
     const leyBanda = (banda && banda.min != null && banda.max != null)

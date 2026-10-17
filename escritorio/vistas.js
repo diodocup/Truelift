@@ -1000,9 +1000,9 @@ function recuperacion(M){
     const umbral = vfcV.filter(v => v.fecha >= soloDia(desde) && tend.get(v.clave)).map(v => ({ x: v.fecha, y: Math.round(tend.get(v.clave).umbral * 10) / 10 }));
     const svg = Charts.lineas({ series: [
       { nombre: 'VFC de la noche', color: TL.txt3, puntos: pts, soloPuntos: true, unidad: 'ms' },
-      { nombre: 'Media de 7 días', color: TL.lima, puntos: media, unidad: 'ms', sinPuntos: true },
+      { nombre: 'Media de 7 días', color: TL.lima, puntos: media, unidad: 'ms', sinPuntos: true, bajo: { ref: umbral, color: ROJO } },
       { nombre: 'Tu umbral', color: TL.ambar, puntos: umbral, unidad: 'ms', dash: '5 4', sinPuntos: true },
-    ], w: 960, h: 240 });
+    ], leyendaExtra: media.some((m, i) => m.y < umbral[i].y) ? [{ color: ROJO, texto: 'Media por debajo del umbral' }] : [], w: 960, h: 240 });
     const filas = vfcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => { const t = tend.get(v.clave);
       return [F.dia(v.fecha), F.num(v.vfc, 0), t ? F.num(t.media7, 1) : '—', t ? F.num(t.umbral, 1) : '—']; });
     out.push(tarjeta('Variabilidad de la frecuencia cardiaca (VFC)', grafica(svg, 'VFC nocturna, media de 7 días y umbral', tabla(['Noche', 'VFC (ms)', 'Media 7 días', 'Umbral'], filas, { caption: 'VFC' })) +
@@ -1012,10 +1012,13 @@ function recuperacion(M){
   const fcV = FCReposo.validas(R);
   if (fcV.length){
     const banda = FCReposo.bandaSerie(R);
-    const pts = fcV.filter(v => v.fecha >= soloDia(desde)).map(v => ({ x: v.fecha, y: v.fcReposo }));
+    // Los días por encima del límite que regía ese día van en rojo.
+    const pts = fcV.filter(v => v.fecha >= soloDia(desde)).map(v => { const b = banda.get(v.clave);
+      return { x: v.fecha, y: v.fcReposo, ...(b && v.fcReposo > b.alta ? { c: ROJO } : {}) }; });
     const alta = fcV.filter(v => v.fecha >= soloDia(desde) && banda.get(v.clave)).map(v => ({ x: v.fecha, y: Math.round(banda.get(v.clave).alta * 10) / 10 }));
     const svg = Charts.lineas({ series: [{ nombre: 'FC en reposo', color: TL.azul, puntos: pts, unidad: 'ppm' },
-      { nombre: 'Límite alto para ti', color: TL.ambar, puntos: alta, unidad: 'ppm', dash: '5 4', sinPuntos: true }], w: 960, h: 220 });
+      { nombre: 'Límite alto para ti', color: TL.ambar, puntos: alta, unidad: 'ppm', dash: '5 4', sinPuntos: true }],
+      leyendaExtra: pts.some(p => p.c) ? [{ color: ROJO, texto: 'Por encima de tu límite' }] : [], w: 960, h: 220 });
     out.push(tarjeta('Frecuencia cardiaca en reposo', grafica(svg, 'FC en reposo y su límite alto',
       tabla(['Día', 'FC (ppm)', 'Límite alto'], fcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => [F.dia(v.fecha), F.num(v.fcReposo, 0), banda.get(v.clave) ? F.num(banda.get(v.clave).alta, 1) : '—']), { caption: 'FC en reposo' }))));
   }
@@ -1024,20 +1027,48 @@ function recuperacion(M){
   if (S.length && Salud.hay(S)){
     const sueno = S.filter(d => d.sueno && d.sueno.total).map(d => ({ x: d.fecha, y: Math.round(d.sueno.total / 6) / 10 }));
     const pasos = S.filter(d => d.pasos != null).map(d => ({ x: d.fecha, y: d.pasos }));
-    const svg = Charts.lineas({ series: [
-      ...(sueno.length ? [{ nombre: 'Horas dormidas', color: TL.azul, puntos: sueno, unidad: 'h' }] : []),
-      ...(pasos.length ? [{ nombre: 'Pasos', color: TL.lima, puntos: pasos, unidad: 'pasos', eje: sueno.length ? 'der' : undefined }] : []),
-    ], w: 960, h: 240 });
-    const filas = S.slice().reverse().map(d => [F.dia(d.fecha), d.sueno && d.sueno.total ? Salud.fmtHm(d.sueno.total) : '—',
-      d.sueno && d.sueno.reparadorPct != null ? `${Math.round(d.sueno.reparadorPct * 100)} %` : '—',
-      d.pasos != null ? d.pasos.toLocaleString('es-ES') : '—', d.fcReposo != null ? F.num(d.fcReposo, 0) : '—']);
-    out.push(tarjeta('Datos del reloj', grafica(svg, 'Sueño y pasos del reloj', tabla(['Día', 'Sueño', 'Sueño profundo y REM', 'Pasos', 'FC reposo'], filas, { caption: 'Datos del reloj por día' })) +
-      '<p class="muted" style="font-size:12.5px">Un día sin dato del reloj es un hueco, no un cero.</p>'));
+    // La media se calcula con todo el historial, para que los primeros días
+    // del periodo ya tengan su semana completa detrás.
+    const media7 = mediaPasos7(M.datos.salud.filter(d => d.fecha <= M.ref));
+    const mediaPts = pasos.filter(p => media7.has(+soloDia(p.x))).map(p => ({ x: p.x, y: Math.round(media7.get(+soloDia(p.x))) }));
+    const svgSueno = sueno.length ? Charts.lineas({ series: [{ nombre: 'Horas dormidas', color: TL.azul, puntos: sueno, unidad: 'h' }], w: 960, h: 220 }) : '';
+    const svgPasos = pasos.length ? Charts.lineas({ series: [
+      { nombre: 'Pasos', color: TL.lima, puntos: pasos, unidad: 'pasos', barras: true },
+      ...(mediaPts.length ? [{ nombre: 'Media de 7 días', color: TL.txt, puntos: mediaPts, unidad: 'pasos', sinPuntos: true }] : []),
+    ], w: 960, h: 240 }) : '';
+    const filas = S.slice().reverse().map(d => { const m = media7.get(+soloDia(d.fecha));
+      return [F.dia(d.fecha), d.sueno && d.sueno.total ? Salud.fmtHm(d.sueno.total) : '—',
+        d.sueno && d.sueno.reparadorPct != null ? `${Math.round(d.sueno.reparadorPct * 100)} %` : '—',
+        d.pasos != null ? d.pasos.toLocaleString('es-ES') : '—', d.pasos != null && m != null ? Math.round(m).toLocaleString('es-ES') : '—',
+        d.fcReposo != null ? F.num(d.fcReposo, 0) : '—']; });
+    const tablaReloj = tabla(['Día', 'Sueño', 'Sueño profundo y REM', 'Pasos', 'Pasos, media 7 días', 'FC reposo'], filas, { caption: 'Datos del reloj por día' });
+    out.push(tarjeta('Datos del reloj', (svgSueno ? grafica(svgSueno, 'Horas dormidas por noche', svgPasos ? '' : tablaReloj) : '') +
+      (svgPasos ? grafica(svgPasos, 'Pasos por día y su media de 7 días', tablaReloj) : '') +
+      (!svgSueno && !svgPasos ? tablaReloj : '') +
+      '<p class="muted" style="font-size:12.5px">Un día sin dato del reloj es un hueco, no un cero. La media de pasos cuenta solo los días con dato de la última semana (al menos 3).</p>'));
   }
   if (out.length === 1) out.push(tarjeta('Recuperación', vacio('Tu copia no trae datos de recuperación.')));
   return out.join('');
 }
 const COLOR_ESTADO = { verde: TL.lima, ambar: TL.ambar, rojo: '#F04438' };
+// Rojo de aviso de las gráficas de recuperación, por variable para el papel.
+const ROJO = 'var(--rojo-vivo, #F04438)';
+
+/* Media de pasos de los 7 días naturales que acaban en cada fecha (clave:
+   +soloDia). Los días sin dato quedan fuera, no cuentan como cero; con menos
+   de 3 días con dato en la ventana no hay media, como en la VFC. */
+function mediaPasos7(salud){
+  const v = salud.filter(d => d.pasos != null).sort((a, b) => a.fecha - b.fecha);
+  const out = new Map();
+  let lo = 0, suma = 0;
+  v.forEach((d, i) => {
+    suma += d.pasos;
+    const ini = new Date(d.fecha.getFullYear(), d.fecha.getMonth(), d.fecha.getDate() - 6);
+    while (v[lo].fecha < ini){ suma -= v[lo].pasos; lo++; }
+    if (i - lo + 1 >= 3) out.set(+soloDia(d.fecha), suma / (i - lo + 1));
+  });
+  return out;
+}
 
 // ---------------------------------------------------------------
 // MI RUTINA
