@@ -152,8 +152,8 @@ function fila(rutina, d, i, f, ss, ctx){
         ${CAT_PATRONES.map(p => { const v = p === '(Ninguno)' ? '' : p; return `<option value="${esc(v)}"${v === (f.patron || '') ? ' selected' : ''}>${esc(p)}</option>`; }).join('')}
         ${f.patron && !CAT_PATRONES.includes(f.patron) ? `<option value="${esc(f.patron)}" selected>${esc(f.patron)}</option>` : ''}</select></label>
       ${campoNum(id('series'), d, i, 'series', f.series, 1, 10, 'Series')}
-      ${campoNum(id('repsMin'), d, i, 'repsMin', f.repsMin, 1, modo === 'rp' ? 60 : 30, modo === 'rp' ? (rutina.sistema === 'doble' ? 'Reps totales mín' : 'Reps totales') : rutina.sistema === 'doble' ? 'Reps mín' : 'Reps')}
-      ${rutina.sistema === 'doble' ? campoNum(id('repsMax'), d, i, 'repsMax', f.repsMax, 1, modo === 'rp' ? 60 : 30, modo === 'rp' ? 'Reps totales máx' : 'Reps máx') : ''}
+      ${campoNum(id('repsMin'), d, i, 'repsMin', f.repsMin, 1, modo === 'rp' ? 60 : 30, modo === 'rp' ? (rutina.sistema === 'doble' ? 'Reps totales mín' : 'Reps totales') : modo === 'drop' ? 'Reps 1.ª serie' : rutina.sistema === 'doble' ? 'Reps mín' : 'Reps')}
+      ${rutina.sistema === 'doble' && modo !== 'drop' ? campoNum(id('repsMax'), d, i, 'repsMax', f.repsMax, 1, modo === 'rp' ? 60 : 30, modo === 'rp' ? 'Reps totales máx' : 'Reps máx') : ''}
       ${modo === 'rp' ? '<span class="rut-campo n2 rut-fijo"><span>RIR</span><b title="En rest-pause todas las series van al fallo">al fallo</b></span>' : campoNum(id('rir'), d, i, 'rir', f.rir, 0, 6, 'RIR')}
       <label class="rut-campo n3" for="${id('descanso')}"><span>Descanso</span><select id="${id('descanso')}" title="Por defecto: el descanso que la app propone para ese ejercicio" data-rut="campo" data-d="${d}" data-f="${i}" data-k="descanso">
         <option value=""${f.descanso == null ? ' selected' : ''}>Por defecto</option>

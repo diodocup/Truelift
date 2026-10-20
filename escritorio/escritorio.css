@@ -754,3 +754,74 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
   .informe-doc .chip.verde{border-color:var(--lima-30)}
 }
 .aviso-comparacion{border-left:0;padding:10px 14px;border:1px solid rgba(224,169,46,.32);border-radius:var(--radio-sm);background:var(--ambar-14);color:var(--txt)}
+
+/* Progreso de la fase (como «Cómo vas» de la app): barra de peso con la
+   marca de lo previsto y barra de tiempo, del mismo ancho. */
+.fase-progreso{margin:14px 0 10px;padding:12px 14px;border:1px solid var(--borde);border-radius:var(--radio-sm);background:var(--sup2)}
+.fase-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.fase-cab .sub-h{margin:0}
+.fase-fila{display:flex;justify-content:space-between;gap:10px;margin:10px 0 5px;font-size:12px;color:var(--txt3)}
+.fase-fila b{color:var(--txt);font-weight:600}
+.fase-barra{position:relative;height:8px;background:var(--sup3);border-radius:6px}
+.fase-barra i{display:block;height:100%;border-radius:6px}
+.fase-barra b{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--txt);border-radius:1px}
+.fase-frase{margin:10px 0 4px;font-weight:600}
+@media print{.fase-progreso{break-inside:avoid}}
+
+/* ---------- Tema claro «Tiza» (como la app, 16/10/2026) ----------
+   tema.js pone data-tema="claro" en <html>. Paleta de la app (TLPaleta.clara):
+   fondo de tiza, tarjeta blanca y campo gris verdoso, bordes en negro
+   translúcido. El lima se desdobla: --lima es la TINTA (texto, iconos,
+   trazos), un oliva que se lee sobre blanco; los rellenos con texto oscuro
+   encima usan --lima-relleno. Solo en pantalla: al imprimir manda la hoja
+   de papel. */
+@media screen{
+  html[data-tema="claro"]{
+    color-scheme:light;
+    --fondo:#F3F5F2; --sup1:#FFFFFF; --sup2:#ECEFEB; --sup3:#E1E5E0;
+    --lima:#477500; --lima-hover:#3A6000; --lima-relleno:#A3E020; --lima-relleno-hover:#B8EE4C;
+    --lima-10:#EBF5D6; --lima-14:#E3F0C8; --lima-18:#DAEBB8; --lima-30:rgba(71,117,0,.32);
+    --ambar:#946200; --ambar-14:rgba(148,98,0,.08);
+    --naranja:#B44D06; --naranja-14:rgba(180,77,6,.08);
+    --rojo:#B3261E; --rojo-14:rgba(179,38,30,.10);
+    --rojo-vivo:#C02E14; --rojo-vivo-14:rgba(192,46,20,.08);
+    --azul:#2A6CB0; --azul-14:rgba(42,108,176,.08);
+    --txt:#0E1210; --txt2:#353D38; --txt3:#4F5853; --txt4:#626C67;
+    --apagado:#8A938E; --vacio:#A9B2AD;
+    --borde:rgba(14,24,18,.10); --borde-campo:rgba(14,24,18,.16);
+    --sep:rgba(14,24,18,.07); --reticula:rgba(14,24,18,.08);
+  }
+  html[data-tema="claro"] svg text{fill:#4F5853}
+  /* Rellenos lima con texto oscuro encima. */
+  html[data-tema="claro"] .btn.pri,html[data-tema="claro"] .saltar,
+  html[data-tema="claro"] .rut-estado > div:nth-child(2)::before{background:var(--lima-relleno);border-color:var(--lima-relleno);color:#0A0C0B}
+  html[data-tema="claro"] .btn.pri:hover{background:var(--lima-relleno-hover);border-color:var(--lima-relleno-hover);color:#0A0C0B}
+  /* Velos y realces que en oscuro aclaran: en claro oscurecen. */
+  html[data-tema="claro"] .btn{border-color:rgba(14,24,18,.16)}
+  html[data-tema="claro"] .btn:hover,html[data-tema="claro"] .btn-mini:hover,
+  html[data-tema="claro"] #modalCaja .opcion:hover,
+  html[data-tema="claro"] input:hover,html[data-tema="claro"] select:hover,html[data-tema="claro"] textarea:hover{border-color:rgba(14,24,18,.30)}
+  html[data-tema="claro"] .chip.gris{background:rgba(14,24,18,.05)}
+  html[data-tema="claro"] .kpi-progreso,html[data-tema="claro"] .vol-barra,html[data-tema="claro"] .dif-barra,html[data-tema="claro"] .barra{background:rgba(14,24,18,.07)}
+  html[data-tema="claro"] .mini-cero{stroke:rgba(14,24,18,.25)}
+  html[data-tema="claro"] .lt-ley-obj{border-top-color:rgba(14,24,18,.45)}
+  html[data-tema="claro"] .lt-cero{stroke:rgba(14,24,18,.28)}
+  html[data-tema="claro"] .lt-descarga{fill:rgba(14,24,18,.04)}
+  html[data-tema="claro"] .lt-pesaje{fill:#B4BCB7}
+  html[data-tema="claro"] .lt-objetivo{stroke:rgba(14,24,18,.35)}
+  html[data-tema="claro"] .lt-fase{fill:rgba(14,24,18,.05)}
+  html[data-tema="claro"] .lt-descarga-chip{fill:rgba(14,24,18,.10)}
+  html[data-tema="claro"] .lt-dia.descanso,html[data-tema="claro"] .lt-ley-dia.descanso{fill:rgba(14,24,18,.07);background:rgba(14,24,18,.10)}
+  html[data-tema="claro"] .rut-estado > div:nth-child(3){border-color:rgba(14,24,18,.20)}
+  html[data-tema="claro"] .ej-lista,html[data-tema="claro"] #tabs,html[data-tema="claro"] #modalCaja,
+  html[data-tema="claro"] .card.ficha-lista{scrollbar-color:rgba(14,24,18,.20) transparent}
+  /* Los dibujos son trazo blanco sobre negro: en claro se invierten a trazo
+     oscuro sobre el gris del campo, como las láminas de la app. */
+  html[data-tema="claro"] img.ej-dibujo{filter:invert(1) brightness(.93)}
+  /* Las fotos de progreso no se tocan. El informe ya es una hoja clara. */
+  html[data-tema="claro"] .informe-doc{box-shadow:0 10px 40px rgba(14,24,18,.14)}
+}
+/* Elegir tema en Mis datos. */
+.tema-elegir{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 8px;padding:0;border:0}
+.tema-op{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--txt2);cursor:pointer}
+.tema-op input{accent-color:var(--lima)}

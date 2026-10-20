@@ -22,7 +22,8 @@ del planificador en `PLANIFICADOR.md`.
   su estado de progresión y su ficha (series una a una, por qué de su
   estado, evolución reciente, mejores marcas y comparación de dos
   sesiones), rendimiento por sesión, volumen por grupo muscular y semana y comparación de dos periodos.
-- **Evolución física:** peso tendencia y fase, composición (estimación),
+- **Evolución física:** peso tendencia y fase con el progreso de la fase
+  frente a lo pactado (como «Cómo vas» de la app), composición (estimación),
   contornos con gráficas y tablas, galería por fecha/pose y comparación de fotos.
 - **Recuperación:** estado para entrenar, cuestionarios, VFC, FC en reposo y
   datos del reloj.
@@ -37,6 +38,10 @@ del planificador en `PLANIFICADOR.md`.
 
 Teclado: Alt + 1…7 cambia de sección; Atrás y Adelante del navegador
 funcionan entre secciones.
+
+**Tema:** oscuro o claro, como en la app. Por defecto sigue el de la app
+(`temaClaro` de la copia); en **Mis datos → Tema** se puede fijar en este
+navegador (`tema.js`). Al imprimir manda siempre la hoja de papel.
 
 ## Diseño
 
@@ -106,9 +111,9 @@ pantallas de móvil.
 5. Revisa la vista previa y confirma. Hasta que confirmas no se guarda nada.
 
 Para probarlo sin exportar datos propios está la copia de ejemplo
-`ejemplo/copia_truelift_2026-10-08.json`, la misma que se descarga desde la
-sección «TrueLift Escritorio» de la web. Sin ZIP de fotos, las fotos que
-registra aparecen como «Falta la imagen».
+`ejemplo/copia_truelift_2026-10-16.json` (el historial del modo DEMO de la app), la misma que se descarga desde la
+sección «TrueLift Escritorio» de la web. No registra fotos de progreso: para
+probar la galería y la comparación importa un ZIP de fotos de la app.
 
 ### Actualizar
 
@@ -276,6 +281,27 @@ pierde al cerrar.
 - Un borrador que no se pudo guardar (falta de espacio) se queda como estaba
   en su último guardado; el aviso lo dice. Los Excel ya exportados son
   archivos tuyos: puedes volver a abrirlos con **Abrir un Excel de rutina…**.
+
+## Al día con la app (20/10/2026)
+
+Cambios de App-PRO del 11 al 20/10/2026 que afectan al escritorio:
+
+- **Rutinas en casa:** la clave de la rutina incluye `casaN`; sin esto quien
+  entrena en casa veía su rutina como «desconocida».
+- **Peso fijo de máquina:** el 1RM estimado y las marcas suman el peso fijo,
+  como la app; la carga que se ve sigue siendo la anotada.
+- **Rest-pause** en progresión simple: se progresa en el extremo alto del rango.
+- **Drop set:** un único objetivo de reps (la 1.ª serie), también en doble, en
+  el editor, los avisos y el Excel.
+- **Biblioteca de ejercicios** regenerada desde la app (Face pull unificado,
+  Fondos asistidos en máquina, dibujo nuevo de Fondos en máquina).
+- **Nutrición v8:** Comparar periodos dice qué pasó con cada propuesta de
+  ajuste (aceptada, pospuesta, sustituida…) y cuenta solo los aceptados.
+- **Fatiga en la sesión:** la ayuda del neto explica el criterio nuevo y
+  Comparar periodos avisa si mezcla sesiones de antes y después.
+- **Progreso de la fase** frente a lo pactado, en Mi resumen y Evolución física.
+- **Copia de ejemplo** = historial del modo DEMO de la app.
+- **Tema claro** y «Como en tu app».
 
 ## Pruebas
 

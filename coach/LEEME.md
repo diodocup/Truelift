@@ -12,7 +12,7 @@ actualizar `../escritorio/index.html` y `../escritorio/sw.js`.
 
 Las copias de ejemplo del Coach (cinco clientes ficticios) se han retirado. La
 copia de ejemplo que se descarga desde la web es la del escritorio:
-`../escritorio/ejemplo/copia_truelift_2026-10-08.json`.
+`../escritorio/ejemplo/copia_truelift_2026-10-16.json`.
 
 Lo que sigue describe el Coach tal como funcionaba, como referencia de los
 módulos compartidos.

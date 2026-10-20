@@ -40,6 +40,9 @@ test('intentos por fase de peso', () => {
 test('objetivo de la línea: doble → último número, simple → primero', () => {
   assert.equal(Motor.objetivoLinea({ ejercicio: 'Sentadilla', reps: '8-12' }, 'doble'), 12);
   assert.equal(Motor.objetivoLinea({ ejercicio: 'Sentadilla', reps: '8-12' }, 'simple'), 8);
+  // Rest-pause: el rango es de total y se progresa en su extremo alto, también en simple.
+  assert.equal(Motor.objetivoLinea({ ejercicio: 'Curl con barra', reps: '15-25', series: 3, restPause: true }, 'simple'), 25);
+  assert.equal(Motor.objetivoLinea({ ejercicio: 'Curl con barra', reps: '15-25', series: 1, restPause: true }, 'simple'), 15, 'con una serie es una serie normal');
   assert.equal(Motor.objetivoLinea({ ejercicio: 'Plancha frontal', reps: '30' }, 'doble'), null);
   assert.equal(Motor.objetivoLinea({ ejercicio: 'X', reps: 'al fallo' }, 'doble'), null);
 });

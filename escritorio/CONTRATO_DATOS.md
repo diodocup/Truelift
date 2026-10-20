@@ -32,6 +32,9 @@ toman su valor por defecto (copias antiguas toleradas).
 | `ejerciciosUsuario` | array | Ejercicios propios. |
 | `fechaUltimaCopia` | `YYYY-MM-DD` | **Fecha de la exportación ANTERIOR**: se anota después de escribir el archivo (`marcarCopiaExportada`). No es la fecha de esta copia. |
 | `proSello` | string | Sello firmado del estado de prueba PRO. El escritorio **no lo lee ni lo usa**. |
+| `enCasa` | bool | Entrena en casa (18/10/2026). Solo vale con `dias` 3 o 4 (`AppState.diasCasa`). La rutina prefijada y `planModKey` usan entonces `casaN` en vez de `N`: `sexo_sistema\|casa3`. `Motor.comboRutina`. Ausente = gimnasio. |
+| `pesoFijoMaquina` | object | Peso fijo inicial por máquina en kg (14/10/2026), con la clave de `claveLadosCarga` (familias `hack squat`, `prensa 45`, `sentadilla pendular`; el resto, nombre en minúsculas). Lo anotado sigue siendo lo que se pone; e1RM, marcas y tonelaje suman el peso fijo con su valor **actual**. Nunca en peso corporal ni asistidos. `Motor.pesoFijoDe`. |
+| `temaClaro` | bool | Tema de la app (16/10/2026). El escritorio lo usa como tema por defecto («Como en tu app»). |
 
 **No existe** fecha de exportación de la propia copia ni identificador de
 usuario o instalación. `onboardingCompletadoEn` (ISO, solo instalaciones
@@ -65,12 +68,42 @@ recientes) y `fechaNacimiento` son indicios, no identidad.
 - No hay identificador de sesión. Huella práctica: `fecha` completa (con
   hora) + `tipo` + `dia`.
 
+Desde el 15/10/2026 cada sesión guarda `fatigueModelVersion` (2) y campos
+`fatigueExcessDrop`, `fatigueCoverage`…: el neto descuenta solo la caída entre
+series **por encima de la habitual**. Las sesiones anteriores conservan el
+neto antiguo (sin versión = 1); Comparar periodos avisa si un grupo mezcla
+ambos.
+
 ### 1.2 `planMod[]` (`LineaRutina.toJson`, `lib/models.dart`)
 
 `id ('linea_<µs>_<n>' o 'prefijada:<dia>:<orden>'), dia, orden, patron, grupo,
 ejercicio, series, reps (string), rir (string), descansoMin, topBack,
 backoffPct, rirBack, dropSet, dropPct, superConAnterior, restPause,
 pausaRpSeg`. Las copias antiguas no traen las modalidades.
+
+- **Drop set (13/10/2026):** `reps` es un único número (el objetivo de la 1.ª
+  serie), también en doble. Una línea antigua con rango la app la deja al
+  cargar en la cifra que abría la subida (doble: el extremo alto); el
+  escritorio la compara ya así. El Excel escribe solo E.
+- **Rest-pause:** el rango es de TOTAL y se progresa al llegar a su extremo
+  alto también en simple (`objetivoRepsLinea`, `Motor.objetivoLinea`).
+
+### 1.3 `nutricion` (esquema v8, 13/10/2026)
+
+Aditivo: las copias v1–v7 se siguen leyendo.
+
+- `recomendaciones[].estadoPropuesta`: `PROPOSED`, `POSTPONED`, `ACCEPTED`,
+  `SUPERSEDED`, `EXPIRED`, `LEGACY_RECONCILED`, `DEFERRED`. Solo en `ADJUST`;
+  sin él se deriva como la app (`aplicadaEn` → aceptada, `pospuestaEn` →
+  pospuesta, si no → propuesta). Un ajuste solo cambia la pauta al aceptarse
+  (`aceptacion {fecha, via, comidaKcalDia, pasosDia…}`).
+- `versionesPauta[] {numero, faseId, desde, tasaObjetivoPctSemana, …}`:
+  historial de la pauta; el escritorio usa el ritmo de cada versión para la
+  trayectoria por tramos.
+- `faseActual.compromiso {tasaPctSemana, pesoInicioKg, grasaInicioPct,
+  pesoMetaKg, fin, reconstruido}` (18/10/2026): foto fija al abrir la fase.
+  Sin él se reconstruye como `ServicioNutricion._completarCompromiso`.
+  `ProgresoFase` (coach/nutricion.js) replica `lib/nutricion/progreso.dart`.
 
 ## 2. Medidas y fotos
 

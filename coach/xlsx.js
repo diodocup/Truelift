@@ -387,7 +387,8 @@ const XLSX = {
             + this._celdaTexto('B' + r, 5, f.ejercicio);
       const n = (col, v) => { if (v != null && !isNaN(v)) c += this._celdaNum(col + r, 5, v); };
       n('C', f.series); n('D', f.rir); n('E', f.repsMin);
-      if (sistema === 'doble') n('F', f.repsMax);
+      // Un drop set lleva un único objetivo de reps (E), también en doble.
+      if (sistema === 'doble' && !(f.dropSet && !f.topBack)) n('F', f.repsMax);
       n('G', f.descanso);
       if (f.topBack){
         c += this._celdaTexto('H' + r, 5, 'sí');

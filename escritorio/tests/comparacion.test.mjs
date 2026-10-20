@@ -94,6 +94,18 @@ test('rendimiento: identidad histórica explícita, rutina y día separados, no 
   assert.ok(comparar(nums).rendimiento.every(g => g.brutoA.n === 0 && g.brutoB.n === 0));
 });
 
+test('rendimiento: avisa si el neto mezcla sesiones de antes y después del cambio de fatiga (15/10/2026)', () => {
+  const raw = copiaFase3();
+  raw.logs.forEach(l => { l.rawSessionPct = 0; l.netDailyPerformancePct = 0; });
+  const C0 = comparar(raw);
+  assert.ok(C0.rendimiento.every(g => !g.netoMixto), 'todas con el criterio anterior');
+  const g = C0.rendimiento.find(x => x.a.length + x.b.length >= 2);
+  const fechas = new Set([...g.a, ...g.b].map(s => s.l.fecha));
+  raw.logs.filter(l => fechas.has(l.fecha)).slice(-1).forEach(l => { l.fatigueModelVersion = 2; });
+  assert.ok(comparar(raw).rendimiento.some(x => x.netoMixto));
+  assert.match(VistasEsc.entrenamiento(model(raw), { sub: 'comparar', periodos }), /compara mejor el bruto/);
+});
+
 test('series: mismo Motor por grupo, sesiones dobles no inflan días y sin grupo no se inventa', () => {
   const raw = copiaFase3(), base = comparar(raw).b;
   raw.logs.push({ ...structuredClone(raw.logs.find(l => l.fecha.startsWith(diaFase3(7, 0)))), entradas: [{ ejercicio: 'Desconocido', kg: 5, reps: [8], rir: [0] }] });
@@ -154,7 +166,24 @@ test('nutrición: fase actual no se aplica al pasado; plan futuro no es historia
   assert.equal(C.contextoA.fases.length, 0); assert.equal(C.contextoB.fases.length, 1);
   assert.equal(C.contextoB.recomendaciones[0].ajusteKcalDia, 0);
   const html = VistasEsc.entrenamiento(model(raw), { sub: 'comparar', periodos });
-  assert.match(html, /no demuestran ingesta real/);
+  assert.match(html, /no demuestra ingesta real/);
+});
+
+test('nutrición v8: cada ajuste dice si se aceptó; las copias antiguas lo derivan como la app', () => {
+  const raw = copiaFase3(); raw.nutricion.faseActual = { id: 'f', tipo: 'DEFICIT', inicio: diaFase3(5, 0) };
+  raw.nutricion.recomendaciones = [
+    { fecha: diaFase3(5, 0), faseId: 'f', tipo: 'ADJUST', ajusteKcalDia: -100, estadoPropuesta: 'SUPERSEDED' },
+    { fecha: diaFase3(6, 0), faseId: 'f', tipo: 'ADJUST', ajusteKcalDia: -120, estadoPropuesta: 'ACCEPTED', aceptacion: { fecha: diaFase3(6, 1), via: 'COMIDA', comidaKcalDia: -120, pasosDia: 0 } },
+    { fecha: diaFase3(7, 0), faseId: 'f', tipo: 'ADJUST', ajusteKcalDia: -80, aplicadaEn: diaFase3(7, 0) },   // anterior a v8
+    { fecha: diaFase3(8, 0), faseId: 'f', tipo: 'ADJUST', ajusteKcalDia: -90 },
+    { fecha: diaFase3(8, 1), faseId: 'f', tipo: 'HOLD', ajusteKcalDia: 0 },
+  ];
+  const B = comparar(raw).contextoB;
+  assert.deepEqual(B.recomendaciones.map(r => r.estadoPropuesta), ['SUPERSEDED', 'ACCEPTED', 'ACCEPTED', 'PROPOSED', null]);
+  assert.equal(B.recomendaciones[1].aceptacion.comidaKcalDia, -120);
+  const html = VistasEsc.entrenamiento(model(raw), { sub: 'comparar', periodos });
+  assert.match(html, /Ajustes aceptados/);
+  for (const t of ['Sustituida por otra', 'Aceptada', 'Propuesta sin decidir', 'Mantener']) assert.ok(html.includes(t), t);
 });
 
 test('vista: fechas, muestras, parciales, contexto, enlaces y contenido importado escapado; sin mutación', () => {

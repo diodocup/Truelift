@@ -136,8 +136,13 @@ function rendimiento(a, b){
   const stat = (ss, tipo) => estadistica(ss.filter(s => tipo === 'neto' ? s.neto != null :
     s.bruto != null && (num(s.l.rawSessionPct) != null || num(s.l.rendimientoPct) != null))
     .map(s => ({ fecha: s.fecha, valor: s[tipo], indice: s.indice })));
+  // Desde el 15/10/2026 la app guarda el neto con otro criterio de fatiga
+  // (`fatigueModelVersion` 2) y no reescribe las sesiones anteriores: un
+  // grupo que mezcla los dos no compara el neto de igual a igual.
+  const v2 = s => (num(s.l.fatigueModelVersion) ?? 1) >= 2;
+  const netoMixto = g => { const ss = [...g.a, ...g.b].filter(s => s.neto != null); return ss.some(v2) && !ss.every(v2); };
   return [...grupos.values()].map(g => ({ ...g, brutoA: stat(g.a, 'bruto'), brutoB: stat(g.b, 'bruto'),
-    netoA: stat(g.a, 'neto'), netoB: stat(g.b, 'neto') }));
+    netoA: stat(g.a, 'neto'), netoB: stat(g.b, 'neto'), netoMixto: netoMixto(g) }));
 }
 function contexto(M, p){
   const nut = M.datos.nutricion;

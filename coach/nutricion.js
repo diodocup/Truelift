@@ -30,6 +30,8 @@
 const NUT = {
   // §4.2 — Controlador
   kcalPorKg: 7700,
+  // EstadoPropuesta de la app (lib/nutricion/pauta.dart).
+  ESTADOS_PROPUESTA: ['PROPOSED', 'POSTPONED', 'ACCEPTED', 'SUPERSEDED', 'EXPIRED', 'LEGACY_RECONCILED', 'DEFERRED'],
   bandaMuertaPctSemana: 0.1,
   maxPasoKcal: 300,
 
@@ -236,6 +238,17 @@ function normalizarNutricion(raw){
       pesoObjetivoKg: numNut(f.pesoObjetivoKg) ?? 0,
       semanasPreviasEnTipo: numNut(f.semanasPreviasEnTipo) ?? 0,
       modoCiclo: f.modoCiclo === true,
+      // Foto fija al abrir la fase (18/10/2026): ritmo, meta, peso de partida
+      // y fin previsto con los que empezó. Aditivo: las copias anteriores no
+      // lo traen y se reconstruye como en la app.
+      compromiso: (f.compromiso && typeof f.compromiso === 'object' && numNut(f.compromiso.tasaPctSemana) != null) ? {
+        tasaPctSemana: numNut(f.compromiso.tasaPctSemana),
+        pesoInicioKg: numNut(f.compromiso.pesoInicioKg),
+        grasaInicioPct: numNut(f.compromiso.grasaInicioPct),
+        pesoMetaKg: numNut(f.compromiso.pesoMetaKg),
+        fin: parseFecha(f.compromiso.fin),
+        reconstruido: f.compromiso.reconstruido === true,
+      } : null,
       // Pasos extra al día que la fase lleva pedidos: con la base del reloj
       // previa a la fase, es el objetivo de pasos que enseña la app.
       pasosExtraAcumuladosDia: numNut(f.pasosExtraAcumuladosDia) ?? 0,
@@ -325,6 +338,18 @@ function normalizarNutricion(raw){
     alimentosProteina: lista(r?.alimentosProteina).map(String),
     accionEntrenamiento: r?.accionEntrenamiento ?? null,
     porRendimiento: r?.porRendimiento === true,
+    // Ciclo de vida de los ajustes (esquema v8, 13/10/2026): una propuesta no
+    // cambia la pauta hasta que se acepta. Solo los ADJUST lo tienen; sin
+    // estado explícito se deriva como la app (aplicada → aceptada, pospuesta
+    // → pospuesta, si no → propuesta).
+    estadoPropuesta: (r?.tipo ?? 'HOLD') !== 'ADJUST' ? null
+      : NUT.ESTADOS_PROPUESTA.includes(r?.estadoPropuesta) ? r.estadoPropuesta
+      : r?.aplicadaEn ? 'ACCEPTED' : r?.pospuestaEn ? 'POSTPONED' : 'PROPOSED',
+    aceptacion: r?.aceptacion && typeof r.aceptacion === 'object' ? {
+      fecha: parseFecha(r.aceptacion.fecha),
+      comidaKcalDia: numNut(r.aceptacion.comidaKcalDia),
+      pasosDia: numNut(r.aceptacion.pasosDia),
+    } : null,
   })).filter(r => r.fecha).sort((a,b) => a.fecha - b.fecha);
 
   const planJ = n.planTemporada;
@@ -356,6 +381,14 @@ function normalizarNutricion(raw){
     pesajes,
     medicionesGrasa,
     recomendaciones,
+    // Historial de la pauta (esquema v8): cada versión guarda el ritmo con
+    // el que se creó. Solo se lee lo que necesita el progreso de la fase.
+    versionesPauta: lista(n.versionesPauta).map(v => ({
+      numero: numNut(v?.numero) ?? 0,
+      faseId: String(v?.faseId ?? ''),
+      desde: parseFecha(v?.desde),
+      tasaObjetivoPctSemana: numNut(v?.tasaObjetivoPctSemana),
+    })).filter(v => v.desde).sort((a, b) => a.numero - b.numero),
     biblioteca: lista(n.biblioteca).map(a => ({
       nombre: String(a?.nombre ?? ''),
       estadoReferencia: a?.estadoReferencia ?? 'DRY_RAW',
@@ -1008,6 +1041,165 @@ const PlanTemporada = {
    mientras que la frescura (días sin pesarse, vigencia del % graso)
    se mide contra hoy de verdad, que es cuando el entrenador mira.
    ================================================================ */
+/* ================================================================
+   Progreso de la fase frente a lo pactado (App-PRO 18/10/2026,
+   lib/nutricion/progreso.dart y ServicioNutricion.progresoFase).
+   Compara la tendencia de hoy con donde la ponía la trayectoria pactada,
+   tramo a tramo con el ritmo que regía cada uno; la tolerancia es el
+   mismo corredor que la gráfica de la app.
+   ================================================================ */
+const ProgresoFase = {
+  /* Ritmo de cada tramo de la fase, del historial de la pauta. Tramos
+     seguidos con el mismo ritmo se funden; el primero rige desde el inicio.
+     Sin historial, un tramo con el ritmo vigente. */
+  tramos(nut, f){
+    const out = [];
+    const eps = 0.05 / 2;
+    (nut.versionesPauta || []).filter(v => v.faseId === f.id).forEach(v => {
+      const tasa = v.tasaObjetivoPctSemana;
+      if (tasa == null) return;
+      if (out.length && Math.abs(out[out.length - 1].tasaPctSemana - tasa) <= eps) return;
+      const desde = !out.length || diasEntre(f.inicio, v.desde) < 0 ? f.inicio : v.desde;
+      if (out.length && diasEntre(out[out.length - 1].desde, desde) === 0) out.pop();
+      out.push({ desde: soloDia(desde), tasaPctSemana: tasa });
+    });
+    if (!out.length) out.push({ desde: soloDia(f.inicio), tasaPctSemana: f.tasaObjetivoPctSemana });
+    return out;
+  },
+
+  /* Trayectoria diaria por tramos con su corredor (objetivo ± banda muerta).
+     Cada tramo arranca donde terminó el anterior, también el corredor. */
+  trayectoria({ inicio, fin, pesoInicialKg, tramos }){
+    if (!tramos.length) return [];
+    const desde = soloDia(inicio);
+    const dias = diasEntre(desde, soloDia(fin));
+    if (dias < 0 || !(pesoInicialKg > 0)) return [];
+    const banda = NUT.bandaMuertaPctSemana;
+    const tras = (p, t, n) => PlanTemporada.pesoTrasDias(p, t, n);
+    const out = [];
+    let tramo = 0, diaAncla = 0, ancla = pesoInicialKg, baja = pesoInicialKg, alta = pesoInicialKg;
+    const punto = dia => {
+      const t = tramos[tramo].tasaPctSemana, n = dia - diaAncla;
+      return { fecha: diaMas(desde, dia), pesoObjetivoKg: tras(ancla, t, n),
+               limiteInferiorKg: tras(baja, Math.min(t - banda, t + banda), n),
+               limiteSuperiorKg: tras(alta, Math.max(t - banda, t + banda), n) };
+    };
+    for (let dia = 0; dia <= dias; dia++){
+      while (tramo + 1 < tramos.length && diasEntre(desde, tramos[tramo + 1].desde) <= dia){
+        const p = punto(dia);
+        tramo++; diaAncla = dia;
+        ancla = p.pesoObjetivoKg; baja = p.limiteInferiorKg; alta = p.limiteSuperiorKg;
+      }
+      out.push(punto(dia));
+    }
+    return out;
+  },
+
+  semanasHastaPeso(actual, objetivo, tasa){
+    if (!(actual > 0) || !(objetivo > 0) || !tasa) return null;
+    const factor = 1 + tasa / 100;
+    if (factor <= 0 || factor === 1) return null;
+    const q = objetivo / actual;
+    if ((tasa < 0 && q >= 1) || (tasa > 0 && q <= 1)) return null;
+    const s = Math.log(q) / Math.log(factor);
+    return isFinite(s) && s >= 0 ? s : null;
+  },
+
+  _metaValida(kg){ return kg >= NUT.pesoMinKg && kg <= NUT.pesoMaxKg ? kg : null; },
+
+  _bloqueDeFase(nut, f, dia){
+    const b = PlanTemporada.bloqueEn(nut.plan, dia);
+    return b && PlanTemporada.tipoFase(b.tipo) === f.tipo ? b : null;
+  },
+
+  /* El compromiso guardado con los huecos que ya se pueden llenar (o
+     reconstruido si la fase es anterior al campo). */
+  compromiso(nut, f, serie){
+    let c = f.compromiso ? { ...f.compromiso }
+      : { tasaPctSemana: this.tramos(nut, f)[0].tasaPctSemana, pesoInicioKg: null, grasaInicioPct: null, pesoMetaKg: null, fin: null, reconstruido: true };
+    if (c.pesoMetaKg == null) c.pesoMetaKg = this._metaValida(f.pesoObjetivoKg);
+    if (c.pesoInicioKg == null && serie && !serie.vacia){
+      const p = EstimadorPeso.hasta(serie, f.inicio) || serie.puntos[0];
+      if (p && p.tendenciaKg > 0) c.pesoInicioKg = p.tendenciaKg;
+    }
+    if (c.fin == null){
+      const b = this._bloqueDeFase(nut, f, f.inicio);
+      if (b) c.fin = b.fin;
+      else if (c.pesoInicioKg != null && c.pesoMetaKg != null){
+        const sem = this.semanasHastaPeso(c.pesoInicioKg, c.pesoMetaKg, c.tasaPctSemana);
+        if (sem != null) c.fin = diaMas(soloDia(f.inicio), Math.ceil(sem * 7));
+      }
+    }
+    return c;
+  },
+
+  /* Lectura acumulada (ProgresoFase.calcular). null si falta algo. */
+  calcular({ tipo, inicio, hoy, pesoInicioKg, pesoHoyKg, tramos, pesoMetaKg = null, finFijo = null }){
+    const desde = soloDia(inicio), dia = soloDia(hoy);
+    if (!tramos.length || !(pesoInicioKg > 0) || !(pesoHoyKg > 0) || diasEntre(desde, dia) < 0) return null;
+    const contrato = this.trayectoria({ inicio: desde, fin: dia, pesoInicialKg: pesoInicioKg, tramos });
+    const previsto = contrato[contrato.length - 1];
+    const tasa = tramos[tramos.length - 1].tasaPctSemana;
+    const meta = tipo === 'MAINTENANCE' || pesoMetaKg == null || pesoMetaKg < NUT.pesoMinKg ||
+                 Math.abs(pesoMetaKg - pesoInicioKg) < 0.05 ? null : pesoMetaKg;
+    const dir = meta != null ? (meta > pesoInicioKg ? 1 : -1) : (tipo === 'MAINTENANCE' ? 0 : (tasa > 0 ? 1 : -1));
+    let fin = finFijo ? soloDia(finFijo) : null;
+    if (!fin && meta != null){
+      const p = contrato.find(x => (x.pesoObjetivoKg - meta) * dir >= 0);
+      if (p) fin = p.fecha;
+      else {
+        const sem = this.semanasHastaPeso(previsto.pesoObjetivoKg, meta, tasa);
+        if (sem != null) fin = diaMas(dia, Math.ceil(sem * 7));
+      }
+    }
+    const eps = 1e-9;
+    const fuera = pesoHoyKg < previsto.limiteInferiorKg - eps || pesoHoyKg > previsto.limiteSuperiorKg + eps;
+    let estado;
+    if (meta != null && (pesoHoyKg - meta) * dir >= 0) estado = 'metaAlcanzada';
+    else if (dir === 0) estado = fuera ? 'fueraDeRango' : 'enLinea';
+    else if (!fuera) estado = 'enLinea';
+    else if ((pesoHoyKg - pesoInicioKg) * dir < 0) estado = 'contrario';
+    else if ((pesoHoyKg - previsto.pesoObjetivoKg) * dir > 0) estado = 'porDelante';
+    else estado = 'porDetras';
+    let pesoAlFinKg = null, llegadaMeta = null;
+    if (finFijo){
+      const d = diasEntre(dia, finFijo);
+      if (d > 0) pesoAlFinKg = PlanTemporada.pesoTrasDias(pesoHoyKg, tasa, d);
+    } else if (meta != null && estado !== 'metaAlcanzada'){
+      const sem = this.semanasHastaPeso(pesoHoyKg, meta, tasa);
+      if (sem != null) llegadaMeta = diaMas(dia, Math.ceil(sem * 7));
+    }
+    const total = meta == null ? null : Math.abs(meta - pesoInicioKg);
+    const fr = kg => total ? nutClamp(kg / total, 0, 1) : null;
+    const hechoKg = (pesoHoyKg - pesoInicioKg) * dir, previstoKg = (previsto.pesoObjetivoKg - pesoInicioKg) * dir;
+    const diasTranscurridos = diasEntre(desde, dia), diasTotales = fin ? diasEntre(desde, fin) : null;
+    return {
+      inicio: desde, hoy: dia, pesoInicioKg, pesoHoyKg, pesoPrevistoHoyKg: previsto.pesoObjetivoKg,
+      direccion: dir, estado, pesoMetaKg: meta, fin, pesoAlFinKg, llegadaMeta,
+      desvioKg: pesoHoyKg - previsto.pesoObjetivoKg, hechoKg, previstoKg, totalKg: total,
+      fraccionPeso: fr(hechoKg), fraccionPrevista: fr(previstoKg),
+      diasTranscurridos, diasTotales,
+      fraccionTiempo: diasTotales > 0 ? nutClamp(diasTranscurridos / diasTotales, 0, 1) : null,
+      semanaActual: Math.floor(diasTranscurridos / 7) + 1,
+      semanasTotales: diasTotales == null ? null : diasTotales / 7,
+    };
+  },
+
+  /* Progreso de la fase vigente a la fecha `hoy`, con el compromiso con el
+     que empezó (para decir si la meta o el fin han cambiado). */
+  deFase(nut, { fase, serie, tendenciaKg, hoy }){
+    if (!fase || !fase.inicio || fase.estado === 'CLOSED' || tendenciaKg == null) return null;
+    const c = this.compromiso(nut, fase, serie);
+    if (c.pesoInicioKg == null) return null;
+    const p = this.calcular({
+      tipo: fase.tipo, inicio: fase.inicio, hoy, pesoInicioKg: c.pesoInicioKg, pesoHoyKg: tendenciaKg,
+      tramos: this.tramos(nut, fase), pesoMetaKg: this._metaValida(fase.pesoObjetivoKg),
+      finFijo: this._bloqueDeFase(nut, fase, hoy)?.fin || null,
+    });
+    return p ? { ...p, compromiso: c } : null;
+  },
+};
+
 const Nutricion = {
   contexto(nut, { hoy = new Date() } = {}){
     if (!nut || !nut.presente) return null;
@@ -1132,8 +1324,16 @@ const Nutricion = {
       perfil, experiencia: perfil?.experienciaFuerza, diasDesdeMedicion,
     }) : null;
 
+    // --- Progreso de la fase frente a lo pactado ---
+    // A la fecha de la última tendencia (el último pesaje), no de hoy: sin
+    // pesajes nuevos «lo previsto» avanzaría y la tendencia no. Mientras
+    // calibra o en pausa no hay veredicto (agua y glucógeno del arranque).
+    const progresoBase = ProgresoFase.deFase(nut, { fase, serie, tendenciaKg, hoy: ultimoPunto ? ultimoPunto.fecha : ref });
+    const progreso = progresoBase && { ...progresoBase,
+      conVeredicto: (asentamiento ? asentamiento.asentado : true) && fase.estado !== 'PAUSED' };
+
     return {
-      nut, fase, perfil, pesajes, serie, ciclo,
+      nut, fase, perfil, pesajes, serie, ciclo, progreso,
       tendenciaKg, tasaPctSemana, ultimoPunto, ultimoPesaje,
       fechaTendencia: ultimoPunto ? ultimoPunto.fecha : null,
       mediciones, grasaVigente, grasaInicial, grasaVigentePct,

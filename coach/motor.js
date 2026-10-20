@@ -93,8 +93,28 @@ const Motor = {
      corporal; el kg tal cual en el resto. OJO: el móvil usa SIEMPRE el peso
      corporal ACTUAL del perfil (`pesoCorporal`), también para sesiones
      antiguas; aquí igual, para dar sus mismas cifras. */
-  cargaEfectiva(nombre, kg, pesoCorporal){
-    return this.esPesoCorporal(nombre) ? (pesoCorporal || 0) + this.lastreCanonico(nombre, kg) : kg;
+  cargaEfectiva(nombre, kg, pesoCorporal, fijos = null){
+    return this.esPesoCorporal(nombre) ? (pesoCorporal || 0) + this.lastreCanonico(nombre, kg)
+                                       : kg + this.pesoFijoDe(nombre, fijos);
+  },
+  /* Peso fijo inicial de una máquina (`pesoFijoMaquina` de la copia, desde el
+     14/10/2026): lo que pesa vacía (cajón de una prensa, carro de una hack
+     squat). Se anota solo lo que se pone; e1RM, marcas y tonelaje suman el
+     peso fijo. Va por máquina con la misma clave que los lados de carga
+     (`claveLadosCarga`): «Prensa 45°» y «Prensa 45° pies medios» comparten.
+     La app solo lo guarda en máquinas que suman peso; aquí se descarta
+     además en peso corporal y asistidos, por si una copia trae una clave
+     huérfana. Como el peso corporal, se aplica el valor ACTUAL a todo el
+     historial. */
+  CLAVES_DISCOS_POR_LADO: ['hack squat', 'prensa 45', 'sentadilla pendular'],
+  claveLadosCarga(nombre){
+    const n = String(nombre || '').toLowerCase().trim();
+    return this.CLAVES_DISCOS_POR_LADO.find(c => n.includes(c)) || n;
+  },
+  pesoFijoDe(nombre, fijos){
+    if (!fijos || typeof fijos !== 'object' || this.esPesoCorporal(nombre)) return 0;
+    const v = fijos[this.claveLadosCarga(nombre)];
+    return typeof v === 'number' && isFinite(v) && v > 0 ? v : 0;
   },
   /* Número que ve y teclea el usuario (la asistencia en positivo). */
   cargaOrientada(nombre, kg){
@@ -183,6 +203,14 @@ const Motor = {
     const rev = this._int(l.rutinaRevision) ?? 0;
     return `${l.variante}|${l.dias}|${rev}`;
   },
+  /* Entrena en casa (`enCasa`, desde el 18/10/2026): solo con 3 o 4 días,
+     como `AppState.diasCasa`. Las copias anteriores no traen la clave. */
+  enCasa(raw){ return !!raw && raw.enCasa === true && ['3', '4'].includes(String(raw.dias)); },
+  /* Clave de la combinación actual con la que el móvil guarda su rutina
+     (`planModKey` = `_comboKey`): «sexo_sistema|días», o «…|casaN» en casa. */
+  comboRutina(raw){
+    return `${raw.sexo}_${raw.sistema}|${this.enCasa(raw) ? 'casa' : ''}${raw.dias}`;
+  },
   rutinaKeyActual(raw){
     const rev = this._int(raw.rutinaRevision) ?? 0;
     return `${raw.sexo}_${raw.sistema}|${raw.dias}|${rev}`;
@@ -210,7 +238,7 @@ const Motor = {
      series tras la pausa fuera, carga efectiva, RIR ausente = 0. `cap` 18
      para marcas; null para la gráfica de Progreso. Devuelve también la
      serie elegida. */
-  mejorSerie(e, pesoCorporal, { cap = 18 } = {}){
+  mejorSerie(e, pesoCorporal, { cap = 18, fijos = null } = {}){
     let mejor = null;
     for (let s = 0; s < e.reps.length; s++){
       if (this.soloPrimeraSerie(e) && s > 0) continue;
@@ -218,7 +246,7 @@ const Motor = {
       if (r == null) continue;
       const kg = this.kgSerie(e, s);
       if (kg == null) continue;
-      const base = this.cargaEfectiva(e.ejercicio, kg, pesoCorporal);
+      const base = this.cargaEfectiva(e.ejercicio, kg, pesoCorporal, fijos);
       if (base <= 0) continue;
       const rr = s < e.rir.length && e.rir[s] != null ? e.rir[s] : 0;
       const v = this.e1rmEpley(base, r, rr, cap);
@@ -234,13 +262,13 @@ const Motor = {
   },
 
   /* Mejor marca de un ejercicio en todo el historial (AppState.mejorMarca). */
-  mejorMarca(logs, ejercicio, pesoCorporal){
+  mejorMarca(logs, ejercicio, pesoCorporal, fijos = null){
     let best = null;
     (logs || []).forEach(l => {
       if (!l || this.esCardio(l)) return;
       this.entradasDe(l).forEach(e => {
         if (e.ejercicio !== ejercicio || !this.puedeFijarMarca(l, e)) return;
-        const m = this.mejorSerie(e, pesoCorporal, { cap: this.CAP_REPS_E1RM });
+        const m = this.mejorSerie(e, pesoCorporal, { cap: this.CAP_REPS_E1RM, fijos });
         if (m && (best == null || m.e1rm > best)) best = m.e1rm;
       });
     });
@@ -269,13 +297,15 @@ const Motor = {
     return !!linea && linea.restPause === true && (this._int(linea.series) ?? 0) >= 2 &&
            !this.esPorTiempo(linea.ejercicio, raw);
   },
-  /* Objetivo de reps de una línea: simple → primer número; doble → el
-     último. Null en ejercicios por tiempo o sin número. */
+  /* Objetivo de reps de una línea (`objetivoRepsLinea`): simple → primer
+     número; doble → el último. El rest-pause trae un rango de TOTAL y se
+     progresa al llegar a su extremo alto también en simple (13/10/2026).
+     Null en ejercicios por tiempo o sin número. */
   objetivoLinea(linea, sistema, raw = null){
     if (!linea || this.esPorTiempo(linea.ejercicio, raw)) return null;
     const nums = (String(linea.reps ?? '').match(/\d+/g) || []).map(Number);
     if (!nums.length) return null;
-    return sistema === 'simple' ? nums[0] : nums[nums.length - 1];
+    return sistema === 'simple' && !this.restPauseLinea(linea, raw) ? nums[0] : nums[nums.length - 1];
   },
   seriesProgresion(reps, total){
     if (!total) return reps;

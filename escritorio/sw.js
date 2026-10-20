@@ -10,11 +10,11 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v7`;
+const VERSION = `${PREFIJO}v8`;
 const ARCHIVOS = [
   './',
   'index.html',
-  'escritorio.css',
+  'escritorio.css', 'tema.js',
   'importar.js', 'zip-seguro.js', 'fotos.js', 'evolucion.js', 'almacen.js', 'analisis.js',
   'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
   'informe.js', 'informe-vista.js', 'app.js',

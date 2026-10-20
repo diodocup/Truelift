@@ -25,7 +25,7 @@ export function cargar(...archivos){
 // realm. `nombres` lista los globales que exporta cada uno.
 const GLOBALES_COACH = { 'motor.js': ['Motor'], 'data.js': ['esc', 'parseFecha', 'fmtISO', 'soloDia', 'diasEntre',
   'normalizar', 'Metricas', 'VFC', 'FCReposo', 'Fatiga', 'Salud', 'num', 'patronVigente'],
-  'nutricion.js': ['Nutricion', 'normalizarNutricion', 'NUT'],
+  'nutricion.js': ['Nutricion', 'normalizarNutricion', 'NUT', 'ProgresoFase'],
   'catalogo.js': ['CAT_FICHA', 'CAT_GRUPO_DE', 'CAT_LISTAS', 'CAT_PATRONES', 'CAT_PATRON_GRUPO', 'CAT_DESCANSOS',
                   'CAT_SISTEMAS', 'OBJETIVOS_GRUPO', 'ORDEN_GRUPOS'],
   'planner.js': ['Planner'], 'xlsx.js': ['XLSX'], 'plantilla.js': ['PLANTILLA_XLSX'], 'canonico.js': ['CANON_ES'] };

@@ -252,6 +252,7 @@ function limitaciones(M, r, P, cob, k, prog, fis, vol, rec){
   if (prog.insuficientes.length) l.push(`Ejercicios sin sesiones comparables suficientes para describir su evolución: ${listaTxt(prog.insuficientes.map(x => x.nombre))}.`);
   if (prog.orientativas.length) l.push(`Lectura solo orientativa (pocas sesiones comparables): ${listaTxt(prog.orientativas.map(x => x.nombre))}.`);
   if (prog.ejercicios.some(x => x.ej.pesoCorporal)) l.push('En los ejercicios con tu peso corporal el 1RM estimado usa tu peso de perfil actual, también en sesiones antiguas.');
+  if (prog.ejercicios.some(x => x.ej.pesoFijo)) l.push('En las máquinas con peso fijo el 1RM estimado suma el peso fijo que tienes guardado ahora, también en sesiones antiguas.');
   if (!fis.peso.n) l.push('No hay pesajes en el periodo.');
   if (!fis.contornos.length) l.push('No hay contornos medidos en el periodo.');
   if (vol.sinGrupo.length) l.push(`Ejercicios sin grupo muscular reconocido (sus series no se reparten por grupo): ${listaTxt(vol.sinGrupo)}.`);

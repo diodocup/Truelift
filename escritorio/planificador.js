@@ -73,7 +73,7 @@ const Planificador = {
           return fila;
         }),
     }));
-    r.dias.forEach(d => { Planner._patronesVigentes(d.filas); Planner._sanearModalidades(d.filas); });
+    r.dias.forEach(d => { Planner._patronesVigentes(d.filas); Planner._sanearModalidades(d.filas, r.sistema); });
     return r;
   },
 
@@ -81,7 +81,8 @@ const Planificador = {
   // Rutina del móvil (copia JSON)
   // ---------------------------------------------------------------
 
-  /* Sistema de la rutina guardada: el de su clave («sexo_sistema|días») si
+  /* Sistema de la rutina guardada: el de su clave («sexo_sistema|días» o
+     «…|casaN») si
      la trae; si no, el ajuste actual. */
   _sistemaPlan(raw){
     const m = /^[^_|]+_(simple|doble)\|/.exec(String(raw.planModKey || ''));
@@ -97,7 +98,7 @@ const Planificador = {
     if (!plan.length) return null;
     const sistema = this._sistemaPlan(raw);
     const rutina = this.normalizarRutina(XLSX.desdePlanMod(plan, sistema));
-    const combo = `${raw.sexo}_${raw.sistema}|${raw.dias}`;
+    const combo = Motor.comboRutina(raw);
     // El Excel admite 5 días y 10 ejercicios por día: lo que no cabe no se
     // puede editar aquí sin perderlo, y se avisa.
     const porDia = new Map();
@@ -152,11 +153,20 @@ const Planificador = {
       sistema: sistema === 'simple' ? 'simple' : 'doble',
       dias: dias.map(d => {
         const ls = por.get(d).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
-        return { nombre: d, lineas: ls.map((l, i) => ({ ...this._linea(l), superserie: i > 0 && l.superConAnterior === true && !this._conModo(l) && !this._conModo(ls[i - 1]) })) };
+        return { nombre: d, lineas: ls.map((l, i) => ({ ...this._linea(this._dropComoLaApp(l, sistema)), superserie: i > 0 && l.superConAnterior === true && !this._conModo(l) && !this._conModo(ls[i - 1]) })) };
       }),
     };
   },
   _conModo(l){ return !!(l && (l.topBack || l.dropSet || l.restPause)); },
+  /* Un drop set guardado con rango (antes del 13/10/2026) la app lo deja al
+     cargar en una sola cifra: la que abría la subida (en doble, el extremo
+     alto). Se compara ya así para no anunciar un cambio que no existe. */
+  _dropComoLaApp(l, sistema){
+    if (!l || !l.dropSet || l.topBack || (typeof Motor === 'object' && Motor.esPorTiempo(l.ejercicio))) return l;
+    const nums = (String(l.reps ?? '').match(/\d+/g) || []).map(Number);
+    if (nums.length < 2) return l;
+    return { ...l, reps: `${sistema === 'simple' ? nums[0] : nums[nums.length - 1]}` };
+  },
 
   /* Lo que el móvil construirá al importar el Excel que exporta este
      borrador: misma limpieza que el exportador (Planner.prepararExportacion)
@@ -188,14 +198,19 @@ const Planificador = {
         const repMin = this._ent(f.repsMin) ?? 8;
         if (this._ent(f.repsMin) == null) notas.push({ dia: nombre, ej, txt: `${ej}: sin repeticiones; la app usará ${repMin}.` });
         let reps = `${repMin}`;
-        if (sistema === 'doble'){
+        const tb = !!f.topBack, drop = !!f.dropSet && !tb, rp = !!f.restPause && !tb && !f.dropSet;
+        // Drop set: un único objetivo (E), también en doble; un Excel antiguo
+        // con rango conserva su extremo alto (rutina_excel.dart).
+        if (sistema === 'doble' && drop){
+          const repMax = this._ent(f.repsMax);
+          if (repMax != null && repMax > repMin) reps = `${repMax}`;
+        } else if (sistema === 'doble'){
           const repMax = this._ent(f.repsMax) ?? repMin;
           const max = repMax > repMin ? repMax : repMin + 2;
           if (max !== repMax || this._ent(f.repsMax) == null)
             notas.push({ dia: nombre, ej, txt: `${ej}: en progresión doble el máximo debe superar al mínimo; la app usará ${repMin}–${max}.` });
           reps = `${repMin}-${max}`;
         }
-        const tb = !!f.topBack, drop = !!f.dropSet && !tb, rp = !!f.restPause && !tb && !f.dropSet;
         const linea = {
           ejercicio: ej, series, reps, rir: `${this._ent(f.rir) ?? 2}`,
           descansoMin: typeof f.descanso === 'number' && isFinite(f.descanso) ? f.descanso : null,
@@ -457,27 +472,27 @@ const Planificador = {
           for (const k of ['backoffPct', 'rirBack', 'dropPct', 'pausaRpSeg']) if (dia.filas[op.f][k] == null) dia.filas[op.f][k] = this.filaVacia()[k];
           const f = dia.filas[op.f];
           const k = { topBack: 'topBack', drop: 'dropSet', rp: 'restPause' }[op.valor];
-          if (k) Planner.aplicarCampo(dia.filas, op.f, k, true);
-          else { f.topBack = false; f.dropSet = false; f.restPause = false; }
-        } else Planner.aplicarCampo(dia.filas, op.f, op.k, op.valor);
+          if (k) Planner.aplicarCampo(dia.filas, op.f, k, true, r.sistema);
+          else { f.topBack = false; Planner._quitarDrop(f, r.sistema); f.restPause = false; }
+        } else Planner.aplicarCampo(dia.filas, op.f, op.k, op.valor, r.sistema);
         // Ejercicio elegido sin patrón: el de su ficha del catálogo.
         const f = dia.filas[op.f];
         if (op.k === 'ejercicio' && !f.patron && typeof CAT_FICHA === 'object' && CAT_FICHA[f.ejercicio])
           f.patron = patronVigente(CAT_FICHA[f.ejercicio].patron, CAT_FICHA[f.ejercicio].grupo);
-        Planner._sanearModalidades(dia.filas);
+        Planner._sanearModalidades(dia.filas, r.sistema);
         return r;
       }
       case 'sistema': r.sistema = op.valor === 'simple' ? 'simple' : 'doble'; return r;
       case 'nombreDia': if (!dia) return null; dia.nombre = String(op.valor ?? '').trim().slice(0, 40) || `Día ${op.d + 1}`; return r;
       case 'addFila': if (!dia || dia.filas.length >= XLSX.MAX_FILAS) return null; dia.filas.push(this.filaVacia()); return r;
-      case 'delFila': if (!dia || !dia.filas[op.f]) return null; dia.filas.splice(op.f, 1); Planner._sanearModalidades(dia.filas); return r;
+      case 'delFila': if (!dia || !dia.filas[op.f]) return null; dia.filas.splice(op.f, 1); Planner._sanearModalidades(dia.filas, r.sistema); return r;
       case 'moverFila': {
         if (!dia) return null;
         const to = op.f + op.delta;
         if (to < 0 || to >= dia.filas.length) return null;
         const [x] = dia.filas.splice(op.f, 1);
         dia.filas.splice(to, 0, x);
-        Planner._sanearModalidades(dia.filas);
+        Planner._sanearModalidades(dia.filas, r.sistema);
         return r;
       }
       case 'addDia':
