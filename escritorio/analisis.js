@@ -27,13 +27,15 @@ const Analisis = {
     const ref = this.referencia(resumen) || new Date();
     const datos = normalizar(raw, { hoy: ref });
     const pc = typeof raw.pesoCorporal === 'number' && raw.pesoCorporal > 0 ? raw.pesoCorporal : null;
-    const combo = `${raw.sexo}_${raw.sistema}|${raw.dias}`;
+    // Peso fijo inicial por máquina (clave aditiva del 14/10/2026).
+    const fijos = raw.pesoFijoMaquina && typeof raw.pesoFijoMaquina === 'object' && !Array.isArray(raw.pesoFijoMaquina) ? raw.pesoFijoMaquina : null;
+    const combo = Motor.comboRutina(raw);
     const planMod = Array.isArray(raw.planMod) ? raw.planMod.filter(p => p && typeof p === 'object') : [];
     // La rutina guardada en la copia es la que usa el móvil cuando es de su
     // combinación actual (y la persona tiene PRO, que el escritorio no lee).
     const planConocido = planMod.length > 0 && raw.planModKey === combo;
     const M = {
-      raw, ref, datos, pc, combo, planMod, planConocido,
+      raw, ref, datos, pc, fijos, combo, planMod, planConocido,
       descarga: raw.modoDescarga === true,
       sistema: raw.sistema === 'simple' ? 'simple' : 'doble',
       rutinaActual: Motor.rutinaKeyActual(raw),
@@ -90,6 +92,7 @@ const Analisis = {
         if (!ej){
           ej = { nombre: e.ejercicio, porTiempo: Motor.esPorTiempo(e.ejercicio, M.raw),
                  pesoCorporal: Motor.esPesoCorporal(e.ejercicio), asistido: Motor.esAsistido(e.ejercicio),
+                 pesoFijo: Motor.pesoFijoDe(e.ejercicio, M.fijos) || null,
                  puntos: [], marca: null };
           mapa.set(e.ejercicio, ej);
         }
@@ -120,9 +123,9 @@ const Analisis = {
 
   punto(M, s, e, pos, ej){
     const hechas = e.noDisponible ? 0 : Motor.seriesHechas(e);
-    const mejor = ej.porTiempo ? null : Motor.mejorSerie(e, M.pc, { cap: null });
+    const mejor = ej.porTiempo ? null : Motor.mejorSerie(e, M.pc, { cap: null, fijos: M.fijos });
     const puedeMarca = !ej.porTiempo && Motor.puedeFijarMarca(s.l, e);
-    const marca = puedeMarca ? Motor.mejorSerie(e, M.pc, { cap: Motor.CAP_REPS_E1RM }) : null;
+    const marca = puedeMarca ? Motor.mejorSerie(e, M.pc, { cap: Motor.CAP_REPS_E1RM, fijos: M.fijos }) : null;
     const kgDistintos = new Set(e.kgSets.filter(k => k != null)).size > 1;
     return {
       fecha: s.fecha, dia: s.dia, sesion: s, e, pos, hechas,

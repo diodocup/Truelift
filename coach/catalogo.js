@@ -9,7 +9,7 @@
    los cambios se pierden. Lo de después del centinela «Criterios del
    entrenador» sí se conserva entre generaciones.
 
-   Biblioteca: 364 ejercicios · 364 con dibujo.
+   Biblioteca: 363 ejercicios · 363 con dibujo.
    ================================================================ */
 
 // Patrones de la plantilla (columna A de «Listas»)
@@ -160,6 +160,7 @@ const CAT_LISTAS = {
   "Press de tríceps sentado con mancuerna",
   "Fondos de tríceps en el suelo",
   "Fondos en anillas",
+  "Fondos asistidos en máquina",
   "Elevación lateral ligera en polea",
   "Elevación frontal con mancuernas",
   "Elevación lateral ligera con mancuernas",
@@ -236,17 +237,15 @@ const CAT_LISTAS = {
   "Flexiones verticales"
  ],
  "Deltoide posterior": [
-  "Face pull en polea",
+  "Face pull con cuerda alto",
   "Pájaros con mancuernas en banco inclinado",
   "Pájaros en máquina",
   "Pájaros en polea",
   "Pec deck inverso",
-  "Face pull con cuerda alto",
   "Pájaros sentado con mancuernas",
   "Pájaros unilateral en polea"
  ],
  "Estabilidad escapular": [
-  "Face pull suave en polea",
   "Pull-apart con banda",
   "Rotación externa con mancuerna",
   "Rotación externa en polea",
@@ -569,9 +568,7 @@ const CAT_FICHA = {
  "Extensión en polea con barra": { grupo: "Tríceps", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60–90 s", nota: "Codos fijos al costado, extiende hasta abajo sin mover los hombros.", img: "Extensión en polea con barra" },
  "Extensión por encima con mancuerna o barra Z": { grupo: "Tríceps", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60–90 s", nota: "Codos fijos arriba, estira el tríceps en la fase baja; sin arquear la lumbar.", img: "Extensión por encima con mancuerna o barra Z" },
  "Extensión unilateral de tríceps en polea": { grupo: "Tríceps", patron: "Aislamiento", secundarios: [], prioridad: "Alternativa", descanso: "60 s", nota: "Un brazo cada vez, codo estable al costado y bloqueo suave al final del recorrido.", img: "Extensión unilateral de tríceps en polea" },
- "Face pull con cuerda alto": { grupo: "Hombro", patron: "Deltoide posterior", secundarios: [], prioridad: "Alternativa", descanso: "60–90 s", nota: "Polea alta, tira hacia la cara con codos abiertos y termina con rotación externa.", img: "Face pull con cuerda alto" },
- "Face pull en polea": { grupo: "Hombro", patron: "Deltoide posterior", secundarios: [], prioridad: "1ª opción", descanso: "60–90 s", nota: "Polea alta, codos arriba al final del movimiento, rotación externa real; agarre neutro.", img: "Face pull en polea" },
- "Face pull suave en polea": { grupo: "Hombro", patron: "Estabilidad escapular", secundarios: [], prioridad: "1ª opción", descanso: "60 s", nota: "Versión ligera; énfasis en la rotación externa suave del manguito rotador.", img: "Face pull suave en polea" },
+ "Face pull con cuerda alto": { grupo: "Hombro", patron: "Deltoide posterior", secundarios: [], prioridad: "1ª opción", descanso: "60–90 s", nota: "Polea alta, tira hacia la cara con codos abiertos y termina con rotación externa.", img: "Face pull con cuerda alto" },
  "Flexiones": { grupo: "Pectoral", patron: "Empuje horizontal", secundarios: ["Tríceps", "Hombro", "Core"], prioridad: "Alternativa", descanso: "90 s", nota: "Cuerpo recto, codos a 45°, pecho roza el suelo, extensión completa arriba.", img: "Flexiones" },
  "Flexiones de rodillas": { grupo: "Pectoral", patron: "Empuje horizontal", secundarios: ["Tríceps", "Hombro"], prioridad: "Alternativa", descanso: "2 min", nota: "", img: "Flexiones de rodillas" },
  "Flexiones declinadas": { grupo: "Pectoral", patron: "Empuje inclinado", secundarios: ["Tríceps", "Hombro", "Core"], prioridad: "Alternativa", descanso: "90 s", nota: "Pies elevados sobre banco o silla, cuerpo recto; baja el pecho al suelo con los codos a 45°. Mayor énfasis en el pectoral superior.", img: "Flexiones declinadas" },
@@ -583,9 +580,10 @@ const CAT_FICHA = {
  "Flexión a una mano": { grupo: "Pectoral", patron: "Empuje horizontal", secundarios: ["Tríceps", "Core"], prioridad: "Alternativa", descanso: "2 min", nota: "", img: "Flexión a una mano" },
  "Flexión desde plancha": { grupo: "Core", patron: "Core", secundarios: ["Tríceps", "Hombro"], prioridad: "Alternativa", descanso: "60 s", nota: "", img: "Flexión desde plancha" },
  "Flexión pica": { grupo: "Hombro", patron: "Empuje vertical", secundarios: ["Tríceps", "Core"], prioridad: "Alternativa", descanso: "90 s", nota: "Cadera alta formando una V invertida; baja la cabeza al suelo entre las manos y empuja hasta extender los brazos. Eleva los pies para aumentar la dificultad.", img: "Flexión pica" },
+ "Fondos asistidos en máquina": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "60–90 s", nota: "Máquina de contrapeso: apoya rodillas o pies en la plataforma, tronco erguido y baja la ayuda a medida que puedas con más peso propio.", img: "Fondos asistidos en máquina" },
  "Fondos de tríceps en el suelo": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "60–90 s", nota: "", img: "Fondos de tríceps en el suelo" },
  "Fondos en anillas": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "60–90 s", nota: "", img: "Fondos en anillas" },
- "Fondos en máquina": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Trayectoria guiada; tronco erguido para enfatizar el tríceps.", img: "Fondos en máquina" },
+ "Fondos en máquina": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Máquina sentada de torre de placas: espalda apoyada, tronco erguido y empuja los agarres hasta extender los codos.", img: "Fondos en máquina" },
  "Fondos en paralelas": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Tronco vertical para enfatizar tríceps, baja controlado, extensión completa arriba.", img: "Fondos en paralelas" },
  "Fondos entre bancos": { grupo: "Tríceps", patron: "Aislamiento", secundarios: ["Pectoral", "Hombro"], prioridad: "Alternativa", descanso: "90 s", nota: "Manos en el borde del banco y cadera cerca del apoyo; baja hasta unos 90° de codo y extiende; hombros lejos de las orejas. Añade un disco sobre los muslos para progresar.", img: "Fondos entre bancos" },
  "Frog pump con mancuerna": { grupo: "Isquios/glúteo", patron: "Glúteo", secundarios: [], prioridad: "Alternativa", descanso: "90 s", nota: "", img: "Frog pump con mancuerna" },

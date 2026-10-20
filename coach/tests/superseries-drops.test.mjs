@@ -106,6 +106,55 @@ test('el Excel escribe K/L/M y la lectura reconstruye los enlaces', () => {
   assert.match(xml, /r="M6"[^>]*>[\s\S]*?<x:v>20<\/x:v>/);
 });
 
+test('un drop set exporta un único objetivo de reps (E, sin F), también en doble', () => {
+  const xlsx = cargarXlsx();
+  const filas = [
+    { patron: 'Empuje horizontal', ejercicio: 'A', series: 3, rir: 2,
+      repsMin: 12, repsMax: null, descanso: 2, dropSet: true, dropPct: 20 },
+    { patron: 'Empuje horizontal', ejercicio: 'B', series: 3, rir: 2,
+      repsMin: 8, repsMax: 12, descanso: 2 },
+  ];
+  const xml = xlsx._sheetDataDia('Día 1', filas, 'doble');
+  assert.match(xml, /r="E4"[^>]*>[\s\S]*?<x:v>12<\/x:v>/);
+  assert.doesNotMatch(xml, /r="F4"/);
+  assert.match(xml, /r="F5"/);
+});
+
+test('drop set: un número de reps, no un rango (activar, quitar, sanear y avisos)', () => {
+  const planner = cargarPlanner();
+  // Sanear (Excel o borrador antiguo): en doble se queda el extremo alto.
+  const filas = [
+    { patron: 'Empuje horizontal', ejercicio: 'Press banca', series: 3,
+      repsMin: 8, repsMax: 12, rir: 2, descanso: 2, dropSet: true },
+  ];
+  planner._sanearModalidades(filas, 'doble');
+  assert.equal(filas[0].repsMin, 12);
+  assert.equal(filas[0].repsMax, null);
+  // En simple manda el número objetivo (reps mín).
+  const simple = [{ repsMin: 8, repsMax: 12, dropSet: true }];
+  planner._sanearModalidades(simple, 'simple');
+  assert.equal(simple[0].repsMin, 8);
+  assert.equal(simple[0].repsMax, null);
+  // Quitarlo en doble devuelve un rango que acaba en la cifra.
+  planner._quitarDrop(filas[0], 'doble');
+  assert.equal(filas[0].dropSet, false);
+  assert.equal(filas[0].repsMin, 8);
+  assert.equal(filas[0].repsMax, 12);
+  // En doble, un drop set sin reps máx no es un aviso.
+  const rutina = { sistema: 'doble', dias: [
+    { nombre: 'Día 1', filas: [
+      { patron: 'Empuje horizontal', ejercicio: 'Press banca', series: 3,
+        repsMin: 12, repsMax: null, rir: 2, descanso: 2, dropSet: true },
+    ] },
+    { nombre: 'Día 2', filas: [
+      { patron: 'Empuje horizontal', ejercicio: 'Press banca', series: 3,
+        repsMin: 8, repsMax: 12, rir: 2, descanso: 2 },
+    ] },
+  ] };
+  const an = planner.analiza(rutina, null);
+  assert.ok(!an.avisos.some(a => /faltan las reps máx/.test(a.txt)));
+});
+
 test('un drop set marcado a la vez que T+B no escribe L/M (manda T+B)', () => {
   const xlsx = cargarXlsx();
   const filas = [

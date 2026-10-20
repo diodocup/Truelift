@@ -54,6 +54,9 @@ test('rutina del móvil: modelo del editor con modalidades, contexto y forma can
   assert.equal(PL.rutinaMovil({ ...raw, planMod: [] }), null);
   // Otra combinación de días: puede no ser la que se usa.
   assert.equal(PL.rutinaMovil({ ...raw, dias: '4' }).vigente, false);
+  // En casa la clave es «…|casa3»: la de gimnasio deja de ser la vigente.
+  assert.equal(PL.rutinaMovil({ ...raw, enCasa: true }).vigente, false);
+  assert.equal(PL.rutinaMovil({ ...raw, enCasa: true, planModKey: 'hombre_doble|casa3' }).vigente, true);
   // Más ejercicios de los que caben en el Excel: se avisa.
   const largo = { ...raw, planMod: Array.from({ length: 11 }, (_, i) => ({ dia: 'Torso', orden: i, ejercicio: `Ej ${i}`, series: 2, reps: '8', rir: '2' })) };
   assert.equal(PL.rutinaMovil(largo).recortada, true);
@@ -69,7 +72,7 @@ test('un borrador sin cambios produce en la app la misma rutina que tiene el mó
     assert.deepEqual(sim.notas, []);
   }
   // Copia de ejemplo que se descarga desde la web.
-  const raw = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-10-08.json', import.meta.url), 'utf8'));
+  const raw = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-10-16.json', import.meta.url), 'utf8'));
   const m = PL.rutinaMovil(raw);
   const d = PL.diferencias(m.normal, PL.comoLaApp(m.rutina, raw).normal);
   assert.equal(d.iguales, true, JSON.stringify(d.dias.filter(x => x.estado !== 'igual')));
@@ -149,6 +152,29 @@ test('ediciones: modalidades excluyentes, superseries, orden, límites y sin mut
   assert.equal(lleno.dias[0].filas.length, 10);
   r = PL.editar(base, { tipo: 'moverDia', d: 2, delta: -2 });
   assert.deepEqual(r.dias.map(d => d.nombre), ['Brazos', 'Torso', 'Pierna']);
+});
+
+test('drop set: un número de reps, no un rango, como la app (13/10/2026)', () => {
+  const raw = copiaPlan();
+  const m = PL.rutinaMovil(raw);
+  // Una copia con un drop set guardado con rango (10-12) se lee como la app tras cargar: 12.
+  assert.equal(m.rutina.dias[1].filas[1].repsMin, 12);
+  assert.equal(m.rutina.dias[1].filas[1].repsMax, null);
+  assert.equal(m.normal.dias[1].lineas[1].reps, '12');
+  // Activar drop set en el Remo (8-12, doble): queda el extremo alto.
+  let r = PL.editar(m.rutina, { tipo: 'campo', d: 0, f: 1, k: 'modalidad', valor: 'drop' });
+  assert.deepEqual([r.dias[0].filas[1].repsMin, r.dias[0].filas[1].repsMax], [12, null]);
+  assert.equal(PL.comoLaApp(r, raw).dias[0].lineas[1].reps, '12');
+  assert.ok(!PL.avisos(r, raw).avisos.some(a => /reps máx/.test(a.txt)));
+  // Quitarlo devuelve un rango que acaba en esa cifra.
+  r = PL.editar(r, { tipo: 'campo', d: 0, f: 1, k: 'modalidad', valor: 'normal' });
+  assert.deepEqual([r.dias[0].filas[1].repsMin, r.dias[0].filas[1].repsMax], [8, 12]);
+  // En simple manda el número objetivo.
+  const simple = PL.editar({ ...m.rutina, sistema: 'simple' }, { tipo: 'campo', d: 0, f: 1, k: 'modalidad', valor: 'drop' });
+  assert.deepEqual([simple.dias[0].filas[1].repsMin, simple.dias[0].filas[1].repsMax], [8, null]);
+  // Un Excel antiguo con rango en el drop set: la app conserva el extremo alto.
+  const viejo = { sistema: 'doble', dias: [{ nombre: 'A', filas: [{ patron: 'Rodilla', ejercicio: 'Prensa', series: 3, repsMin: 10, repsMax: 15, rir: 1, dropSet: true }] }] };
+  assert.equal(PL.comoLaApp(viejo, raw).dias[0].lineas[0].reps, '15');
 });
 
 test('comparación activa ↔ propuesta: ejercicios, campos, orden, días y series por grupo', () => {

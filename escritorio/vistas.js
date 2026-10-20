@@ -108,7 +108,7 @@ function resumen(M, ctx){
 /* Rutina y fase en una línea, bajo el título. */
 function contextoBloque(M, P){
   const partes = [];
-  if (M.raw.dias) partes.push(`Rutina de <b>${esc(M.raw.dias)} días</b> · ${M.sistema === 'simple' ? 'progresión simple' : 'progresión doble'}`);
+  if (M.raw.dias) partes.push(`Rutina de <b>${esc(M.raw.dias)} días${Motor.enCasa(M.raw) ? ' en casa' : ''}</b> · ${M.sistema === 'simple' ? 'progresión simple' : 'progresión doble'}`);
   const f = P && P.fase;
   if (f && f.tipo !== 'MAINTENANCE') partes.push(`fase de <b>${esc((FASE_NUT[f.tipo] || f.tipo).toLowerCase())}</b>${f.inicio ? ` desde el ${F.corta(f.inicio)}` : ''}`);
   else if (f) partes.push('fase de <b>mantenimiento</b>');
@@ -275,6 +275,10 @@ function tarjetaSiguiente(){
 }
 
 const FASE_NUT = { DEFICIT: 'Déficit', SURPLUS: 'Superávit', MAINTENANCE: 'Mantenimiento' };
+const TIPO_REC = { ADJUST: 'Ajuste', HOLD: 'Mantener', REFEED: 'Recarga', LOWER_TARGET: 'Bajar objetivo', END_PHASE: 'Fin de fase' };
+// Qué pasó con cada propuesta de ajuste (la app solo cambia tu pauta al aceptarla).
+const ESTADO_REC = { PROPOSED: 'Propuesta sin decidir', POSTPONED: 'Pospuesta', ACCEPTED: 'Aceptada', SUPERSEDED: 'Sustituida por otra',
+  EXPIRED: 'Caducada', LEGACY_RECONCILED: 'Ya incluida en tu pauta', DEFERRED: 'Aplazada' };
 
 /* Celda de fecha: si la fila viene de una sesión, abre su detalle. */
 function celdaFecha(f){
@@ -364,6 +368,60 @@ function tarjetaComparables(M){
     ${ayuda('Compara el 1RM estimado del principio y del final de tus últimas semanas, solo con las sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias ni cambios de un día) y con la misma modalidad de series. «Sin cambios claros» describe una diferencia pequeña; no significa que estés estancado. Con pocas sesiones comparables la lectura es orientativa y no se usa como conclusión. El 1RM es una estimación a partir de tus series.')}`);
 }
 
+/* Progreso de la fase frente a lo pactado, como «Cómo vas» de la app
+   (18/10/2026): estado, barra de peso con la marca de lo previsto, barra de
+   tiempo, frase acumulada, llegada prevista y si la meta ha cambiado desde
+   el inicio. Mientras calibra o en pausa, barras sin veredicto. */
+const PROGRESO_TXT = {
+  enLinea: ['En línea', 'verde', 'Desde el inicio de la fase vas en línea con lo previsto.'],
+  metaAlcanzada: ['Meta alcanzada', 'verde', 'Tu tendencia ya ha llegado a la meta de la fase.'],
+  porDetras: ['Por detrás', 'ambar', kg => `Desde el inicio, vas ${kg} por detrás de lo previsto.`],
+  porDelante: ['Por delante', 'ambar', kg => `Desde el inicio, vas ${kg} por delante de lo previsto.`],
+  contrario: ['Al revés', 'ambar', 'Desde el inicio, tu peso se ha movido en sentido contrario al previsto.'],
+};
+function progresoFase(N){
+  const p = N && N.progreso;
+  if (!p) return '';
+  const kgAbs = v => F.kg(Math.abs(v));
+  let etiqueta, clase, frase;
+  if (p.direccion === 0){
+    const dentro = p.estado === 'enLinea';
+    etiqueta = dentro ? 'En tu rango' : 'Fuera de tu rango'; clase = dentro ? 'verde' : 'ambar';
+    const d = p.pesoHoyKg - p.pesoInicioKg;
+    frase = dentro ? 'Tu peso se mantiene cerca de donde empezaste.' : `Tu peso está ${kgAbs(d)} ${d > 0 ? 'por encima' : 'por debajo'} de donde empezaste.`;
+  } else {
+    const t = PROGRESO_TXT[p.estado];
+    etiqueta = t[0]; clase = t[1]; frase = typeof t[2] === 'function' ? t[2](kgAbs(p.desvioKg)) : t[2];
+  }
+  const ver = p.conVeredicto;
+  const barra = (fr, color, marca, nombre) => `<div class="fase-barra" role="img" aria-label="${esc(nombre)}"><i style="width:${Math.round(fr * 1000) / 10}%;background:${color}"></i>${marca != null ? `<b style="left:${Math.round(marca * 1000) / 10}%" title="Lo previsto a esta fecha"></b>` : ''}</div>`;
+  const color = !ver ? 'var(--txt4)' : clase === 'verde' ? 'var(--lima)' : 'var(--ambar)';
+  const filas = [];
+  if (p.fraccionPeso != null && p.totalKg != null)
+    filas.push(`<div class="fase-fila"><span>Peso</span><b class="mono">${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPeso, color, p.fraccionPrevista, `Llevas ${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}`)}`);
+  if (p.fraccionTiempo != null && p.semanasTotales != null){
+    const sem = Math.min(p.semanaActual, Math.ceil(p.semanasTotales));
+    filas.push(`<div class="fase-fila"><span>Tiempo</span><b class="mono">Semana ${sem} de ${F.num(p.semanasTotales, p.semanasTotales % 1 ? 1 : 0)}</b></div>${barra(p.fraccionTiempo, 'var(--txt3)', null, `Semana ${sem} de ${F.num(p.semanasTotales, 1)}`)}`);
+  }
+  let llegada = '';
+  if (ver && p.pesoAlFinKg != null && p.fin) llegada = `Si sigues la pauta desde tu último pesaje, acabarás la etapa hacia ${F.kg(p.pesoAlFinKg)} el ${F.dia(p.fin)}.`;
+  else if (ver && p.llegadaMeta && p.pesoMetaKg != null) llegada = `Si sigues la pauta desde tu último pesaje, llegarás a ${F.kg(p.pesoMetaKg)} hacia el ${F.dia(p.llegadaMeta)}.`;
+  const c = p.compromiso;
+  let cambio = '';
+  if (c && c.pesoMetaKg != null && p.pesoMetaKg != null && (Math.abs(c.pesoMetaKg - p.pesoMetaKg) >= 0.05 || (c.fin && p.fin && diasEntre(c.fin, p.fin) !== 0)))
+    cambio = c.fin && p.fin ? `Al empezar, tu meta era ${F.kg(c.pesoMetaKg)} para el ${F.dia(c.fin)}. Ahora es ${F.kg(p.pesoMetaKg)} para el ${F.dia(p.fin)}.`
+                            : `Al empezar, tu meta era ${F.kg(c.pesoMetaKg)}. Ahora es ${F.kg(p.pesoMetaKg)}.`;
+  return `<div class="fase-progreso">
+    <div class="fase-cab"><h3 class="sub-h">Progreso de la fase</h3>${ver ? chip(clase, etiqueta) : chip('gris', 'Sin veredicto todavía', 'Al empezar una fase, o con la fase en pausa, el peso aún no dice cómo vas.')}</div>
+    ${filas.join('')}
+    ${ver ? `<p class="fase-frase">${esc(frase)}</p>` : '<p class="muted" style="font-size:12.5px">La fase aún se está calibrando o está en pausa: se enseña el avance, sin veredicto.</p>'}
+    ${llegada ? `<p class="muted" style="font-size:12.5px">${esc(llegada)}</p>` : ''}
+    ${cambio ? `<p class="muted" style="font-size:12.5px">${esc(cambio)}</p>` : ''}
+    ${c && c.reconstruido ? '<p class="muted" style="font-size:12.5px">El punto de partida se ha estimado con tu historial.</p>' : ''}
+    <p class="muted" style="font-size:12.5px">A fecha de tu último pesaje (${F.dia(p.hoy)}).</p>
+  </div>`;
+}
+
 function tarjetaPeso(M, P){
   if (!P){
     return M.pc ? tarjeta('Peso y fase', `<p>Tu copia no trae pesajes (la nutrición de la app no está activa). Peso de tu perfil: ${F.kg(M.pc)}.</p>`) : null;
@@ -377,6 +435,7 @@ function tarjetaPeso(M, P){
     ${f ? kv('Fase de nutrición', `${esc(FASE_NUT[f.tipo] || f.tipo)}${P.diasEnFase != null ? ` <span class="muted">· ${F.plural(Math.floor(P.diasEnFase / 7), 'semana', 'semanas')}</span>` : ''}`) : ''}
     ${f && f.tipo !== 'MAINTENANCE' ? kv('Ritmo objetivo de la fase', `${F.signo(f.tasaObjetivoPctSemana, 2)} por semana`) : ''}
     ${f && f.pesoObjetivoKg > 0 ? kv('Peso objetivo', F.kg(f.pesoObjetivoKg)) : ''}
+    ${progresoFase(M.datos.nut)}
     <p class="muted" style="font-size:12.5px">Último pesaje: ${F.dia(P.ultimoPesaje.fecha)}. El peso tendencia es el que calcula la app para suavizar las variaciones diarias. Los ajustes de calorías los decide la app; aquí solo se muestran.</p>
     <div class="fila-botones">${ir('fisica', 'Ver evolución física')}</div>`);
 }
@@ -508,7 +567,8 @@ function compararPeriodos(M, st){
 
   const rend = C.rendimiento.flatMap(g => ['bruto', 'neto'].filter(k => g[`${k}A`].n || g[`${k}B`].n).map(k => {
     const A = g[`${k}A`], B = g[`${k}B`];
-    return [`${esc(rutinaTxt(g.rutina))}<br>${esc(g.dia)} · ${k === 'bruto' ? 'Bruto' : 'Neto'}`, muestra(A, '%'), muestra(B, '%'),
+    const mixto = k === 'neto' && g.netoMixto ? '<br><span class="muted">Mezcla sesiones guardadas antes y después de que la app cambiara cómo descuenta la fatiga: compara mejor el bruto.</span>' : '';
+    return [`${esc(rutinaTxt(g.rutina))}<br>${esc(g.dia)} · ${k === 'bruto' ? 'Bruto' : 'Neto'}${mixto}`, muestra(A, '%'), muestra(B, '%'),
       A.n >= 2 && B.n >= 2 ? diff(A.mediana, B.mediana, 'pp') : 'Muestra insuficiente'];
   }));
   out.push(tarjeta('Rendimiento guardado por la app', `${rend.length ? tabla([...cab, 'Diferencia B − A'], rend, { caption: 'Rendimiento por identidad de rutina y día' }) : vacio('No hay rendimiento agrupable con identidad histórica completa.')}
@@ -534,9 +594,10 @@ function compararPeriodos(M, st){
   out.push(tarjeta('Contexto nutricional', tabla(cab, [
     ['Fases que coinciden con el periodo', ...contexto.map(nutTexto)],
     ['Recomendaciones registradas', ...contexto.map(c => String(c.recomendaciones.length))],
+    ['Ajustes aceptados', ...contexto.map(c => String(c.recomendaciones.filter(r => r.estadoPropuesta === 'ACCEPTED').length))],
     ['Ritmo real guardado (mediana)', ...contexto.map(c => muestra(Comparacion.estadistica(c.recomendaciones.filter(r => r.tasaRealPctSemana != null).map(r => ({ fecha: r.fecha, valor: r.tasaRealPctSemana }))), '% / semana'))],
-  ], { caption: 'Contexto nutricional histórico' }) + `<details class="detalle"><summary>Ver recomendaciones y ajustes guardados</summary>${tabla(['Periodo', 'Fecha', 'Fase', 'Tipo', 'Ajuste (kcal/día)'], contexto.flatMap((c, i) => c.recomendaciones.map(r => [i ? 'B' : 'A', F.dia(r.fecha), esc(r.faseId), esc(r.tipo), numero(r.ajusteKcalDia)])), { caption: 'Recomendaciones nutricionales dentro de la selección' })}</details>` +
-    ayuda('Las fases proceden de sus fechas guardadas; el plan de temporada es una previsión y no se usa como historia realizada. No se aplica la fase actual a fechas anteriores a su inicio. Los ajustes son propuestas guardadas por la app: no demuestran ingesta real ni adherencia a la dieta. No se atribuyen los cambios de entrenamiento a la nutrición.')));
+  ], { caption: 'Contexto nutricional histórico' }) + `<details class="detalle"><summary>Ver recomendaciones y ajustes guardados</summary>${tabla(['Periodo', 'Fecha', 'Fase', 'Tipo', 'Qué pasó', 'Ajuste propuesto (kcal/día)'], contexto.flatMap((c, i) => c.recomendaciones.map(r => [i ? 'B' : 'A', F.dia(r.fecha), esc(r.faseId), esc(TIPO_REC[r.tipo] || r.tipo), r.estadoPropuesta ? esc(ESTADO_REC[r.estadoPropuesta] || r.estadoPropuesta) : '—', numero(r.ajusteKcalDia)])), { caption: 'Recomendaciones nutricionales dentro de la selección' })}</details>` +
+    ayuda('Las fases proceden de sus fechas guardadas; el plan de temporada es una previsión y no se usa como historia realizada. No se aplica la fase actual a fechas anteriores a su inicio. Un ajuste solo cambia tu pauta si lo aceptaste en la app; los que quedaron sin decidir, pospuestos o sustituidos no la cambiaron. Ninguno demuestra ingesta real ni adherencia a la dieta. No se atribuyen los cambios de entrenamiento a la nutrición.')));
 
   out.push(tarjeta('Recuperación registrada', tabla([...cab, 'Diferencia B − A'], [
     ['Estado para entrenar (0–100)', ...contexto.map(c => muestra(c.estado)), diff(C.contextoA.estado.mediana, C.contextoB.estado.mediana)],
@@ -682,7 +743,8 @@ function fichaEjercicio(M, nombre, st = {}){
       ${cifra(F.dia(ej.ultimo && ej.ultimo.fecha), 'última')}
       ${!ej.porTiempo ? cifra(ej.marca ? F.kg(ej.marca.valor) : '—', `mejor 1RM estimado${ej.marca ? ` (${F.corta(ej.marca.fecha)})` : ''}`) : ''}
       ${ficha ? cifra(ficha.grupo, 'grupo muscular') : ''}</div>
-    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}</div>
+    ${ej.pesoCorporal ? `<p class="muted" style="font-size:12.5px">${ej.asistido ? 'Ejercicio asistido: la carga es la ayuda que restas a tu peso.' : 'Ejercicio con tu peso corporal: la carga anotada es el lastre.'} El 1RM estimado suma tu peso de perfil actual${M.pc ? ` (${F.kg(M.pc)})` : ''}, igual que la app, también en sesiones antiguas.${M.pc == null ? ' Tu copia no trae peso de perfil, así que no se estima.' : ''}</p>` : ''}
+    ${ej.pesoFijo ? `<p class="muted" style="font-size:12.5px">Máquina con peso fijo de ${F.kg(ej.pesoFijo)}: la carga que ves es la que anotas, y el 1RM estimado y las marcas le suman ese peso, igual que la app, también en sesiones antiguas.</p>` : ''}</div>
     ${DibujosEsc.src(nombre) ? DibujosEsc.grande(nombre, { clase: 'ej-dibujo-cab' }) : ''}</div></section>`);
 
   // --- evolución: gráfica con marcas de contexto y tabla por serie ---
@@ -861,14 +923,14 @@ function rendimiento(M){
   if (!pb.length && !pn.length) return tarjeta('Rendimiento por sesión', vacio('Tu copia no trae sesiones con rendimiento medido.'));
   const svg = Charts.lineas({ series: [
     { nombre: 'Bruto', color: TL.lima, puntos: pb, unidad: '%' },
-    ...(pn.length ? [{ nombre: 'Neto (descuenta la fatiga de la sesión)', color: TL.azul, puntos: pn, unidad: '%', dash: '5 4' }] : []),
+    ...(pn.length ? [{ nombre: 'Neto (descuenta la fatiga de más y el esfuerzo)', color: TL.azul, puntos: pn, unidad: '%', dash: '5 4' }] : []),
   ], lineaBase: { y: 0, label: 'Tu nivel reciente', color: TL.txt3 }, banda: { min: -tol, max: tol, label: 'Zona normal' }, w: 960, h: 280 });
   const filas = ses.slice().reverse().filter(s => s.bruto != null || s.neto != null || s.sinBase).map(s => [F.dia(s.fecha), esc(s.dia),
     s.sinBase ? '<span class="muted">sin referencia</span>' : F.signo(s.bruto), s.neto != null ? F.signo(s.neto) : '—',
     s.veredicto ? chip(...(VEREDICTO[s.veredicto] || ['gris', s.veredicto])) : '—', s.cambioRutina ? chip('azul', 'Cambio de rutina') : '']);
   return tarjeta('Rendimiento por sesión', grafica(svg, 'Rendimiento bruto y neto de cada sesión frente a tu nivel reciente',
       tabla(['Fecha', 'Sesión', 'Bruto', 'Neto', 'Valoración', '<span class="sr-only">Cambio de rutina</span>'], filas, { caption: 'Rendimiento por sesión' })) +
-    ayuda('Son las cifras que la app calculó y guardó al terminar cada sesión: cuánto rindió frente a tu nivel reciente en ese día de la rutina (0 % = tu nivel). El neto, si registras el esfuerzo de la sesión, descuenta la fatiga acumulada dentro de ella. Las sesiones que la app guardó sin referencia previa (al empezar una rutina, por ejemplo) aparecen como hueco. Las descargas no se muestran.'));
+    ayuda('Son las cifras que la app calculó y guardó al terminar cada sesión: cuánto rindió frente a tu nivel reciente en ese día de la rutina (0 % = tu nivel). El neto, si registras el esfuerzo de la sesión, descuenta ese esfuerzo y la parte de la caída entre series que va más allá de la que sueles tener en esos ejercicios: la caída normal de cualquier sesión, o la que ya está prevista en tu rutina, no resta. Las sesiones antiguas conservan el neto con el que la app las guardó. Las sesiones que la app guardó sin referencia previa (al empezar una rutina, por ejemplo) aparecen como hueco. Las descargas no se muestran.'));
 }
 
 function volumen(M){
@@ -946,8 +1008,9 @@ function fisica(M, ctx){
         ${N.fase ? cifra(FASE_NUT[N.fase.tipo] || N.fase.tipo, 'fase de nutrición') : ''}
         ${N.fase && N.fase.tipo !== 'MAINTENANCE' ? cifra(F.signo(N.fase.tasaObjetivoPctSemana, 2), 'ritmo objetivo') : ''}
         ${N.fase && N.fase.pesoObjetivoKg > 0 ? cifra(F.kg(N.fase.pesoObjetivoKg), 'peso objetivo') : ''}</div>
+      ${progresoFase(N)}
       ${grafica(svg, 'Pesajes y peso tendencia', tabla(['Fecha', 'Pesaje', 'Tendencia', '<span class="sr-only">Observación</span>'], filas, { caption: 'Pesajes' }))}
-      ${ayuda('La línea es el peso tendencia que calcula la app: suaviza las subidas y bajadas diarias de agua y comida para ver hacia dónde va tu peso. Los pesajes de días de refeed o tras una pausa se muestran, pero no mueven la tendencia.')}`));
+      ${ayuda('La línea es el peso tendencia que calcula la app: suaviza las subidas y bajadas diarias de agua y comida para ver hacia dónde va tu peso. Los pesajes de días de refeed o tras una pausa se muestran, pero no mueven la tendencia. El progreso de la fase compara dónde está tu tendencia con dónde la ponía lo que pactaste al empezar, teniendo en cuenta los cambios de ritmo que aceptaste por el camino; la marca de la barra de peso es lo previsto. Ir por detrás no se recupera solo: el ajuste semanal de la app corrige el ritmo, no el terreno perdido.')}`));
   } else {
     out.push(tarjeta('Peso', vacio(M.pc ? `Tu copia no trae pesajes (la nutrición de la app no está activa). Peso de tu perfil: ${F.kg(M.pc)}.` : 'Tu copia no trae pesajes.')));
   }
@@ -1081,8 +1144,8 @@ function rutina(M, { sinCabecera = false } = {}){
     return out.join('');
   }
   const aviso = M.planConocido
-    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana. Es de consulta: para preparar cambios crea un borrador.</p>`
-    : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días o sistema que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
+    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: para preparar cambios crea un borrador.</p>`
+    : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días, sistema o lugar de entrenamiento que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
   const dias = [...new Set(lineas.map(l => l.dia))];
   const bloques = dias.map(d => {
     const ls = lineas.filter(l => l.dia === d).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));

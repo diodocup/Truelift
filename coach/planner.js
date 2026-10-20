@@ -476,9 +476,11 @@ const Planner = {
 
         if (!f.series) add('ambar', `${d.nombre} · ${f.ejercicio}: faltan las series.`);
         if (f.repsMin == null) add('ambar', `${d.nombre} · ${f.ejercicio}: faltan las repeticiones.`);
-        if (rutina.sistema === 'doble' && f.repsMin != null && f.repsMax != null && f.repsMax < f.repsMin)
+        // Un drop set no lleva rango: su objetivo es un número (reps mín).
+        const rangoDoble = rutina.sistema === 'doble' && !(f.dropSet && !f.topBack);
+        if (rangoDoble && f.repsMin != null && f.repsMax != null && f.repsMax < f.repsMin)
           add('rojo', `${d.nombre} · ${f.ejercicio}: reps máx (${f.repsMax}) menor que reps mín (${f.repsMin}).`);
-        if (rutina.sistema === 'doble' && f.repsMin != null && f.repsMax == null)
+        if (rangoDoble && f.repsMin != null && f.repsMax == null)
           add('ambar', `${d.nombre} · ${f.ejercicio}: en sistema doble faltan las reps máx.`);
         if (f.dropSet && (f.series || 0) < 2)
           add('ambar', `${d.nombre} · ${f.ejercicio}: un drop set necesita al menos 2 series (la primera y sus drops).`);
@@ -605,7 +607,7 @@ const Planner = {
     const rutina = XLSX.desdePlanMod(fuente.plan, fuente.sistema);
     rutina.dias.forEach(d => {
       this._patronesVigentes(d.filas);
-      this._sanearModalidades(d.filas);
+      this._sanearModalidades(d.filas, rutina.sistema);
     });
     this.rutina = rutina;
     this.guardar(); render();
@@ -622,7 +624,7 @@ const Planner = {
       // desconocido (excels antiguos sin biblioteca embebida).
       this._fusionarBiblioteca(rutina.biblioteca);
       this._fusionarEjerciciosDeRutina(rutina);
-      rutina.dias.forEach(d => this._sanearModalidades(d.filas));
+      rutina.dias.forEach(d => this._sanearModalidades(d.filas, rutina.sistema));
       this.rutina = rutina;
       this.guardar(); render();
     } catch (err){
@@ -680,7 +682,7 @@ const Planner = {
       });
       // Al caerse filas incompletas cambian los vecinos: se rehace la
       // exclusión antes de escribir K/L/M/N en el Excel.
-      this._sanearModalidades(d.filas);
+      this._sanearModalidades(d.filas, r.sistema);
       this._patronesVigentes(d.filas);
     });
     const dias = r.dias.filter(d => d.filas.length).length;
@@ -750,6 +752,9 @@ const Planner = {
     // más altas) y no hay RIR: todas las series van al fallo.
     const rp = !!f.restPause && !enSS;
     const repsTope = rp ? 60 : 30;
+    // Drop set: solo la 1.ª serie gobierna la progresión, así que su objetivo
+    // es UN número (sin reps máx), también en doble. Misma regla que la app.
+    const drop = !!f.dropSet && !f.topBack && !enSS;
     const numIn = (k, v, min, max, step, ancho, title) =>
       `<input type="number" class="pln-campo" data-d="${d}" data-f="${i}" data-k="${k}"
         value="${v ?? ''}" min="${min}" max="${max}" step="${step}" style="width:${ancho}px" title="${title}">`;
@@ -771,8 +776,8 @@ const Planner = {
           </select>
         </span>
         ${numIn('series', f.series, 1, 10, 1, 52, 'Series')}<span class="pln-x">×</span>
-        ${numIn('repsMin', f.repsMin, 1, repsTope, 1, 52, rp ? 'Reps totales mín / objetivo (suma de todas las series)' : 'Reps mín / objetivo')}
-        ${sistema === 'doble' ? `<span class="pln-x">–</span>${numIn('repsMax', f.repsMax, 1, repsTope, 1, 52, rp ? 'Reps totales máx (suma de todas las series)' : 'Reps máx')}` : ''}
+        ${numIn('repsMin', f.repsMin, 1, repsTope, 1, 52, rp ? 'Reps totales mín / objetivo (suma de todas las series)' : drop ? 'Reps objetivo de la 1.ª serie (la única que decide la progresión: un número, no un rango)' : 'Reps mín / objetivo')}
+        ${sistema === 'doble' && !drop ? `<span class="pln-x">–</span>${numIn('repsMax', f.repsMax, 1, repsTope, 1, 52, rp ? 'Reps totales máx (suma de todas las series)' : 'Reps máx')}` : ''}
         ${rp ? '<span class="pln-x" title="Rest-pause: todas las series al fallo, sin RIR">total · al fallo</span>' : `<span class="pln-x">@RIR</span>${numIn('rir', f.rir, 0, 6, 1, 44, 'RIR objetivo')}`}
         <select class="pln-campo" data-d="${d}" data-f="${i}" data-k="descanso" title="Descanso (min)">
           ${CAT_DESCANSOS.map(v => `<option value="${v}" ${v === f.descanso ? 'selected' : ''}>${fmtNum(v, 1)}′</option>`).join('')}
@@ -809,12 +814,15 @@ const Planner = {
      ejecución): misma precedencia que la app. Hace falta además de las
      casillas porque borrar o reordenar filas cambia quién es vecino de
      quién, y un Excel o un JSON pueden traer las tres marcas juntas. */
-  _sanearModalidades(filas){
+  _sanearModalidades(filas, sistema){
+    const sis = sistema || (this.rutina && this.rutina.sistema) || 'doble';
     (filas || []).forEach((f, i) => {
-      if (f.topBack && f.dropSet) f.dropSet = false;
+      if (f.topBack && f.dropSet) this._quitarDrop(f, sis);
       // El rest-pause cede ante top+back y drop set (misma precedencia que la
       // app al importar).
       if (f.restPause && (f.topBack || f.dropSet)) f.restPause = false;
+      // Un drop set con rango (Excel antiguo, borrador) se queda con una cifra.
+      this._dropRepsUnicas(f, sis);
       if (!f.superConAnterior || i === 0) return;
       const ant = filas[i - 1];
       if (this._conModalidad(f) || this._conModalidad(ant))
@@ -823,6 +831,25 @@ const Planner = {
     return filas;
   },
 
+  /* En un drop set solo la 1.ª serie gobierna la progresión: su objetivo es
+     UN número (repsMin, sin repsMax), en simple y en doble. Un rango se queda
+     con la cifra que abría la subida de carga: en doble, el extremo alto.
+     Misma regla que la app (AppState._repsUnicasDropSet). */
+  _dropRepsUnicas(f, sistema){
+    if (!f || !f.dropSet || f.topBack) return;
+    if (sistema !== 'simple' && f.repsMax != null &&
+        (f.repsMin == null || f.repsMax > f.repsMin)) f.repsMin = f.repsMax;
+    f.repsMax = null;
+  },
+  /* Quita el drop set de la fila. En doble, la cifra única vuelve a ser un
+     rango que acaba en ella (mismo criterio de subida). Como la app. */
+  _quitarDrop(f, sistema){
+    if (!f || !f.dropSet) return;
+    f.dropSet = false;
+    if (sistema === 'simple' || f.repsMin == null || f.repsMax != null) return;
+    f.repsMax = f.repsMin;
+    f.repsMin = Math.max(1, f.repsMin - 4);
+  },
   /* ¿La fila lleva alguna modalidad propia (top+back, drop set o
      rest-pause)? Cualquiera de ellas impide la superserie. */
   _conModalidad(f){
@@ -952,10 +979,12 @@ const Planner = {
      drop set / rest-pause) y una superserie solo enlaza filas a series
      rectas; activar una apaga las que no caben. `valor`: booleano en las
      marcas, texto en patrón y ejercicio, número (o texto numérico; vacío =
-     sin dato) en el resto. Lo usan el editor del Coach y el del escritorio. */
-  aplicarCampo(filas, i, k, valor){
+     sin dato) en el resto. Lo usan el editor del Coach y el del escritorio.
+     `sistema` (simple/doble) decide cómo queda el objetivo de un drop set. */
+  aplicarCampo(filas, i, k, valor, sistema){
     const fila = filas[i];
     if (!fila) return false;
+    const sis = sistema || (this.rutina && this.rutina.sistema) || 'doble';
     const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
     const romperSS = () => {
       fila.superConAnterior = false;
@@ -963,16 +992,20 @@ const Planner = {
     };
     if (k === 'topBack'){
       fila.topBack = !!valor;
-      if (valor){ fila.dropSet = false; fila.restPause = false; romperSS(); }
+      if (valor){ this._quitarDrop(fila, sis); fila.restPause = false; romperSS(); }
     }
     else if (k === 'dropSet'){
-      fila.dropSet = !!valor;
-      if (valor){ fila.topBack = false; fila.restPause = false; romperSS(); }
+      if (valor){
+        fila.dropSet = true;
+        fila.topBack = false; fila.restPause = false; romperSS();
+        // Solo la 1.ª serie gobierna la progresión: un número, no un rango.
+        this._dropRepsUnicas(fila, sis);
+      } else this._quitarDrop(fila, sis);
     }
     else if (k === 'restPause'){
       fila.restPause = !!valor;
       if (valor){
-        fila.topBack = false; fila.dropSet = false; romperSS();
+        fila.topBack = false; this._quitarDrop(fila, sis); romperSS();
         if ((fila.series || 0) < 2) fila.series = 2;
         if (!fila.pausaRpSeg) fila.pausaRpSeg = 20;
       }
@@ -987,7 +1020,7 @@ const Planner = {
         while (filas[fin + 1] && filas[fin + 1].superConAnterior) fin++;
         for (let j = ini; j <= fin; j++){
           filas[j].topBack = false;
-          filas[j].dropSet = false;
+          this._quitarDrop(filas[j], sis);
           filas[j].restPause = false;
         }
       }
@@ -1024,7 +1057,7 @@ const Planner = {
           }]);
         }
       }
-      else this.aplicarCampo(filas, +f, k, el.type === 'checkbox' ? el.checked : el.value);
+      else this.aplicarCampo(filas, +f, k, el.type === 'checkbox' ? el.checked : el.value, r.sistema);
       this.guardar(); render();
     }));
 
@@ -1042,7 +1075,7 @@ const Planner = {
       filas.splice(+el.dataset.f, 1);
       // Al desaparecer una fila se juntan sus vecinas: el enlace de la
       // siguiente puede quedar apuntando a un top+back o a un drop set.
-      this._sanearModalidades(filas);
+      this._sanearModalidades(filas, r.sistema);
       this.guardar(); render();
     }));
     const filasEditor = [...cont.querySelectorAll('.pln-fila')];

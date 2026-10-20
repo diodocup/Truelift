@@ -101,6 +101,7 @@ async function cargarEstado(){
       // nunca se modifica al calcular.
       try { E.raw = E.inst ? JSON.parse(E.inst.texto) : null; }
       catch (e) { E.rawError = 'La copia guardada no se puede leer.'; }
+      TemaEsc.desdeCopia(E.raw);
     }
     if (E.raw && E.raw.medidas && typeof E.raw.medidas === 'object' && !Array.isArray(E.raw.medidas))
       E.indiceJson = FotosTL.leerIndice(E.raw.medidas);
@@ -619,6 +620,7 @@ function renderDatos(){
   if (!E.espacio) return renderBienvenida();
   const out = ['<div class="cabecera-seccion"><h1>Mis datos</h1></div>'];
   out.push(`<div class="grid cols2" style="align-items:start">${tarjetaDatos()}${tarjetaAlmacen()}</div>`);
+  out.push(tarjetaTema());
   out.push(tarjetaFotos('resumen'));
   out.push(tarjetaHistorial());
   return out.join('');
@@ -689,6 +691,16 @@ function tarjetaDatos(){
       <button class="btn sec" type="button" data-accion="importar-datos">Actualizar con una copia nueva</button>
       ${E.espacio.instantaneaAnteriorId ? '<button class="btn sec" type="button" data-accion="volver-anterior">Volver a la copia anterior</button>' : ''}
     </div></div>`;
+}
+
+/* Tema de la pantalla (tema.js): como en la app, oscuro o claro. */
+function tarjetaTema(){
+  const el = TemaEsc.eleccion(), app = TemaEsc.deLaApp() === 'claro' ? 'claro' : 'oscuro';
+  const op = (v, txt) => `<label class="tema-op"><input type="radio" name="temaEsc" value="${v}"${el === v ? ' checked' : ''}> ${txt}</label>`;
+  return `<div class="card"><h2>Tema</h2>
+    <fieldset class="tema-elegir"><legend class="sr-only">Tema de la pantalla</legend>
+      ${op('app', `Como en tu app <span class="muted">(${app})</span>`)}${op('oscuro', 'Oscuro')}${op('claro', 'Claro')}</fieldset>
+    <p class="muted" style="font-size:12.5px">Se guarda solo en este navegador. «Como en tu app» sigue el tema que tengas en la app según tu última copia. Al imprimir un informe se usan siempre los colores de papel.</p></div>`;
 }
 
 function tarjetaAlmacen(){
@@ -1639,6 +1651,7 @@ function init(){
       anunciar('Comparación actualizada');
       return;
     }
+    if (ev.target.name === 'temaEsc'){ TemaEsc.elegir(ev.target.value); anunciar(`Tema: ${TemaEsc.efectivo()}.`); return; }
     if (ev.target.id === 'selEspacio'){
       await guardarSimple([{ almacen: 'meta', put: { clave: 'espacioActivo', valor: ev.target.value } }], 'Espacio cambiado.');
     }

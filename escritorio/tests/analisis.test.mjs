@@ -57,6 +57,36 @@ test('sin la rutina en uso no se valora la progresión', () => {
   assert.equal(M.ejercicios.get('Press banca con barra').estados[0].tipo, 'rutinaDesconocida');
 });
 
+test('rutina en casa: la clave del móvil lleva «casaN» (18/10/2026)', () => {
+  const casa = { ...copiaRica(), dias: '3', enCasa: true, planModKey: 'hombre_doble|casa3' };
+  assert.equal(Motor.comboRutina(casa), 'hombre_doble|casa3');
+  assert.equal(Analisis.preparar(casa, resumen).planConocido, true);
+  // La rutina de gimnasio guardada no es la que usa quien entrena en casa.
+  assert.equal(Analisis.preparar({ ...casa, planModKey: 'hombre_doble|3' }, resumen).planConocido, false);
+  // Como en la app, «en casa» solo existe con 3 o 4 días; copias antiguas sin la clave, gimnasio.
+  assert.equal(Motor.comboRutina({ ...casa, dias: '5' }), 'hombre_doble|5');
+  const { enCasa, ...antigua } = casa;
+  assert.equal(Motor.comboRutina(antigua), 'hombre_doble|3');
+});
+
+test('peso fijo de máquina: e1RM y marcas lo suman, la carga anotada no (14/10/2026)', () => {
+  const fijos = { 'prensa 45': 50, 'press banca con barra': 20, 'dominada asistida en máquina': 30 };
+  // Familia compartida: «pies medios» es la misma máquina.
+  assert.equal(Motor.pesoFijoDe('Prensa 45° pies medios', fijos), 50);
+  // Peso corporal y asistidos nunca suman un peso fijo (clave huérfana).
+  assert.equal(Motor.pesoFijoDe('Dominada asistida en máquina', fijos), 0);
+  assert.equal(Motor.cargaEfectiva('Prensa 45°', 0, 80, fijos), 50, 'la máquina vacía es una carga válida');
+  const e = Motor.entrada({ ejercicio: 'Prensa 45°', kg: 100, reps: [10], rir: [2] });
+  assert.equal(Motor.mejorSerie(e, 80, { fijos }).e1rm, 150 * (1 + 12 / 30));
+  assert.equal(Motor.mejorSerie(e, 80).e1rm, 100 * (1 + 12 / 30), 'copias sin la clave: como antes');
+  const raw = copiaRica(); raw.pesoFijoMaquina = { 'press banca con barra': 20 };
+  const con = Analisis.preparar(raw, resumen).ejercicios.get('Press banca con barra');
+  const sin = Analisis.preparar(copiaRica(), resumen).ejercicios.get('Press banca con barra');
+  assert.equal(con.pesoFijo, 20);
+  assert.ok(con.marca.valor > sin.marca.valor);
+  assert.deepEqual(con.puntos.map(p => p.cargaTop), sin.puntos.map(p => p.cargaTop));
+});
+
 test('marcas: carga efectiva en asistidos, sin días ámbar, sin molestias, drop solo primera serie', () => {
   const M = Analisis.preparar(copiaRica(), resumen);
   const dom = M.ejercicios.get('Dominada asistida en máquina');
