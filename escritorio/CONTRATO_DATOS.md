@@ -113,7 +113,18 @@ Aditivo: las copias v1–v7 se siguen leyendo.
   `10 ≤ cm ≤ 300`; uno por día y sitio. Claves: `cuello, hombros, pecho,
   biceps_izq, biceps_der, antebrazo_izq, antebrazo_der, cintura, abdomen,
   cadera, muslo_izq, muslo_der, gemelo_izq, gemelo_der`.
-- `fotos[] {fecha: 'YYYY-MM-DD', pose: 'frente'|'perfil'|'espalda', archivo, pesoKg?}`.
+- `fotos[] {fecha: 'YYYY-MM-DD', pose: 'frente'|'perfil'|'espalda', archivo, pesoKg?, ajuste?, analisis?}`.
+- `ajuste {escala, dx, dy, giro, espejo?, origen}` (21/10/2026, clave
+  aditiva): encuadre guardado en la app (`lib/medidas/ajuste_foto.dart`).
+  Relativo al recuadro 3:4 en que se pinta la foto (`BoxFit.cover`): escala y
+  giro (radianes, horario) alrededor del centro tras el espejo horizontal, y
+  después el desplazamiento en fracción del ancho y del alto. Topes: escala
+  0,5–3, desplazamiento ±1, giro ±45°; la identidad no se guarda. El
+  escritorio lo lee con `FotosTL.leerAjuste` y lo pinta con
+  `FotosTL.transformCss` (comparador, galería, informe y vista ampliada), sin
+  tocar la imagen. Si la copia JSON no lo trae y el ZIP sí, se adopta el del
+  ZIP (misma regla que la fusión del móvil); uno presente no se pisa. Un ZIP
+  que solo cambia encuadres cuenta como cambio de índice.
   `archivo` es el **identificador único** (sin `/`, `\` ni `..`). `pesoKg` es
   el peso congelado al crear la foto (pesaje más cercano ±7 días o peso de
   perfil).

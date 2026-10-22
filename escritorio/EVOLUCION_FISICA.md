@@ -62,6 +62,12 @@ Fuentes móviles revisadas el 10/10/2026 en App-PRO/main:
   en `meta['encuadres:<espacioId>']`. Se guardan explícitamente, se pueden
   restablecer por foto y se conserva lo guardado si falla una escritura.
   En modo temporal se advierte que se perderán al cerrar.
+- Encuadre hecho en la app (22/10/2026): la ficha trae `ajuste` (ver
+  CONTRATO_DATOS.md §2) y el comparador lo aplica por defecto, con la imagen
+  a sangre (`object-fit: cover`) y fondo negro como en el móvil; el
+  interruptor «Ver con el encuadre hecho en la app» lo quita. El ajuste del
+  navegador se suma encima. Galería, informe y vista ampliada enseñan la foto
+  encuadrada. Solo es un `transform` CSS: el blob original no cambia.
 - No hay cambio de versión de IndexedDB: se reutiliza el almacén `meta`
   existente. Borrar un espacio elimina también sus encuadres y fechas de
   comparación de periodos. Las imágenes siguen siendo blobs originales.

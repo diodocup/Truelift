@@ -108,6 +108,10 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 .comparador-lienzo{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;isolation:isolate}
 .comparador-marco{position:relative;aspect-ratio:3/4;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--sup3);border-radius:8px;min-width:0}
 .comparador-marco img{width:100%;height:100%;object-fit:contain;display:block;transform-origin:center;flex-shrink:0}
+.comparador-lienzo.encuadre-app .comparador-marco{background:#000}
+.comparador-lienzo.encuadre-app .comparador-marco img{object-fit:cover}
+.foto-encuadre-app{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--txt2)}
+.foto-encuadre-app input{accent-color:var(--lima);width:16px;height:16px}
 .comparador-marco .hueco{padding:20px;font-size:13px;color:var(--txt3);text-align:center}
 .comparador-lienzo:not(.modo-lado){display:block;width:min(100%,540px);aspect-ratio:3/4;margin:0 auto}
 .comparador-lienzo:not(.modo-lado) .comparador-marco{position:absolute;inset:0;width:100%;height:100%}
@@ -825,3 +829,11 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
 .tema-elegir{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 8px;padding:0;border:0}
 .tema-op{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--txt2);cursor:pointer}
 .tema-op input{accent-color:var(--lima)}
+
+/* Encuadre hecho en la app (FotosTL.transformCss): recuadro 3:4, imagen a
+   sangre y fondo negro neutro donde asome el borde, como en el móvil. Va al
+   final para ganar a los .marco de galería, informe y selector de fotos. */
+.marco.con-ajuste,.foto-grande-marco.con-ajuste{background:#000;overflow:hidden}
+.marco.con-ajuste img{object-fit:cover;transform-origin:center}
+.foto-grande-marco{width:min(100%,calc(70vh * 3 / 4));aspect-ratio:3/4;margin:0 auto;border-radius:10px}
+.foto-grande-marco img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center}

@@ -10,7 +10,7 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v8`;
+const VERSION = `${PREFIJO}v9`;
 const ARCHIVOS = [
   './',
   'index.html',
