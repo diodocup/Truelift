@@ -123,3 +123,16 @@ test('vistas muestran medidas reales, ausencia, sin músculo deducido y texto es
   assert.ok(sin.includes('Falta una imagen')); assert.ok(!sin.includes('data-original'));
   assert.ok(VistasEsc.contornos(conCintura(), {}).includes('Datos insuficientes para una tendencia'));
 });
+test('comparador: el encuadre de la app se aplica por defecto y se puede apagar', () => {
+  const a = { archivo: 'a.jpg', fecha: '2026-06-03', pose: 'frente', pesoKg: 80, tieneImagen: true, ajuste: null };
+  const b = { archivo: 'b.jpg', fecha: '2026-09-02', pose: 'frente', pesoKg: 78, tieneImagen: true, ajuste: { escala: 1.2, dx: 0, dy: 0, giro: 0, espejo: false } };
+  const st = { corte: 50, opacidad: 50, encuadres: {} };
+  // Sin encuadre en ninguna, ni interruptor ni recuadro a sangre.
+  const sin = FisicaVista.comparador([a, { ...b, ajuste: null }], conCintura(), {}, st);
+  assert.ok(!sin.includes('compEncuadreApp')); assert.ok(!sin.includes('encuadre-app'));
+  const con = FisicaVista.comparador([a, b], conCintura(), {}, st);
+  assert.ok(con.includes('id="compEncuadreApp" checked')); assert.ok(con.includes('modo-lado encuadre-app'));
+  assert.ok(con.includes('Se suma al encuadre hecho en la app.'));
+  const apagado = FisicaVista.comparador([a, b], conCintura(), {}, { ...st, encuadreApp: false });
+  assert.ok(apagado.includes('id="compEncuadreApp">')); assert.ok(!apagado.includes('modo-lado encuadre-app'));
+});

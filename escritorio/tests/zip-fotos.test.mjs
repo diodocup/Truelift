@@ -237,3 +237,34 @@ test('índice tolerante: pose desconocida se lee como frente, entradas rotas se 
   assert.equal(idx.descartadas, 2);
   assert.equal(I.archivoValido('a.jpg'), true);
 });
+
+test('encuadre de la app: se lee con sus topes, se adopta del ZIP y cuenta como cambio', () => {
+  const archivo = 'foto_20260801_frente.jpg';
+  const ficha = ajuste => ({ fotos: [{ archivo, fecha: '2026-08-01', pose: 'frente', ...(ajuste ? { ajuste } : {}) }] });
+  // Lo de la app: escala, desplazamiento, giro, espejo y origen (ignorado).
+  const a = F.leerIndice(ficha({ escala: 1.25, dx: 0.1, dy: -0.05, giro: 0.1, espejo: true, origen: 'manual' }));
+  assert.deepEqual(a.fotos.get(archivo).ajuste, { escala: 1.25, dx: 0.1, dy: -0.05, giro: 0.1, espejo: true });
+  // Copia manipulada: se acota; lo no numérico vale lo neutro.
+  const fuera = F.leerIndice(ficha({ escala: 1e9, dx: -7, dy: 'x', giro: 3 })).fotos.get(archivo).ajuste;
+  assert.deepEqual(fuera, { escala: 3, dx: -1, dy: 0, giro: Math.PI / 4, espejo: false });
+  // La identidad o un valor que no es objeto no es encuadre.
+  assert.equal(F.leerIndice(ficha({ escala: 1, dx: 0, dy: 0, giro: 0 })).fotos.get(archivo).ajuste, null);
+  assert.equal(F.leerIndice(ficha([1, 2])).fotos.get(archivo).ajuste, null);
+  assert.equal(F.leerIndice(ficha(null)).fotos.get(archivo).ajuste, null);
+
+  // Mismo orden que la app: espejo, escala y giro sobre el centro; después,
+  // el desplazamiento en fracción del recuadro.
+  assert.equal(F.transformCss(a.fotos.get(archivo).ajuste), 'translate(10%, -5%) rotate(0.1rad) scale(1.25) scaleX(-1)');
+  assert.equal(F.transformCss(null), '');
+
+  // La copia JSON manda; si no trae encuadre, se adopta el del ZIP.
+  const sin = F.leerIndice(ficha(null));
+  const guardadas = [{ archivo }];
+  assert.deepEqual(F.resolver({ indiceJson: sin, indiceZip: a, guardadas })[0].ajuste, a.fotos.get(archivo).ajuste);
+  const otro = F.leerIndice(ficha({ escala: 2 }));
+  assert.equal(F.resolver({ indiceJson: otro, indiceZip: a, guardadas })[0].ajuste.escala, 2);
+
+  // Reimportar un ZIP en el que solo cambió el encuadre actualiza el índice.
+  assert.deepEqual(F.cambioIndice(sin, a), { cambia: true, confirmar: true });
+  assert.deepEqual(F.cambioIndice(a, F.leerIndice(ficha({ escala: 1.25, dx: 0.1, dy: -0.05, giro: 0.1, espejo: true }))), { cambia: false, confirmar: false });
+});

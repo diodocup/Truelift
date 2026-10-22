@@ -21,7 +21,7 @@ const E = {
   urls: new Set(), urlModal: null, obs: null, canal: null,
   estimacion: null, persistido: null, origenModal: null, sinConexion: null,
   M: null, errorModelo: null, fisica: null, espacioFisica: null,
-  fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 },
+  fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true },
   st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null, capasOcultas: new Set() },
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
@@ -117,7 +117,7 @@ async function cargarEstado(){
   E.fisica = Evolucion.preparar(E.raw, E.espacio?.indiceZip);
   const espacioId = E.espacio?.id || null;
   if (espacioId !== E.espacioFisica){
-    Object.assign(E.fis, { pose: null, a: null, b: null, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0 });
+    Object.assign(E.fis, { pose: null, a: null, b: null, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true });
     E.espacioFisica = espacioId;
   }
   if (!E.fis.dirty) E.fis.encuadres = espacioId ? (await Almacen.leer('meta', `encuadres:${espacioId}`))?.valor || {} : {};
@@ -803,12 +803,26 @@ function actualizarOutput(i){
   const out = document.querySelector(`output[for="${i.id}"]`);
   if (out) out.textContent = i.value;
 }
+/* Comparador: el encuadre guardado en la app (si está activado) y, encima,
+   el ajuste adicional de este navegador. */
 function aplicarEncuadres(){
   $$('[data-original]').forEach(m => {
     const enc = Evolucion.encuadre(E.fis.encuadres[m.dataset.original]);
     const img = m.querySelector('img');
-    if (img) img.style.transform = `translate(${enc.x}%, ${enc.y}%) scale(${enc.zoom})`;
+    const f = E.galeria.find(x => x.archivo === m.dataset.original);
+    const app = E.fis.encuadreApp ? FotosTL.transformCss(f?.ajuste) : '';
+    if (img) img.style.transform = `translate(${enc.x}%, ${enc.y}%) scale(${enc.zoom}) ${app}`.trim();
   });
+}
+/* Fuera del comparador (galería, informe, vista ampliada) la foto con
+   encuadre de la app se pinta encuadrada, como en el móvil: recuadro 3:4,
+   imagen a sangre y fondo negro donde asome el borde. */
+function encuadrarImagen(img, archivo){
+  const f = E.galeria.find(x => x.archivo === archivo);
+  const t = FotosTL.transformCss(f?.ajuste);
+  if (!t) return;
+  img.style.transform = t;
+  img.parentElement?.classList.add('con-ajuste');
 }
 function activarOriginales(){
   const espacioId = E.espacio?.id;
@@ -838,6 +852,7 @@ function liberarUrls(){
 function activarMiniaturas(){
   const imgs = $$('img[data-mini]');
   if (!imgs.length) return;
+  imgs.forEach(img => encuadrarImagen(img, img.dataset.mini));
   const cargar = async img => {
     const archivo = img.dataset.mini;
     const espacioId = E.espacio && E.espacio.id;
@@ -863,8 +878,12 @@ async function verFoto(archivo){
   if (E.urlModal) URL.revokeObjectURL(E.urlModal);
   E.urlModal = URL.createObjectURL(reg.blob);
   const pose = POSE_TXT[f.pose] || f.pose;
+  const alt = esc(`${pose}, ${fmtDia(f.fecha)}`);
+  const t = FotosTL.transformCss(f.ajuste);
   abrirModal(`<h2 id="modalTitulo">${esc(pose)} · ${fmtDia(f.fecha)}</h2>
-    <img class="foto-grande" src="${E.urlModal}" alt="${esc(`${pose}, ${fmtDia(f.fecha)}`)}">
+    ${t ? `<div class="foto-grande-marco con-ajuste"><img src="${E.urlModal}" alt="${alt}" style="transform:${t}"></div>
+    <p class="muted mono-peq" style="margin-top:8px;text-align:center">Encuadrada en la app</p>`
+      : `<img class="foto-grande" src="${E.urlModal}" alt="${alt}">`}
     <p class="muted mono-peq" style="margin-top:8px">${esc(archivo)}${f.pesoKg != null ? ` · ${fmtNum(f.pesoKg)} kg` : ''}</p>
     ${FisicaVista.contexto(f, E.fisica, E.raw)}
     ${E.fisica.sitios.length ? FisicaVista.asociaciones(f, f, E.fisica) : ''}
@@ -1369,7 +1388,7 @@ function activarFotosInforme(){
       const f = E.galeria.find(x => x.archivo === archivo);
       const img = document.createElement('img');
       img.alt = f ? `${POSE_TXT[f.pose] || f.pose}, ${fmtDia(f.fecha)}` : archivo;
-      img.onload = () => { if (document.contains(marco)){ marco.replaceChildren(img); fin('lista'); } };
+      img.onload = () => { if (document.contains(marco)){ marco.replaceChildren(img); encuadrarImagen(img, archivo); fin('lista'); } };
       img.onerror = () => { if (document.contains(marco)){ marco.textContent = 'Imagen ilegible'; fin('error'); } };
       img.src = url;
     } catch (_) { if (document.contains(marco)){ marco.textContent = 'No se pudo cargar'; fin('error'); } }
@@ -1622,6 +1641,11 @@ function init(){
       anunciar(ev.target.checked ? 'Foto añadida al informe' : 'Foto quitada del informe'); return;
     }
     const idFis = ev.target.id;
+    if (idFis === 'compEncuadreApp'){
+      E.fis.encuadreApp = ev.target.checked;
+      render(); $('#compEncuadreApp')?.focus();
+      anunciar(E.fis.encuadreApp ? 'Fotos con el encuadre de la app' : 'Fotos sin el encuadre de la app'); return;
+    }
     if (['compPose', 'compFotoA', 'compFotoB', 'contornoSitio', 'galeriaPose'].includes(idFis)){
       const valor = ev.target.value;
       if (idFis === 'compPose'){ E.fis.pose = valor; E.fis.a = null; E.fis.b = null; }

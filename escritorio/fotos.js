@@ -12,6 +12,12 @@
         (fichaDesdeNombreFoto en lib/medidas/modelos.dart).
    La ficha se resuelve al LEER, no se congela al importar: una copia
    JSON nueva corrige fechas y poses sin tocar las imágenes.
+
+   Encuadre (`ajuste`, AjusteFoto en lib/medidas/ajuste_foto.dart): escala,
+   desplazamiento, giro y espejo RELATIVOS al recuadro 3:4, guardados por la
+   app al encuadrar. Viaja en la copia JSON y en medidas.json del ZIP; aquí
+   se lee con los mismos topes y se pinta con CSS (transformCss), sin tocar
+   la imagen: la foto se ve encuadrada como en el móvil.
    Depende de ImportarJSON (importar.js) para fechas y nombres.
    ================================================================ */
 
@@ -31,6 +37,45 @@ const FotosTL = {
     return { fecha, pose: m[4] };
   },
 
+  /* Topes de AjusteFoto (escala 0,5–3, desplazamiento ±1 recuadro, giro
+     ±45°). Más allá no es encuadrar la misma foto, y una copia manipulada
+     no puede pedir una escala de 1e9. */
+  AJUSTE: { escalaMin: 0.5, escalaMax: 3, desplazamientoMax: 1, giroMax: Math.PI / 4 },
+
+  /* Espejo de AjusteFoto.fromJson: tolerante (lo ausente o no numérico vale
+     lo neutro, lo que se pasa se acota). Null si no es un objeto o si queda
+     la identidad: no hay nada que aplicar. */
+  leerAjuste(j){
+    if (!j || typeof j !== 'object' || Array.isArray(j)) return null;
+    const T = this.AJUSTE;
+    const leer = (k, neutro, min, max) => {
+      const v = j[k];
+      return typeof v === 'number' && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : neutro;
+    };
+    const a = {
+      escala: leer('escala', 1, T.escalaMin, T.escalaMax),
+      dx: leer('dx', 0, -T.desplazamientoMax, T.desplazamientoMax),
+      dy: leer('dy', 0, -T.desplazamientoMax, T.desplazamientoMax),
+      giro: leer('giro', 0, -T.giroMax, T.giroMax),
+      espejo: j.espejo === true,
+    };
+    const eps = 1e-4;
+    const identidad = Math.abs(a.escala - 1) < eps && Math.abs(a.dx) < eps && Math.abs(a.dy) < eps &&
+      Math.abs(a.giro) < eps && !a.espejo;
+    return identidad ? null : a;
+  },
+
+  /* Encuadre como `transform` CSS de una imagen que llena su recuadro 3:4
+     (object-fit: cover, transform-origin centrado), igual que la app:
+     espejo, escala y giro alrededor del centro y, después, el
+     desplazamiento en fracción del recuadro. '' sin encuadre. */
+  transformCss(ajuste){
+    if (!ajuste) return '';
+    const n = v => Number(v.toFixed(6));
+    return `translate(${n(ajuste.dx * 100)}%, ${n(ajuste.dy * 100)}%) rotate(${n(ajuste.giro)}rad) ` +
+      `scale(${n(ajuste.escala)})${ajuste.espejo ? ' scaleX(-1)' : ''}`;
+  },
+
   /* Índice de medidas/fotos (bloque `medidas` de la copia o medidas.json
      del ZIP) → { fotos: Map(archivo → ficha), registros[], descartadas }.
      Mismo filtro tolerante que EstadoMedidas.fromJson. Una pose
@@ -47,6 +92,7 @@ const FotosTL = {
         archivo: f.archivo, fecha,
         pose: poseOk ? f.pose : 'frente', poseDesconocida: !poseOk,
         pesoKg: ImportarJSON.esNum(f.pesoKg) ? f.pesoKg : null,
+        ajuste: this.leerAjuste(f.ajuste),
       });
     });
     (Array.isArray(obj.registros) ? obj.registros : []).forEach(r => {
@@ -94,7 +140,10 @@ const FotosTL = {
      hay copia JSON o si la copia no trae bloque `medidas` (anterior al
      módulo): entonces nada queda «fuera de la copia». */
   asociar(archivo, { indiceJson = null, metaZip = null } = {}){
-    const deJson = indiceJson ? indiceJson.fotos.get(archivo) : null;
+    let deJson = indiceJson ? indiceJson.fotos.get(archivo) : null;
+    // Misma regla que la fusión del ZIP en el móvil: el encuadre que solo
+    // trae el ZIP se adopta; uno que ya tiene la copia no se pisa.
+    if (deJson && !deJson.ajuste && metaZip?.ajuste) deJson = { ...deJson, ajuste: metaZip.ajuste };
     if (deJson){
       const discrepancia = (metaZip && !this.igualFicha(deJson, metaZip))
         ? { zip: { fecha: metaZip.fecha, pose: metaZip.pose } } : null;
@@ -149,7 +198,9 @@ const FotosTL = {
   cambioIndice(actual, entrante){
     if (!entrante) return { cambia: false, confirmar: false };
     const firma = i => JSON.stringify({
-      fotos: [...i.fotos.values()].map(f => [f.archivo, f.fecha, f.pose, f.pesoKg]).sort(),
+      // El encuadre cuenta: reimportar un ZIP en el que solo cambió el
+      // encuadre de una foto tiene que actualizar el índice guardado.
+      fotos: [...i.fotos.values()].map(f => [f.archivo, f.fecha, f.pose, f.pesoKg, f.ajuste ? JSON.stringify(f.ajuste) : null]).sort(),
       registros: i.registros.map(r => [r.fecha, r.sitio, r.cm]).sort(),
     });
     const cambia = !actual || firma(actual) !== firma(entrante);
