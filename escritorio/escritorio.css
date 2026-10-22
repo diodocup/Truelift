@@ -123,6 +123,24 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 .encuadres,.comparador-contextos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
 .encuadre{min-width:0;border:1px solid var(--borde);border-radius:8px;padding:12px}
 .encuadre legend{font-size:12px;color:var(--txt2)}
+
+/* Vídeo de progreso: ajustes arriba, vista previa (a tamaño de salida,
+   escalada) junto a la lista numerada de fotos. */
+.video-ajustes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.video-ajustes label{display:block;font-size:12px;color:var(--txt2)}
+.video-ajustes select{display:block;width:100%;margin-top:5px;min-width:0}
+.video-check{display:flex!important;align-items:center;gap:8px;font-size:13px!important}
+.video-check input,.video-lista input{accent-color:var(--lima);width:16px;height:16px}
+.video-tiempos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 16px;margin-top:12px;font-size:13px}
+.video-tiempos input{display:block;width:100%;accent-color:var(--lima);margin:6px 0 4px}
+.video-tiempos .mono-peq{grid-column:1/-1;margin:4px 0 0;color:var(--lima)}
+#videoLimite{margin-top:12px;display:block}
+.video-cuerpo{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:16px;margin-top:14px;align-items:start}
+.video-previa canvas{display:block;width:100%;height:auto;border-radius:10px;background:#000}
+.video-lista ul{max-height:420px;overflow:auto;margin:6px 0 0;padding:0;list-style:none}
+.video-lista label{display:flex;align-items:center;gap:8px;font:500 13px var(--mono);color:var(--txt)}
+.video-num{display:inline-block;min-width:22px;color:var(--lima);font-weight:600}
+@media (max-width:640px){.video-cuerpo{grid-template-columns:1fr}}
 .encuadre output{float:right;font-family:var(--mono)}
 .foto-contexto{font-size:12.5px;line-height:1.6;overflow-wrap:anywhere}
 .foto-filtro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--txt3)}

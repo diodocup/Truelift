@@ -17,7 +17,7 @@ const capturas = process.argv[2];
 if (capturas) fs.mkdirSync(capturas, { recursive: true });
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tl-integral-'));
 const guardar = (n, d) => { const p = path.join(tmp, n); fs.writeFileSync(p, d); return p; };
-let version = 'v9', falloServidor = false;
+let version = 'v10', falloServidor = false;
 const servidor = http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://local').pathname);
   let f = path.resolve(raiz, '.' + ruta);
@@ -28,7 +28,7 @@ const servidor = http.createServer((req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', ({ '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.woff2': 'font/woff2' })[path.extname(f)] || 'application/octet-stream');
   const contenido = fs.readFileSync(f);
-  res.end(ruta === '/escritorio/sw.js' ? contenido.toString().replace('${PREFIJO}v9', '${PREFIJO}' + version) : contenido);
+  res.end(ruta === '/escritorio/sw.js' ? contenido.toString().replace('${PREFIJO}v10', '${PREFIJO}' + version) : contenido);
 });
 await new Promise(r => servidor.listen(0, '127.0.0.1', r));
 const origen = `http://127.0.0.1:${servidor.address().port}`;
@@ -169,9 +169,9 @@ try {
   await pagina.waitForFunction(() => !!navigator.serviceWorker.controller);
   await pagina.evaluate(async () => { await caches.open('tlcoach-ajena'); await caches.open('otra-ajena'); });
   const antesSW = await estado();
-  version = 'v9-validacion';
+  version = 'v10-validacion';
   await pagina.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-  await pagina.waitForFunction(async () => (await caches.keys()).includes('tlescritorio-v9-validacion') && !(await caches.keys()).includes('tlescritorio-v9'));
+  await pagina.waitForFunction(async () => (await caches.keys()).includes('tlescritorio-v10-validacion') && !(await caches.keys()).includes('tlescritorio-v10'));
   assert.ok((await pagina.evaluate(() => caches.keys())).includes('tlcoach-ajena'));
   assert.ok((await pagina.evaluate(() => caches.keys())).includes('otra-ajena'));
   assert.deepEqual(await estado(), antesSW);
