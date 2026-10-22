@@ -22,6 +22,9 @@ const E = {
   estimacion: null, persistido: null, origenModal: null, sinConexion: null,
   M: null, errorModelo: null, fisica: null, espacioFisica: null,
   fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true },
+  // Vídeo de progreso (video.js): ajustes en memoria; el vídeo grabado vive
+  // como URL de un Blob hasta que se graba otro o se cambia de espacio.
+  vid: null,
   st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null, capasOcultas: new Set() },
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
@@ -118,6 +121,7 @@ async function cargarEstado(){
   const espacioId = E.espacio?.id || null;
   if (espacioId !== E.espacioFisica){
     Object.assign(E.fis, { pose: null, a: null, b: null, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true });
+    reiniciarVideo();
     E.espacioFisica = espacioId;
   }
   if (!E.fis.dirty) E.fis.encuadres = espacioId ? (await Almacen.leer('meta', `encuadres:${espacioId}`))?.valor || {} : {};
@@ -797,7 +801,75 @@ function tarjetaHistorial(){
 }
 
 function fisicaFotosHtml(){
-  return FisicaVista.comparador(E.galeria, E.fisica, E.raw, E.fis) + tarjetaFotos('galeria');
+  return FisicaVista.comparador(E.galeria, E.fisica, E.raw, E.fis) +
+    (E.galeria.some(f => f.tieneImagen) ? VideoTL.html(E.galeria, E.vid) : '') + tarjetaFotos('galeria');
+}
+
+// ---------- vídeo de progreso ----------
+function reiniciarVideo(){
+  if (E.vid?.rep) E.vid.rep.parar();
+  if (E.vid?.url) URL.revokeObjectURL(E.vid.url);
+  E.vid = { pose: null, quitadas: new Set(), h: VideoTL.FOTO.normal, t: VideoTL.TRANSICION.normal, formato: 'vertical',
+            rotulos: true, grabando: false, segundo: 0, url: null, nombre: null, error: null, rep: null };
+}
+reiniciarVideo();
+function planVideo(){
+  const elegidas = E.galeria.filter(f => f.pose === E.vid.pose && f.tieneImagen && !E.vid.quitadas.has(f.archivo));
+  return VideoTL.plan({ fotos: elegidas, segundosFoto: E.vid.h, segundosTransicion: E.vid.t, rotulos: E.vid.rotulos, formato: E.vid.formato });
+}
+function cargadorVideo(plan){
+  const espacioId = E.espacio?.id;
+  return VideoTL.cargador(plan, async archivo => (await Almacen.leer('imagenes', [espacioId, archivo]))?.blob || null);
+}
+const tituloVideo = () => `MI PROGRESO · ${(POSE_TXT[E.vid.pose] || '').toUpperCase()}`;
+/* Tras pintar la sección: el primer fotograma en la vista previa. */
+async function activarVideo(){
+  const lienzo = $('#videoLienzo');
+  if (!lienzo || E.vid.grabando) return;
+  const plan = planVideo();
+  try { await document.fonts?.load('900 30px Archivo'); } catch (_) { /* sin la letra, la de respaldo */ }
+  const c = cargadorVideo(plan), m = VideoTL.momento(plan, 0);
+  await c.preparar(m);
+  if (document.contains(lienzo)) VideoTL.pintar(lienzo.getContext('2d'), plan, m, i => c.imagen(i), { titulo: tituloVideo() });
+  c.cerrar();
+}
+function estadoVideo(texto){ const e = $('#videoEstado'); if (e) e.textContent = texto; }
+async function videoPrevia(){
+  const lienzo = $('#videoLienzo');
+  if (!lienzo) return;
+  if (E.vid.rep){ E.vid.rep.parar(); return; }
+  const plan = planVideo(), c = cargadorVideo(plan);
+  E.vid.rep = VideoTL.reproducir(lienzo, plan, c, { titulo: tituloVideo(),
+    alPaso: s => estadoVideo(`${VideoTL.reloj(s)} / ${VideoTL.reloj(plan.duracion)}`) });
+  try { await E.vid.rep.fin; } catch (_) { /* nada que grabar */ }
+  c.cerrar(); E.vid.rep = null;
+}
+async function videoGrabar(){
+  const lienzo = $('#videoLienzo'), plan = planVideo();
+  if (!lienzo || !plan.cabe) return;
+  const tipo = typeof MediaRecorder === 'undefined' || !lienzo.captureStream ? null
+    : VideoTL.tipoGrabacion(t => MediaRecorder.isTypeSupported(t));
+  if (!tipo){ E.vid.error = 'Este navegador no permite grabar vídeo.'; render(); return; }
+  if (E.vid.rep) E.vid.rep.parar();
+  if (E.vid.url){ URL.revokeObjectURL(E.vid.url); E.vid.url = null; }
+  try { await document.fonts?.load('900 30px Archivo'); } catch (_) { /* sin la letra, la de respaldo */ }
+  Object.assign(E.vid, { grabando: true, segundo: 0, error: null });
+  render(); $('[data-accion="video-cancelar"]')?.focus();
+  const canvas = $('#videoLienzo'), c = cargadorVideo(plan);
+  E.vid.rep = VideoTL.reproducir(canvas, plan, c, { grabar: tipo, titulo: tituloVideo(),
+    alPaso: s => { E.vid.segundo = s; estadoVideo(`Grabando… ${VideoTL.reloj(s)} de ${VideoTL.reloj(plan.duracion)}`); } });
+  let blob = null;
+  try { blob = await E.vid.rep.fin; }
+  catch (e) { E.vid.error = 'No se pudo grabar el vídeo. Vuelve a intentarlo.'; console.error(e); }
+  c.cerrar();
+  E.vid.rep = null; E.vid.grabando = false;
+  if (blob){
+    E.vid.url = URL.createObjectURL(blob);
+    E.vid.nombre = VideoTL.nombreArchivo(new Date().toISOString().slice(0, 10), tipo);
+  }
+  render();
+  if (blob){ $('#videoDescargar')?.focus(); anunciar('Vídeo listo para descargar'); }
+  else if (!E.vid.error) anunciar('Grabación cancelada');
 }
 function actualizarOutput(i){
   const out = document.querySelector(`output[for="${i.id}"]`);
@@ -1020,6 +1092,7 @@ function render(){
   cont.innerHTML = renderSeccion();
   activarMiniaturas();
   activarOriginales();
+  activarVideo();
   activarFotosInforme();
   marcarDesplazables();
   rutRestaurarFoco();
@@ -1476,6 +1549,19 @@ async function accion(nombre, el){
       } catch (e) { modalMensaje('No se guardaron los encuadres', `<p>${esc(e.message || String(e))}. Las fotos originales siguen intactas.</p>`); }
       break;
     }
+    case 'video-previa': await videoPrevia(); break;
+    case 'video-grabar': await videoGrabar(); break;
+    case 'video-cancelar': E.vid.rep?.parar(); break;
+    case 'video-una-por-mes': {
+      const plan = planVideo(), quedan = new Set(VideoTL.unaPorMes(plan.fotos).map(f => f.archivo));
+      plan.fotos.forEach(f => { if (!quedan.has(f.archivo)) E.vid.quitadas.add(f.archivo); });
+      render(); $('#videoFoto')?.focus(); anunciar('Una foto por mes'); break;
+    }
+    case 'video-mas-rapido': {
+      const plan = planVideo(), r = VideoTL.tiemposQueCaben(plan.n, plan.segundosFoto, plan.segundosTransicion);
+      if (r){ E.vid.h = r.foto; E.vid.t = r.transicion; }
+      render(); $('#videoFoto')?.focus(); anunciar('Tiempos ajustados para que quepan'); break;
+    }
     case 'imprimir-informe': await imprimirInforme(); break;
     case 'informe-comparar': await compararConAnterior(); break;
     case 'importar-datos': $('#inputDatos').click(); break;
@@ -1598,6 +1684,14 @@ function init(){
       c?.style.setProperty(i.id === 'fotoCorte' ? '--corte' : '--opacidad', i.id === 'fotoCorte' ? `${i.value}%` : Number(i.value) / 100);
       actualizarOutput(i); return;
     }
+    if (i.id === 'videoFoto' || i.id === 'videoTransicion'){
+      E.vid[i.id === 'videoFoto' ? 'h' : 't'] = Number(i.value);
+      const out = document.querySelector(`output[for="${i.id}"]`);
+      if (out) out.textContent = `${Number(i.value).toFixed(1).replace('.', ',')} s`;
+      const plan = planVideo(), d = $('#videoDuracion');
+      if (d && plan.n) d.textContent = `Dura ${VideoTL.duracionTexto(plan.duracion)}`;
+      return;
+    }
     if (ev.target.id !== 'buscaEj') return;
     E.st.busca = ev.target.value;
     const pos = ev.target.selectionStart;
@@ -1639,6 +1733,19 @@ function init(){
       E.inf.fotos = new Set($$('[data-inf-elegir]').filter(i => i.checked).map(i => i.dataset.infElegir).slice(0, Informe.MAX_FOTOS));
       render(); document.getElementById(id)?.focus();
       anunciar(ev.target.checked ? 'Foto añadida al informe' : 'Foto quitada del informe'); return;
+    }
+    const idVid = ev.target.id;
+    if (['videoPose', 'videoFormato', 'videoRotulos', 'videoFoto', 'videoTransicion'].includes(idVid) || ev.target.dataset.videoFoto != null){
+      if (E.vid.rep) E.vid.rep.parar();
+      const t = ev.target;
+      if (idVid === 'videoPose') E.vid.pose = t.value;
+      else if (idVid === 'videoFormato') E.vid.formato = t.value;
+      else if (idVid === 'videoRotulos') E.vid.rotulos = t.checked;
+      else if (t.dataset.videoFoto != null){ if (t.checked) E.vid.quitadas.delete(t.dataset.videoFoto); else E.vid.quitadas.add(t.dataset.videoFoto); }
+      const foco = t.id || null, archivo = t.dataset.videoFoto;
+      render();
+      (foco ? document.getElementById(foco) : $$('[data-video-foto]').find(x => x.dataset.videoFoto === archivo))?.focus();
+      return;
     }
     const idFis = ev.target.id;
     if (idFis === 'compEncuadreApp'){

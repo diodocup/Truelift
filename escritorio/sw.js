@@ -10,13 +10,13 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v9`;
+const VERSION = `${PREFIJO}v10`;
 const ARCHIVOS = [
   './',
   'index.html',
   'escritorio.css', 'tema.js',
   'importar.js', 'zip-seguro.js', 'fotos.js', 'evolucion.js', 'almacen.js', 'analisis.js',
-  'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js', 'planificador.js', 'rutina-vista.js',
+  'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js', 'video.js', 'planificador.js', 'rutina-vista.js',
   'informe.js', 'informe-vista.js', 'app.js',
   '../coach/styles.css',
   '../coach/motor.js', '../coach/data.js', '../coach/nutricion.js', '../coach/charts.js',
