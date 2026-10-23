@@ -94,3 +94,9 @@ test('umbrales iguales a nivel_fuerza.dart', { skip: dart ? false : 'App-PRO no 
   const edad = [...dart.slice(dart.indexOf('factorEdadTabla')).split('];')[0].matchAll(/\((\d+),\s*([\d.]+)\)/g)].map(m => [+m[1], +m[2]]);
   assert.deepEqual(Motor.NIVEL_FACTOR_EDAD, edad);
 });
+
+test('la ficha del Coach lee el sexo declarado, no el reparto de la rutina', () => {
+  assert.equal(G.normalizar({ sexo: 'mujer', sexoUsuario: 'hombre', logs: [] }).perfil.sexo, 'hombre');
+  assert.equal(G.normalizar({ sexo: 'hombre', sexoUsuario: 'mujer', logs: [] }).perfil.sexo, 'mujer');
+  assert.equal(G.normalizar({ sexo: 'mujer', logs: [] }).perfil.sexo, null);
+});
