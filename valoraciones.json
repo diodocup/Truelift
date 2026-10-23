@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-22T10:16:40.823Z",
+  "actualizado": "2026-10-23T10:10:05.540Z",
   "android": {
     "nota": 4.6,
     "total": 18
@@ -9,6 +9,15 @@
     "total": 6
   },
   "resenas": [
+    {
+      "id": "as:14673924632",
+      "tienda": "ios",
+      "autor": "Pakobellon",
+      "estrellas": 5,
+      "texto": "Muy buena aplicación para progresar en el gimnasio, la llevo utilizando hará más o menos un mes y cada vez me gusta más.",
+      "fecha": "2026-10-16",
+      "idioma": "es"
+    },
     {
       "id": "gp:c062034d-b4db-49d8-b6d8-22c8ecc62058",
       "tienda": "android",
