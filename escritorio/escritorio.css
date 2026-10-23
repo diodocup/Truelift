@@ -536,6 +536,22 @@ b.sube{color:var(--lima)} b.baja{color:var(--naranja)}
 .kpi-cab-estado{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .kpi-progreso{height:10px;margin-top:auto;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden}
 .kpi-progreso i{display:block;height:100%;border-radius:5px;background:var(--lima)}
+/* Tu nivel: colores de nivel de la app (kNivelColores): gris, verde, azul,
+   morado y dorado. En claro, los de TLPaleta.clara. */
+:root{--nivel-0:#8E8E8E;--nivel-1:#A3E020;--nivel-2:#6FA8DC;--nivel-3:#B07CDC;--nivel-4:#E8C547;--nivel-sin:#5F6660}
+.nivel-nombre{margin:0;font:800 34px/1 var(--display);letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--nivel-sin)}
+.nivel-tramos{display:flex;gap:3px}
+.nivel-tramo{flex:1;display:block;height:8px;border-radius:4px;background:var(--vacio);overflow:hidden}
+.nivel-tramo i{display:block;height:100%}
+.nivel-grado{flex:none}
+.kpi-nivel .kpi-pie{margin-top:auto}
+.nivel-t0{color:var(--nivel-0)} .nivel-t1{color:var(--nivel-1)} .nivel-t2{color:var(--nivel-2)} .nivel-t3{color:var(--nivel-3)} .nivel-t4{color:var(--nivel-4)}
+.nivel-c0{background:var(--nivel-0)} .nivel-c1{background:var(--nivel-1)} .nivel-c2{background:var(--nivel-2)} .nivel-c3{background:var(--nivel-3)} .nivel-c4{background:var(--nivel-4)}
+.kpi-nivel.nivel-b0{border-color:color-mix(in srgb,var(--nivel-0) 35%,transparent)}
+.kpi-nivel.nivel-b1{border-color:color-mix(in srgb,var(--nivel-1) 35%,transparent)}
+.kpi-nivel.nivel-b2{border-color:color-mix(in srgb,var(--nivel-2) 35%,transparent)}
+.kpi-nivel.nivel-b3{border-color:color-mix(in srgb,var(--nivel-3) 35%,transparent)}
+.kpi-nivel.nivel-b4{border-color:color-mix(in srgb,var(--nivel-4) 35%,transparent)}
 .kpi-linea{margin-top:auto}
 .kpi-linea svg{width:100%;height:48px}
 .kpi-acciones{margin-top:auto}
@@ -812,6 +828,7 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
     --apagado:#8A938E; --vacio:#A9B2AD;
     --borde:rgba(14,24,18,.10); --borde-campo:rgba(14,24,18,.16);
     --sep:rgba(14,24,18,.07); --reticula:rgba(14,24,18,.08);
+    --nivel-0:#6E6E6E; --nivel-1:#477500; --nivel-2:#2A6CB0; --nivel-3:#8D5BC4; --nivel-4:#8A6C00; --nivel-sin:#8A938E;
   }
   html[data-tema="claro"] svg text{fill:#4F5853}
   /* Rellenos lima con texto oscuro encima. */

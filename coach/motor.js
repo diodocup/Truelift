@@ -193,7 +193,11 @@ const Motor = {
     return v === 'rojo' ? 'rojo' : v === 'ambar' ? 'ambar' : 'verde';
   },
   estadoDeEntrada(l, e){ return e.estadoEjercicio || this.estadoSemaforo(l); },
-  cuentaParaRecordsEntrada(l, e){ return this.estadoDeEntrada(l, e) === 'verde'; },
+  /* Sesiones traídas de Hevy o Strong (`origen`, AppState.esLogImportado):
+     cuentan para el volumen, no para marcas ni niveles. */
+  ORIGENES_IMPORTACION: ['hevy', 'strong'],
+  esLogImportado(l){ return !!l && this.ORIGENES_IMPORTACION.includes(l.origen); },
+  cuentaParaRecordsEntrada(l, e){ return !this.esLogImportado(l) && this.estadoDeEntrada(l, e) === 'verde'; },
   entradasDe(l){
     return Array.isArray(l && l.entradas) ? l.entradas.filter(x => x && typeof x === 'object').map(x => this.entrada(x)) : [];
   },
@@ -540,6 +544,161 @@ const Motor = {
     if (cubo.dias <= 0) return 0;
     const n = grupo ? (cubo.series.get(grupo) || 0) : [...cubo.series.values()].reduce((a, b) => a + b, 0);
     return n * 7 / (cubo.dias < 7 ? 7 : cubo.dias);
+  },
+
+  // ---------------------------------------------------------------
+  // Nivel de fuerza (lib/nivel_fuerza.dart y
+  // AppState.clasificacionesNivel): la insignia global de la tarjeta
+  // «TU NIVEL» de Progreso.
+  //
+  // Mejor e1RM de cada ejercicio evaluable (misma compuerta que las
+  // marcas) / peso corporal, frente a los umbrales por sexo declarado,
+  // escalados por la edad. Puntuación continua por ejercicio (nivel +
+  // fracción hacia el siguiente umbral, con grados de Élite por encima
+  // del último) y nivel global = media, con un mínimo de ejercicios y de
+  // patrones distintos.
+  // ---------------------------------------------------------------
+
+  NIVEL_NOMBRES: ['Principiante', 'Novato', 'Intermedio', 'Avanzado', 'Élite'],
+  NIVEL_GRADO_ELITE_MAX: 5,
+  NIVEL_ROMANOS: ['I', 'II', 'III', 'IV', 'V'],
+  NIVEL_GLOBAL_MIN_EJERCICIOS: 3,
+  NIVEL_GLOBAL_MIN_PATRONES: 2,
+  // [ejercicio, patrón, umbrales hombre, umbrales mujer, alias] (nivelesEjercicios)
+  NIVEL_EJERCICIOS: [
+    ['Sentadilla con barra', 'Rodilla', [0.75, 1.25, 1.50, 2.00, 2.50], [0.50, 0.75, 1.25, 1.50, 2.00]],
+    ['Sentadilla frontal con barra', 'Rodilla', [0.75, 1.00, 1.25, 1.75, 2.25], [0.50, 0.75, 1.00, 1.25, 1.50]],
+    ['Press banca con barra', 'Empuje horizontal', [0.50, 0.75, 1.25, 1.75, 2.00], [0.25, 0.50, 0.75, 1.00, 1.25]],
+    ['Press banca con mancuernas', 'Empuje horizontal', [0.20, 0.35, 0.50, 0.70, 0.90], [0.10, 0.20, 0.30, 0.45, 0.60]],
+    ['Peso muerto convencional con barra', 'Bisagra', [1.00, 1.50, 2.00, 2.50, 3.00], [0.50, 1.00, 1.25, 1.75, 2.25],
+      ['Peso muerto piernas rígidas Dead Stop']],
+    ['Peso muerto rumano con barra', 'Bisagra', [0.75, 1.00, 1.50, 2.00, 2.75], [0.50, 0.75, 1.00, 1.50, 2.00]],
+    ['Peso muerto sumo con barra', 'Bisagra', [1.25, 1.75, 2.25, 2.75, 3.50], [0.75, 1.00, 1.50, 2.00, 2.50]],
+    ['Peso muerto con barra hexagonal', 'Bisagra', [1.25, 1.50, 2.00, 2.75, 3.25], [0.75, 1.00, 1.50, 2.00, 2.50]],
+    ['Press militar de pie con barra', 'Empuje vertical', [0.35, 0.55, 0.80, 1.05, 1.30], [0.20, 0.35, 0.50, 0.75, 1.00]],
+    ['Press militar con mancuernas de pie', 'Empuje vertical', [0.15, 0.25, 0.40, 0.55, 0.70], [0.10, 0.15, 0.25, 0.35, 0.45],
+      ['Press sentado con mancuernas']],
+    ['Press inclinado con mancuernas', 'Empuje inclinado', [0.15, 0.30, 0.50, 0.75, 1.00], [0.10, 0.15, 0.30, 0.50, 0.70]],
+    ['Press inclinado con barra', 'Empuje inclinado', [0.50, 0.75, 1.00, 1.50, 1.75], [0.25, 0.40, 0.65, 0.95, 1.25]],
+    ['Dominada agarre prono', 'Tirón vertical', [1.00, 1.15, 1.40, 1.70, 2.00], [0.90, 1.00, 1.15, 1.35, 1.60],
+      ['Dominada agarre neutro', 'Dominada asistida en máquina']],
+    ['Dominada agarre supino', 'Tirón vertical', [1.00, 1.20, 1.45, 1.70, 1.95], [0.85, 1.00, 1.15, 1.35, 1.55]],
+    ['Remo con barra inclinado', 'Tirón horizontal', [0.50, 0.75, 1.00, 1.50, 1.75], [0.30, 0.45, 0.70, 0.95, 1.25]],
+    ['Remo Pendlay con barra', 'Tirón horizontal', [0.50, 0.75, 1.25, 1.50, 1.75], [0.40, 0.55, 0.80, 1.05, 1.35]],
+    ['Fondos en paralelas', 'Empuje horizontal', [1.05, 1.35, 1.65, 2.00, 2.40], [0.75, 1.00, 1.30, 1.60, 1.95],
+      ['Fondos asistidos en máquina']],
+    ['Hip thrust con barra', 'Glúteo', [0.75, 1.25, 1.75, 2.25, 2.75], [0.50, 1.00, 1.50, 2.00, 2.50]],
+    ['Sentadilla búlgara con mancuernas', 'Unilateral', [0.15, 0.25, 0.40, 0.60, 0.85], [0.10, 0.20, 0.35, 0.50, 0.65]],
+  ].map(([ejercicio, patron, hombre, mujer, alias = []]) => ({ ejercicio, patron, hombre, mujer, alias })),
+  // (edad, factor) de factorEdadTabla; se interpola entre puntos.
+  NIVEL_FACTOR_EDAD: [
+    [15, 0.85], [20, 0.975], [25, 1.0], [40, 1.0], [45, 0.945], [50, 0.885],
+    [55, 0.82], [60, 0.745], [65, 0.675], [70, 0.61], [75, 0.545], [80, 0.49],
+    [85, 0.44], [90, 0.39],
+  ],
+
+  definicionNivelDe(nombre){
+    return this.NIVEL_EJERCICIOS.find(d => d.ejercicio === nombre || d.alias.includes(nombre)) || null;
+  },
+  factorEdadNivel(edad){
+    if (edad == null) return 1;
+    const t = this.NIVEL_FACTOR_EDAD;
+    if (edad <= t[0][0]) return t[0][1];
+    if (edad >= t[t.length - 1][0]) return t[t.length - 1][1];
+    for (let i = 1; i < t.length; i++){
+      const [e1, f1] = t[i];
+      if (edad > e1) continue;
+      const [e0, f0] = t[i - 1];
+      if (edad === e1) return f1;
+      return f0 + (f1 - f0) * (edad - e0) / (e1 - e0);
+    }
+    return 1;
+  },
+  edadEnAnios(nacimiento, hoy){
+    if (!nacimiento || !hoy) return null;
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    if (hoy.getMonth() < nacimiento.getMonth() ||
+        (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate())) edad--;
+    return edad < 0 ? 0 : edad;
+  },
+  indiceNivel(ratio, umbrales){
+    let idx = -1;
+    umbrales.forEach((u, i) => { if (ratio >= u) idx = i; });
+    return idx;
+  },
+  /* puntuacionNivel: [0,1) sin clasificar, i+1+fracción dentro del tramo i y,
+     pasado Élite, un grado por cada anchura del tramo Avanzado→Élite. */
+  puntuacionNivel(ratio, umbrales){
+    if (ratio <= 0) return 0;
+    const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+    const max = this.NIVEL_NOMBRES.length + this.NIVEL_GRADO_ELITE_MAX - 1;
+    const idx = this.indiceNivel(ratio, umbrales);
+    if (idx < 0) return clamp(ratio / umbrales[0], 0, 0.999999);
+    const n = umbrales.length;
+    if (idx >= n - 1){
+      const unidad = umbrales[n - 1] - umbrales[n - 2];
+      if (unidad <= 0) return n;
+      return clamp(n + (ratio - umbrales[n - 1]) / unidad, n, max);
+    }
+    return (idx + 1) + clamp((ratio - umbrales[idx]) / (umbrales[idx + 1] - umbrales[idx]), 0, 0.999999);
+  },
+
+  /* Clasificación de cada ejercicio evaluable con marca, en el orden de la
+     tabla. Peso corporal y sexo del perfil (sin `sexoUsuario` declarado se
+     asume hombre, como `sexoEfectivo`); edad a fecha de `hoy`. */
+  clasificacionesNivel(raw, hoy){
+    const peso = typeof raw.pesoCorporal === 'number' ? raw.pesoCorporal : 80;
+    if (!(peso > 0)) return [];
+    const sexo = raw.sexoUsuario === 'mujer' ? 'mujer' : 'hombre';
+    const factor = this.factorEdadNivel(this.edadEnAnios(this._fecha(raw.fechaNacimiento), hoy));
+    const fijos = raw.pesoFijoMaquina && typeof raw.pesoFijoMaquina === 'object' ? raw.pesoFijoMaquina : null;
+    const mejores = new Map();
+    (Array.isArray(raw.logs) ? raw.logs : []).forEach(l => {
+      if (!l || typeof l !== 'object' || this.esCardio(l)) return;
+      this.entradasDe(l).forEach(e => {
+        if (!this.puedeFijarMarca(l, e)) return;
+        const def = this.definicionNivelDe(e.ejercicio);
+        if (!def) return;
+        const m = this.mejorSerie(e, peso, { cap: this.CAP_REPS_E1RM, fijos });
+        if (!m || !(m.e1rm > 0)) return;
+        const prev = mejores.get(def.ejercicio);
+        if (prev == null || m.e1rm > prev) mejores.set(def.ejercicio, m.e1rm);
+      });
+    });
+    const out = [];
+    this.NIVEL_EJERCICIOS.forEach(def => {
+      const e1rm = mejores.get(def.ejercicio);
+      if (!(e1rm > 0)) return;
+      const umbrales = (sexo === 'mujer' ? def.mujer : def.hombre).map(u => u * factor);
+      const ratio = e1rm / peso;
+      out.push({ def, e1rm, ratio, indice: this.indiceNivel(ratio, umbrales), puntuacion: this.puntuacionNivel(ratio, umbrales) });
+    });
+    return out;
+  },
+
+  /* NivelGlobal: media de las puntuaciones, o null si aún no hay ejercicios
+     suficientes de patrones distintos. */
+  nivelGlobal(clasificaciones){
+    if (clasificaciones.length < this.NIVEL_GLOBAL_MIN_EJERCICIOS) return null;
+    const patrones = new Set(clasificaciones.map(c => c.def.patron));
+    if (patrones.size < this.NIVEL_GLOBAL_MIN_PATRONES) return null;
+    const media = clasificaciones.reduce((s, c) => s + c.puntuacion, 0) / clasificaciones.length;
+    const N = this.NIVEL_NOMBRES.length;
+    const max = N + this.NIVEL_GRADO_ELITE_MAX - 1;
+    const indice = Math.min(Math.max(Math.floor(media) - 1, -1), N - 1);
+    const esElite = indice === N - 1;
+    const esTecho = esElite && media >= max;
+    const grado = esElite ? Math.min(Math.max(Math.floor(media - N) + 1, 1), this.NIVEL_GRADO_ELITE_MAX) : null;
+    return {
+      puntuacion: media, indice, esElite, esTecho, grado,
+      romano: grado ? this.NIVEL_ROMANOS[grado - 1] : null,
+      siguienteGrado: esElite && !esTecho ? grado + 1 : null,
+      nombre: indice < 0 ? 'Sin clasificar' : this.NIVEL_NOMBRES[indice],
+      siguiente: indice + 1 < N ? this.NIVEL_NOMBRES[indice + 1] : null,
+      fraccionTramo: esTecho ? 1 : media - Math.floor(media),
+      ejercicios: clasificaciones.length,
+      patrones: patrones.size,
+    };
   },
 
   // ---------------------------------------------------------------

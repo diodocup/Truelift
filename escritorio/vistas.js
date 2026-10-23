@@ -130,7 +130,35 @@ function kpi(titulo, cuerpo, { tono = '', id = '' } = {}){
 const grande = (valor, resto = '', logro = false) => `<p class="kpi-cifra${logro ? ' logro' : ''}">${esc(valor)}${resto ? ` <span>${esc(resto)}</span>` : ''}</p>`;
 
 function cifrasClave(M, P){
-  return `<section class="kpis" aria-label="De un vistazo">${[kpiDias(M), kpiValoracion(M), kpiPeso(M, P), kpiEstado(M)].join('')}</section>`;
+  return `<section class="kpis" aria-label="De un vistazo">${[kpiNivel(M), kpiDias(M), kpiValoracion(M), kpiPeso(M, P), kpiEstado(M)].join('')}</section>`;
+}
+
+/* Tu nivel: la insignia global de la tarjeta «TU NIVEL» de la app. Nombre en
+   el color de su nivel, barra de cinco tramos (cada uno con el color de SU
+   nivel: lleno = conseguido, el que se llena = al que te acercas) y, en
+   Élite, una sexta barra hacia el grado siguiente. La edad se mira a hoy,
+   como en el móvil. */
+function kpiNivel(M){
+  const clas = Motor.clasificacionesNivel(M.raw, new Date());
+  const g = Motor.nivelGlobal(clas);
+  if (!g){
+    return kpi('Tu nivel', `<p class="kpi-txt">${clas.length
+      ? 'Tu nivel global aparecerá cuando tengas marcas en más ejercicios que puntúan y de movimientos distintos.'
+      : 'Aún no tienes marcas en los ejercicios que puntúan para el nivel de fuerza.'}</p>`, { id: 'kpi-nivel' });
+  }
+  const titulo = g.esElite ? `${g.nombre} ${g.romano}` : g.nombre;
+  const pct = Math.round(g.fraccionTramo * 100);
+  const tramos = Motor.NIVEL_NOMBRES.map((n, i) =>
+    `<span class="nivel-tramo"><i class="nivel-c${i}" style="width:${Math.round(Math.min(Math.max(g.puntuacion - i, 0), 1) * 100)}%"></i></span>`).join('');
+  const progreso = g.siguiente ? `Progreso hacia ${g.siguiente}: ${pct} %`
+    : g.siguienteGrado ? `Progreso hacia Élite ${Motor.NIVEL_ROMANOS[g.siguienteGrado - 1]}: ${pct} %`
+    : 'Techo de la escala alcanzado';
+  return `<article class="card kpi kpi-nivel nivel-b${g.indice}" aria-labelledby="kpi-nivel"><h2 id="kpi-nivel">Tu nivel</h2>
+    <p class="nivel-nombre nivel-t${g.indice}">${esc(titulo)}</p>
+    <div class="nivel-tramos" role="img" aria-label="${esc(`Nivel ${titulo}. ${progreso}`)}">${tramos}</div>
+    ${g.esElite ? `<div class="nivel-tramo nivel-grado"><i class="nivel-c4" style="width:${pct}%"></i></div>` : ''}
+    <p class="kpi-txt">Media de ${g.ejercicios} ejercicios · ${g.patrones} patrones</p>
+    <p class="kpi-pie"><span>${esc(progreso)}</span></p></article>`;
 }
 
 function kpiDias(M){

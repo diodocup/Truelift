@@ -68,7 +68,10 @@ function pareceTrueLift(raw){
    reciente que se sabe de esa persona. */
 function normalizar(raw, { hoy = new Date() } = {}){
   const perfil = {
-    sexo: raw.sexo ?? null,
+    // Sexo DECLARADO por el usuario. `sexo` a secas es otra cosa: el reparto
+    // de volumen de la rutina (equilibrado / cadena posterior), que por razones
+    // históricas se llama así. Copias sin `sexoUsuario`: no declarado.
+    sexo: (raw.sexoUsuario === 'hombre' || raw.sexoUsuario === 'mujer') ? raw.sexoUsuario : null,
     sistema: raw.sistema ?? null,
     diasSemana: parseInt(raw.dias, 10) || null,
     pesoCorporal: (typeof raw.pesoCorporal === 'number') ? raw.pesoCorporal : null,
