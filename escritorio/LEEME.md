@@ -12,7 +12,7 @@ del planificador en `PLANIFICADOR.md`.
 
 ## Secciones
 
-- **Mi resumen:** antigüedad de tus datos, hasta tres observaciones
+- **Mi resumen:** tu **nivel de fuerza** (el nivel global de la tarjeta «Tu nivel» de la app, con su color, la barra de cinco tramos y el progreso hacia el siguiente; `Motor.clasificacionesNivel` en `coach/motor.js`), antigüedad de tus datos, hasta tres observaciones
   priorizadas (cada una con su periodo, los datos que la respaldan, sus
   limitaciones y un enlace al detalle), constancia por semana frente a la
   rutina que tenías entonces, la misma valoración de progreso que la app,
