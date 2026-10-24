@@ -81,7 +81,12 @@ function cerrarModal(){
   if (E.urlModal){ URL.revokeObjectURL(E.urlModal); E.urlModal = null; }
   $('#modal').classList.add('oculto');
   $('#modalCaja').innerHTML = '';
+  // Editor de zonas pixeladas del vídeo: lo hecho ya está guardado; la
+  // tarjeta se repinta para enseñarlo.
+  const pix = E.vid?.pix;
+  if (pix){ E.vid.pix = null; pix.img?.close?.(); render(); }
   if (E.origenModal && document.contains(E.origenModal)) E.origenModal.focus();
+  else if (pix) $$('[data-video-pixelar]').find(b => b.dataset.videoPixelar === pix.archivo)?.focus();
   E.origenModal = null;
 }
 function modalMensaje(titulo, cuerpoHtml){
@@ -810,27 +815,60 @@ function reiniciarVideo(){
   if (E.vid?.rep) E.vid.rep.parar();
   if (E.vid?.url) URL.revokeObjectURL(E.vid.url);
   E.vid = { pose: null, quitadas: new Set(), h: VideoTL.FOTO.normal, t: VideoTL.TRANSICION.normal, formato: 'vertical',
-            rotulos: true, grabando: false, segundo: 0, url: null, nombre: null, error: null, rep: null };
+            rotulos: true, igualar: true, grises: false, musica: true,
+            // Zonas pixeladas por archivo (solo para el vídeo, como en la app)
+            // y luz medida aquí de las fotos que la copia no trae medidas.
+            censura: new Map(), luz: new Map(), pix: null,
+            grabando: false, segundo: 0, url: null, nombre: null, error: null, aviso: null, rep: null };
 }
 reiniciarVideo();
 function planVideo(){
-  const elegidas = E.galeria.filter(f => f.pose === E.vid.pose && f.tieneImagen && !E.vid.quitadas.has(f.archivo));
-  return VideoTL.plan({ fotos: elegidas, segundosFoto: E.vid.h, segundosTransicion: E.vid.t, rotulos: E.vid.rotulos, formato: E.vid.formato });
+  const elegidas = E.galeria.filter(f => f.pose === E.vid.pose && f.tieneImagen && !E.vid.quitadas.has(f.archivo))
+    .map(f => f.analisis || !E.vid.luz.has(f.archivo) ? f : { ...f, analisis: E.vid.luz.get(f.archivo) });
+  return VideoTL.plan({ fotos: elegidas, segundosFoto: E.vid.h, segundosTransicion: E.vid.t, rotulos: E.vid.rotulos, formato: E.vid.formato,
+                        musica: E.vid.musica, igualarLuz: E.vid.igualar, grises: E.vid.grises });
 }
-function cargadorVideo(plan){
-  const espacioId = E.espacio?.id;
-  return VideoTL.cargador(plan, async archivo => (await Almacen.leer('imagenes', [espacioId, archivo]))?.blob || null);
+const leerImagenVideo = async archivo => (await Almacen.leer('imagenes', [E.espacio?.id, archivo]))?.blob || null;
+function cargadorVideo(plan){ return VideoTL.cargador(plan, leerImagenVideo); }
+const zonasVideo = plan => i => E.vid.censura.get(plan.fotos[i]?.archivo) || [];
+/* Igualar luz necesita la luz de todas: se miden (una vez) las que la copia
+   no trae. Devuelve el plan con ellas. */
+async function medirLuzVideo(){
+  let plan = planVideo();
+  if (!plan.igualarLuz) return plan;
+  const faltan = plan.fotos.filter(f => !f.analisis && !E.vid.luz.has(f.archivo));
+  for (const f of faltan){
+    const blob = await leerImagenVideo(f.archivo);
+    E.vid.luz.set(f.archivo, blob ? await VideoTL.medirLuz(blob) : null);
+  }
+  return faltan.length ? planVideo() : plan;
+}
+/* La banda sonora decodificada (una vez por visita). Null si el navegador
+   no sabe leerla. */
+let musicaVideoPromesa = null;
+function musicaVideo(){
+  const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!Ctx) return Promise.resolve(null);
+  musicaVideoPromesa ??= VideoTL.cargarMusica(
+    async url => { const r = await fetch(url); return r.ok ? r.arrayBuffer() : null; },
+    datos => new Ctx(2, 1, 44100).decodeAudioData(datos),
+  ).then(b => { if (!b) musicaVideoPromesa = null; return b; });
+  return musicaVideoPromesa;
 }
 const tituloVideo = () => `MI PROGRESO · ${(POSE_TXT[E.vid.pose] || '').toUpperCase()}`;
+async function cargarLetrasVideo(){
+  try { await Promise.all(['900 30px Archivo', '800 30px "Saira Condensed"', '600 30px "IBM Plex Mono"', '500 30px "IBM Plex Mono"'].map(f => document.fonts?.load(f))); }
+  catch (_) { /* sin la letra, la de respaldo */ }
+}
 /* Tras pintar la sección: el primer fotograma en la vista previa. */
 async function activarVideo(){
   const lienzo = $('#videoLienzo');
   if (!lienzo || E.vid.grabando) return;
-  const plan = planVideo();
-  try { await document.fonts?.load('900 30px Archivo'); } catch (_) { /* sin la letra, la de respaldo */ }
+  await cargarLetrasVideo();
+  const plan = await medirLuzVideo();
   const c = cargadorVideo(plan), m = VideoTL.momento(plan, 0);
   await c.preparar(m);
-  if (document.contains(lienzo)) VideoTL.pintar(lienzo.getContext('2d'), plan, m, i => c.imagen(i), { titulo: tituloVideo() });
+  if (document.contains(lienzo) && !E.vid.rep) VideoTL.pintar(lienzo.getContext('2d'), plan, m, i => c.imagen(i), { titulo: tituloVideo(), zonas: zonasVideo(plan) });
   c.cerrar();
 }
 function estadoVideo(texto){ const e = $('#videoEstado'); if (e) e.textContent = texto; }
@@ -838,25 +876,28 @@ async function videoPrevia(){
   const lienzo = $('#videoLienzo');
   if (!lienzo) return;
   if (E.vid.rep){ E.vid.rep.parar(); return; }
-  const plan = planVideo(), c = cargadorVideo(plan);
-  E.vid.rep = VideoTL.reproducir(lienzo, plan, c, { titulo: tituloVideo(),
+  const plan = await medirLuzVideo(), musica = plan.conMusica ? await musicaVideo() : null, c = cargadorVideo(plan);
+  E.vid.rep = VideoTL.reproducir(lienzo, plan, c, { titulo: tituloVideo(), zonas: zonasVideo(plan), musica,
     alPaso: s => estadoVideo(`${VideoTL.reloj(s)} / ${VideoTL.reloj(plan.duracion)}`) });
   try { await E.vid.rep.fin; } catch (_) { /* nada que grabar */ }
   c.cerrar(); E.vid.rep = null;
 }
 async function videoGrabar(){
-  const lienzo = $('#videoLienzo'), plan = planVideo();
-  if (!lienzo || !plan.cabe) return;
-  const tipo = typeof MediaRecorder === 'undefined' || !lienzo.captureStream ? null
-    : VideoTL.tipoGrabacion(t => MediaRecorder.isTypeSupported(t));
-  if (!tipo){ E.vid.error = 'Este navegador no permite grabar vídeo.'; render(); return; }
+  const lienzo = $('#videoLienzo');
+  if (!lienzo || !planVideo().cabe) return;
   if (E.vid.rep) E.vid.rep.parar();
   if (E.vid.url){ URL.revokeObjectURL(E.vid.url); E.vid.url = null; }
-  try { await document.fonts?.load('900 30px Archivo'); } catch (_) { /* sin la letra, la de respaldo */ }
-  Object.assign(E.vid, { grabando: true, segundo: 0, error: null });
+  await cargarLetrasVideo();
+  const plan = await medirLuzVideo();
+  const musica = plan.conMusica ? await musicaVideo() : null;
+  const tipo = typeof MediaRecorder === 'undefined' || !lienzo.captureStream ? null
+    : VideoTL.tipoGrabacion(t => MediaRecorder.isTypeSupported(t), !!musica);
+  if (!tipo){ E.vid.error = 'Este navegador no permite grabar vídeo.'; render(); return; }
+  Object.assign(E.vid, { grabando: true, segundo: 0, error: null,
+    aviso: plan.conMusica && !musica ? 'La música no se ha podido cargar en este navegador; el vídeo sale sin ella.' : null });
   render(); $('[data-accion="video-cancelar"]')?.focus();
   const canvas = $('#videoLienzo'), c = cargadorVideo(plan);
-  E.vid.rep = VideoTL.reproducir(canvas, plan, c, { grabar: tipo, titulo: tituloVideo(),
+  E.vid.rep = VideoTL.reproducir(canvas, plan, c, { grabar: tipo, titulo: tituloVideo(), zonas: zonasVideo(plan), musica,
     alPaso: s => { E.vid.segundo = s; estadoVideo(`Grabando… ${VideoTL.reloj(s)} de ${VideoTL.reloj(plan.duracion)}`); } });
   let blob = null;
   try { blob = await E.vid.rep.fin; }
@@ -870,6 +911,118 @@ async function videoGrabar(){
   render();
   if (blob){ $('#videoDescargar')?.focus(); anunciar('Vídeo listo para descargar'); }
   else if (!E.vid.error) anunciar('Grabación cancelada');
+}
+
+/* «Pixelar zonas» de una foto del vídeo: clic para poner un círculo,
+   arrastrar para moverlo, rueda o + / − para su tamaño. La foto se ve con su
+   encuadre y el mismo pintor del vídeo; las zonas se guardan al momento. */
+async function abrirPixelar(archivo){
+  const f = E.galeria.find(x => x.archivo === archivo && x.tieneImagen);
+  if (!f) return;
+  if (E.vid.rep) E.vid.rep.parar();
+  const otras = E.galeria.filter(x => x.pose === f.pose && x.tieneImagen && x.archivo !== archivo);
+  abrirModal(VideoTL.htmlPixelar(f, otras.length > 0), { ancho: true });
+  const pix = E.vid.pix = { archivo, foto: f, otras, elegida: -1, img: null, arrastre: null };
+  pintarPixelar();
+  const blob = await leerImagenVideo(archivo);
+  try { pix.img = blob ? await createImageBitmap(blob, { resizeWidth: VideoTL.anchoDecodificacion(600, f.ajuste?.escala), resizeQuality: 'high' }) : null; }
+  catch (_) { pix.img = null; }
+  if (E.vid.pix !== pix){ pix.img?.close?.(); return; }
+  pintarPixelar();
+  const lienzo = $('#pixelarLienzo');
+  if (!lienzo) return;
+  const W = lienzo.width, H = lienzo.height;
+  const enFoto = ev => {
+    const r = lienzo.getBoundingClientRect();
+    return VideoTL.deshacer(f.ajuste, (ev.clientX - r.left) * W / r.width, (ev.clientY - r.top) * H / r.height, W, H);
+  };
+  lienzo.addEventListener('pointerdown', ev => {
+    const p = enFoto(ev), zonas = zonasPixelar();
+    let i = VideoTL.zonaEn(zonas, p.x, p.y, W, H);
+    if (i < 0){
+      // Mismo tamaño en pantalla con cualquier zoom del encuadre.
+      zonas.push(VideoTL.acotarZona({ cx: p.x / W, cy: p.y / H, radio: VideoTL.ZONA.radio / (f.ajuste?.escala || 1) }));
+      i = zonas.length - 1;
+      guardarPixelar(zonas);
+    }
+    pix.elegida = i;
+    pix.arrastre = { zona: zonas[i], p };
+    lienzo.setPointerCapture?.(ev.pointerId);
+    pintarPixelar();
+  });
+  lienzo.addEventListener('pointermove', ev => {
+    const a = pix.arrastre;
+    if (!a) return;
+    const p = enFoto(ev), zonas = zonasPixelar();
+    zonas[pix.elegida] = VideoTL.acotarZona({ ...a.zona, cx: a.zona.cx + (p.x - a.p.x) / W, cy: a.zona.cy + (p.y - a.p.y) / H });
+    guardarPixelar(zonas); pintarPixelar();
+  });
+  const soltar = () => { pix.arrastre = null; };
+  lienzo.addEventListener('pointerup', soltar);
+  lienzo.addEventListener('pointercancel', soltar);
+  lienzo.addEventListener('wheel', ev => {
+    const p = enFoto(ev), zonas = zonasPixelar(), bajo = VideoTL.zonaEn(zonas, p.x, p.y, W, H);
+    const i = bajo >= 0 ? bajo : pix.elegida;
+    if (i < 0 || !zonas[i]) return;
+    ev.preventDefault();
+    pix.elegida = i;
+    redimensionarPixelar(Math.exp(-ev.deltaY * 0.0015));
+  }, { passive: false });
+  lienzo.addEventListener('keydown', ev => {
+    const zonas = zonasPixelar(), i = pix.elegida, paso = 0.01;
+    const mover = (dx, dy) => { zonas[i] = VideoTL.acotarZona({ ...zonas[i], cx: zonas[i].cx + dx, cy: zonas[i].cy + dy }); guardarPixelar(zonas); pintarPixelar(); };
+    if ((ev.key === 'Enter' || ev.key === ' ') && !ev.repeat){
+      zonas.push(VideoTL.acotarZona({ cx: 0.5, cy: 0.3, radio: VideoTL.ZONA.radio / (f.ajuste?.escala || 1) }));
+      pix.elegida = zonas.length - 1; guardarPixelar(zonas); pintarPixelar(); ev.preventDefault(); return;
+    }
+    if (i < 0 || !zonas[i]) return;
+    const accionTecla = { ArrowLeft: () => mover(-paso, 0), ArrowRight: () => mover(paso, 0), ArrowUp: () => mover(0, -paso), ArrowDown: () => mover(0, paso),
+      '+': () => redimensionarPixelar(1.1), '=': () => redimensionarPixelar(1.1), '-': () => redimensionarPixelar(1 / 1.1),
+      Delete: () => quitarZonaPixelar(), Backspace: () => quitarZonaPixelar() }[ev.key];
+    if (accionTecla){ ev.preventDefault(); accionTecla(); }
+  });
+}
+const zonasPixelar = () => [...(E.vid.censura.get(E.vid.pix?.archivo) || [])];
+function guardarPixelar(zonas){
+  if (!E.vid.pix) return;
+  if (zonas.length) E.vid.censura.set(E.vid.pix.archivo, zonas); else E.vid.censura.delete(E.vid.pix.archivo);
+}
+function redimensionarPixelar(factor){
+  const pix = E.vid.pix, zonas = zonasPixelar(), z = zonas[pix?.elegida];
+  if (!z) return;
+  zonas[pix.elegida] = VideoTL.acotarZona({ ...z, radio: z.radio * factor });
+  guardarPixelar(zonas); pintarPixelar();
+}
+function quitarZonaPixelar(){
+  const pix = E.vid.pix, zonas = zonasPixelar();
+  if (!pix || pix.elegida < 0 || !zonas[pix.elegida]) return;
+  zonas.splice(pix.elegida, 1);
+  pix.elegida = -1;
+  guardarPixelar(zonas); pintarPixelar();
+  anunciar('Círculo quitado');
+}
+function pintarPixelar(){
+  const pix = E.vid.pix, lienzo = $('#pixelarLienzo');
+  if (!pix || !lienzo) return;
+  const ctx = lienzo.getContext('2d'), W = lienzo.width, H = lienzo.height, zonas = zonasPixelar(), ajuste = pix.foto.ajuste;
+  ctx.clearRect(0, 0, W, H);
+  VideoTL.pintarFoto(ctx, pix.img, ajuste, W, H, 1, zonas);
+  // Contorno de cada círculo para poder agarrarlo; el elegido, más marcado.
+  ctx.save();
+  ctx.transform(...VideoTL.matriz(ajuste, W, H));
+  const escala = ajuste?.escala || 1;
+  zonas.forEach((z, i) => {
+    ctx.beginPath(); ctx.arc(z.cx * W, z.cy * H, z.radio * W, 0, Math.PI * 2);
+    ctx.lineWidth = (i === pix.elegida ? 4 : 2) / escala;
+    ctx.strokeStyle = i === pix.elegida ? VideoTL.LIMA : 'rgba(255,255,255,0.7)';
+    ctx.stroke();
+  });
+  ctx.restore();
+  const quitar = $('#pixelarQuitar');
+  if (quitar) quitar.disabled = pix.elegida < 0 || !zonas[pix.elegida];
+  const cuenta = $('#pixelarCuenta');
+  if (cuenta) cuenta.textContent = !pix.img ? 'Cargando la foto…' : zonas.length === 0 ? 'Sin zonas pixeladas.'
+    : zonas.length === 1 ? 'Una zona pixelada.' : `${zonas.length} zonas pixeladas.`;
 }
 function actualizarOutput(i){
   const out = document.querySelector(`output[for="${i.id}"]`);
@@ -1557,6 +1710,23 @@ async function accion(nombre, el){
       plan.fotos.forEach(f => { if (!quedan.has(f.archivo)) E.vid.quitadas.add(f.archivo); });
       render(); $('#videoFoto')?.focus(); anunciar('Una foto por mes'); break;
     }
+    case 'video-musica-ajustar': {
+      const plan = planVideo(), r = VideoTL.tiemposParaMusica(plan.n, plan.segundosFoto, plan.segundosTransicion);
+      if (r){ E.vid.h = r.foto; E.vid.t = r.transicion; E.vid.musica = true; }
+      render(); $('#videoMusica')?.focus(); anunciar('Tiempos ajustados para la música'); break;
+    }
+    case 'pixelar-quitar': quitarZonaPixelar(); $('#pixelarLienzo')?.focus(); break;
+    case 'pixelar-todas': {
+      const pix = E.vid.pix;
+      if (!pix) break;
+      const zonas = zonasPixelar();
+      for (const f of pix.otras){
+        if (zonas.length) E.vid.censura.set(f.archivo, zonas.map(z => VideoTL.trasladarZona(z, pix.foto.ajuste, f.ajuste)));
+        else E.vid.censura.delete(f.archivo);
+      }
+      cerrarModal(); anunciar('Zonas pixeladas en todas las fotos de la pose'); break;
+    }
+    case 'pixelar-listo': cerrarModal(); break;
     case 'video-mas-rapido': {
       const plan = planVideo(), r = VideoTL.tiemposQueCaben(plan.n, plan.segundosFoto, plan.segundosTransicion);
       if (r){ E.vid.h = r.foto; E.vid.t = r.transicion; }
@@ -1608,6 +1778,8 @@ function init(){
     if (ra && !ra.disabled){ rutAccion(ra.dataset.rutAccion, ra); return; }
     const a = ev.target.closest('[data-accion]');
     if (a && !a.disabled){ accion(a.dataset.accion, a); return; }
+    const pixelar = ev.target.closest('[data-video-pixelar]');
+    if (pixelar && !pixelar.disabled){ abrirPixelar(pixelar.dataset.videoPixelar); return; }
     const ir = ev.target.closest('[data-ir]');
     if (ir){
       if (!$('#modal').classList.contains('oculto')) cerrarModal();
@@ -1735,12 +1907,15 @@ function init(){
       anunciar(ev.target.checked ? 'Foto añadida al informe' : 'Foto quitada del informe'); return;
     }
     const idVid = ev.target.id;
-    if (['videoPose', 'videoFormato', 'videoRotulos', 'videoFoto', 'videoTransicion'].includes(idVid) || ev.target.dataset.videoFoto != null){
+    if (['videoPose', 'videoFormato', 'videoRotulos', 'videoIgualar', 'videoGrises', 'videoMusica', 'videoFoto', 'videoTransicion'].includes(idVid) || ev.target.dataset.videoFoto != null){
       if (E.vid.rep) E.vid.rep.parar();
       const t = ev.target;
       if (idVid === 'videoPose') E.vid.pose = t.value;
       else if (idVid === 'videoFormato') E.vid.formato = t.value;
       else if (idVid === 'videoRotulos') E.vid.rotulos = t.checked;
+      else if (idVid === 'videoIgualar') E.vid.igualar = t.checked;
+      else if (idVid === 'videoGrises') E.vid.grises = t.checked;
+      else if (idVid === 'videoMusica') E.vid.musica = t.checked;
       else if (t.dataset.videoFoto != null){ if (t.checked) E.vid.quitadas.delete(t.dataset.videoFoto); else E.vid.quitadas.add(t.dataset.videoFoto); }
       const foco = t.id || null, archivo = t.dataset.videoFoto;
       render();

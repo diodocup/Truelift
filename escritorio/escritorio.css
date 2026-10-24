@@ -872,3 +872,15 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
 .marco.con-ajuste img{object-fit:cover;transform-origin:center}
 .foto-grande-marco{width:min(100%,calc(70vh * 3 / 4));aspect-ratio:3/4;margin:0 auto;border-radius:10px}
 .foto-grande-marco img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center}
+/* Vídeo de progreso: ajustes, música y pixelado (espejo de la app). */
+.video-opciones{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 16px;margin-top:12px}
+.video-opciones .video-check,.video-musica .video-check{align-items:flex-start!important}
+.video-check span small,.video-musica small{display:block;font-size:11.5px;margin-top:2px}
+.video-musica{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--borde);font-size:13px}
+.video-aviso{font-size:12.5px;margin:8px 0 0}
+.video-lista li{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.video-lista li label{flex:1;min-width:0}
+.btn-mini.activo{color:var(--lima);border-color:var(--lima)}
+.pixelar-marco{display:flex;justify-content:center;margin:10px 0}
+.pixelar-marco canvas{width:min(100%,420px,calc((100vh - 300px) * .75));height:auto;aspect-ratio:3/4;border-radius:10px;background:#000;cursor:crosshair;touch-action:none}
+.pixelar-marco canvas:focus-visible{outline:2px solid var(--lima);outline-offset:3px}

@@ -25,9 +25,11 @@ del planificador en `PLANIFICADOR.md`.
 - **Evolución física:** peso tendencia y fase con el progreso de la fase
   frente a lo pactado (como «Cómo vas» de la app), composición (estimación),
   contornos con gráficas y tablas, galería por fecha/pose, comparación de fotos
-  y **vídeo de progreso** (las fotos de una pose en orden de fecha, con fundido,
-  el encuadre de la app y la marca TRUELIFT; se graba en el navegador y se
-  descarga en MP4 o WebM, `video.js`).
+  y **vídeo de progreso** como el de la app (las fotos de una pose en orden de
+  fecha, con fundido, el encuadre de la app, igualar luz, blanco y negro,
+  zonas pixeladas, la música TrueLift con el drop en la última foto y la marca
+  TRUELIFT; se graba en el navegador a 1080 de ancho y se descarga en MP4 o
+  WebM, `video.js`).
 - **Recuperación:** estado para entrenar, cuestionarios, VFC, FC en reposo y
   datos del reloj.
 - **Mi rutina:** la rutina de tu móvil (consulta) y tus borradores: editor con
@@ -312,7 +314,7 @@ Cambios de App-PRO del 11 al 20/10/2026 que afectan al escritorio:
 node --test escritorio/tests/*.test.mjs     # módulos (Node 20+)
 PLAYWRIGHT_MODULE=/ruta/playwright node escritorio/tests/e2e.mjs   # si no está en node_modules
 node escritorio/tests/e2e.mjs [capturas/]   # navegador (requiere Playwright)
-node escritorio/tests/video.e2e.mjs [capturas/]   # vídeo de progreso: vista previa, grabar y descargar
+node escritorio/tests/video.e2e.mjs [capturas/]   # vídeo de progreso: vista previa, pixelar, grabar con música y descargar
 PLAYWRIGHT_MODULE=/ruta/playwright AXE_MODULE=/ruta/axe-core/axe.min.js node escritorio/tests/integral.e2e.mjs [capturas/]
                                             # fase 8: persistencia real, proceso, ZIP, caché, accesibilidad
 DART=/ruta/dart node --test escritorio/tests/planificador.test.mjs
