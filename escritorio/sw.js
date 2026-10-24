@@ -10,7 +10,7 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v11`;
+const VERSION = `${PREFIJO}v12`;
 const ARCHIVOS = [
   './',
   'index.html',
@@ -18,6 +18,8 @@ const ARCHIVOS = [
   'importar.js', 'zip-seguro.js', 'fotos.js', 'evolucion.js', 'almacen.js', 'analisis.js',
   'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js', 'video.js', 'planificador.js', 'rutina-vista.js',
   'informe.js', 'informe-vista.js', 'app.js',
+  // Banda sonora del vídeo de progreso (la .webm, para navegadores sin AAC).
+  'sonidos/bso_truelift.m4a', 'sonidos/bso_truelift.webm',
   '../coach/styles.css',
   '../coach/motor.js', '../coach/data.js', '../coach/nutricion.js', '../coach/charts.js',
   '../coach/catalogo.js', '../coach/canonico.js', '../coach/plantilla.js', '../coach/xlsx.js', '../coach/planner.js',

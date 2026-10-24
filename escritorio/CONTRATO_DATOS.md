@@ -125,6 +125,12 @@ Aditivo: las copias v1–v7 se siguen leyendo.
   tocar la imagen. Si la copia JSON no lo trae y el ZIP sí, se adopta el del
   ZIP (misma regla que la fusión del móvil); uno presente no se pisa. Un ZIP
   que solo cambia encuadres cuenta como cambio de índice.
+  `analisis {v, r, g, b, luz, bajo, alto, quemados, negros, nitidez}`
+  (21/10/2026, clave aditiva): luz y color medidos por la app
+  (`lib/medidas/analisis_foto.dart`, versión 1 del método). El escritorio lo
+  lee con `FotosTL.leerAnalisis` (otra versión o números fuera de rango → se
+  ignora) y lo usa para «Igualar luz» en el vídeo de progreso; si falta, lo
+  mide en el navegador con el mismo método (solo en memoria).
   `archivo` es el **identificador único** (sin `/`, `\` ni `..`). `pesoKg` es
   el peso congelado al crear la foto (pesaje más cercano ±7 días o peso de
   perfil).

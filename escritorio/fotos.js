@@ -17,7 +17,8 @@
    desplazamiento, giro y espejo RELATIVOS al recuadro 3:4, guardados por la
    app al encuadrar. Viaja en la copia JSON y en medidas.json del ZIP; aquí
    se lee con los mismos topes y se pinta con CSS (transformCss), sin tocar
-   la imagen: la foto se ve encuadrada como en el móvil.
+   la imagen: la foto se ve encuadrada como en el móvil. `analisis` (luz y
+   color, AnalisisFoto) viaja igual y sirve para igualar la luz del vídeo.
    Depende de ImportarJSON (importar.js) para fechas y nombres.
    ================================================================ */
 
@@ -65,6 +66,19 @@ const FotosTL = {
     return identidad ? null : a;
   },
 
+  /* Luz y color medidos por la app (AnalisisFoto, versión 1 del método),
+     para igualar la luz en el vídeo de progreso. Espejo de
+     AnalisisFoto.fromJson: null si no es de esta versión o algún número
+     falta o es absurdo (entonces se mide aquí). */
+  leerAnalisis(j){
+    if (!j || typeof j !== 'object' || Array.isArray(j) || j.v !== 1) return null;
+    const leer = (k, max) => typeof j[k] === 'number' && Number.isFinite(j[k]) && j[k] >= 0 && j[k] <= max ? j[k] : null;
+    const a = { r: leer('r', 255), g: leer('g', 255), b: leer('b', 255), luz: leer('luz', 255),
+                bajo: leer('bajo', 255), alto: leer('alto', 255) };
+    if (Object.values(a).some(v => v == null) || a.bajo > a.alto) return null;
+    return a;
+  },
+
   /* Encuadre como `transform` CSS de una imagen que llena su recuadro 3:4
      (object-fit: cover, transform-origin centrado), igual que la app:
      espejo, escala y giro alrededor del centro y, después, el
@@ -93,6 +107,7 @@ const FotosTL = {
         pose: poseOk ? f.pose : 'frente', poseDesconocida: !poseOk,
         pesoKg: ImportarJSON.esNum(f.pesoKg) ? f.pesoKg : null,
         ajuste: this.leerAjuste(f.ajuste),
+        analisis: this.leerAnalisis(f.analisis),
       });
     });
     (Array.isArray(obj.registros) ? obj.registros : []).forEach(r => {

@@ -1,6 +1,6 @@
 // Vídeo de progreso del escritorio en Chromium (Playwright): la tarjeta de
-// «Evolución física» pinta la vista previa con la marca, graba un vídeo
-// corto y ofrece descargarlo. Datos 100 % sintéticos. Uso:
+// «Evolución física» pinta la vista previa con la marca, pixela una zona,
+// graba el vídeo con la música TrueLift y ofrece descargarlo. Datos 100 % sintéticos. Uso:
 //   node escritorio/tests/video.e2e.mjs [carpetaCapturas]
 import http from 'node:http';
 import fs from 'node:fs';
@@ -74,20 +74,24 @@ try {
   await pagina.waitForSelector('#videoProgreso');
   const texto = await pagina.textContent('#videoProgreso');
   assert.match(texto, /Fotos · 3 de 3/);
-  assert.match(texto, /Dura 7 s/);
-  ok('la tarjeta del vídeo aparece con las tres fotos de frente');
+  // Con la música (activada por defecto), la última foto se queda hasta que
+  // acaba la pista.
+  assert.match(texto, /Dura 14 s/);
+  assert.ok(await pagina.locator('#videoMusica').isChecked());
+  assert.match(texto, /El momento fuerte llega con tu última foto/);
+  ok('la tarjeta del vídeo aparece con las tres fotos de frente y la música');
 
   // Vista previa: el primer fotograma, con la foto y la marca pintadas.
   await pagina.waitForFunction(() => {
     const c = document.querySelector('#videoLienzo');
     // Esquina de la foto (fuera de la silueta oscura): el azul de la primera.
-    const d = c.getContext('2d').getImageData(60, 60, 1, 1).data;
+    const d = c.getContext('2d').getImageData(90, 90, 1, 1).data;
     return d[2] > 150;
   });
   const marca = await pagina.evaluate(() => {
     const c = document.querySelector('#videoLienzo'), g = c.getContext('2d');
     // Zona de la marca (abajo a la derecha): hay lima.
-    const d = g.getImageData(470, 880, 230, 50).data;
+    const d = g.getImageData(650, 1200, 420, 140).data;
     let lima = 0;
     for (let i = 0; i < d.length; i += 4) if (d[i + 1] > 180 && d[i] > 120 && d[i] < 200 && d[i + 2] < 90) lima++;
     return lima;
@@ -108,15 +112,47 @@ try {
   await pagina.getByText('Fotos · 3 de 3').waitFor();
   ok('quitar y volver a poner una foto');
 
-  // Tiempos mínimos para que la grabación sea corta: 3·0,4 + 2·0,2 = 1,6 s.
-  for (const [id, v] of [['#videoFoto', '0.4'], ['#videoTransicion', '0.2']]){
-    await pagina.locator(id).evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, v);
-  }
-  assert.match(await pagina.textContent('#videoDuracion'), /Dura 2 s/);
+  // Sin música dura lo de siempre; con ella, otra vez lo de la pista.
+  await pagina.locator('#videoMusica').uncheck();
+  await pagina.waitForFunction(() => /Dura 7 s/.test(document.querySelector('#videoDuracion')?.textContent || ''));
+  await pagina.locator('#videoMusica').check();
+  await pagina.waitForFunction(() => /Dura 14 s/.test(document.querySelector('#videoDuracion')?.textContent || ''));
+  ok('la música se quita y se vuelve a poner');
+
+  // Pixelar: un círculo en el borde de la cabeza de la primera foto. En la
+  // vista previa ese borde se vuelve bloques (colores mezclados a lo ancho
+  // de un bloque entero), no una línea fina.
+  const tramoMezclado = () => pagina.evaluate(() => {
+    const c = document.querySelector('#videoLienzo'), d = c.getContext('2d').getImageData(0, 346, 1080, 1).data;
+    let mejor = 0, run = 0;
+    for (let x = 280; x < 530; x++){ const b = d[x * 4 + 2]; run = b > 50 && b < 170 ? run + 1 : 0; mejor = Math.max(mejor, run); }
+    return mejor;
+  });
+  assert.ok(await tramoMezclado() < 15, 'sin pixelar, el borde es fino');
+  await pagina.click('[data-video-pixelar="foto_20260601_frente.jpg"]');
+  await pagina.getByRole('heading', { name: /Pixelar zonas/ }).waitFor();
+  await pagina.waitForFunction(() => /Sin zonas/.test(document.querySelector('#pixelarCuenta')?.textContent || ''));
+  const caja = await pagina.locator('#pixelarLienzo').boundingBox();
+  await pagina.mouse.click(caja.x + caja.width * 0.375, caja.y + caja.height * 0.24);
+  await pagina.getByText('Una zona pixelada.').waitFor();
+  assert.equal(await pagina.locator('#pixelarQuitar').isDisabled(), false);
+  if (capturas) await pagina.locator('#modalCaja').screenshot({ path: path.join(capturas, 'video-pixelar.png') });
+  await pagina.click('[data-accion="pixelar-listo"]');
+  await pagina.waitForSelector('#modal.oculto', { state: 'attached' });
+  assert.match(await pagina.textContent('#videoProgreso'), /pixelada/);
+  await pagina.waitForFunction(() => document.activeElement?.dataset?.videoPixelar === 'foto_20260601_frente.jpg');
+  await pagina.waitForFunction(() => {
+    const c = document.querySelector('#videoLienzo'), d = c.getContext('2d').getImageData(0, 346, 1080, 1).data;
+    let mejor = 0, run = 0;
+    for (let x = 280; x < 530; x++){ const b = d[x * 4 + 2]; run = b > 50 && b < 170 ? run + 1 : 0; mejor = Math.max(mejor, run); }
+    return mejor >= 30;
+  }, null, { timeout: 5000 });
+  ok('pixelar una zona: se ve en bloques en la vista previa y el foco vuelve a su botón');
+
   await pagina.click('[data-accion="video-grabar"]');
   await pagina.getByText(/Grabando…/).waitFor();
   ok('al grabar enseña el tiempo y deja cancelar');
-  await pagina.waitForSelector('#videoDescargar', { timeout: 20000 });
+  await pagina.waitForSelector('#videoDescargar', { timeout: 40000 });
   // La página no deja hacer fetch de un blob: (CSP connect-src 'self'): el
   // vídeo se comprueba descargándolo, como haría el usuario.
   const [d] = await Promise.all([pagina.waitForEvent('download'), pagina.click('#videoDescargar')]);
@@ -130,6 +166,9 @@ try {
   const esWebm = bytes.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
   assert.ok(nombre.endsWith('.mp4') ? esMp4 : esWebm, 'cabecera del contenedor');
   assert.ok(bytes.length > 1000, `tamaño ${bytes.length}`);
+  // Con pista de audio: AAC u Opus en el contenedor.
+  const latin = bytes.toString('latin1');
+  assert.ok(/mp4a|Opus|A_OPUS/.test(latin), 'el vídeo lleva la música');
   ok(`vídeo grabado y descargado (${nombre}, ${bytes.length} bytes)`);
 
   assert.deepEqual(externas, []);
