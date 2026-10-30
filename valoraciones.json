@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-29T11:34:14.957Z",
+  "actualizado": "2026-10-30T11:26:44.969Z",
   "android": {
     "nota": 4.7,
     "total": 21
@@ -9,6 +9,24 @@
     "total": 8
   },
   "resenas": [
+    {
+      "id": "as:14704347692",
+      "tienda": "ios",
+      "autor": "cañadadelhoyense",
+      "estrellas": 5,
+      "texto": "Muy buena app para entrenar. Una aplicación sencilla, intuitiva y muy cómoda para llevar el seguimiento de los entrenamientos en el gimnasio. Permite registrar los ejercicios y ver tu progresión de forma clara, lo que ayuda mucho a mantener la motivación y seguir mejorando. Muy recomendable si entrenas fuerza y quieres tener todo organizado.",
+      "fecha": "2026-10-24",
+      "idioma": "es"
+    },
+    {
+      "id": "as:14673924632",
+      "tienda": "ios",
+      "autor": "Pakobellon",
+      "estrellas": 5,
+      "texto": "Muy buena aplicación para progresar en el gimnasio, la llevo utilizando hará más o menos un mes y cada vez me gusta más.",
+      "fecha": "2026-10-16",
+      "idioma": "es"
+    },
     {
       "id": "gp:c062034d-b4db-49d8-b6d8-22c8ecc62058",
       "tienda": "android",
