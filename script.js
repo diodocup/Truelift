@@ -300,7 +300,81 @@ const englishTranslations = {
   "Tus datos se procesan y se guardan solo en tu navegador. Si quieres probarlo antes, en la sección": "Your data is processed and stored only in your browser. If you want to try it first, the",
   "tienes una copia de ejemplo.": "section has a sample backup.",
   "¿TrueLift usa IA para calcular mi dieta?": "Does TrueLift use AI to work out my diet?",
-  "No. Las calorías, los macros y el reparto en comidas los calcula la app con un método estable, igual que la progresión. Si quieres un menú semanal, la app prepara un prompt con tus cifras y tus preferencias para que lo pegues en la IA que prefieras. TrueLift no se conecta a ninguna IA ni le envía nada por su cuenta.": "No. Calories, macros and the meal split are worked out by the app with a stable method, just like progression. If you want a weekly menu, the app prepares a prompt with your numbers and preferences for you to paste into the AI you prefer. TrueLift does not connect to any AI or send it anything on its own."
+  "No. Las calorías, los macros y el reparto en comidas los calcula la app con un método estable, igual que la progresión. Si quieres un menú semanal, la app prepara un prompt con tus cifras y tus preferencias para que lo pegues en la IA que prefieras. TrueLift no se conecta a ninguna IA ni le envía nada por su cuenta.": "No. Calories, macros and the meal split are worked out by the app with a stable method, just like progression. If you want a weekly menu, the app prepares a prompt with your numbers and preferences for you to paste into the AI you prefer. TrueLift does not connect to any AI or send it anything on its own.",
+  "Planificador": "Planner",
+  "Novedad · Planificador de temporada": "New · Season planner",
+  "Mira cómo acabarás antes de empezar": "See where you'll end up before you start",
+  "Pestaña Progreso con el rendimiento de cada sesión frente a tu histórico": "Progress tab with each session's performance against your history",
+  "Récords y niveles · novedad": "Records and levels · new",
+  "Cada récord y cada nivel nuevo, celebrados en el momento.": "Every record and every new level, celebrated on the spot.",
+  "Cuando bates tu 1RM estimado o subes de nivel en un ejercicio, TrueLift te lo dice en plena sesión, con tu nombre y tu marca nueva. Porque progresar también tiene que notarse.": "When you beat your estimated 1RM or move up a level on an exercise, TrueLift tells you mid-session, with your name and your new mark. Because progress should feel like progress.",
+  "Nuevo récord: tu 1RM estimado del ejercicio, en cuanto lo superas.": "New record: your estimated 1RM for the exercise, the moment you beat it.",
+  "Nivel nuevo: de Principiante a Élite, y grados por encima para los fuera de serie, de Élite II a Élite V.": "New level: from Beginner to Elite, plus grades above it for the exceptional, from Elite II to Elite V.",
+  "Y los grupos musculares que suben de nivel contigo.": "And the muscle groups that level up with you.",
+  "Animación de nuevo récord: press inclinado con mancuernas, e1RM 65 kg": "New record animation: incline dumbbell press, e1RM 65 kg",
+  "Sonido": "Sound",
+  "Nuevo récord": "New record",
+  "Animación de nivel nuevo: press inclinado con mancuernas sube a Avanzado, y también suben pectoral, hombro y tríceps": "New level animation: incline dumbbell press moves up to Advanced, along with chest, shoulders and triceps",
+  "Nivel nuevo": "New level",
+  "Nutrición y planificador de temporada: ajuste semanal, calorías, macros y menú con IA": "Nutrition and season planner: weekly adjustment, calories, macros and AI menu",
+  "Planificador de temporada con proyección e ilustración de tu cuerpo, y ajuste semanal": "Season planner with projection and an illustration of your body, plus weekly adjustment",
+  "Pestaña Nutrición con tu peso-tendencia frente al objetivo de la fase": "Nutrition tab with your trend weight against the phase goal",
+  "Planificador de temporada · novedad": "Season planner · new",
+  "Mira cómo acabas antes de empezar.": "See where you end up before you start.",
+  "Encadena tus bloques de definición, mantenimiento y volumen. TrueLift proyecta tu peso, tu % graso y tu masa libre de grasa hasta el último día de la temporada y te enseña, con una ilustración orientativa, cómo cambiaría tu cuerpo del principio al final.": "Chain your cut, maintenance and bulk blocks. TrueLift projects your weight, body fat % and fat-free mass to the last day of the season and shows you, with an indicative illustration, how your body would change from start to finish.",
+  "Ilustración orientativa del cuerpo al inicio de la temporada": "Indicative illustration of the body at the start of the season",
+  "Ilustración orientativa del cuerpo al final de la temporada": "Indicative illustration of the body at the end of the season",
+  "Inicial": "Start",
+  "Final": "End",
+  "Desliza para comparar el cuerpo inicial y el final": "Slide to compare the starting and final body",
+  "Ilustración orientativa: cada cuerpo responde a su manera.": "Indicative illustration: every body responds in its own way.",
+  "Pantalla Temporada: cómo cambiaría tu cuerpo, con la imagen inicial y la final, y la proyección de peso, % graso y masa libre de grasa": "Season screen: how your body would change, with the start and end images and the projection of weight, body fat % and fat-free mass",
+  "Ejemplo de temporada · 32 semanas": "Sample season · 32 weeks",
+  "Bloques de una temporada de ejemplo": "Blocks of a sample season",
+  "Definición": "Cut",
+  "12 sem · −0,5 %/sem": "12 wk · −0.5 %/wk",
+  "Normo": "Maintenance",
+  "4 sem": "4 wk",
+  "Volumen": "Bulk",
+  "16 sem · +0,25 %/sem": "16 wk · +0.25 %/wk",
+  "Lo que proyecta la gráfica": "What the chart projects",
+  "Peso": "Weight",
+  "% graso": "Body fat %",
+  "Masa libre de grasa": "Fat-free mass",
+  "Tu temporada, por bloques": "Your season, block by block",
+  "Elige cuánto dura cada bloque y a qué ritmo quieres perder o ganar. Un semáforo te avisa si ese ritmo es sensato para tu punto de partida.": "Choose how long each block lasts and how fast you want to lose or gain. A traffic light tells you whether that pace is sensible for your starting point.",
+  "Tus números, semana a semana": "Your numbers, week by week",
+  "La gráfica proyecta tu peso, tu % graso y tu masa libre de grasa hasta el final, para que sepas a dónde te lleva cada bloque.": "The chart projects your weight, body fat % and fat-free mass to the end, so you know where each block takes you.",
+  "Músculo y grasa, estimados para ti": "Muscle and fat, estimated for you",
+  "El reparto entre músculo y grasa se estima con tu experiencia entrenando, tu % graso y el ritmo que elijas. No es una tabla genérica.": "The split between muscle and fat is estimated from your training experience, your body fat % and the pace you choose. It is not a generic table.",
+  "El objetivo, con imagen": "Your goal, in a picture",
+  "Ves tu punto de partida y tu final lado a lado. El objetivo deja de ser un número en la báscula y se convierte en algo que quieres alcanzar.": "You see your starting point and your finish side by side. The goal stops being a number on the scale and becomes something you want to reach.",
+  "Una guía, no una promesa": "A guide, not a promise",
+  "La proyección y las imágenes son orientativas: parten de tus datos y de estimaciones medias, y cada cuerpo responde a su manera. Lo que manda es tu báscula: cada semana, la revisión compara tu tendencia real con el plan y te propone un ajuste si te desvías.": "The projection and the images are indicative: they start from your data and from average estimates, and every body responds in its own way. Your scale has the final say: every week, the review compares your real trend with the plan and suggests an adjustment if you drift.",
+  "Sesión en curso con el descanso en marcha y la carga y las repeticiones estimadas de la siguiente serie": "Session in progress with the rest timer running and the estimated load and reps for the next set",
+  "Descanso en marcha": "Rest timer running",
+  "Disponibilidad media antes de una serie: con VFC baja y pulso en reposo alto, la app mantiene cargas y explica por qué": "Medium readiness before a set: with low HRV and a high resting heart rate, the app holds the loads and explains why",
+  "Disponibilidad · PRO": "Readiness · PRO",
+  "Cómo estás hoy: estrés, dolor articular, si estás enfermo, VFC nocturna, pulso en reposo y peso del día": "How are you today: stress, joint pain, whether you are ill, overnight HRV, resting heart rate and today's weight",
+  "Cómo estás hoy · PRO": "How are you today · PRO",
+  "Rendimiento de sesión": "Session performance",
+  "Pestaña Rutina con la estructura, el material disponible, la duración de la sesión y las series por grupo muscular": "Routine tab with the structure, available equipment, session length and sets per muscle group",
+  "Tu rutina": "Your routine",
+  "Estructura de la rutina: dónde entrenas, días por semana y sistema de progresión, lineal simple o doble progresión": "Routine structure: where you train, days per week and progression system, simple linear or double progression",
+  "Estructura y progresión": "Structure and progression",
+  "Catálogo de rutinas PRO para gimnasio o casa, filtradas por días de entrenamiento": "Catalogue of PRO routines for the gym or home, filtered by training days",
+  "Rutinas PRO": "PRO routines",
+  "Crea tu rutina con IA: duración, material, molestias y estructura para generar el prompt": "Create your routine with AI: length, equipment, niggles and structure to generate the prompt",
+  "Rutina con IA · PRO": "AI routine · PRO",
+  "Volumen semanal por grupo muscular sobre la figura del cuerpo, con la zona objetivo de series": "Weekly volume per muscle group on a body figure, with the target set range",
+  "Volumen y frecuencia": "Volume and frequency",
+  "Técnica del ejercicio con la posición inicial y final, los músculos implicados y los pasos para hacerlo": "Exercise technique with the start and end positions, the muscles involved and the steps to perform it",
+  "Técnica del ejercicio": "Exercise technique",
+  "Informe mensual con sesiones, cumplimiento, récords, carga movida y el mes de un vistazo": "Monthly report with sessions, adherence, records, total load moved and the month at a glance",
+  "Informe mensual": "Monthly report",
+  "Planificador · PRO": "Planner · PRO",
+  "Revisión de la semana: tu ritmo previsto frente a tu tendencia y la masa libre de grasa estimada": "Weekly review: your planned pace against your trend, and your estimated fat-free mass",
+  "Esta semana · PRO": "This week · PRO"
 };
 
 const normaliseTranslationKey = (value) => value.replace(/\s+/g, " ").trim();
@@ -500,3 +574,95 @@ if (mobileStore) {
     if (destination) link.setAttribute("href", destination);
   });
 }
+
+// Comparador antes/después del planificador de temporada. Es un input range
+// transparente encima de las dos imágenes: funciona con ratón, dedo y teclado,
+// y sin JavaScript se queda en el 50 %.
+document.querySelectorAll("[data-compare]").forEach((compare) => {
+  const range = compare.querySelector("[data-compare-range]");
+  const stage = compare.querySelector(".season-compare-stage");
+  if (!range || !stage) return;
+  const update = () => stage.style.setProperty("--split", `${range.value}%`);
+  let hintFrame = 0;
+  const stopHint = () => cancelAnimationFrame(hintFrame);
+  range.addEventListener("input", update);
+  range.addEventListener("pointerdown", stopHint);
+  range.addEventListener("keydown", stopHint);
+  update();
+
+  // Al entrar en pantalla por primera vez, la cortina hace un vaivén corto para
+  // que se entienda que se puede deslizar.
+  if (prefersReducedMotion || !("IntersectionObserver" in window)) return;
+  const hintObserver = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    hintObserver.disconnect();
+    const keys = [50, 80, 20, 50];
+    const duration = 2400;
+    let start = 0;
+    const step = (time) => {
+      if (!start) start = time;
+      const progress = Math.min((time - start) / duration, 1);
+      const segment = Math.min(Math.floor(progress * 3), 2);
+      const local = progress * 3 - segment;
+      const eased = local < 0.5 ? 2 * local * local : 1 - Math.pow(-2 * local + 2, 2) / 2;
+      range.value = String(Math.round(keys[segment] + (keys[segment + 1] - keys[segment]) * eased));
+      update();
+      if (progress < 1) hintFrame = requestAnimationFrame(step);
+    };
+    hintFrame = requestAnimationFrame(step);
+  }, { threshold: 0.6 });
+  hintObserver.observe(stage);
+});
+
+// Vídeos de récord y nivel: se reproducen en bucle y sin sonido solo mientras
+// están a la vista. Con movimiento reducido no arrancan solos: se muestran los
+// controles nativos para que la persona decida.
+const autoplayVideos = document.querySelectorAll("video[data-autoplay]");
+
+if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+  autoplayVideos.forEach((video) => {
+    video.controls = true;
+    video.preload = "metadata";
+  });
+} else if (autoplayVideos.length) {
+  const videoObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const video = entry.target;
+        if (entry.isIntersecting) {
+          video.play().catch(() => {
+            video.controls = true;
+          });
+        } else {
+          video.pause();
+        }
+      });
+    },
+    { threshold: 0.35 }
+  );
+  autoplayVideos.forEach((video) => videoObserver.observe(video));
+}
+
+document.querySelectorAll("[data-sound]").forEach((button) => {
+  const video = button.closest(".clip")?.querySelector("video");
+  if (!video) return;
+  button.addEventListener("click", () => {
+    const enable = video.muted;
+    // Solo suena un vídeo a la vez.
+    if (enable) {
+      document.querySelectorAll("[data-sound]").forEach((other) => {
+        const otherVideo = other.closest(".clip")?.querySelector("video");
+        if (otherVideo && otherVideo !== video) {
+          otherVideo.muted = true;
+          other.setAttribute("aria-pressed", "false");
+        }
+      });
+    }
+    video.muted = !enable;
+    button.setAttribute("aria-pressed", String(enable));
+    if (enable) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
+  });
+});

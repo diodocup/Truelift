@@ -72,16 +72,52 @@ qué falta, extrae los textos de `index.html` y busca cada uno como `"<frase>"` 
 
 Las capturas de la landing viven en `capturas/<idioma>/<nombre>.jpg` (`es`, `en`, `pt-BR`), con el
 mismo nombre de archivo en los tres idiomas. `script.js` cambia la carpeta al cambiar de idioma.
-Si una captura solo existe en algunos idiomas, la `<figure>` de la galería lo indica con
-`data-shot-langs="es"` y se oculta en los demás.
+Si una captura solo existe en algunos idiomas, la `<figure>` lo indica con `data-shot-langs`
+(por ejemplo `data-shot-langs="es"`) y se oculta en los demás.
 
 Para regenerarlas a partir de capturas del móvil (1220×2712): recortar la barra de estado
-(96 px superiores) y reducir a 800 px de ancho, JPEG de calidad ~82.
+(96 px superiores) y la barra de navegación de Android (161 px inferiores), y reducir a
+800×1610, JPEG de calidad ~82.
+
+**Interfaz nueva (31/10/2026).** Las capturas de `es` son ya de la interfaz de cuatro pestañas
+(Rutina, Registro, Progreso, Nutrición). Las de `en` y `pt-BR` siguen siendo de la interfaz
+anterior hasta que se hagan en esos idiomas. Mientras tanto:
+
+- Solo en `es` (`data-shot-langs="es"`): `descanso`, `disponibilidad`, `hoy`, `rutina`, `estructura`,
+  `rutinas-pro`, `rutina-ia`, `volumen`, `tecnica`, `informe-mensual`, `temporada` y `semana`.
+  Al añadir la captura en `en` y `pt-BR` con el mismo nombre, basta con quitar el atributo.
+- Solo en `en` y `pt-BR` (`data-shot-langs="en pt-BR"`): `estado` y `vfc`, de la interfaz anterior.
+  En `es` las sustituyen `disponibilidad` y `hoy`. Cuando existan las nuevas en esos idiomas, se
+  borran estas dos figuras de la galería.
 
 Las de nutrición `energia`, `macros`, `comidas` y `menu-ia` salen tanto en la sección de nutrición
 como en la galería. Las de TrueLift Escritorio viven aparte, en `capturas/escritorio/`, y no cambian
 con el idioma porque el escritorio solo está en español: son capturas reales de `escritorio/` con la
 copia de ejemplo importada (ventana de 1440×900 a 1,5×, reducidas a 1600 px y JPEG ~82).
+
+## Planificador de temporada
+
+La sección `#temporada` (PRO) presenta el planificador: bloques de definición, mantenimiento y
+volumen, proyección de peso, % graso y masa libre de grasa, y la ilustración orientativa de cómo
+cambiaría el cuerpo del inicio al final. El hero lo anuncia con una franja propia.
+
+La pieza central es un comparador antes/después: un `input range` transparente sobre las dos
+ilustraciones de `capturas/temporada/` (recortadas de la pantalla Temporada de la app, sin texto,
+así que valen para los tres idiomas). Funciona con ratón, dedo y teclado; al entrar en pantalla
+hace un vaivén corto para que se vea que se puede deslizar (no lo hace con movimiento reducido).
+La nota «Ilustración orientativa: cada cuerpo responde a su manera» y el aviso «Una guía, no una
+promesa» no se quitan: las imágenes no son una promesa de resultado.
+
+El móvil con la pantalla Temporada solo sale en `es` (`data-shot-langs="es"`); en EN y PT-BR la
+columna se queda con el ejemplo de temporada.
+
+## Récords y niveles en vídeo
+
+Dentro de `#progreso`, el bloque «Cada récord y cada nivel nuevo» muestra las animaciones de la app
+en `capturas/videos/` (`record.mp4` y `nivel.mp4`, H.264 vertical 576×1280 con `faststart`, y su
+fotograma de portada en `.jpg`). Se reproducen en bucle y sin sonido solo mientras están a la vista;
+el botón de altavoz activa el sonido de uno (y silencia el otro). Con movimiento reducido no
+arrancan solos y muestran los controles nativos. Los vídeos están grabados en español.
 
 ## TrueLift Escritorio
 

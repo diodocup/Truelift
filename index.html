@@ -79,7 +79,7 @@
     </script>
     <link rel="preload" as="font" type="font/woff2" href="fonts/archivo-latin.woff2" crossorigin>
     <link rel="preload" as="font" type="font/woff2" href="fonts/jetbrainsmono-latin.woff2" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20261012-1">
+    <link rel="stylesheet" href="styles.css?v=20261031-1">
   </head>
   <body>
     <header class="site-header">
@@ -92,6 +92,7 @@
         <a href="#progreso">Progreso</a>
         <a href="#planes">Planes</a>
         <a href="#nutricion">Nutrición</a>
+        <a href="#temporada">Planificador</a>
         <a href="#escritorio">Escritorio</a>
         <a href="#capturas">Capturas</a>
         <a href="#faq">FAQ</a>
@@ -140,6 +141,19 @@
                   <span class="platform-chip">Apple Salud <span>iOS</span></span>
                 </span>
                 <span class="watch-strip-brands">Apple Watch · Garmin · Samsung Galaxy Watch · Pixel Watch · Polar · y muchos más</span>
+              </span>
+              <span class="watch-strip-arrow" aria-hidden="true">→</span>
+            </a>
+
+            <a class="season-strip" href="#temporada">
+              <span class="season-strip-bodies" aria-hidden="true">
+                <img src="capturas/temporada/cuerpo-inicial.jpg" alt="" width="381" height="586" decoding="async">
+                <span class="season-strip-to">→</span>
+                <img src="capturas/temporada/cuerpo-final.jpg" alt="" width="381" height="586" decoding="async">
+              </span>
+              <span class="season-strip-copy">
+                <span class="season-strip-kicker">Novedad · Planificador de temporada <span class="tag-pro">PRO</span></span>
+                <span class="season-strip-title">Mira cómo acabarás antes de empezar</span>
               </span>
               <span class="watch-strip-arrow" aria-hidden="true">→</span>
             </a>
@@ -345,7 +359,7 @@
           <div class="steps">
             <article class="step">
               <div class="device">
-                <img src="capturas/es/registro.jpg" data-shot="registro" alt="Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado" width="800" height="1715" loading="lazy" decoding="async">
+                <img src="capturas/es/registro.jpg" data-shot="registro" alt="Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado" width="800" height="1610" loading="lazy" decoding="async">
               </div>
               <div class="step-mark">
                 <span class="num">1</span>
@@ -426,11 +440,47 @@
             </div>
             <div class="phone-duo" aria-label="Capturas de la pestaña Progreso">
               <div class="device">
-                <img src="capturas/es/valoracion.jpg" data-shot="valoracion" alt="Pestaña Progreso con el estado para entrenar, la valoración general y el rendimiento de sesión" width="800" height="1715" loading="lazy" decoding="async">
+                <img src="capturas/es/valoracion.jpg" data-shot="valoracion" alt="Pestaña Progreso con el rendimiento de cada sesión frente a tu histórico" width="800" height="1610" loading="lazy" decoding="async">
               </div>
               <div class="device">
-                <img src="capturas/es/nivel.jpg" data-shot="nivel" alt="Nivel de fuerza global y por ejercicio, con el progreso hacia el siguiente nivel" width="800" height="1715" loading="lazy" decoding="async">
+                <img src="capturas/es/nivel.jpg" data-shot="nivel" alt="Nivel de fuerza global y por ejercicio, con el progreso hacia el siguiente nivel" width="800" height="1610" loading="lazy" decoding="async">
               </div>
+            </div>
+          </div>
+
+          <div class="celebrate" aria-labelledby="celebrate-title">
+            <div class="celebrate-copy">
+              <p class="sub-kicker is-lime">Récords y niveles · novedad</p>
+              <h3 id="celebrate-title">Cada récord y cada nivel nuevo, celebrados en el momento.</h3>
+              <p>
+                Cuando bates tu 1RM estimado o subes de nivel en un ejercicio, TrueLift te lo dice en plena sesión,
+                con tu nombre y tu marca nueva. Porque progresar también tiene que notarse.
+              </p>
+              <ul class="check-list">
+                <li>Nuevo récord: tu 1RM estimado del ejercicio, en cuanto lo superas.</li>
+                <li>Nivel nuevo: de Principiante a Élite, y grados por encima para los fuera de serie, de Élite II a Élite V.</li>
+                <li>Y los grupos musculares que suben de nivel contigo.</li>
+              </ul>
+            </div>
+            <div class="celebrate-videos">
+              <figure class="clip">
+                <div class="device clip-device">
+                  <video src="capturas/videos/record.mp4" poster="capturas/videos/record.jpg" width="576" height="1280" muted loop playsinline preload="none" data-autoplay aria-label="Animación de nuevo récord: press inclinado con mancuernas, e1RM 65 kg"></video>
+                  <button class="clip-sound" type="button" data-sound aria-pressed="false" aria-label="Sonido">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="clip-sound-on" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="clip-sound-off" d="M16 9.5l5 5M21 9.5l-5 5"/></svg>
+                  </button>
+                </div>
+                <figcaption>Nuevo récord</figcaption>
+              </figure>
+              <figure class="clip">
+                <div class="device clip-device">
+                  <video src="capturas/videos/nivel.mp4" poster="capturas/videos/nivel.jpg" width="576" height="1280" muted loop playsinline preload="none" data-autoplay aria-label="Animación de nivel nuevo: press inclinado con mancuernas sube a Avanzado, y también suben pectoral, hombro y tríceps"></video>
+                  <button class="clip-sound" type="button" data-sound aria-pressed="false" aria-label="Sonido">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="clip-sound-on" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="clip-sound-off" d="M16 9.5l5 5M21 9.5l-5 5"/></svg>
+                  </button>
+                </div>
+                <figcaption>Nivel nuevo</figcaption>
+              </figure>
             </div>
           </div>
         </div>
@@ -476,7 +526,7 @@
                 <li>Autorregulación por sueño, estrés, molestias y VFC</li>
                 <li>Reloj conectado: Health Connect y Apple Salud</li>
                 <li>Descarga guiada y descarga automática por fatiga</li>
-                <li>Nutrición: temporada, ajuste semanal, calorías, macros y menú con IA</li>
+                <li>Nutrición y planificador de temporada: ajuste semanal, calorías, macros y menú con IA</li>
                 <li>Fotos de progreso con la luz igualada y vídeo de tu evolución</li>
                 <li>Crear ejercicios e importar tu rutina desde Excel</li>
               </ul>
@@ -589,7 +639,7 @@
                     <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
                   <tr>
-                    <th scope="row">Plan de nutrición: temporada y ajuste semanal</th>
+                    <th scope="row">Planificador de temporada con proyección e ilustración de tu cuerpo, y ajuste semanal</th>
                     <td class="no"><span class="sr-only">No incluido</span></td>
                     <td class="yes"><span class="sr-only">Incluido</span></td>
                   </tr>
@@ -626,7 +676,7 @@
           <div class="split">
             <div class="phone-single" aria-label="Captura de la pestaña Nutrición">
               <div class="device is-pro">
-                <img src="capturas/es/nutricion.jpg" data-shot="nutricion" alt="Pestaña Nutrición con el peso-tendencia, el estado de la fase de déficit y la temporada por bloques" width="800" height="1715" loading="lazy" decoding="async">
+                <img src="capturas/es/nutricion.jpg" data-shot="nutricion" alt="Pestaña Nutrición con tu peso-tendencia frente al objetivo de la fase" width="800" height="1610" loading="lazy" decoding="async">
               </div>
             </div>
             <div class="split-copy">
@@ -670,7 +720,7 @@
               </article>
               <article class="step">
                 <div class="device is-pro">
-                  <img src="capturas/es/macros.jpg" data-shot="macros" alt="Macros del día: proteína y grasa con su deslizador e hidratos que se ajustan solos, en gramos y en gramos por kilo" width="800" height="1715" loading="lazy" decoding="async">
+                  <img src="capturas/es/macros.jpg" data-shot="macros" alt="Macros del día: proteína y grasa con su deslizador e hidratos que se ajustan solos, en gramos y en gramos por kilo" width="800" height="1610" loading="lazy" decoding="async">
                 </div>
                 <div class="step-mark">
                   <span class="num">2</span>
@@ -681,7 +731,7 @@
               </article>
               <article class="step">
                 <div class="device is-pro">
-                  <img src="capturas/es/comidas.jpg" data-shot="comidas" alt="Reparto en comidas con las calorías y los gramos de proteína, hidratos y grasa de cada comida y las comidas de antes y después de entrenar" width="800" height="1715" loading="lazy" decoding="async">
+                  <img src="capturas/es/comidas.jpg" data-shot="comidas" alt="Reparto en comidas con las calorías y los gramos de proteína, hidratos y grasa de cada comida y las comidas de antes y después de entrenar" width="800" height="1610" loading="lazy" decoding="async">
                 </div>
                 <div class="step-mark">
                   <span class="num">3</span>
@@ -715,11 +765,122 @@
         </div>
       </section>
 
+      <section class="section season-section" id="temporada" aria-labelledby="season-title">
+        <div class="section-inner" data-reveal>
+          <div class="section-head is-pro">
+            <span class="num">07</span>
+            <span class="label">Planificador de temporada · novedad</span>
+            <span class="tag-pro">PRO</span>
+            <span class="rule" aria-hidden="true"></span>
+          </div>
+          <div class="heading-split">
+            <h2 id="season-title">Mira cómo acabas antes de empezar.</h2>
+            <p>
+              Encadena tus bloques de definición, mantenimiento y volumen. TrueLift proyecta tu peso, tu % graso y tu masa libre de grasa
+              hasta el último día de la temporada y te enseña, con una ilustración orientativa, cómo cambiaría tu cuerpo del principio al final.
+            </p>
+          </div>
+
+          <div class="season-showcase">
+            <figure class="season-compare" data-compare>
+              <div class="season-compare-stage">
+                <img class="season-compare-img" src="capturas/temporada/cuerpo-inicial.jpg" alt="Ilustración orientativa del cuerpo al inicio de la temporada" width="381" height="586" loading="lazy" decoding="async">
+                <div class="season-compare-top" data-compare-top>
+                  <img class="season-compare-img" src="capturas/temporada/cuerpo-final.jpg" alt="Ilustración orientativa del cuerpo al final de la temporada" width="381" height="586" loading="lazy" decoding="async">
+                </div>
+                <span class="season-compare-handle" aria-hidden="true" data-compare-handle><span>↔</span></span>
+                <span class="season-compare-tag is-start">Inicial</span>
+                <span class="season-compare-tag is-end">Final</span>
+                <input class="season-compare-range" type="range" min="0" max="100" value="50" step="1" aria-label="Desliza para comparar el cuerpo inicial y el final" data-compare-range>
+              </div>
+              <figcaption>
+                <span class="season-compare-dates"><b>Inicial</b> 31/10/2026 <span aria-hidden="true">→</span> <b>Final</b> 07/05/2027</span>
+                <span class="season-compare-note">Ilustración orientativa: cada cuerpo responde a su manera.</span>
+              </figcaption>
+            </figure>
+
+            <div class="season-side">
+              <figure class="season-phone" data-shot-langs="es">
+                <div class="device is-pro">
+                  <img src="capturas/es/temporada.jpg" data-shot="temporada" alt="Pantalla Temporada: cómo cambiaría tu cuerpo, con la imagen inicial y la final, y la proyección de peso, % graso y masa libre de grasa" width="800" height="1610" loading="lazy" decoding="async">
+                </div>
+              </figure>
+
+              <div class="season-plan">
+                <p class="season-plan-label">Ejemplo de temporada · 32 semanas</p>
+                <ol class="season-bar" aria-label="Bloques de una temporada de ejemplo">
+                  <li class="is-cut" style="--weeks: 12">
+                    <span class="season-bar-name">Definición</span>
+                    <span class="season-bar-meta">12 sem · −0,5 %/sem</span>
+                  </li>
+                  <li class="is-maintain" style="--weeks: 4">
+                    <span class="season-bar-name">Normo</span>
+                    <span class="season-bar-meta">4 sem</span>
+                  </li>
+                  <li class="is-bulk" style="--weeks: 16">
+                    <span class="season-bar-name">Volumen</span>
+                    <span class="season-bar-meta">16 sem · +0,25 %/sem</span>
+                  </li>
+                </ol>
+                <ul class="season-legend" aria-label="Lo que proyecta la gráfica">
+                  <li><i class="is-weight" aria-hidden="true"></i>Peso</li>
+                  <li><i class="is-fat" aria-hidden="true"></i>% graso</li>
+                  <li><i class="is-lean" aria-hidden="true"></i>Masa libre de grasa</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="cards season-cards">
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">01</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="8" width="6" height="8" rx="1.5"/><rect x="10" y="8" width="3" height="8" rx="1.5"/><rect x="14" y="8" width="7" height="8" rx="1.5"/></svg></span>
+              </div>
+              <h3>Tu temporada, por bloques</h3>
+              <p>Elige cuánto dura cada bloque y a qué ritmo quieres perder o ganar. Un semáforo te avisa si ese ritmo es sensato para tu punto de partida.</p>
+            </article>
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">02</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M3 6l6 8 4-3 8 7"/><path d="M3 20.5h18"/></svg></span>
+              </div>
+              <h3>Tus números, semana a semana</h3>
+              <p>La gráfica proyecta tu peso, tu % graso y tu masa libre de grasa hasta el final, para que sepas a dónde te lleva cada bloque.</p>
+            </article>
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">03</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12l6 6"/></svg></span>
+              </div>
+              <h3>Músculo y grasa, estimados para ti</h3>
+              <p>El reparto entre músculo y grasa se estima con tu experiencia entrenando, tu % graso y el ritmo que elijas. No es una tabla genérica.</p>
+            </article>
+            <article class="card is-pro">
+              <div class="card-head">
+                <span class="num">04</span>
+                <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><circle cx="12" cy="5.5" r="2.5"/><path d="M7 21l1.5-8.5L6 9.5h12l-2.5 3L17 21"/></svg></span>
+              </div>
+              <h3>El objetivo, con imagen</h3>
+              <p>Ves tu punto de partida y tu final lado a lado. El objetivo deja de ser un número en la báscula y se convierte en algo que quieres alcanzar.</p>
+            </article>
+          </div>
+
+          <aside class="note-gold" aria-labelledby="season-note-title">
+            <h4 id="season-note-title">Una guía, no una promesa</h4>
+            <p>
+              La proyección y las imágenes son orientativas: parten de tus datos y de estimaciones medias, y cada cuerpo responde a su manera.
+              Lo que manda es tu báscula: cada semana, la revisión compara tu tendencia real con el plan y te propone un ajuste si te desvías.
+            </p>
+          </aside>
+        </div>
+      </section>
+
       <section class="section desk-section" id="escritorio" aria-labelledby="desk-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">07</span>
-            <span class="label">TrueLift Escritorio · novedad</span>
+            <span class="num">08</span>
+            <span class="label">TrueLift Escritorio</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
           <div class="heading-split">
@@ -840,7 +1001,7 @@
       <section class="section is-band" id="capturas" aria-labelledby="screens-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">08</span>
+            <span class="num">09</span>
             <span class="label">Capturas</span>
             <span class="rule" aria-hidden="true"></span>
             <span class="hint" aria-hidden="true">Desliza para ver más →</span>
@@ -848,55 +1009,99 @@
           <h2 id="screens-title">Así se ve TrueLift.</h2>
           <div class="shots-strip" data-shots>
             <figure>
-              <div class="device"><img src="capturas/es/registro.jpg" data-shot="registro" alt="Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <div class="device"><img src="capturas/es/registro.jpg" data-shot="registro" alt="Pestaña Registro con la sesión que toca y el estado para entrenar de hoy desglosado" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>Registro</figcaption>
             </figure>
             <figure>
               <div class="device"><img src="capturas/es/sesion.jpg" data-shot="sesion" alt="Registro serie a serie con la carga sugerida, el objetivo de repeticiones y RIR y tu última sesión en verde" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>Sesión en curso</figcaption>
             </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/descanso.jpg" data-shot="descanso" alt="Sesión en curso con el descanso en marcha y la carga y las repeticiones estimadas de la siguiente serie" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Descanso en marcha</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/disponibilidad.jpg" data-shot="disponibilidad" alt="Disponibilidad media antes de una serie: con VFC baja y pulso en reposo alto, la app mantiene cargas y explica por qué" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Disponibilidad · PRO</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/hoy.jpg" data-shot="hoy" alt="Cómo estás hoy: estrés, dolor articular, si estás enfermo, VFC nocturna, pulso en reposo y peso del día" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Cómo estás hoy · PRO</figcaption>
+            </figure>
             <figure>
               <div class="device"><img src="capturas/es/informe.jpg" data-shot="informe" alt="Sesión guardada con el rendimiento frente a tu base, tonelaje, series, RPE y duración" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>Sesión guardada</figcaption>
             </figure>
             <figure>
-              <div class="device"><img src="capturas/es/valoracion.jpg" data-shot="valoracion" alt="Pestaña Progreso con el estado para entrenar, la valoración general y el rendimiento de sesión" width="800" height="1715" loading="lazy" decoding="async"></div>
-              <figcaption>Valoración general</figcaption>
+              <div class="device"><img src="capturas/es/valoracion.jpg" data-shot="valoracion" alt="Pestaña Progreso con el rendimiento de cada sesión frente a tu histórico" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Rendimiento de sesión</figcaption>
             </figure>
-            <figure>
-              <div class="device"><img src="capturas/es/estado.jpg" data-shot="estado" alt="Estado para entrenar y rendimiento de una sesión concreta frente a su histórico" width="800" height="1715" loading="lazy" decoding="async"></div>
+            <figure data-shot-langs="en pt-BR" hidden>
+              <div class="device"><img src="capturas/en/estado.jpg" data-shot="estado" alt="Estado para entrenar y rendimiento de una sesión concreta frente a su histórico" width="800" height="1715" loading="lazy" decoding="async"></div>
               <figcaption>Rendimiento por sesión</figcaption>
             </figure>
             <figure>
-              <div class="device"><img src="capturas/es/nivel.jpg" data-shot="nivel" alt="Nivel de fuerza global y por ejercicio, con el progreso hacia el siguiente nivel" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <div class="device"><img src="capturas/es/nivel.jpg" data-shot="nivel" alt="Nivel de fuerza global y por ejercicio, con el progreso hacia el siguiente nivel" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>Nivel de fuerza</figcaption>
             </figure>
             <figure>
-              <div class="device"><img src="capturas/es/1rm.jpg" data-shot="1rm" alt="1RM estimado de un ejercicio con la evolución de la carga y del e1RM por sesión" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <div class="device"><img src="capturas/es/1rm.jpg" data-shot="1rm" alt="1RM estimado de un ejercicio con la evolución de la carga y del e1RM por sesión" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>1RM estimado</figcaption>
             </figure>
-            <figure>
-              <div class="device"><img src="capturas/es/vfc.jpg" data-shot="vfc" alt="VFC y frecuencia cardíaca en reposo por día, con tu banda de referencia y marcas personales" width="800" height="1715" loading="lazy" decoding="async"></div>
+            <figure data-shot-langs="en pt-BR" hidden>
+              <div class="device"><img src="capturas/en/vfc.jpg" data-shot="vfc" alt="VFC y frecuencia cardíaca en reposo por día, con tu banda de referencia y marcas personales" width="800" height="1715" loading="lazy" decoding="async"></div>
               <figcaption>VFC · PRO</figcaption>
             </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/rutina.jpg" data-shot="rutina" alt="Pestaña Rutina con la estructura, el material disponible, la duración de la sesión y las series por grupo muscular" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Tu rutina</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/estructura.jpg" data-shot="estructura" alt="Estructura de la rutina: dónde entrenas, días por semana y sistema de progresión, lineal simple o doble progresión" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Estructura y progresión</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/rutinas-pro.jpg" data-shot="rutinas-pro" alt="Catálogo de rutinas PRO para gimnasio o casa, filtradas por días de entrenamiento" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Rutinas PRO</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/rutina-ia.jpg" data-shot="rutina-ia" alt="Crea tu rutina con IA: duración, material, molestias y estructura para generar el prompt" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Rutina con IA · PRO</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/volumen.jpg" data-shot="volumen" alt="Volumen semanal por grupo muscular sobre la figura del cuerpo, con la zona objetivo de series" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Volumen y frecuencia</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/tecnica.jpg" data-shot="tecnica" alt="Técnica del ejercicio con la posición inicial y final, los músculos implicados y los pasos para hacerlo" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Técnica del ejercicio</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/informe-mensual.jpg" data-shot="informe-mensual" alt="Informe mensual con sesiones, cumplimiento, récords, carga movida y el mes de un vistazo" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Informe mensual</figcaption>
+            </figure>
             <figure>
-              <div class="device"><img src="capturas/es/nutricion.jpg" data-shot="nutricion" alt="Pestaña Nutrición con el peso-tendencia, el estado de la fase de déficit y la temporada por bloques" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <div class="device"><img src="capturas/es/nutricion.jpg" data-shot="nutricion" alt="Pestaña Nutrición con tu peso-tendencia frente al objetivo de la fase" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>Nutrición · PRO</figcaption>
             </figure>
             <figure data-shot-langs="es">
-              <div class="device"><img src="capturas/es/nutricion-ajuste.jpg" data-shot="nutricion-ajuste" alt="Ajuste semanal de nutrición expresado en calorías y en gramos de tus propios alimentos" width="800" height="1715" loading="lazy" decoding="async"></div>
-              <figcaption>Ajuste semanal · PRO</figcaption>
+              <div class="device"><img src="capturas/es/temporada.jpg" data-shot="temporada" alt="Pantalla Temporada: cómo cambiaría tu cuerpo, con la imagen inicial y la final, y la proyección de peso, % graso y masa libre de grasa" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Planificador · PRO</figcaption>
+            </figure>
+            <figure data-shot-langs="es">
+              <div class="device"><img src="capturas/es/semana.jpg" data-shot="semana" alt="Revisión de la semana: tu ritmo previsto frente a tu tendencia y la masa libre de grasa estimada" width="800" height="1610" loading="lazy" decoding="async"></div>
+              <figcaption>Esta semana · PRO</figcaption>
             </figure>
             <figure>
               <div class="device"><img src="capturas/es/energia.jpg" data-shot="energia" alt="Tarjeta Energía diaria con el gasto teórico, las calorías ajustadas a tu fase y de dónde sale el gasto" width="800" height="1715" loading="lazy" decoding="async"></div>
               <figcaption>Energía diaria · PRO</figcaption>
             </figure>
             <figure>
-              <div class="device"><img src="capturas/es/macros.jpg" data-shot="macros" alt="Macros del día: proteína y grasa con su deslizador e hidratos que se ajustan solos, en gramos y en gramos por kilo" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <div class="device"><img src="capturas/es/macros.jpg" data-shot="macros" alt="Macros del día: proteína y grasa con su deslizador e hidratos que se ajustan solos, en gramos y en gramos por kilo" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>Macros del día · PRO</figcaption>
             </figure>
             <figure>
-              <div class="device"><img src="capturas/es/comidas.jpg" data-shot="comidas" alt="Reparto en comidas con las calorías y los gramos de proteína, hidratos y grasa de cada comida y las comidas de antes y después de entrenar" width="800" height="1715" loading="lazy" decoding="async"></div>
+              <div class="device"><img src="capturas/es/comidas.jpg" data-shot="comidas" alt="Reparto en comidas con las calorías y los gramos de proteína, hidratos y grasa de cada comida y las comidas de antes y después de entrenar" width="800" height="1610" loading="lazy" decoding="async"></div>
               <figcaption>Reparto en comidas · PRO</figcaption>
             </figure>
             <figure>
@@ -914,7 +1119,7 @@
       <section class="section" id="faq" aria-labelledby="faq-title">
         <div class="section-inner" data-reveal>
           <div class="section-head">
-            <span class="num">09</span>
+            <span class="num">10</span>
             <span class="label">Preguntas frecuentes</span>
             <span class="rule" aria-hidden="true"></span>
           </div>
@@ -1073,8 +1278,8 @@
       </div>
     </footer>
 
-    <script src="translations-pt-br.js?v=20261015-1"></script>
-    <script src="script.js?v=20261015-1"></script>
+    <script src="translations-pt-br.js?v=20261031-1"></script>
+    <script src="script.js?v=20261031-1"></script>
     <script src="valoraciones.js?v=20261002-1" defer></script>
     <script src="atribucion-tiendas.js?v=20260925-2" defer></script>
   </body>
