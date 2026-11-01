@@ -87,6 +87,7 @@ function resumen(M, ctx){
   }
   const P = Analisis.peso(M);
   out.push(`<div class="cabecera-seccion"><h1>Mi resumen</h1>
+    ${M.nombre ? `<p class="saludo">Hola, ${esc(M.nombre)}</p>` : ''}
     <p class="muted">Tus datos llegan hasta el <b>${F.dia(r.ultimoRegistro)}</b> (${antig}). Último entrenamiento: ${F.dia(r.ultimoEntreno)}. Copia importada el ${F.dia(new Date(ctx.inst.importadoEn))}.
     ${dias > 14 ? '<br>Para ver lo más reciente, exporta una copia nueva en el móvil e impórtala.' : ''}</p>
     ${contextoBloque(M, P)}</div>`);
@@ -763,7 +764,7 @@ function fichaEjercicio(M, nombre, st = {}){
     ${ficha && ficha.nota ? `<p class="ej-nota ficha-nota">${esc(ficha.nota)}</p>` : ''}
     ${etiquetas.length ? `<p class="ficha-etiquetas">${etiquetas.map(t => `<span>${esc(String(t))}</span>`).join('')}</p>` : ''}
     <p>${est.map(({ s, t }) => `${chip(t.clase, t.corto)}${s.dia ? ` <span class="muted">${esc(s.dia)}</span>` : ''}`).join(' · ')}</p>
-    ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
+    ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.repsExtra ? ` Como bajaste el peso por estancamiento, ahora buscas ${esc(s.repsHoy)} reps; al conseguirlo volverá a subir la carga y recuperarás tu rango de siempre.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.trasPasoAtras ? ' La app marcó que se volvió a estancar tras bajar el peso y te propuso cambiarlo por una variante equivalente.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
     ${porQue.length ? `<details class="detalle"><summary>Por qué este estado</summary>${porQue.join('')}
       <p class="muted" style="font-size:12.5px">Son las sesiones más recientes de tu rutina actual que cuentan para la progresión, igual que en la app. Las descargas, las sesiones con molestias o con un cambio de un día y las que tienen series principales sin anotar no aparecen porque no cuentan.</p></details>` : ''}
     <div class="cifras">${cifra(String(ej.sesiones), 'sesiones')}
@@ -966,16 +967,22 @@ function volumen(M){
   if (!cubos.length) return tarjeta('Volumen', vacio('No hay sesiones de fuerza.'));
   const ult = cubos.slice(-12);
   const presentes = Motor.GRUPOS_VOLUMEN.filter(g => ult.some(c => c.series.get(g) > 0));
+  const hayRecortes = ult.some(c => Motor.recorteSemanal(c) > 0);
   const filas = ult.slice().reverse().map(c => [
     `${F.corta(c.inicio)}–${F.corta(new Date(+c.finExclusivo - 86400000))}${c.enCurso ? ' <span class="muted">(en curso)</span>' : c.dias < 7 ? ' <span class="muted">(parcial)</span>' : ''}${c.cambioRutina ? ' ' + chip('azul', 'Cambio de rutina') : ''}`,
     String(c.sesiones),
     ...presentes.map(g => { const v = c.series.get(g); return v ? F.num(v, 1) : '<span class="muted">0</span>'; }),
-    `<b>${F.num(Motor.tasaSemanal(c), 1)}</b>`]);
+    `<b>${F.num(Motor.tasaSemanal(c), 1)}</b>`,
+    ...(hayRecortes ? [Motor.recorteSemanal(c) > 0 ? `<span class="nowrap" style="color:${ROJO}">${F.num(Motor.recorteSemanal(c), 1)}</span>` : '<span class="muted">0</span>'] : [])]);
+  const grafCubos = cubos.filter(c => !c.enCurso).slice(-26);
   const total = Charts.lineas({ series: [{ nombre: 'Series efectivas por semana', color: TL.lima,
-    puntos: cubos.filter(c => !c.enCurso).slice(-26).map(c => ({ x: c.inicio, y: Math.round(Motor.tasaSemanal(c) * 10) / 10 })), unidad: 'series' }], w: 960, h: 220 });
+    puntos: grafCubos.map(c => ({ x: c.inicio, y: Math.round(Motor.tasaSemanal(c) * 10) / 10 })), unidad: 'series' },
+    ...(grafCubos.some(c => Motor.recorteSemanal(c) > 0) ? [{ nombre: 'Series que la app quitó de tu plan', color: ROJO, dash: '5 4',
+      puntos: grafCubos.map(c => ({ x: c.inicio, y: Math.round(Motor.recorteSemanal(c) * 10) / 10 })), unidad: 'series' }] : [])], w: 960, h: 220 });
   return tarjeta('Series por grupo muscular y semana', `
     <div class="chart-caja" role="img" aria-label="Series efectivas por semana, últimas semanas completas">${total}</div>
-    ${tabla(['Semana', 'Sesiones', ...presentes.map(esc), 'Total'], filas, { caption: 'Series por grupo y semana' })}
+    ${tabla(['Semana', 'Sesiones', ...presentes.map(esc), 'Total', ...(hayRecortes ? ['Quitadas por la app'] : [])], filas, { caption: 'Series por grupo y semana' })}
+    ${hayRecortes ? '<p class="muted" style="font-size:12.5px">«Quitadas por la app» son las series que la app retiró de tu plan para adaptarse a cómo llegabas (días en rojo, descargas o tu fase de nutrición). No cuentan como hechas.</p>' : ''}
     ${sinGrupo.length ? `<p class="muted" style="font-size:12.5px">No se reconoce el grupo de ${F.plural(sinGrupo.length, 'ejercicio', 'ejercicios')} (${sinGrupo.slice(0, 5).map(esc).join(', ')}${sinGrupo.length > 5 ? '…' : ''}): sus series no se reparten, como en la app.</p>` : ''}
     ${ayuda('Cuenta las series que anotaste, con el mismo reparto que la app: cada serie suma entera a su grupo principal y media a los grupos que también trabaja. Los ejercicios marcados como no realizados no suman. Las semanas van de lunes a domingo; la primera y la última pueden estar incompletas y se señalan.')}`);
 }
@@ -1164,6 +1171,8 @@ function mediaPasos7(salud){
 // ---------------------------------------------------------------
 // MI RUTINA
 // ---------------------------------------------------------------
+/* Enfoque de la rutina (AppState.sexo): nombres de la app desde el 28/10/2026. */
+const ENFOQUE = { hombre: 'enfoque equilibrado', mujer: 'enfoque glúteo y cadena posterior', torso: 'enfoque torso y brazos', pierna: 'enfoque pierna completa' };
 function rutina(M, { sinCabecera = false } = {}){
   const out = [sinCabecera ? '' : '<div class="cabecera-seccion"><h1>Mi rutina</h1></div>'];
   const lineas = M.planMod;
@@ -1172,7 +1181,7 @@ function rutina(M, { sinCabecera = false } = {}){
     return out.join('');
   }
   const aviso = M.planConocido
-    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: los cambios se hacen en la app.</p>`
+    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${ENFOQUE[M.raw.sexo] ? `${esc(ENFOQUE[M.raw.sexo])}, ` : ''}${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: los cambios se hacen en la app.</p>`
     : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días, sistema o lugar de entrenamiento que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
   const dias = [...new Set(lineas.map(l => l.dia))];
   const bloques = dias.map(d => {

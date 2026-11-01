@@ -236,7 +236,9 @@ const ImportarJSON = {
     const lista = v => Array.isArray(v) ? v : [];
     const logs = lista(raw.logs).filter(l => l && typeof l === 'object' && this.dia(l.fecha));
     const fuerza = logs.filter(l => l.tipo !== 'cardio');
-    const cardio = logs.filter(l => l.tipo === 'cardio');
+    // El cardio apuntado a mano que repite una sesión del reloj no cuenta
+    // (la app lo marca con duplicadaDe).
+    const cardio = logs.filter(l => l.tipo === 'cardio' && typeof l.duplicadaDe !== 'string');
     const readiness = lista(raw.readinessDiario).filter(d => d && this.dia(d.fecha));
     const salud = lista(raw.saludDiaria).filter(d => d && this.dia(d.fecha));
     const n = (raw.nutricion && typeof raw.nutricion === 'object') ? raw.nutricion : null;

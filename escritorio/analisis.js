@@ -23,6 +23,15 @@ const Analisis = {
     return d ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59) : null;
   },
 
+  /* Nombre opcional del usuario (limpiarNombreUsuario, 28/10/2026): sin
+     espacios sobrantes, como mucho 30 caracteres y null si queda vacío. */
+  nombreUsuario(bruto){
+    if (typeof bruto !== 'string') return null;
+    const limpio = bruto.trim().replace(/\s+/g, ' ');
+    if (!limpio) return null;
+    const letras = [...limpio];
+    return letras.length <= 30 ? limpio : letras.slice(0, 30).join('').trimEnd();
+  },
   preparar(raw, resumen){
     const ref = this.referencia(resumen) || new Date();
     const datos = normalizar(raw, { hoy: ref });
@@ -36,6 +45,7 @@ const Analisis = {
     const planConocido = planMod.length > 0 && raw.planModKey === combo;
     const M = {
       raw, ref, datos, pc, fijos, combo, planMod, planConocido,
+      nombre: this.nombreUsuario(raw.nombreUsuario),
       descarga: raw.modoDescarga === true,
       sistema: raw.sistema === 'simple' ? 'simple' : 'doble',
       rutinaActual: Motor.rutinaKeyActual(raw),
@@ -160,9 +170,14 @@ const Analisis = {
       const op = Motor.oportunidades(M.raw, ej.nombre, dia, objetivo, { max: base.max + 5 });
       const consumidos = Motor.sesionesEstancadas(op.map(o => o.kg), op.map(o => o.completo));
       const recurrente = op.length && op[0].entrada.estancamientoRecurrente;
+      const trasPasoAtras = op.length && op[0].entrada.estancamientoTrasPasoAtras;
+      // Rango subido tras el paso atrás: sigue mientras la última sesión que
+      // cuenta lo llevaba y no logró el objetivo (AppState._repsExtraPendiente).
+      const repsExtra = op.length && op[0].extra > 0 && !op[0].completo ? op[0].extra : 0;
       // `op` son las oportunidades que cuentan, de la más reciente a la más
       // antigua; las `consumidos` primeras forman la racha del contador.
       const r = { ...base, consumidos, oportunidades: op.length, ultima: op[0] || null, recurrente: !!recurrente,
+                  trasPasoAtras: !!trasPasoAtras, repsExtra, repsHoy: Motor.repsConExtra(linea.reps, repsExtra),
                   descarga: M.descarga, op };
       if (!op.length) return { ...r, tipo: 'sinOportunidades' };
       if (op[0].completo) return { ...r, tipo: 'objetivoCumplido' };
@@ -222,7 +237,7 @@ const Analisis = {
   volumen(M, { gran = 'semana', desde = null } = {}){
     const sinGrupo = new Set();
     const info = n => { const i = this.info(M, n); if (!i) sinGrupo.add(n); return i; };
-    const cubos = Motor.volumenReal({ logs: M.raw.logs, info, hoy: M.ref, gran, desde });
+    const cubos = Motor.volumenReal({ logs: M.raw.logs, info, hoy: M.ref, gran, desde, nominalHoy: Motor.nominalDePlan(M.raw.planMod) });
     return { cubos, sinGrupo: [...sinGrupo] };
   },
 

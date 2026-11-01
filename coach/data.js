@@ -110,6 +110,8 @@ function normalizar(raw, { hoy = new Date() } = {}){
     const fecha = parseFecha(l.fecha);
     if (!fecha) return;
     if (l.tipo === 'cardio'){
+      // Repetición manual de una sesión del reloj: no cuenta (Motor.esCardioDuplicado).
+      if (typeof l.duplicadaDe === 'string') return;
       cardio.push({
         fecha, nombre: l.nombre ?? 'Cardio',
         duracion: l.duracion ?? null, intensidad: l.intensidad ?? null,

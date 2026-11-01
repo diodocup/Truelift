@@ -157,6 +157,14 @@ const Motor = {
       restPause: raw.restPause === true,
       superserie: this._int(raw.superserie),
       estancamientoRecurrente: raw.estancamientoRecurrente === true,
+      // En déficit, se volvió a estancar con el peso ya bajado y la app
+      // propuso cambiarlo por una variante (27/10/2026).
+      estancamientoTrasPasoAtras: raw.estancamientoTrasPasoAtras === true,
+      // EntryLog.repsExtra: reps sumadas al objetivo de la línea tras bajar
+      // el peso por estancamiento (27/10/2026). Clave aditiva.
+      repsExtra: typeof raw.repsExtra === 'number' && raw.repsExtra > 0 ? Math.trunc(raw.repsExtra) : 0,
+      prescripcionReps: raw.prescripcion && typeof raw.prescripcion === 'object' && typeof raw.prescripcion.reps === 'string'
+        ? raw.prescripcion.reps : null,
     };
   },
   noEvaluable(e){ return e.molestias || e.sustitucion; },
@@ -186,6 +194,10 @@ const Motor = {
   // ---------------------------------------------------------------
 
   esCardio(l){ return !!l && l.tipo === 'cardio'; },
+  /* AppState.esCardioDuplicado: cardio apuntado a mano que repite una sesión
+     del reloj (`duplicadaDe` = su saludId). La app lo conserva en el
+     historial, pero no suma: la del reloj ya la cuenta. */
+  esCardioDuplicado(l){ return this.esCardio(l) && typeof l.duplicadaDe === 'string'; },
   /* estadoSemaforoDeLog: el global congelado y, si falta, la compuerta;
      cualquier otro valor cuenta como verde. */
   estadoSemaforo(l){
@@ -316,6 +328,18 @@ const Motor = {
     if (!reps.length) return [];
     return [reps.some(r => r == null) ? null : reps.reduce((a, r) => a + r, 0)];
   },
+  /* AppState._repsExtraDeEntrada: extra con el que se juzga una entrada (el
+     que llevaba ese día), salvo que el rango de la línea haya cambiado desde
+     entonces: editar el rango a mano cierra el episodio. */
+  repsExtraDeEntrada(e, repsLinea){
+    if (!e || !(e.repsExtra > 0)) return 0;
+    if (e.prescripcionReps != null && repsLinea != null && e.prescripcionReps.trim() !== String(repsLinea).trim()) return 0;
+    return e.repsExtra;
+  },
+  /* AppState.repsConExtra: «8-12» con +2 → «10-14». */
+  repsConExtra(reps, extra){
+    return extra > 0 ? String(reps).replace(/\d+/g, m => String(Number(m) + extra)) : String(reps);
+  },
   repsObjetivoCumplido(reps, objetivo, total = false){
     const p = this.seriesProgresion(reps, total);
     return p.length > 0 && p.every(r => r != null && r >= objetivo);
@@ -342,9 +366,12 @@ const Motor = {
       if (!this.oportunidadCompleta(e)) continue;
       const marca = e.progresionPausadaRegistrada || e.moduladaRegistrada;
       if (!marca && this.estadoSemaforo(l) !== 'verde') continue;
-      const completo = this.repsObjetivoCumplido(this.repsTop(e), objetivo, total);
+      // Cada sesión se juzga con el objetivo que tenía ese día: tras un paso
+      // atrás por estancamiento el rango iba subido (repsExtra).
+      const extra = this.repsExtraDeEntrada(e, linea ? linea.reps : null);
+      const completo = this.repsObjetivoCumplido(this.repsTop(e), objetivo + extra, total);
       if (e.neutra && !completo) continue;
-      out.push({ kg: e.kg, completo, fecha: l.fecha, indice: i, entrada: e });
+      out.push({ kg: e.kg, completo, fecha: l.fecha, indice: i, entrada: e, extra });
     }
     return out;
   },
@@ -481,9 +508,8 @@ const Motor = {
      ×0,5 y «Isquios/glúteo» partido por patrón. `info(nombre)` →
      {grupo, patron, secundarios} o null (ejercicio irreconocible: no se
      inventa). Devuelve Map(grupo → series) o null. */
-  seriesPorGrupo(e, info){
+  seriesPorGrupo(e, info, n = this.seriesHechas(e)){
     if (e.noDisponible || this.SIN_VOLUMEN_MUSCULAR.includes(e.ejercicio)) return null;
-    const n = this.seriesHechas(e);
     if (n <= 0) return null;
     const ej = info(e.ejercicio);
     if (!ej) return null;
@@ -503,7 +529,28 @@ const Motor = {
      fuerza (o `desde`) hasta `hoy`, con las series por grupo SIN
      normalizar. `tasa(cubo, g)` da la media semanal: los cubos de menos de
      siete días se enseñan tal cual (no se proyectan). */
-  volumenReal({ logs, info, hoy, gran = 'semana', desde = null }){
+  /* volumen_historico._seriesRecortadas: series que la autorregulación quitó
+     a una entrada (día rojo, descarga, tope del déficit). Las entradas nuevas
+     traen `seriesPlan` (las del plan sin ajustes del día); en las antiguas solo
+     se reconoce el recorte de una descarga o de un ejercicio en rojo, contra
+     las series de la rutina de hoy (`nominalHoy(l, e)`). */
+  seriesRecortadas(l, e, nominalHoy = null){
+    const previstas = e.reps.length ? e.reps.length : e.rir.length;
+    const guardadas = this._num(e.raw.seriesPlan);
+    const nominal = guardadas != null ? Math.trunc(guardadas)
+      : (l.descarga === true || this.estadoDeEntrada(l, e) === 'rojo') && nominalHoy ? nominalHoy(l, e) : null;
+    return nominal == null || nominal <= previstas ? 0 : nominal - previstas;
+  },
+  /* Series de la rutina de hoy para una entrada antigua: la línea de su mismo
+     día si sigue siendo ese ejercicio y, si no, la primera que lo lleve. */
+  nominalDePlan(planMod){
+    const lineas = Array.isArray(planMod) ? planMod.filter(p => p && typeof p.ejercicio === 'string') : [];
+    return (l, e) => {
+      const p = lineas.find(x => x.ejercicio === e.ejercicio && x.dia === l.dia) || lineas.find(x => x.ejercicio === e.ejercicio);
+      return p ? this._int(p.series) : null;
+    };
+  },
+  volumenReal({ logs, info, hoy, gran = 'semana', desde = null, nominalHoy = null }){
     const dia = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const sumar = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
     const ses = (logs || []).filter(l => l && !this.esCardio(l) && this._fecha(l.fecha))
@@ -520,7 +567,9 @@ const Motor = {
       const f = sig(d), a = d < ini ? ini : d, b = f > finEx ? finEx : f;
       idx.set(+d, cubos.length);
       cubos.push({ inicio: d, finExclusivo: f, dias: Math.round((b - a) / 86400000), enCurso: f > finEx,
-                   series: new Map(this.GRUPOS_VOLUMEN.map(g => [g, 0])), cambioRutina: false, sesiones: 0 });
+                   series: new Map(this.GRUPOS_VOLUMEN.map(g => [g, 0])),
+                   // Series que la autorregulación quitó del plan, mismo reparto.
+                   recortes: new Map(this.GRUPOS_VOLUMEN.map(g => [g, 0])), cambioRutina: false, sesiones: 0 });
     }
     let ant = null;
     ses.forEach(({ l, f }) => {
@@ -536,15 +585,20 @@ const Motor = {
       this.entradasDe(l).forEach(e => {
         const v = this.seriesPorGrupo(e, info);
         if (v) v.forEach((n, g) => c.series.set(g, c.series.get(g) + n));
+        const quitadas = this.seriesRecortadas(l, e, nominalHoy);
+        const r = quitadas > 0 ? this.seriesPorGrupo(e, info, quitadas) : null;
+        if (r) r.forEach((n, g) => c.recortes.set(g, c.recortes.get(g) + n));
       });
     });
     return cubos;
   },
-  tasaSemanal(cubo, grupo = null){
+  tasaSemanal(cubo, grupo = null, mapa = cubo.series){
     if (cubo.dias <= 0) return 0;
-    const n = grupo ? (cubo.series.get(grupo) || 0) : [...cubo.series.values()].reduce((a, b) => a + b, 0);
+    const n = grupo ? (mapa.get(grupo) || 0) : [...mapa.values()].reduce((a, b) => a + b, 0);
     return n * 7 / (cubo.dias < 7 ? 7 : cubo.dias);
   },
+  /* PuntoVolumenReal.recorteSemanal / recorteTotal. */
+  recorteSemanal(cubo, grupo = null){ return cubo.recortes ? this.tasaSemanal(cubo, grupo, cubo.recortes) : 0; },
 
   // ---------------------------------------------------------------
   // Nivel de fuerza (lib/nivel_fuerza.dart y
