@@ -19,8 +19,8 @@
 const Almacen = {
 
   NOMBRE: 'truelift-escritorio',
-  VERSION: 1,
-  ALMACENES: ['meta', 'espacios', 'instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones', 'borradores'],
+  VERSION: 2,
+  ALMACENES: ['meta', 'espacios', 'instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones'],
 
   db: null,
   modo: null,              // 'persistente' | 'temporal'
@@ -64,8 +64,9 @@ const Almacen = {
     return { modo: this.modo, motivo };
   },
 
-  /* Cada versión añade lo suyo; nunca se elimina un almacén con datos. */
-  _migrar(db, desde){
+  /* Cada versión añade lo suyo. La 2 retira los borradores de rutina: el
+     escritorio es solo de consulta y ya no tiene editor. */
+  _migrar(db, desde, tx){
     if (desde < 1){
       db.createObjectStore('meta', { keyPath: 'clave' });
       db.createObjectStore('espacios', { keyPath: 'id' });
@@ -76,10 +77,17 @@ const Almacen = {
       db.createObjectStore('miniaturas', { keyPath: ['espacioId', 'archivo'] });
       const imp = db.createObjectStore('importaciones', { keyPath: 'id', autoIncrement: true });
       imp.createIndex('espacioId', 'espacioId');
-      const bor = db.createObjectStore('borradores', { keyPath: 'id' });
-      bor.createIndex('espacioId', 'espacioId');
     }
-    // if (desde < 2) { … futuras migraciones … }
+    if (desde >= 1 && desde < 2){
+      if (db.objectStoreNames.contains('borradores')) db.deleteObjectStore('borradores');
+      const meta = tx.objectStore('meta');
+      meta.openCursor().onsuccess = ev => {
+        const c = ev.target.result;
+        if (!c) return;
+        if (String(c.key).startsWith('borradorActivo:')) c.delete();
+        c.continue();
+      };
+    }
   },
 
   // ---------- lectura ----------
@@ -232,12 +240,11 @@ const Almacen = {
 
   opsBorrarEspacio(espacioId){
     return [
-      ...['instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones', 'borradores']
+      ...['instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones']
         .map(a => ({ almacen: a, delEspacio: espacioId })),
       { almacen: 'espacios', del: espacioId },
       { almacen: 'meta', del: `encuadres:${espacioId}` },
       { almacen: 'meta', del: `periodos:${espacioId}` },
-      { almacen: 'meta', del: `borradorActivo:${espacioId}` },
       { almacen: 'meta', del: `informe:${espacioId}` },
     ];
   },

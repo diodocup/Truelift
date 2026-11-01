@@ -124,23 +124,6 @@ details.detalle summary{cursor:pointer;color:var(--txt2)}
 .encuadre{min-width:0;border:1px solid var(--borde);border-radius:8px;padding:12px}
 .encuadre legend{font-size:12px;color:var(--txt2)}
 
-/* Vídeo de progreso: ajustes arriba, vista previa (a tamaño de salida,
-   escalada) junto a la lista numerada de fotos. */
-.video-ajustes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
-.video-ajustes label{display:block;font-size:12px;color:var(--txt2)}
-.video-ajustes select{display:block;width:100%;margin-top:5px;min-width:0}
-.video-check{display:flex!important;align-items:center;gap:8px;font-size:13px!important}
-.video-check input,.video-lista input{accent-color:var(--lima);width:16px;height:16px}
-.video-tiempos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 16px;margin-top:12px;font-size:13px}
-.video-tiempos input{display:block;width:100%;accent-color:var(--lima);margin:6px 0 4px}
-.video-tiempos .mono-peq{grid-column:1/-1;margin:4px 0 0;color:var(--lima)}
-#videoLimite{margin-top:12px;display:block}
-.video-cuerpo{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:16px;margin-top:14px;align-items:start}
-.video-previa canvas{display:block;width:100%;height:auto;border-radius:10px;background:#000}
-.video-lista ul{max-height:420px;overflow:auto;margin:6px 0 0;padding:0;list-style:none}
-.video-lista label{display:flex;align-items:center;gap:8px;font:500 13px var(--mono);color:var(--txt)}
-.video-num{display:inline-block;min-width:22px;color:var(--lima);font-weight:600}
-@media (max-width:640px){.video-cuerpo{grid-template-columns:1fr}}
 .encuadre output{float:right;font-family:var(--mono)}
 .foto-contexto{font-size:12.5px;line-height:1.6;overflow-wrap:anywhere}
 .foto-filtro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--txt3)}
@@ -248,53 +231,8 @@ img[data-mini]:not([src]){visibility:hidden}
 .aviso-comparacion{border-left:3px solid var(--ambar);padding-left:10px;color:var(--txt2)}
 @media (max-width:640px){.periodos-sel{grid-template-columns:1fr}}
 
-/* ---------- Mi rutina: planificador personal (fase 6) ---------- */
-.rut-estado{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
-.rut-estado > div{padding:2px 0 2px 12px;border-left:3px solid var(--borde)}
-.rut-estado > div:nth-child(2){border-left-color:var(--lima)}
-.card.rut-estado h2{margin:0 0 6px}
-.rut-estado p{margin:4px 0}
-.rut-barra .fila-botones{margin-top:0}
-.rut-barra .fila-botones + .fila-botones{margin-top:10px;padding-top:10px;border-top:1px solid var(--borde)}
-.rut-dias{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:12px;align-items:start;margin-bottom:12px}
-.rut-dias > .card{margin:0}
-.rut-dia-cab{display:flex;gap:8px;align-items:flex-end}
-.rut-dia-cab .rut-campo.nombre{flex:1}
-.rut-dia-resumen{margin:6px 0 8px;font-size:12px}
-.rut-filas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.rut-fila{padding:8px 10px;background:var(--sup2);border:1px solid var(--borde);border-radius:var(--radio-sm)}
-.rut-fila.en-ss{border-left:3px solid var(--azul)}
-.rut-fila-cab{display:flex;gap:8px;align-items:flex-end}
-.rut-num{font:800 12px var(--mono);color:var(--txt3);min-width:16px;padding-bottom:9px}
-.rut-mover{display:flex;gap:4px;padding-bottom:4px}
-.rut-mover .btn-mini{min-width:30px;min-height:30px}
-.rut-fila-campos{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:6px;align-items:flex-end}
-.rut-campo{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--txt3);min-width:0}
-.rut-campo > span{font:600 10.5px var(--mono);letter-spacing:.03em}
-.rut-campo input,.rut-campo select{width:100%;min-width:0}
-.rut-campo.ej{flex:1}
-.rut-campo.pat{width:150px}
-.rut-campo.n2{width:74px}
-.rut-campo.n3{width:124px}
-.rut-campo.n4{width:184px}
-.rut-campo.nombre{min-width:180px}
-.rut-fijo b{display:block;padding:7px 0;font:600 12px var(--mono);color:var(--txt2)}
-.rut-ss{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--txt2);padding-bottom:7px}
-.rut-ss input{margin:0}
-.rut-meta{margin:6px 0 0}
-.rut-cambios{margin:0;padding-left:18px}
-.rut-cambios > li{margin:6px 0}
-.rut-cambios ul{margin:4px 0;padding-left:14px;list-style:none}
-.rut-cambios ul li{margin:3px 0;font-size:13px}
-.rut-cambios .chip{font-size:9px}
-.rut-analisis{grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))}
 b.sube{color:var(--lima)}
 b.baja{color:var(--naranja)}
-@media (max-width:560px){
-  .rut-fila-cab{flex-wrap:wrap}
-  .rut-campo.pat,.rut-campo.n4{width:calc(50% - 4px)}
-  .rut-barra .spacer{display:none}
-}
 
 /* ---------- Informes (fase 7) ---------- */
 .inf-tipo,.inf-fotos{min-width:0;border:1px solid var(--borde);border-radius:var(--radio-sm);padding:12px;margin:10px 0}
@@ -725,7 +663,6 @@ b.sube{color:var(--lima)} b.baja{color:var(--naranja)}
 img.ej-dibujo[data-ejercicio]{cursor:pointer}
 .ej-dibujo-cab{width:168px;height:168px;border-radius:14px;font-size:44px}
 .ej-dibujo-rut{width:52px;height:52px;border-radius:9px;font-size:15px}
-.rut-fila-campos > .ej-dibujo-btn,.rut-fila-campos > .ej-dibujo{align-self:flex-end}
 #modalCaja .ej-ficha .ej-dibujo-xl{width:min(360px,100%);height:auto;aspect-ratio:1}
 @media (max-width:640px){
   .ficha-cab-fila{flex-direction:column-reverse;gap:12px}
@@ -757,17 +694,6 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
 .dif-barra i.neg{right:50%}
 
 /* ---------- Mi rutina: de tu móvil a tu móvil (fase 9) ---------- */
-.card.rut-estado{counter-reset:paso;background:none;border:0;padding:0;gap:12px}
-.rut-estado > div{counter-increment:paso;position:relative;padding:18px 20px 18px 62px;border:1px solid var(--borde);border-left:1px solid var(--borde);border-radius:var(--radio);background:var(--sup1)}
-.rut-estado > div::before{content:counter(paso);position:absolute;left:18px;top:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--sup2);border:1px solid var(--borde-campo);font:600 13px var(--mono);color:var(--txt2)}
-.rut-estado > div:nth-child(2){border-color:rgba(163,224,32,.45)}
-.rut-estado > div:nth-child(2)::before{background:var(--lima);border-color:var(--lima);color:#0A0C0B}
-.rut-estado > div:nth-child(3){border-style:dashed;border-color:rgba(255,255,255,.16)}
-.card.rut-estado h2{margin:0 0 4px;font:600 11.5px var(--sans);letter-spacing:.14em;color:var(--txt3)}
-.rut-estado > div:nth-child(2) h2{color:var(--lima)}
-.rut-dias{grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
-.rut-dia-cab .rut-campo.nombre input{font:700 18px var(--display);letter-spacing:.4px}
-.rut-fila{border-radius:12px}
 
 /* ---------- Informes: vista previa en papel (fase 9) ----------
    En pantalla el documento ya se ve como sale impreso: hoja clara y los
@@ -833,7 +759,6 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
   html[data-tema="claro"] svg text{fill:#4F5853}
   /* Rellenos lima con texto oscuro encima. */
   html[data-tema="claro"] .btn.pri,html[data-tema="claro"] .saltar,
-  html[data-tema="claro"] .rut-estado > div:nth-child(2)::before{background:var(--lima-relleno);border-color:var(--lima-relleno);color:#0A0C0B}
   html[data-tema="claro"] .btn.pri:hover{background:var(--lima-relleno-hover);border-color:var(--lima-relleno-hover);color:#0A0C0B}
   /* Velos y realces que en oscuro aclaran: en claro oscurecen. */
   html[data-tema="claro"] .btn{border-color:rgba(14,24,18,.16)}
@@ -851,7 +776,6 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
   html[data-tema="claro"] .lt-fase{fill:rgba(14,24,18,.05)}
   html[data-tema="claro"] .lt-descarga-chip{fill:rgba(14,24,18,.10)}
   html[data-tema="claro"] .lt-dia.descanso,html[data-tema="claro"] .lt-ley-dia.descanso{fill:rgba(14,24,18,.07);background:rgba(14,24,18,.10)}
-  html[data-tema="claro"] .rut-estado > div:nth-child(3){border-color:rgba(14,24,18,.20)}
   html[data-tema="claro"] .ej-lista,html[data-tema="claro"] #tabs,html[data-tema="claro"] #modalCaja,
   html[data-tema="claro"] .card.ficha-lista{scrollbar-color:rgba(14,24,18,.20) transparent}
   /* Los dibujos son trazo blanco sobre negro: en claro se invierten a trazo
@@ -872,15 +796,3 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
 .marco.con-ajuste img{object-fit:cover;transform-origin:center}
 .foto-grande-marco{width:min(100%,calc(70vh * 3 / 4));aspect-ratio:3/4;margin:0 auto;border-radius:10px}
 .foto-grande-marco img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center}
-/* Vídeo de progreso: ajustes, música y pixelado (espejo de la app). */
-.video-opciones{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 16px;margin-top:12px}
-.video-opciones .video-check,.video-musica .video-check{align-items:flex-start!important}
-.video-check span small,.video-musica small{display:block;font-size:11.5px;margin-top:2px}
-.video-musica{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--borde);font-size:13px}
-.video-aviso{font-size:12.5px;margin:8px 0 0}
-.video-lista li{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.video-lista li label{flex:1;min-width:0}
-.btn-mini.activo{color:var(--lima);border-color:var(--lima)}
-.pixelar-marco{display:flex;justify-content:center;margin:10px 0}
-.pixelar-marco canvas{width:min(100%,420px,calc((100vh - 300px) * .75));height:auto;aspect-ratio:3/4;border-radius:10px;background:#000;cursor:crosshair;touch-action:none}
-.pixelar-marco canvas:focus-visible{outline:2px solid var(--lima);outline-offset:3px}

@@ -22,18 +22,11 @@ const E = {
   estimacion: null, persistido: null, origenModal: null, sinConexion: null,
   M: null, errorModelo: null, fisica: null, espacioFisica: null,
   fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true },
-  // Vídeo de progreso (video.js): ajustes en memoria; el vídeo grabado vive
-  // como URL de un Blob hasta que se graba otro o se cambia de espacio.
-  vid: null,
   st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null, capasOcultas: new Set() },
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
   inf: { conFotos: false, fotos: new Set(), error: null, borrador: null }, espacioInforme: null,
-  // Planificador (fase 6): borradores del espacio, el activo y, solo en
-  // memoria, las pilas de deshacer/rehacer de cada borrador.
-  rut: { borradores: [], activoId: null, pilas: new Map(), error: null, foco: null },
 };
-const PL = Planificador;
 
 const SECCIONES = {
   resumen: 'Mi resumen', entrenamiento: 'Entrenamiento', fisica: 'Evolución física',
@@ -81,12 +74,7 @@ function cerrarModal(){
   if (E.urlModal){ URL.revokeObjectURL(E.urlModal); E.urlModal = null; }
   $('#modal').classList.add('oculto');
   $('#modalCaja').innerHTML = '';
-  // Editor de zonas pixeladas del vídeo: lo hecho ya está guardado; la
-  // tarjeta se repinta para enseñarlo.
-  const pix = E.vid?.pix;
-  if (pix){ E.vid.pix = null; pix.img?.close?.(); render(); }
   if (E.origenModal && document.contains(E.origenModal)) E.origenModal.focus();
-  else if (pix) $$('[data-video-pixelar]').find(b => b.dataset.videoPixelar === pix.archivo)?.focus();
   E.origenModal = null;
 }
 function modalMensaje(titulo, cuerpoHtml){
@@ -126,19 +114,12 @@ async function cargarEstado(){
   const espacioId = E.espacio?.id || null;
   if (espacioId !== E.espacioFisica){
     Object.assign(E.fis, { pose: null, a: null, b: null, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true });
-    reiniciarVideo();
     E.espacioFisica = espacioId;
   }
   if (!E.fis.dirty) E.fis.encuadres = espacioId ? (await Almacen.leer('meta', `encuadres:${espacioId}`))?.valor || {} : {};
   E.st.periodos = E.espacio ? (await Almacen.leer('meta', `periodos:${E.espacio.id}`))?.valor || null : null;
   E.st.informe = E.espacio ? (await Almacen.leer('meta', `informe:${E.espacio.id}`))?.valor || null : null;
   if (espacioId !== E.espacioInforme){ E.inf = { conFotos: false, fotos: new Set(), error: null, borrador: null }; E.espacioInforme = espacioId; }
-  // Borradores de rutina: cuelgan del espacio, no de la copia; actualizar la
-  // copia no los toca.
-  E.rut.borradores = E.espacio
-    ? (await Almacen.todos('borradores', E.espacio.id)).map(b => PL.leerBorrador(b)).filter(Boolean).sort((a, b) => a.creado < b.creado ? -1 : 1)
-    : [];
-  E.rut.activoId = E.espacio ? (await Almacen.leer('meta', `borradorActivo:${E.espacio.id}`))?.valor || null : null;
   E.estimacion = await Almacen.estimacion();
   E.persistido = await Almacen.persistido();
 }
@@ -642,7 +623,7 @@ function renderBienvenida(){
       <div class="bv-intro">
         <span class="chip verde">Complemento de la app TrueLift</span>
         <h1>Tu entrenamiento, en grande</h1>
-        <p class="bv-lead">En el móvil entrenas y registras. Aquí te sientas con calma a entender tu bloque, comparar periodos y fotos, y preparar tu próxima rutina para llevarla a la app.</p>
+        <p class="bv-lead">En el móvil entrenas y registras. Aquí lo consultas con calma en pantalla grande: tu bloque, tus periodos, tus fotos y tu nutrición, tal y como los guarda la app.</p>
         <p class="bv-privacidad"><svg class="icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
           <span><b>Tus archivos no salen de este ordenador.</b> Se leen y se guardan solo en este navegador; TrueLift no los recibe. Conserva tus copias originales: son tu respaldo.</span></p>
       </div>
@@ -666,9 +647,9 @@ function renderBienvenida(){
     <h2 class="bv-h2">Móvil y escritorio, cada uno a lo suyo</h2>
     <div class="bv-dos">
       <article class="card"><h3>En el móvil</h3><p class="muted">Para el día a día en el gimnasio</p>
-        <ul><li>Registra cada serie mientras entrenas</li><li>Te propone la carga de la próxima sesión</li><li>Cuestionario diario y datos de tu reloj</li><li>Ajustes de tu dieta según tu fase</li></ul></article>
-      <article class="card bv-escritorio"><h3>En el escritorio</h3><p class="muted">Para entender, comparar y planificar</p>
-        <ul><li>${ok}Rendimiento, peso y entrenos en una sola línea de tiempo</li><li>${ok}Ficha de cada ejercicio, sesión a sesión</li><li>${ok}Periodos y fotos lado a lado</li><li>${ok}Tu próxima rutina con todos los días a la vista, lista para la app</li><li>${ok}Informes para imprimir o guardar en PDF</li></ul></article>
+        <ul><li>Registra cada serie mientras entrenas</li><li>Te propone la carga de la próxima sesión</li><li>Cuestionario diario y datos de tu reloj</li><li>Ajustes de tu dieta según tu fase</li><li>Cambias tu rutina, tu plan y tus ajustes</li></ul></article>
+      <article class="card bv-escritorio"><h3>En el escritorio</h3><p class="muted">Para consultar y entender, sin cambiar nada</p>
+        <ul><li>${ok}Rendimiento, peso y entrenos en una sola línea de tiempo</li><li>${ok}Ficha de cada ejercicio, sesión a sesión</li><li>${ok}Periodos y fotos lado a lado</li><li>${ok}Tu rutina y tu plan de nutrición con todo a la vista</li><li>${ok}Informes para imprimir o guardar en PDF</li></ul></article>
     </div>
   </section>`;
 }
@@ -806,224 +787,9 @@ function tarjetaHistorial(){
 }
 
 function fisicaFotosHtml(){
-  return FisicaVista.comparador(E.galeria, E.fisica, E.raw, E.fis) +
-    (E.galeria.some(f => f.tieneImagen) ? VideoTL.html(E.galeria, E.vid) : '') + tarjetaFotos('galeria');
+  return FisicaVista.comparador(E.galeria, E.fisica, E.raw, E.fis) + tarjetaFotos('galeria');
 }
 
-// ---------- vídeo de progreso ----------
-function reiniciarVideo(){
-  if (E.vid?.rep) E.vid.rep.parar();
-  if (E.vid?.url) URL.revokeObjectURL(E.vid.url);
-  E.vid = { pose: null, quitadas: new Set(), h: VideoTL.FOTO.normal, t: VideoTL.TRANSICION.normal, formato: 'vertical',
-            rotulos: true, igualar: true, grises: false, musica: true,
-            // Zonas pixeladas por archivo (solo para el vídeo, como en la app)
-            // y luz medida aquí de las fotos que la copia no trae medidas.
-            censura: new Map(), luz: new Map(), pix: null,
-            grabando: false, segundo: 0, url: null, nombre: null, error: null, aviso: null, rep: null };
-}
-reiniciarVideo();
-function planVideo(){
-  const elegidas = E.galeria.filter(f => f.pose === E.vid.pose && f.tieneImagen && !E.vid.quitadas.has(f.archivo))
-    .map(f => f.analisis || !E.vid.luz.has(f.archivo) ? f : { ...f, analisis: E.vid.luz.get(f.archivo) });
-  return VideoTL.plan({ fotos: elegidas, segundosFoto: E.vid.h, segundosTransicion: E.vid.t, rotulos: E.vid.rotulos, formato: E.vid.formato,
-                        musica: E.vid.musica, igualarLuz: E.vid.igualar, grises: E.vid.grises });
-}
-const leerImagenVideo = async archivo => (await Almacen.leer('imagenes', [E.espacio?.id, archivo]))?.blob || null;
-function cargadorVideo(plan){ return VideoTL.cargador(plan, leerImagenVideo); }
-const zonasVideo = plan => i => E.vid.censura.get(plan.fotos[i]?.archivo) || [];
-/* Igualar luz necesita la luz de todas: se miden (una vez) las que la copia
-   no trae. Devuelve el plan con ellas. */
-async function medirLuzVideo(){
-  let plan = planVideo();
-  if (!plan.igualarLuz) return plan;
-  const faltan = plan.fotos.filter(f => !f.analisis && !E.vid.luz.has(f.archivo));
-  for (const f of faltan){
-    const blob = await leerImagenVideo(f.archivo);
-    E.vid.luz.set(f.archivo, blob ? await VideoTL.medirLuz(blob) : null);
-  }
-  return faltan.length ? planVideo() : plan;
-}
-/* La banda sonora decodificada (una vez por visita). Null si el navegador
-   no sabe leerla. */
-let musicaVideoPromesa = null;
-function musicaVideo(){
-  const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-  if (!Ctx) return Promise.resolve(null);
-  musicaVideoPromesa ??= VideoTL.cargarMusica(
-    async url => { const r = await fetch(url); return r.ok ? r.arrayBuffer() : null; },
-    datos => new Ctx(2, 1, 44100).decodeAudioData(datos),
-  ).then(b => { if (!b) musicaVideoPromesa = null; return b; });
-  return musicaVideoPromesa;
-}
-const tituloVideo = () => `MI PROGRESO · ${(POSE_TXT[E.vid.pose] || '').toUpperCase()}`;
-async function cargarLetrasVideo(){
-  try { await Promise.all(['900 30px Archivo', '800 30px "Saira Condensed"', '600 30px "IBM Plex Mono"', '500 30px "IBM Plex Mono"'].map(f => document.fonts?.load(f))); }
-  catch (_) { /* sin la letra, la de respaldo */ }
-}
-/* Tras pintar la sección: el primer fotograma en la vista previa. */
-async function activarVideo(){
-  const lienzo = $('#videoLienzo');
-  if (!lienzo || E.vid.grabando) return;
-  await cargarLetrasVideo();
-  const plan = await medirLuzVideo();
-  const c = cargadorVideo(plan), m = VideoTL.momento(plan, 0);
-  await c.preparar(m);
-  if (document.contains(lienzo) && !E.vid.rep) VideoTL.pintar(lienzo.getContext('2d'), plan, m, i => c.imagen(i), { titulo: tituloVideo(), zonas: zonasVideo(plan) });
-  c.cerrar();
-}
-function estadoVideo(texto){ const e = $('#videoEstado'); if (e) e.textContent = texto; }
-async function videoPrevia(){
-  const lienzo = $('#videoLienzo');
-  if (!lienzo) return;
-  if (E.vid.rep){ E.vid.rep.parar(); return; }
-  const plan = await medirLuzVideo(), musica = plan.conMusica ? await musicaVideo() : null, c = cargadorVideo(plan);
-  E.vid.rep = VideoTL.reproducir(lienzo, plan, c, { titulo: tituloVideo(), zonas: zonasVideo(plan), musica,
-    alPaso: s => estadoVideo(`${VideoTL.reloj(s)} / ${VideoTL.reloj(plan.duracion)}`) });
-  try { await E.vid.rep.fin; } catch (_) { /* nada que grabar */ }
-  c.cerrar(); E.vid.rep = null;
-}
-async function videoGrabar(){
-  const lienzo = $('#videoLienzo');
-  if (!lienzo || !planVideo().cabe) return;
-  if (E.vid.rep) E.vid.rep.parar();
-  if (E.vid.url){ URL.revokeObjectURL(E.vid.url); E.vid.url = null; }
-  await cargarLetrasVideo();
-  const plan = await medirLuzVideo();
-  const musica = plan.conMusica ? await musicaVideo() : null;
-  const tipo = typeof MediaRecorder === 'undefined' || !lienzo.captureStream ? null
-    : VideoTL.tipoGrabacion(t => MediaRecorder.isTypeSupported(t), !!musica);
-  if (!tipo){ E.vid.error = 'Este navegador no permite grabar vídeo.'; render(); return; }
-  Object.assign(E.vid, { grabando: true, segundo: 0, error: null,
-    aviso: plan.conMusica && !musica ? 'La música no se ha podido cargar en este navegador; el vídeo sale sin ella.' : null });
-  render(); $('[data-accion="video-cancelar"]')?.focus();
-  const canvas = $('#videoLienzo'), c = cargadorVideo(plan);
-  E.vid.rep = VideoTL.reproducir(canvas, plan, c, { grabar: tipo, titulo: tituloVideo(), zonas: zonasVideo(plan), musica,
-    alPaso: s => { E.vid.segundo = s; estadoVideo(`Grabando… ${VideoTL.reloj(s)} de ${VideoTL.reloj(plan.duracion)}`); } });
-  let blob = null;
-  try { blob = await E.vid.rep.fin; }
-  catch (e) { E.vid.error = 'No se pudo grabar el vídeo. Vuelve a intentarlo.'; console.error(e); }
-  c.cerrar();
-  E.vid.rep = null; E.vid.grabando = false;
-  if (blob){
-    E.vid.url = URL.createObjectURL(blob);
-    E.vid.nombre = VideoTL.nombreArchivo(new Date().toISOString().slice(0, 10), tipo);
-  }
-  render();
-  if (blob){ $('#videoDescargar')?.focus(); anunciar('Vídeo listo para descargar'); }
-  else if (!E.vid.error) anunciar('Grabación cancelada');
-}
-
-/* «Pixelar zonas» de una foto del vídeo: clic para poner un círculo,
-   arrastrar para moverlo, rueda o + / − para su tamaño. La foto se ve con su
-   encuadre y el mismo pintor del vídeo; las zonas se guardan al momento. */
-async function abrirPixelar(archivo){
-  const f = E.galeria.find(x => x.archivo === archivo && x.tieneImagen);
-  if (!f) return;
-  if (E.vid.rep) E.vid.rep.parar();
-  const otras = E.galeria.filter(x => x.pose === f.pose && x.tieneImagen && x.archivo !== archivo);
-  abrirModal(VideoTL.htmlPixelar(f, otras.length > 0), { ancho: true });
-  const pix = E.vid.pix = { archivo, foto: f, otras, elegida: -1, img: null, arrastre: null };
-  pintarPixelar();
-  const blob = await leerImagenVideo(archivo);
-  try { pix.img = blob ? await createImageBitmap(blob, { resizeWidth: VideoTL.anchoDecodificacion(600, f.ajuste?.escala), resizeQuality: 'high' }) : null; }
-  catch (_) { pix.img = null; }
-  if (E.vid.pix !== pix){ pix.img?.close?.(); return; }
-  pintarPixelar();
-  const lienzo = $('#pixelarLienzo');
-  if (!lienzo) return;
-  const W = lienzo.width, H = lienzo.height;
-  const enFoto = ev => {
-    const r = lienzo.getBoundingClientRect();
-    return VideoTL.deshacer(f.ajuste, (ev.clientX - r.left) * W / r.width, (ev.clientY - r.top) * H / r.height, W, H);
-  };
-  lienzo.addEventListener('pointerdown', ev => {
-    const p = enFoto(ev), zonas = zonasPixelar();
-    let i = VideoTL.zonaEn(zonas, p.x, p.y, W, H);
-    if (i < 0){
-      // Mismo tamaño en pantalla con cualquier zoom del encuadre.
-      zonas.push(VideoTL.acotarZona({ cx: p.x / W, cy: p.y / H, radio: VideoTL.ZONA.radio / (f.ajuste?.escala || 1) }));
-      i = zonas.length - 1;
-      guardarPixelar(zonas);
-    }
-    pix.elegida = i;
-    pix.arrastre = { zona: zonas[i], p };
-    lienzo.setPointerCapture?.(ev.pointerId);
-    pintarPixelar();
-  });
-  lienzo.addEventListener('pointermove', ev => {
-    const a = pix.arrastre;
-    if (!a) return;
-    const p = enFoto(ev), zonas = zonasPixelar();
-    zonas[pix.elegida] = VideoTL.acotarZona({ ...a.zona, cx: a.zona.cx + (p.x - a.p.x) / W, cy: a.zona.cy + (p.y - a.p.y) / H });
-    guardarPixelar(zonas); pintarPixelar();
-  });
-  const soltar = () => { pix.arrastre = null; };
-  lienzo.addEventListener('pointerup', soltar);
-  lienzo.addEventListener('pointercancel', soltar);
-  lienzo.addEventListener('wheel', ev => {
-    const p = enFoto(ev), zonas = zonasPixelar(), bajo = VideoTL.zonaEn(zonas, p.x, p.y, W, H);
-    const i = bajo >= 0 ? bajo : pix.elegida;
-    if (i < 0 || !zonas[i]) return;
-    ev.preventDefault();
-    pix.elegida = i;
-    redimensionarPixelar(Math.exp(-ev.deltaY * 0.0015));
-  }, { passive: false });
-  lienzo.addEventListener('keydown', ev => {
-    const zonas = zonasPixelar(), i = pix.elegida, paso = 0.01;
-    const mover = (dx, dy) => { zonas[i] = VideoTL.acotarZona({ ...zonas[i], cx: zonas[i].cx + dx, cy: zonas[i].cy + dy }); guardarPixelar(zonas); pintarPixelar(); };
-    if ((ev.key === 'Enter' || ev.key === ' ') && !ev.repeat){
-      zonas.push(VideoTL.acotarZona({ cx: 0.5, cy: 0.3, radio: VideoTL.ZONA.radio / (f.ajuste?.escala || 1) }));
-      pix.elegida = zonas.length - 1; guardarPixelar(zonas); pintarPixelar(); ev.preventDefault(); return;
-    }
-    if (i < 0 || !zonas[i]) return;
-    const accionTecla = { ArrowLeft: () => mover(-paso, 0), ArrowRight: () => mover(paso, 0), ArrowUp: () => mover(0, -paso), ArrowDown: () => mover(0, paso),
-      '+': () => redimensionarPixelar(1.1), '=': () => redimensionarPixelar(1.1), '-': () => redimensionarPixelar(1 / 1.1),
-      Delete: () => quitarZonaPixelar(), Backspace: () => quitarZonaPixelar() }[ev.key];
-    if (accionTecla){ ev.preventDefault(); accionTecla(); }
-  });
-}
-const zonasPixelar = () => [...(E.vid.censura.get(E.vid.pix?.archivo) || [])];
-function guardarPixelar(zonas){
-  if (!E.vid.pix) return;
-  if (zonas.length) E.vid.censura.set(E.vid.pix.archivo, zonas); else E.vid.censura.delete(E.vid.pix.archivo);
-}
-function redimensionarPixelar(factor){
-  const pix = E.vid.pix, zonas = zonasPixelar(), z = zonas[pix?.elegida];
-  if (!z) return;
-  zonas[pix.elegida] = VideoTL.acotarZona({ ...z, radio: z.radio * factor });
-  guardarPixelar(zonas); pintarPixelar();
-}
-function quitarZonaPixelar(){
-  const pix = E.vid.pix, zonas = zonasPixelar();
-  if (!pix || pix.elegida < 0 || !zonas[pix.elegida]) return;
-  zonas.splice(pix.elegida, 1);
-  pix.elegida = -1;
-  guardarPixelar(zonas); pintarPixelar();
-  anunciar('Círculo quitado');
-}
-function pintarPixelar(){
-  const pix = E.vid.pix, lienzo = $('#pixelarLienzo');
-  if (!pix || !lienzo) return;
-  const ctx = lienzo.getContext('2d'), W = lienzo.width, H = lienzo.height, zonas = zonasPixelar(), ajuste = pix.foto.ajuste;
-  ctx.clearRect(0, 0, W, H);
-  VideoTL.pintarFoto(ctx, pix.img, ajuste, W, H, 1, zonas);
-  // Contorno de cada círculo para poder agarrarlo; el elegido, más marcado.
-  ctx.save();
-  ctx.transform(...VideoTL.matriz(ajuste, W, H));
-  const escala = ajuste?.escala || 1;
-  zonas.forEach((z, i) => {
-    ctx.beginPath(); ctx.arc(z.cx * W, z.cy * H, z.radio * W, 0, Math.PI * 2);
-    ctx.lineWidth = (i === pix.elegida ? 4 : 2) / escala;
-    ctx.strokeStyle = i === pix.elegida ? VideoTL.LIMA : 'rgba(255,255,255,0.7)';
-    ctx.stroke();
-  });
-  ctx.restore();
-  const quitar = $('#pixelarQuitar');
-  if (quitar) quitar.disabled = pix.elegida < 0 || !zonas[pix.elegida];
-  const cuenta = $('#pixelarCuenta');
-  if (cuenta) cuenta.textContent = !pix.img ? 'Cargando la foto…' : zonas.length === 0 ? 'Sin zonas pixeladas.'
-    : zonas.length === 1 ? 'Una zona pixelada.' : `${zonas.length} zonas pixeladas.`;
-}
 function actualizarOutput(i){
   const out = document.querySelector(`output[for="${i.id}"]`);
   if (out) out.textContent = i.value;
@@ -1245,10 +1011,8 @@ function render(){
   cont.innerHTML = renderSeccion();
   activarMiniaturas();
   activarOriginales();
-  activarVideo();
   activarFotosInforme();
   marcarDesplazables();
-  rutRestaurarFoco();
 }
 
 /* Antigüedad de los datos en la barra lateral: hasta qué día llegan y cuánto
@@ -1333,7 +1097,7 @@ function renderSeccion(){
     case 'entrenamiento': return VistasEsc.entrenamiento(M, E.st);
     case 'fisica': return VistasEsc.fisica(M, ctx);
     case 'recuperacion': return VistasEsc.recuperacion(M);
-    case 'rutina': return RutinaVista.html(rutCtx());
+    case 'rutina': return VistasEsc.rutina(M);
     case 'informes': return InformeVista.seccion(M, { sel: E.st.informe, error: E.inf.error, fisica: E.fisica, galeria: E.galeria, inst: E.inst, st: E.inf });
   }
   return '';
@@ -1364,238 +1128,6 @@ function initTooltip(){
     tip.style.left = `${Math.max(4, x)}px`; tip.style.top = `${Math.max(4, y)}px`;
   });
   document.addEventListener('mouseleave', ocultar);
-}
-
-// ---------- Mi rutina: borradores (fase 6) ----------
-function borradorActivo(){
-  return E.rut.borradores.find(b => b.id === E.rut.activoId) || E.rut.borradores[E.rut.borradores.length - 1] || null;
-}
-function pilaDe(id){
-  if (!E.rut.pilas.has(id)) E.rut.pilas.set(id, { deshacer: [], rehacer: [] });
-  return E.rut.pilas.get(id);
-}
-function rutCtx(){
-  const b = borradorActivo();
-  const p = b ? pilaDe(b.id) : { deshacer: [], rehacer: [] };
-  return { M: E.M, raw: E.raw, rawExport: PL.rawConBiblioteca(E.raw, b), inst: E.inst, movil: PL.rutinaMovil(E.raw), borrador: b, borradores: E.rut.borradores,
-           pila: { deshacer: p.deshacer.length, rehacer: p.rehacer.length }, error: E.rut.error };
-}
-const ahoraISO = () => new Date().toISOString();
-
-/* Guarda (o borra) borradores en UNA transacción. Si falla, el estado en
-   pantalla vuelve a lo último guardado y se dice. */
-async function rutGuardar({ put = [], del = [], activo, foco = null, msg = null, hecho = null }){
-  const ops = [...put.map(b => ({ almacen: 'borradores', put: b })), ...del.map(id => ({ almacen: 'borradores', del: id }))];
-  if (activo !== undefined) ops.push({ almacen: 'meta', put: { clave: `borradorActivo:${E.espacio.id}`, valor: activo } });
-  try { await Almacen.escribir(ops); }
-  catch (e) {
-    E.rut.error = Almacen.esErrorCuota(e)
-      ? 'No hay espacio en el navegador para guardar el borrador. El último cambio no se ha guardado; lo anterior sigue intacto. Libera espacio (por ejemplo, borrando un espacio que no uses) y vuelve a intentarlo.'
-      : `El último cambio no se ha guardado (${e && e.message ? e.message : e}); lo anterior sigue intacto.`;
-    render(); $('.alerta[role="alert"]')?.scrollIntoView({ block: 'nearest' });
-    anunciar('No se ha guardado el cambio');
-    return false;
-  }
-  E.rut.error = null;
-  const lista = E.rut.borradores.filter(b => !del.includes(b.id) && !put.some(p => p.id === b.id));
-  E.rut.borradores = [...lista, ...put].sort((a, b) => a.creado < b.creado ? -1 : 1);
-  if (activo !== undefined) E.rut.activoId = activo;
-  if (hecho) hecho();
-  if (E.canal) E.canal.postMessage({ tipo: 'cambio' });
-  E.rut.foco = foco;
-  render();
-  if (msg) anunciar(msg);
-  return true;
-}
-
-async function rutEditar(op, foco){
-  const b = borradorActivo();
-  if (!b) return;
-  const r = PL.editar(b.rutina, op);
-  if (!r) return;
-  const p = pilaDe(b.id);
-  await rutGuardar({ put: [{ ...b, rutina: r, actualizado: ahoraISO() }], foco,
-    hecho: () => { p.deshacer.push(b.rutina); if (p.deshacer.length > PL.MAX_DESHACER) p.deshacer.shift(); p.rehacer = []; } });
-}
-
-async function rutCrear(b, msg){
-  await rutGuardar({ put: [b], activo: b.id, foco: 'rutExportar', msg });
-}
-
-function nombreNuevo(base){
-  const usados = new Set(E.rut.borradores.map(b => b.nombre));
-  let n = base, i = 2;
-  while (usados.has(n)) n = `${base} (${i++})`;
-  return n;
-}
-
-async function rutAccion(nombre, el){
-  const b = borradorActivo();
-  const d = el ? Number(el.dataset.d) : NaN, f = el ? Number(el.dataset.f) : NaN;
-  switch (nombre){
-    case 'nuevo-movil': {
-      const m = PL.rutinaMovil(E.raw);
-      if (!m) return;
-      if (!$('#modal').classList.contains('oculto')) cerrarModal();
-      await rutCrear(PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo(`Desde el móvil (${VistasEsc.F.dia(E.inst?.resumen?.ultimoRegistro)})`),
-        rutina: m.rutina, origen: { tipo: 'movil', firma: PL.firma(m.normal), normal: m.normal, rutina: m.rutina,
-          instantaneaId: E.inst?.id || null, desde: E.inst?.resumen?.ultimoRegistro || null } }), 'Borrador creado desde la rutina del móvil');
-      return;
-    }
-    case 'nuevo-blanco':
-      await rutCrear(PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo('Rutina nueva'), rutina: PL.rutinaVacia(), origen: { tipo: 'blanco' } }), 'Borrador en blanco creado');
-      return;
-    case 'abrir-excel': $('#rutExcel')?.click(); return;
-    case 'duplicar':
-      if (b) await rutCrear(PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo(`${b.nombre} (copia)`), rutina: b.rutina,
-        origen: { ...PL.clonar(b.origen) } }), 'Borrador duplicado');
-      return;
-    case 'renombrar':
-      if (!b) return;
-      abrirModal(`<h2 id="modalTitulo">Renombrar borrador</h2>
-        <label for="rutNombre">Nombre</label><input id="rutNombre" type="text" maxlength="80" value="${esc(b.nombre)}" style="width:100%" autofocus>
-        <div class="mod-acciones"><button class="btn sec" type="button" data-accion="cerrar">Cancelar</button>
-          <button class="btn pri" type="button" data-rut-accion="renombrar-ok">Guardar</button></div>`);
-      return;
-    case 'renombrar-ok': {
-      const v = ($('#rutNombre')?.value || '').trim();
-      cerrarModal();
-      if (b && v) await rutGuardar({ put: [{ ...b, nombre: v.slice(0, 80), actualizado: ahoraISO() }], foco: 'rutExportar', msg: 'Borrador renombrado' });
-      return;
-    }
-    case 'eliminar':
-      if (!b) return;
-      abrirModal(`<h2 id="modalTitulo">Eliminar «${esc(b.nombre)}»</h2>
-        <p>Se borra este borrador de este navegador. No afecta a tu móvil ni a los Excel que ya hayas exportado.</p>
-        <div class="mod-acciones"><button class="btn sec" type="button" data-accion="cerrar" autofocus>Cancelar</button>
-          <button class="btn peligro" type="button" data-rut-accion="eliminar-ok">Eliminar borrador</button></div>`);
-      return;
-    case 'eliminar-ok': {
-      cerrarModal();
-      if (!b) return;
-      const resto = E.rut.borradores.filter(x => x.id !== b.id);
-      if (await rutGuardar({ del: [b.id], activo: resto.length ? resto[resto.length - 1].id : null, msg: 'Borrador eliminado' })) E.rut.pilas.delete(b.id);
-      return;
-    }
-    case 'deshacer': case 'rehacer': {
-      if (!b) return;
-      const p = pilaDe(b.id);
-      const [de, a] = nombre === 'deshacer' ? [p.deshacer, p.rehacer] : [p.rehacer, p.deshacer];
-      if (!de.length) return;
-      const r = de[de.length - 1];
-      await rutGuardar({ put: [{ ...b, rutina: r, actualizado: ahoraISO() }], foco: nombre === 'deshacer' ? 'rutDeshacer' : 'rutRehacer',
-                         msg: nombre === 'deshacer' ? 'Cambio deshecho' : 'Cambio rehecho', hecho: () => { de.pop(); a.push(b.rutina); } });
-      return;
-    }
-    case 'partida': {
-      if (!b) return;
-      const p = pilaDe(b.id);
-      await rutGuardar({ put: [{ ...b, rutina: PL.clonar(b.origen.rutina), actualizado: ahoraISO() }], foco: 'rutDeshacer', msg: 'Recuperada la rutina de partida. Puedes deshacerlo.',
-                         hecho: () => { p.deshacer.push(b.rutina); p.rehacer = []; } });
-      return;
-    }
-    case 'rebasar': {
-      const m = PL.rutinaMovil(E.raw);
-      if (!b) return;
-      const origen = m ? { tipo: 'movil', firma: PL.firma(m.normal), normal: m.normal, rutina: m.rutina, instantaneaId: E.inst?.id || null, desde: E.inst?.resumen?.ultimoRegistro || null }
-                       : { ...b.origen, tipo: 'copia' };
-      await rutGuardar({ put: [{ ...b, origen, actualizado: ahoraISO() }], foco: 'rutExportar', msg: 'Borrador conservado; ahora se compara con la rutina actual del móvil' });
-      return;
-    }
-    case 'exportar': {
-      if (!b) return;
-      const av = PL.avisos(b.rutina, E.raw);
-      if (av.bloquea){
-        modalMensaje('Aún no se puede exportar', `<p>La app no podría leer este borrador:</p>${listaHtml(av.avisos.filter(a => a.nivel === 'rojo').map(a => esc(a.txt)))}`);
-        return;
-      }
-      abrirModal(RutinaVista.confirmarExportacion(rutCtx()), { ancho: true });
-      return;
-    }
-    case 'exportar-confirmar': await rutExportar(); return;
-    case 'fila-nueva': await rutEditar({ tipo: 'addFila', d }, `rut-${d}-${b ? b.rutina.dias[d].filas.length : 0}-ejercicio`); return;
-    case 'fila-arriba': await rutEditar({ tipo: 'moverFila', d, f, delta: -1 }, f - 1 > 0 ? `rut-${d}-${f - 1}-arriba` : `rut-${d}-${f - 1}-abajo`); return;
-    case 'fila-abajo': {
-      const ult = b ? b.rutina.dias[d].filas.length - 1 : 0;
-      await rutEditar({ tipo: 'moverFila', d, f, delta: 1 }, f + 1 < ult ? `rut-${d}-${f + 1}-abajo` : `rut-${d}-${f + 1}-arriba`);
-      return;
-    }
-    case 'fila-quitar': {
-      const n = b ? b.rutina.dias[d].filas.length : 0;
-      await rutEditar({ tipo: 'delFila', d, f }, n > 1 ? `rut-${d}-${Math.min(f, n - 2)}-ejercicio` : `rut-${d}-nueva`);
-      anunciar('Ejercicio quitado. Puedes deshacerlo.');
-      return;
-    }
-    case 'dia-nuevo': await rutEditar({ tipo: 'addDia' }, `rut-${b ? b.rutina.dias.length : 0}-nombre`); return;
-    case 'dia-antes': await rutEditar({ tipo: 'moverDia', d, delta: -1 }, `rut-${d - 1}-nombre`); return;
-    case 'dia-despues': await rutEditar({ tipo: 'moverDia', d, delta: 1 }, `rut-${d + 1}-nombre`); return;
-    case 'dia-quitar': await rutEditar({ tipo: 'delDia', d }, `rut-${Math.max(0, d - 1)}-nombre`); anunciar('Día quitado. Puedes deshacerlo.'); return;
-  }
-}
-
-async function rutCambio(el){
-  const b = borradorActivo();
-  const tipo = el.dataset.rut;
-  if (el.id === 'rutExcel'){
-    const file = el.files && el.files[0];
-    el.value = '';
-    if (file) await rutAbrirExcel(file);
-    return;
-  }
-  if (tipo === 'borrador'){
-    await rutGuardar({ activo: el.value, foco: 'rutSelBorrador', msg: 'Borrador cambiado' });
-    return;
-  }
-  if (!b) return;
-  if (tipo === 'sistema') await rutEditar({ tipo: 'sistema', valor: el.value }, 'rutSistema');
-  else if (tipo === 'nombreDia') await rutEditar({ tipo: 'nombreDia', d: Number(el.dataset.d), valor: el.value }, el.id);
-  else if (tipo === 'campo'){
-    const valor = el.type === 'checkbox' ? el.checked : el.value;
-    await rutEditar({ tipo: 'campo', d: Number(el.dataset.d), f: Number(el.dataset.f), k: el.dataset.k, valor }, el.id);
-  }
-}
-
-const MAX_EXCEL = 5 * 1024 * 1024;
-async function rutAbrirExcel(file){
-  if (file.size > MAX_EXCEL){ modalMensaje('Archivo demasiado grande', '<p>Un Excel de rutina de TrueLift ocupa unos pocos KB. Elige el archivo que exporta la app o este escritorio.</p>'); return; }
-  let rutina;
-  try { rutina = await XLSX.leerRutina(await file.arrayBuffer()); }
-  catch (e) { modalMensaje('No se pudo leer el Excel', `<p>${esc(e.message || String(e))}</p><p>Usa un Excel de rutina exportado por la app o por este escritorio.</p>`); return; }
-  const nombre = file.name.replace(/\.xlsx$/i, '').slice(0, 80) || 'Rutina de Excel';
-  const b = PL.nuevoBorrador({ espacioId: E.espacio.id, nombre: nombreNuevo(nombre), rutina, origen: { tipo: 'excel', archivo: file.name } });
-  // Ejercicios propios que trae el archivo (bloque de biblioteca de la app):
-  // se guardan con el borrador para volver a exportarlos con sus datos.
-  if (Array.isArray(rutina.biblioteca) && rutina.biblioteca.length) b.bibliotecaExcel = rutina.biblioteca;
-  await rutCrear(b, `Borrador creado desde ${file.name}`);
-}
-
-async function rutExportar(){
-  const b = borradorActivo();
-  if (!b) return;
-  const raw = PL.rawConBiblioteca(E.raw, b);
-  const sim = PL.comoLaApp(b.rutina, raw);
-  let bytes;
-  try { bytes = await XLSX.escribirRutina(sim.exportable); }
-  catch (e) { cerrarModal(); modalMensaje('No se pudo generar el Excel', `<p>${esc(e.message || String(e))}</p>`); return; }
-  const archivo = PL.nombreArchivo(b);
-  const exp = { fecha: ahoraISO(), archivo, firma: PL.firma(sim.normal), bytes: bytes.length, dias: sim.dias.length, sistema: sim.sistema };
-  cerrarModal();
-  const guardado = await rutGuardar({ put: [{ ...b, exportaciones: [...b.exportaciones, exp].slice(-20) }], foco: 'rutExportar' });
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-  const a = document.createElement('a');
-  a.href = url; a.download = archivo;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  anunciar(guardado ? `Excel descargado: ${archivo}. Tu móvil no cambia hasta que lo importes allí.` : `Excel descargado: ${archivo}, pero no se pudo anotar la exportación.`);
-}
-
-/* Tras pintar Mi rutina, el foco vuelve al control equivalente. */
-function rutRestaurarFoco(){
-  const id = E.rut.foco;
-  E.rut.foco = null;
-  if (!id || E.seccion !== 'rutina') return;
-  const el = document.getElementById(id);
-  if (el && !el.disabled) el.focus({ preventScroll: false });
 }
 
 // ---------- Informes (fase 7) ----------
@@ -1702,36 +1234,6 @@ async function accion(nombre, el){
       } catch (e) { modalMensaje('No se guardaron los encuadres', `<p>${esc(e.message || String(e))}. Las fotos originales siguen intactas.</p>`); }
       break;
     }
-    case 'video-previa': await videoPrevia(); break;
-    case 'video-grabar': await videoGrabar(); break;
-    case 'video-cancelar': E.vid.rep?.parar(); break;
-    case 'video-una-por-mes': {
-      const plan = planVideo(), quedan = new Set(VideoTL.unaPorMes(plan.fotos).map(f => f.archivo));
-      plan.fotos.forEach(f => { if (!quedan.has(f.archivo)) E.vid.quitadas.add(f.archivo); });
-      render(); $('#videoFoto')?.focus(); anunciar('Una foto por mes'); break;
-    }
-    case 'video-musica-ajustar': {
-      const plan = planVideo(), r = VideoTL.tiemposParaMusica(plan.n, plan.segundosFoto, plan.segundosTransicion);
-      if (r){ E.vid.h = r.foto; E.vid.t = r.transicion; E.vid.musica = true; }
-      render(); $('#videoMusica')?.focus(); anunciar('Tiempos ajustados para la música'); break;
-    }
-    case 'pixelar-quitar': quitarZonaPixelar(); $('#pixelarLienzo')?.focus(); break;
-    case 'pixelar-todas': {
-      const pix = E.vid.pix;
-      if (!pix) break;
-      const zonas = zonasPixelar();
-      for (const f of pix.otras){
-        if (zonas.length) E.vid.censura.set(f.archivo, zonas.map(z => VideoTL.trasladarZona(z, pix.foto.ajuste, f.ajuste)));
-        else E.vid.censura.delete(f.archivo);
-      }
-      cerrarModal(); anunciar('Zonas pixeladas en todas las fotos de la pose'); break;
-    }
-    case 'pixelar-listo': cerrarModal(); break;
-    case 'video-mas-rapido': {
-      const plan = planVideo(), r = VideoTL.tiemposQueCaben(plan.n, plan.segundosFoto, plan.segundosTransicion);
-      if (r){ E.vid.h = r.foto; E.vid.t = r.transicion; }
-      render(); $('#videoFoto')?.focus(); anunciar('Tiempos ajustados para que quepan'); break;
-    }
     case 'imprimir-informe': await imprimirInforme(); break;
     case 'informe-comparar': await compararConAnterior(); break;
     case 'importar-datos': $('#inputDatos').click(); break;
@@ -1774,12 +1276,8 @@ function init(){
   }));
 
   document.addEventListener('click', ev => {
-    const ra = ev.target.closest('[data-rut-accion]');
-    if (ra && !ra.disabled){ rutAccion(ra.dataset.rutAccion, ra); return; }
     const a = ev.target.closest('[data-accion]');
     if (a && !a.disabled){ accion(a.dataset.accion, a); return; }
-    const pixelar = ev.target.closest('[data-video-pixelar]');
-    if (pixelar && !pixelar.disabled){ abrirPixelar(pixelar.dataset.videoPixelar); return; }
     const ir = ev.target.closest('[data-ir]');
     if (ir){
       if (!$('#modal').classList.contains('oculto')) cerrarModal();
@@ -1856,14 +1354,6 @@ function init(){
       c?.style.setProperty(i.id === 'fotoCorte' ? '--corte' : '--opacidad', i.id === 'fotoCorte' ? `${i.value}%` : Number(i.value) / 100);
       actualizarOutput(i); return;
     }
-    if (i.id === 'videoFoto' || i.id === 'videoTransicion'){
-      E.vid[i.id === 'videoFoto' ? 'h' : 't'] = Number(i.value);
-      const out = document.querySelector(`output[for="${i.id}"]`);
-      if (out) out.textContent = `${Number(i.value).toFixed(1).replace('.', ',')} s`;
-      const plan = planVideo(), d = $('#videoDuracion');
-      if (d && plan.n) d.textContent = `Dura ${VideoTL.duracionTexto(plan.duracion)}`;
-      return;
-    }
     if (ev.target.id !== 'buscaEj') return;
     E.st.busca = ev.target.value;
     const pos = ev.target.selectionStart;
@@ -1888,7 +1378,6 @@ function init(){
     if (guardado) $('#compararPeriodos button[type="submit"]')?.focus();
   });
   $('#contenido').addEventListener('change', async ev => {
-    if (ev.target.dataset.rut || ev.target.id === 'rutExcel'){ await rutCambio(ev.target); return; }
     // Informe: el tipo de periodo activa sus campos sin repintar.
     if (ev.target.name === 'tipo' && ev.target.form?.id === 'formInforme'){
       const mes = ev.target.value === 'mes';
@@ -1905,22 +1394,6 @@ function init(){
       E.inf.fotos = new Set($$('[data-inf-elegir]').filter(i => i.checked).map(i => i.dataset.infElegir).slice(0, Informe.MAX_FOTOS));
       render(); document.getElementById(id)?.focus();
       anunciar(ev.target.checked ? 'Foto añadida al informe' : 'Foto quitada del informe'); return;
-    }
-    const idVid = ev.target.id;
-    if (['videoPose', 'videoFormato', 'videoRotulos', 'videoIgualar', 'videoGrises', 'videoMusica', 'videoFoto', 'videoTransicion'].includes(idVid) || ev.target.dataset.videoFoto != null){
-      if (E.vid.rep) E.vid.rep.parar();
-      const t = ev.target;
-      if (idVid === 'videoPose') E.vid.pose = t.value;
-      else if (idVid === 'videoFormato') E.vid.formato = t.value;
-      else if (idVid === 'videoRotulos') E.vid.rotulos = t.checked;
-      else if (idVid === 'videoIgualar') E.vid.igualar = t.checked;
-      else if (idVid === 'videoGrises') E.vid.grises = t.checked;
-      else if (idVid === 'videoMusica') E.vid.musica = t.checked;
-      else if (t.dataset.videoFoto != null){ if (t.checked) E.vid.quitadas.delete(t.dataset.videoFoto); else E.vid.quitadas.add(t.dataset.videoFoto); }
-      const foco = t.id || null, archivo = t.dataset.videoFoto;
-      render();
-      (foco ? document.getElementById(foco) : $$('[data-video-foto]').find(x => x.dataset.videoFoto === archivo))?.focus();
-      return;
     }
     const idFis = ev.target.id;
     if (idFis === 'compEncuadreApp'){
@@ -1963,16 +1436,6 @@ function init(){
     }
   });
   document.addEventListener('keydown', trampaFoco);
-  // Deshacer / rehacer del borrador (fuera de los campos de texto, donde
-  // Ctrl + Z deshace lo que se está escribiendo).
-  document.addEventListener('keydown', ev => {
-    if (E.seccion !== 'rutina' || !(ev.ctrlKey || ev.metaKey) || ev.altKey || !$('#modal').classList.contains('oculto')) return;
-    const t = ev.target;
-    if (t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && !['checkbox', 'radio', 'button'].includes(t.type)))) return;
-    const k = ev.key.toLowerCase();
-    if (k === 'z' && !ev.shiftKey){ ev.preventDefault(); rutAccion('deshacer'); }
-    else if (k === 'y' || (k === 'z' && ev.shiftKey)){ ev.preventDefault(); rutAccion('rehacer'); }
-  });
   // Atajos: Alt + 1…7 para las secciones (sin modal abierto).
   const orden = Object.keys(SECCIONES);
   document.addEventListener('keydown', ev => {

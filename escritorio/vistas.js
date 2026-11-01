@@ -287,7 +287,7 @@ function tarjetaVolumenGrupos(M){
   const max = filas[0][1];
   return tarjeta('Volumen por grupo', `<p class="muted tarjeta-sub">${sub}</p>
     <ul class="vol-lista">${filas.map(([g, v]) => `<li><span>${esc(g)}</span><span class="vol-barra" aria-hidden="true"><i style="width:${(v / max * 100).toFixed(1)}%"></i></span><b>${F.num(v, 1).replace(/,0$/, '')}</b></li>`).join('')}</ul>
-    <div class="fila-botones">${ir('entrenamiento:volumen', 'Ver volumen por semana')}${ir('rutina', 'Ajustar en Mi rutina')}</div>`);
+    <div class="fila-botones">${ir('entrenamiento:volumen', 'Ver volumen por semana')}${ir('rutina', 'Ver Mi rutina')}</div>`);
 }
 
 // ---------- accesos del escritorio ----------
@@ -295,7 +295,7 @@ const TILES = [
   ['informes', 'Informe del último mes', 'Tu mes en un documento para imprimir o guardar en PDF', '<path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-10z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h6"/>'],
   ['entrenamiento:comparar', 'Compara dos periodos', 'Tus últimas semanas frente a las anteriores, lado a lado', '<path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/>'],
   ['fisica', 'Compara tus fotos', 'Dos fechas lado a lado, con el peso de cada una', '<rect x="3" y="5" width="8" height="14" rx="2"/><rect x="13" y="5" width="8" height="14" rx="2"/>'],
-  ['rutina', 'Prepara tu próximo bloque', 'Todos los días a la vista y exportación a la app', '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/>'],
+  ['nutricion', 'Tu nutrición', 'Tu pauta, tu plan de temporada y cómo vas', '<path d="M12 21c-4.4 0-8-3.6-8-8 0-3.3 2.2-6.4 5-7.5 1 .9 2 1.4 3 1.4s2-.5 3-1.4c2.8 1.1 5 4.2 5 7.5 0 4.4-3.6 8-8 8z"/><path d="M12 7c0-2 1-3.5 3-4"/>'],
 ];
 function tarjetaSiguiente(){
   return `<section class="siguiente" aria-labelledby="t-siguiente"><h2 id="t-siguiente">Sigue en el escritorio</h2>
@@ -1172,7 +1172,7 @@ function rutina(M, { sinCabecera = false } = {}){
     return out.join('');
   }
   const aviso = M.planConocido
-    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: para preparar cambios crea un borrador.</p>`
+    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: los cambios se hacen en la app.</p>`
     : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días, sistema o lugar de entrenamiento que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
   const dias = [...new Set(lineas.map(l => l.dia))];
   const bloques = dias.map(d => {
