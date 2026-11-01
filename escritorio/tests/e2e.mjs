@@ -765,6 +765,68 @@ try {
     ok('mi rutina: la rutina del móvil solo se consulta; no hay editor, borradores ni exportación');
   }
 
+  // --- Nutrición (solo consulta) con la copia de ejemplo: pauta, evolución,
+  // temporada con imágenes y reproducción, historial; nada cambia los datos ---
+  {
+    const paginaAntesN = pagina;
+    const servidorN = http.createServer(servidor.listeners('request')[0]);
+    await new Promise(ok => servidorN.listen(0, '127.0.0.1', ok));
+    servidorN.unref();
+    const origenN = `http://127.0.0.1:${servidorN.address().port}`;
+    origenesPrueba.add(origenN);
+    pagina = await ctx.newPage();
+    await pagina.setViewportSize({ width: 1366, height: 900 });
+    await pagina.goto(`${origenN}/escritorio/`);
+    await pagina.waitForSelector('html[data-listo="1"]');
+    await pagina.setInputFiles('#inputDatos', [new URL('../ejemplo/copia_truelift_2026-11-01.json', import.meta.url).pathname]);
+    await pagina.getByText('Revisa la importación').waitFor();
+    await pagina.click('[data-accion="confirmar"]');
+    await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+    await pagina.click('#modalCaja [data-accion="cerrar"]');
+    const textoAntes = await pagina.evaluate(() => Escritorio.estado.inst.texto);
+    await pagina.keyboard.press('Alt+5');
+    await pagina.getByRole('heading', { name: 'Nutrición', exact: true }).waitFor();
+    const txt = () => pagina.locator('#contenido').innerText();
+    assert.match(await txt(), /DÉFICIT · SEMANA \d+/i);
+    assert.match(await txt(), /Es de consulta: tu pauta y tu plan se cambian en la app/);
+    assert.match(await txt(), /come unas 171 kcal más al día que antes/);
+    await foto('40-nutricion-pauta.png');
+    await pagina.click('[data-ir="nutricion:evolucion"]');
+    await pagina.getByText('Tu peso en la fase').waitFor();
+    assert.match(await txt(), /Plan inicial/);
+    await pagina.click('[data-ir="nutricion:temporada"]');
+    await pagina.waitForSelector('#nutImagenes .nut-cuerpo img');
+    assert.match(await txt(), /Definición 1[\s\S]*Normocalórica[\s\S]*Volumen[\s\S]*Definición 2/);
+    assert.equal(await pagina.locator('#nutImagenes .nut-cuerpo img').count(), 2);
+    assert.ok((await pagina.locator('#nutImagenes .nut-cuerpo img').first().getAttribute('src')).startsWith('estados/hombre/'));
+    // Mover la imagen de partida con el teclado cambia solo lo que se ve.
+    await pagina.focus('#nutImgIzq');
+    await pagina.keyboard.press('ArrowRight');
+    await pagina.waitForFunction(() => Escritorio.estado.nut.izq != null && document.activeElement.id === 'nutImgIzq');
+    await foto('41-nutricion-temporada.png');
+    await pagina.click('[data-nut-modo="superponer"]');
+    await pagina.click('[data-accion="nut-reproducir"]');
+    await pagina.waitForFunction(() => document.querySelector('.nut-repro-etapa')?.textContent.trim().length > 1);
+    await pagina.waitForFunction(() => Number(document.querySelector('.nut-repro-avance')?.getAttribute('aria-valuenow')) > 20);
+    await pagina.click('[data-accion="nut-repro-pausa"]');
+    await pagina.keyboard.press('Escape');
+    await pagina.click('[data-ir="nutricion:historial"]');
+    await pagina.getByText('Historial de tu pauta').waitFor();
+    assert.match(await txt(), /Revisiones semanales/);
+    // Ningún control de la sección escribe: solo deslizadores de vista y botones.
+    assert.equal(await pagina.locator('#contenido input:not([type="range"]), #contenido select, #contenido textarea').count(), 0);
+    assert.equal(await pagina.evaluate(() => Escritorio.estado.inst.texto), textoAntes);
+    await pagina.setViewportSize({ width: 420, height: 900 });
+    for (const sub of ['pauta', 'evolucion', 'temporada', 'historial']){
+      await pagina.evaluate(s => { location.hash = `#nutricion/${s}`; }, sub);
+      await pagina.waitForSelector('.subnav button.activa');
+      const d = await pagina.evaluate(() => [innerWidth, document.documentElement.scrollWidth]);
+      assert.ok(d[1] <= d[0] + 2, `${sub}: ${d}`);
+    }
+    ok('nutrición: pauta, evolución, temporada con imágenes y reproducción, historial; solo consulta y 420 px sin desbordamiento');
+    await pagina.close(); servidorN.close(); pagina = paginaAntesN;
+  }
+
   // --- Fase 7. Informe de un periodo: selección, fotos solo elegidas,
   // impresión/PDF, recarga y ventana estrecha ---
   {
@@ -794,7 +856,7 @@ try {
     await pagina.click('[data-accion="confirmar"]');
     await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
     await pagina.click('#modalCaja [data-accion="cerrar"]');
-    await pagina.keyboard.press('Alt+6');
+    await pagina.keyboard.press('Alt+7');
     await pagina.getByRole('heading', { name: 'Septiembre de 2026', exact: true }).waitFor();
     const doc = () => pagina.locator('.informe-doc').innerText();
     for (const t of ['RESUMEN DEL PERIODO', 'CONSTANCIA', 'PROGRESIÓN VERIFICABLE', 'EVOLUCIÓN FÍSICA', 'VOLUMEN REALIZADO', 'RECUPERACIÓN',
@@ -803,7 +865,7 @@ try {
     assert.match(await doc(), /Cintura\s+84,6 cm\s*4 sep 2026\s+84 cm\s*25 sep 2026\s+−0,6 cm/);
     assert.match(await doc(), /Fotos registradas en el periodo: 3 \(1 sin imagen importada\)/);
     assert.equal(await pagina.locator('[data-inf-foto]').count(), 0);
-    ok('informe: Alt + 6 abre el último mes completo con todas sus secciones, contornos sin arrastre y sin fotos');
+    ok('informe: Alt + 7 abre el último mes completo con todas sus secciones, contornos sin arrastre y sin fotos');
     await foto('30-informe.png');
 
     // Fechas con el teclado: invertidas se rechazan sin guardar; válidas se
@@ -917,7 +979,7 @@ try {
     await pagina.click('#modalCaja [data-accion="cerrar"]');
     await pagina.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
     await pagina.getByText('esta página ya se puede abrir sin conexión en este navegador').waitFor();
-    assert.deepEqual((await pagina.evaluate(() => caches.keys())).sort(), ['otra-pagina', 'tlcoach-v16', 'tlescritorio-v13']);
+    assert.deepEqual((await pagina.evaluate(() => caches.keys())).sort(), ['otra-pagina', 'tlcoach-v16', 'tlescritorio-v14']);
     // Sin red ni servidor: la página, los datos y el informe siguen disponibles.
     await ctx.setOffline(true);
     servidor8.closeAllConnections(); await new Promise(ok => servidor8.close(ok));

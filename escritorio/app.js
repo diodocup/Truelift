@@ -22,6 +22,9 @@ const E = {
   estimacion: null, persistido: null, origenModal: null, sinConexion: null,
   M: null, errorModelo: null, fisica: null, espacioFisica: null,
   fis: { pose: null, a: null, b: null, modo: 'lado', corte: 50, opacidad: 50, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true },
+  // Nutrición: solo cómo se ven las imágenes del plan (posición, modo y
+  // transparencia) y la reproducción en curso. Nada de esto toca datos.
+  nut: { izq: null, der: null, modo: 'lado', opacidad: 50, rep: null },
   st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null, capasOcultas: new Set() },
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
@@ -30,7 +33,7 @@ const E = {
 
 const SECCIONES = {
   resumen: 'Mi resumen', entrenamiento: 'Entrenamiento', fisica: 'Evolución física',
-  recuperacion: 'Recuperación', rutina: 'Mi rutina', informes: 'Informes', datos: 'Mis datos',
+  recuperacion: 'Recuperación', nutricion: 'Nutrición', rutina: 'Mi rutina', informes: 'Informes', datos: 'Mis datos',
 };
 const POSE_TXT = { frente: 'Frente', perfil: 'Perfil', espalda: 'Espalda' };
 const FUENTE_TXT = {
@@ -72,6 +75,7 @@ function abrirModal(html, { ancho = false, bloqueado = false } = {}){
 }
 function cerrarModal(){
   if (E.urlModal){ URL.revokeObjectURL(E.urlModal); E.urlModal = null; }
+  if (E.nut.rep){ E.nut.rep.parar(); E.nut.rep = null; }
   $('#modal').classList.add('oculto');
   $('#modalCaja').innerHTML = '';
   if (E.origenModal && document.contains(E.origenModal)) E.origenModal.focus();
@@ -115,6 +119,7 @@ async function cargarEstado(){
   if (espacioId !== E.espacioFisica){
     Object.assign(E.fis, { pose: null, a: null, b: null, encuadres: {}, dirty: false, sitio: null, galeriaPose: 'todas', pagina: 0, encuadreApp: true });
     E.espacioFisica = espacioId;
+    Object.assign(E.nut, { izq: null, der: null, modo: 'lado', opacidad: 50 });
   }
   if (!E.fis.dirty) E.fis.encuadres = espacioId ? (await Almacen.leer('meta', `encuadres:${espacioId}`))?.valor || {} : {};
   E.st.periodos = E.espacio ? (await Almacen.leer('meta', `periodos:${E.espacio.id}`))?.valor || null : null;
@@ -1097,10 +1102,66 @@ function renderSeccion(){
     case 'entrenamiento': return VistasEsc.entrenamiento(M, E.st);
     case 'fisica': return VistasEsc.fisica(M, ctx);
     case 'recuperacion': return VistasEsc.recuperacion(M);
+    case 'nutricion': return NutricionVista.html(M, { ...E.nut, sub: E.st.sub }, nutModelo());
     case 'rutina': return VistasEsc.rutina(M);
     case 'informes': return InformeVista.seccion(M, { sel: E.st.informe, error: E.inf.error, fisica: E.fisica, galeria: E.galeria, inst: E.inst, st: E.inf });
   }
   return '';
+}
+
+// ---------- Nutrición (solo consulta) ----------
+/* Modelo de la sección, calculado una vez por copia cargada. */
+function nutModelo(){
+  if (!E.M) return { presente: false };
+  if (!E.M.nutEsc) E.M.nutEsc = NutricionEsc.preparar(E.M.raw, E.M.datos.nut, E.M.ref);
+  return E.M.nutEsc;
+}
+/* Reproduce el tramo entre las dos imágenes del plan, superpuestas y con la
+   etapa de cada momento (como el ▶ de la app). Dura siempre lo mismo. */
+function nutReproducir(){
+  const X = nutModelo(), P = X.plan;
+  if (!P || !P.curva || P.imagenes.motivo) return;
+  P.ref = X.ref;
+  const pos = NutricionVista.posiciones(P, E.nut);
+  const R = NutricionEsc.reproduccion({ curva: P.curva, desde: pos.fechaIzq, hasta: pos.fechaDer, bloques: P.bloques, nombres: P.nombres,
+    mujer: P.imagenes.mujer, alturaCm: P.imagenes.alturaCm, hoy: X.ref, fmt: d => VistasEsc.F.dia(d) });
+  if (!R) return;
+  R.distintas.forEach(r => { const i = new Image(); i.src = r; });
+  abrirModal(NutricionVista.reproductor(), { ancho: true });
+  const caja = $('#modalCaja'), base = caja.querySelector('img.base'), encima = caja.querySelector('img.encima');
+  const etapa = caja.querySelector('.nut-repro-etapa'), rotulo = caja.querySelector('.nut-repro-rotulo');
+  const avance = caja.querySelector('.nut-repro-avance'), boton = caja.querySelector('[data-accion="nut-repro-pausa"]');
+  const total = NutricionEsc.DURACION_REPRODUCCION * 1000;
+  let transcurrido = 0, ultimo = null, pausado = false, raf = null, fin = false;
+  const pintar = t => {
+    const f = R.en(t);
+    if (f.base && base.getAttribute('src') !== f.base) base.src = f.base;
+    if (f.encima){ if (encima.getAttribute('src') !== f.encima) encima.src = f.encima; encima.style.opacity = f.mezcla; }
+    else encima.style.opacity = 0;
+    base.style.visibility = f.base ? 'visible' : 'hidden';
+    etapa.textContent = f.etapa || 'Fuera del plan';
+    rotulo.textContent = f.rotulo;
+    avance.firstElementChild.style.width = `${(t * 100).toFixed(1)}%`;
+    avance.setAttribute('aria-valuenow', String(Math.round(t * 100)));
+  };
+  const paso = ahora => {
+    if (ultimo != null && !pausado) transcurrido += ahora - ultimo;
+    ultimo = ahora;
+    const t = Math.min(1, transcurrido / total);
+    pintar(t);
+    if (t >= 1){ fin = true; boton.textContent = 'Volver a reproducir'; raf = null; return; }
+    raf = requestAnimationFrame(paso);
+  };
+  E.nut.rep = {
+    parar(){ if (raf) cancelAnimationFrame(raf); raf = null; },
+    alternar(){
+      if (fin){ fin = false; transcurrido = 0; ultimo = null; pausado = false; boton.textContent = 'Pausar'; raf = requestAnimationFrame(paso); return; }
+      pausado = !pausado; boton.textContent = pausado ? 'Seguir' : 'Pausar';
+      anunciar(pausado ? 'Reproducción en pausa' : 'Reproducción en marcha');
+    },
+  };
+  pintar(0);
+  raf = requestAnimationFrame(paso);
 }
 
 function verSesion(indice){
@@ -1234,6 +1295,8 @@ async function accion(nombre, el){
       } catch (e) { modalMensaje('No se guardaron los encuadres', `<p>${esc(e.message || String(e))}. Las fotos originales siguen intactas.</p>`); }
       break;
     }
+    case 'nut-reproducir': nutReproducir(); break;
+    case 'nut-repro-pausa': E.nut.rep?.alternar(); break;
     case 'imprimir-informe': await imprimirInforme(); break;
     case 'informe-comparar': await compararConAnterior(); break;
     case 'importar-datos': $('#inputDatos').click(); break;
@@ -1318,6 +1381,8 @@ function init(){
       E.st.graf = { rango: gr.dataset.grafRango };
       render(); $(`[data-graf-rango="${E.st.graf.rango}"]`)?.focus(); anunciar('Fechas de la gráfica actualizadas'); return;
     }
+    const nm = ev.target.closest('[data-nut-modo]');
+    if (nm){ E.nut.modo = nm.dataset.nutModo; render(); $(`[data-nut-modo="${E.nut.modo}"]`)?.focus(); return; }
     const mf = ev.target.closest('[data-modo-foto]');
     if (mf){ E.fis.modo = mf.dataset.modoFoto; render(); $(`[data-modo-foto="${E.fis.modo}"]`)?.focus(); return; }
     const rest = ev.target.closest('[data-restaurar-foto]');
@@ -1353,6 +1418,20 @@ function init(){
       const c = $('.comparador-lienzo');
       c?.style.setProperty(i.id === 'fotoCorte' ? '--corte' : '--opacidad', i.id === 'fotoCorte' ? `${i.value}%` : Number(i.value) / 100);
       actualizarOutput(i); return;
+    }
+    if (i.id === 'nutOpacidad'){
+      E.nut.opacidad = Number(i.value);
+      $('.nut-superponer')?.style.setProperty('--opacidad', Number(i.value) / 100);
+      return;
+    }
+    if (i.id === 'nutImgIzq' || i.id === 'nutImgDer'){
+      const v = Number(i.value), X = nutModelo();
+      const pos = X.plan ? NutricionVista.posiciones({ ...X.plan, ref: X.ref }, E.nut) : null;
+      if (i.id === 'nutImgIzq'){ E.nut.izq = v; if (pos && v > pos.der) E.nut.der = v; }
+      else { E.nut.der = v; if (pos && v < pos.izq){ E.nut.izq = v; } }
+      const id = i.id;
+      render(); document.getElementById(id)?.focus();
+      return;
     }
     if (ev.target.id !== 'buscaEj') return;
     E.st.busca = ev.target.value;
@@ -1436,7 +1515,7 @@ function init(){
     }
   });
   document.addEventListener('keydown', trampaFoco);
-  // Atajos: Alt + 1…7 para las secciones (sin modal abierto).
+  // Atajos: Alt + 1…8 para las secciones (sin modal abierto).
   const orden = Object.keys(SECCIONES);
   document.addEventListener('keydown', ev => {
     if (!ev.altKey || ev.ctrlKey || ev.metaKey || !$('#modal').classList.contains('oculto')) return;

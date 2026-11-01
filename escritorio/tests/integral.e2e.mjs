@@ -194,7 +194,7 @@ try {
     const axe = fs.readFileSync(require.resolve(process.env.AXE_MODULE), 'utf8');
     for (const ancho of [1366, 420]){
       await pagina.setViewportSize({ width: ancho, height: 900 });
-      for (const seccion of ['resumen', 'entrenamiento', 'fisica', 'recuperacion', 'rutina', 'informes', 'datos']){
+      for (const seccion of ['resumen', 'entrenamiento', 'fisica', 'recuperacion', 'nutricion', 'rutina', 'informes', 'datos']){
         await pagina.evaluate(s => { location.hash = '#' + s; }, seccion);
         await pagina.waitForFunction(s => Escritorio.estado.seccion === s, seccion);
         // Herramienta de auditoría en DevTools, sin relajar la CSP de la app.
@@ -207,7 +207,7 @@ try {
         if (seccion === 'resumen') await foto(`36-resumen-${ancho}.png`);
       }
     }
-    ok('axe WCAG 2.1 A/AA: siete secciones a 1366 y 420 px sin infracciones ni desbordamiento');
+    ok('axe WCAG 2.1 A/AA: ocho secciones a 1366 y 420 px sin infracciones ni desbordamiento');
   } else console.log('# OMITIDO axe: define AXE_MODULE para validar accesibilidad');
 
   await pagina.waitForFunction(() => !!navigator.serviceWorker.controller);

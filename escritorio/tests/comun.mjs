@@ -14,7 +14,7 @@ export function cargar(...archivos){
     const codigo = fs.readFileSync(new URL(a, dir), 'utf8');
     const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'comparacion.js': 'Comparacion', 'vistas.js': 'VistasEsc', 'graficas.js': 'GraficasEsc', 'dibujos.js': 'DibujosEsc',
                      'fotos.js': 'FotosTL', 'evolucion.js': 'Evolucion', 'fisica-vista.js': 'FisicaVista', 'almacen.js': 'Almacen',
-                     'informe.js': 'Informe', 'informe-vista.js': 'InformeVista' }[a];
+                     'informe.js': 'Informe', 'informe-vista.js': 'InformeVista', 'nutricion-esc.js': 'NutricionEsc', 'nutricion-vista.js': 'NutricionVista' }[a];
     vm.runInThisContext(`${codigo}\n;globalThis.${nombre} = ${nombre};`, { filename: a });
     cargados.add(a);
   }
@@ -25,7 +25,7 @@ export function cargar(...archivos){
 // realm. `nombres` lista los globales que exporta cada uno.
 const GLOBALES_COACH = { 'motor.js': ['Motor'], 'data.js': ['esc', 'parseFecha', 'fmtISO', 'soloDia', 'diasEntre',
   'normalizar', 'Metricas', 'VFC', 'FCReposo', 'Fatiga', 'Salud', 'num', 'patronVigente'],
-  'nutricion.js': ['Nutricion', 'normalizarNutricion', 'NUT', 'ProgresoFase'],
+  'nutricion.js': ['Nutricion', 'normalizarNutricion', 'NUT', 'ProgresoFase', 'PlanTemporada', 'BandaTasa', 'GuardarrailesNut', 'Particion'],
   'catalogo.js': ['CAT_FICHA', 'CAT_GRUPO_DE', 'CAT_LISTAS', 'CAT_PATRONES', 'CAT_PATRON_GRUPO', 'CAT_DESCANSOS',
                   'CAT_SISTEMAS', 'OBJETIVOS_GRUPO', 'ORDEN_GRUPOS'],
   'planner.js': ['Planner'], 'xlsx.js': ['XLSX'], 'plantilla.js': ['PLANTILLA_XLSX'], 'canonico.js': ['CANON_ES'] };

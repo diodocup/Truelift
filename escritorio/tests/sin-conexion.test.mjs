@@ -23,9 +23,11 @@ test('las dos herramientas solo borran sus propias cachés al activarse', () => 
   assert.match(fs.readFileSync(new URL('../coach/sw.js', dir), 'utf8'), /k\.startsWith\('tlcoach-'\) && k !== VERSION/);
 });
 
-test('los dibujos se guardan al verse y, sin conexión y sin copia, no dejan un error', () => {
+test('los dibujos y las ilustraciones del plan se guardan al verse y, sin conexión y sin copia, no dejan un error', () => {
   const sw = leer('sw.js');
-  assert.match(sw, /url\.href\.startsWith\(DIBUJOS\)/, 'los dibujos pasan por la caché');
-  assert.match(sw, /startsWith\(DIBUJOS\) \? dibujoVacio\(\) : Response\.error\(\)/, 'sin copia: imagen vacía, no error');
+  assert.match(sw, /aMedida = href => href\.startsWith\(DIBUJOS\) \|\| href\.startsWith\(ESTADOS\)/, 'dibujos e ilustraciones pasan por la caché');
+  assert.match(sw, /!URLS\.has\(url\.href\) && !aMedida\(url\.href\)/);
+  assert.match(sw, /aMedida\(url\.href\) \? dibujoVacio\(\) : Response\.error\(\)/, 'sin copia: imagen vacía, no error');
   assert.ok(fs.existsSync(new URL('../coach/media/ejercicios/', dir)), 'carpeta de dibujos del Coach');
+  assert.ok(fs.existsSync(new URL('estados/hombre/m3g3.webp', dir)), 'ilustraciones del cuerpo');
 });

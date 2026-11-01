@@ -426,8 +426,14 @@ function progresoFase(N){
   const barra = (fr, color, marca, nombre) => `<div class="fase-barra" role="img" aria-label="${esc(nombre)}"><i style="width:${Math.round(fr * 1000) / 10}%;background:${color}"></i>${marca != null ? `<b style="left:${Math.round(marca * 1000) / 10}%" title="Lo previsto a esta fecha"></b>` : ''}</div>`;
   const color = !ver ? 'var(--txt4)' : clase === 'verde' ? 'var(--lima)' : 'var(--ambar)';
   const filas = [];
-  if (p.fraccionPeso != null && p.totalKg != null)
-    filas.push(`<div class="fase-fila"><span>Peso</span><b class="mono">${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPeso, color, p.fraccionPrevista, `Llevas ${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}`)}`);
+  // Como «Cómo vas» de la app (28-29/10/2026): dos barras a la misma escala,
+  // lo que llevas y tu objetivo, que se rellena hasta lo que el objetivo
+  // vigente esperaba llevar hoy.
+  if (p.fraccionPeso != null && p.totalKg != null){
+    filas.push(`<div class="fase-fila"><span>Llevas</span><b class="mono">${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPeso, color, null, `Llevas ${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}`)}`);
+    if (p.fraccionPrevista != null)
+      filas.push(`<div class="fase-fila"><span>Tu objetivo</span><b class="mono">${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPrevista, 'var(--azul, #4F8EF7)', null, `Tu objetivo esperaba llevar ${F.num(Math.max(0, p.previstoKg), 1)} de ${F.kg(p.totalKg)} a esta fecha`)}`);
+  }
   if (p.fraccionTiempo != null && p.semanasTotales != null){
     const sem = Math.min(p.semanaActual, Math.ceil(p.semanasTotales));
     filas.push(`<div class="fase-fila"><span>Tiempo</span><b class="mono">Semana ${sem} de ${F.num(p.semanasTotales, p.semanasTotales % 1 ? 1 : 0)}</b></div>${barra(p.fraccionTiempo, 'var(--txt3)', null, `Semana ${sem} de ${F.num(p.semanasTotales, 1)}`)}`);
@@ -1045,7 +1051,7 @@ function fisica(M, ctx){
         ${N.fase && N.fase.pesoObjetivoKg > 0 ? cifra(F.kg(N.fase.pesoObjetivoKg), 'peso objetivo') : ''}</div>
       ${progresoFase(N)}
       ${grafica(svg, 'Pesajes y peso tendencia', tabla(['Fecha', 'Pesaje', 'Tendencia', '<span class="sr-only">Observación</span>'], filas, { caption: 'Pesajes' }))}
-      ${ayuda('La línea es el peso tendencia que calcula la app: suaviza las subidas y bajadas diarias de agua y comida para ver hacia dónde va tu peso. Los pesajes de días de refeed o tras una pausa se muestran, pero no mueven la tendencia. El progreso de la fase compara dónde está tu tendencia con dónde la ponía lo que pactaste al empezar, teniendo en cuenta los cambios de ritmo que aceptaste por el camino; la marca de la barra de peso es lo previsto. Ir por detrás no se recupera solo: el ajuste semanal de la app corrige el ritmo, no el terreno perdido.')}`));
+      ${ayuda('La línea es el peso tendencia que calcula la app: suaviza las subidas y bajadas diarias de agua y comida para ver hacia dónde va tu peso. Los pesajes de días de refeed o tras una pausa se muestran, pero no mueven la tendencia. El progreso de la fase compara dónde está tu tendencia con dónde la ponía lo que pactaste al empezar, teniendo en cuenta los cambios de ritmo que aceptaste por el camino: «Llevas» es lo que has avanzado y «Tu objetivo» se rellena hasta donde deberías estar hoy. Ir por detrás no se recupera solo: el ajuste semanal de la app corrige el ritmo, no el terreno perdido.')}`));
   } else {
     out.push(tarjeta('Peso', vacio(M.pc ? `Tu copia no trae pesajes (la nutrición de la app no está activa). Peso de tu perfil: ${F.kg(M.pc)}.` : 'Tu copia no trae pesajes.')));
   }
@@ -1208,5 +1214,5 @@ function rutina(M, { sinCabecera = false } = {}){
   return out.join('');
 }
 
-return { resumen, entrenamiento, detalleSesionHtml, fisica, contornos, recuperacion, rutina, estadoTexto, F, SITIOS, tabla };
+return { resumen, entrenamiento, detalleSesionHtml, fisica, contornos, recuperacion, rutina, estadoTexto, F, SITIOS, tabla, progresoFase, grafica, TIPO_REC, ESTADO_REC, FASE_NUT };
 })();

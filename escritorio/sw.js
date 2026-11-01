@@ -10,13 +10,13 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v13`;
+const VERSION = `${PREFIJO}v14`;
 const ARCHIVOS = [
   './',
   'index.html',
   'escritorio.css', 'tema.js',
   'importar.js', 'zip-seguro.js', 'fotos.js', 'evolucion.js', 'almacen.js', 'analisis.js',
-  'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js',
+  'comparacion.js', 'graficas.js', 'dibujos.js', 'vistas.js', 'fisica-vista.js', 'nutricion-esc.js', 'nutricion-vista.js',
   'informe.js', 'informe-vista.js', 'app.js',
   '../coach/styles.css',
   '../coach/motor.js', '../coach/data.js', '../coach/nutricion.js', '../coach/charts.js',
@@ -38,6 +38,9 @@ const URLS = new Set(ARCHIVOS.map(a => new URL(a, self.registration.scope).href)
 // la estrategia de abajo los guarda a medida que se ven, y quedan
 // disponibles sin conexión.
 const DIBUJOS = new URL('../coach/media/ejercicios/', self.registration.scope).href;
+// Ilustraciones del cuerpo del plan de temporada: igual, a medida que se ven.
+const ESTADOS = new URL('estados/', self.registration.scope).href;
+const aMedida = href => href.startsWith(DIBUJOS) || href.startsWith(ESTADOS);
 const dibujoVacio = () => new Response('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>',
   { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' } });
 
@@ -61,11 +64,11 @@ self.addEventListener('fetch', ev => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   url.search = ''; url.hash = '';
-  if (!URLS.has(url.href) && !url.href.startsWith(DIBUJOS)) return;
+  if (!URLS.has(url.href) && !aMedida(url.href)) return;
   // Un dibujo que aún no se había visto no está en la caché: sin conexión se
   // sirve una imagen vacía (queda el recuadro oscuro, sin icono roto ni
   // error) y el dibujo de verdad llega en cuanto vuelve la red.
-  const sinCopia = () => url.href.startsWith(DIBUJOS) ? dibujoVacio() : Response.error();
+  const sinCopia = () => aMedida(url.href) ? dibujoVacio() : Response.error();
   const respaldo = async () => (await (await caches.open(VERSION)).match(url.href)) || sinCopia();
   ev.respondWith(
     fetch(req)
