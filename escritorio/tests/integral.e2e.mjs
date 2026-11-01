@@ -17,7 +17,10 @@ const capturas = process.argv[2];
 if (capturas) fs.mkdirSync(capturas, { recursive: true });
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tl-integral-'));
 const guardar = (n, d) => { const p = path.join(tmp, n); fs.writeFileSync(p, d); return p; };
-let version = 'v10', falloServidor = false;
+// Versión de la caché publicada (sw.js): la prueba la sustituye para simular
+// una actualización del service worker.
+const VERSION_SW = fs.readFileSync(path.join(raiz, 'escritorio/sw.js'), 'utf8').match(/\$\{PREFIJO\}(v\d+)/)[1];
+let version = VERSION_SW, falloServidor = false;
 const servidor = http.createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://local').pathname);
   let f = path.resolve(raiz, '.' + ruta);
@@ -28,7 +31,7 @@ const servidor = http.createServer((req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', ({ '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.woff2': 'font/woff2' })[path.extname(f)] || 'application/octet-stream');
   const contenido = fs.readFileSync(f);
-  res.end(ruta === '/escritorio/sw.js' ? contenido.toString().replace('${PREFIJO}v10', '${PREFIJO}' + version) : contenido);
+  res.end(ruta === '/escritorio/sw.js' ? contenido.toString().replace('${PREFIJO}' + VERSION_SW, '${PREFIJO}' + version) : contenido);
 });
 await new Promise(r => servidor.listen(0, '127.0.0.1', r));
 const origen = `http://127.0.0.1:${servidor.address().port}`;
@@ -65,6 +68,49 @@ async function estado(){
   });
 }
 try {
+  // Un perfil de antes del escritorio de solo consulta (IndexedDB v1) con
+  // borradores de rutina: al abrir, el almacén y su marca desaparecen sin
+  // tocar nada más.
+  {
+    ctx = await pw.chromium.launchPersistentContext(path.join(tmp, 'perfil'), { viewport: { width: 1366, height: 900 } });
+    observar(ctx);
+    pagina = await ctx.newPage();
+    await pagina.goto(origen + '/privacidad.html');
+    await pagina.evaluate(() => new Promise((ok, ko) => {
+      const r = indexedDB.open('truelift-escritorio', 1);
+      r.onupgradeneeded = () => {
+        const db = r.result;
+        db.createObjectStore('meta', { keyPath: 'clave' });
+        db.createObjectStore('espacios', { keyPath: 'id' });
+        db.createObjectStore('instantaneas', { keyPath: 'id' }).createIndex('espacioId', 'espacioId');
+        for (const n of ['fotos', 'imagenes', 'miniaturas']) db.createObjectStore(n, { keyPath: ['espacioId', 'archivo'] });
+        db.createObjectStore('importaciones', { keyPath: 'id', autoIncrement: true }).createIndex('espacioId', 'espacioId');
+        db.createObjectStore('borradores', { keyPath: 'id' }).createIndex('espacioId', 'espacioId');
+      };
+      r.onsuccess = () => {
+        const db = r.result, tx = db.transaction(['meta', 'borradores'], 'readwrite');
+        tx.objectStore('meta').put({ clave: 'borradorActivo:e1', valor: 'b1' });
+        tx.objectStore('meta').put({ clave: 'tema', valor: 'claro' });
+        tx.objectStore('borradores').put({ id: 'b1', espacioId: 'e1', nombre: 'Viejo' });
+        tx.oncomplete = () => { db.close(); ok(); };
+        tx.onerror = () => ko(tx.error);
+      };
+      r.onerror = () => ko(r.error);
+    }));
+    await pagina.goto(origen + '/escritorio/');
+    await pagina.waitForSelector('html[data-listo="1"]');
+    const tras = await pagina.evaluate(async () => ({
+      almacenes: [...Almacen.db.objectStoreNames].sort(),
+      esperados: [...Almacen.ALMACENES].sort(),
+      meta: (await Almacen.todos('meta')).map(m => m.clave).sort(),
+    }));
+    assert.deepEqual(tras.almacenes, tras.esperados);
+    assert.ok(!tras.almacenes.includes('borradores'));
+    assert.deepEqual(tras.meta, ['tema']);
+    await pagina.evaluate(() => Almacen.escribir([{ almacen: 'meta', del: 'tema' }]));
+    await ctx.close();
+    ok('perfil antiguo: los borradores de rutina se retiran al abrir y el resto se conserva');
+  }
   await abrir();
   console.log(`# Chromium ${ctx.browser().version()} · Node ${process.version}`);
   // Un índice sin ninguno de sus originales sigue siendo información útil.
@@ -109,12 +155,11 @@ try {
   assert.equal(await pagina.evaluate(() => Escritorio.estado.galeria[0].pose), 'perfil');
   ok('ZIP idéntico no escribe; volver a un índice antiguo exige confirmación y cancelar lo conserva');
 
-  // Prioridad JSON y borrador para verificar los ocho almacenes juntos.
+  // Prioridad JSON para verificar los siete almacenes juntos.
   const raw = copiaRica(); raw.medidas.fotos = [{ archivo: nombre, fecha: '2026-07-20', pose: 'espalda' }];
   await previa(guardar('datos.json', JSON.stringify(raw)), '#inputDatos');
   await pagina.check('[name="destino"][value="actualizar"]'); await confirmar();
   assert.equal(await pagina.evaluate(() => Escritorio.estado.galeria[0].pose), 'espalda');
-  await pagina.evaluate(async () => Almacen.escribir([{ almacen: 'borradores', put: { id: 'borrador-sintetico', espacioId: Escritorio.estado.espacio.id, nombre: 'Conservar', rutina: Planificador.rutinaMovil(Escritorio.estado.raw).rutina } }]));
   const antes = await estado();
   const raw2 = structuredClone(raw); raw2.logs.push({ ...raw2.logs[0], fecha: '2026-08-10T18:00:00.000' });
   await previa(guardar('actualizacion.json', JSON.stringify(raw2)), '#inputDatos');
@@ -133,7 +178,7 @@ try {
   await pagina.evaluate(() => window.restaurarPut());
   assert.deepEqual(await estado(), antes);
   await pagina.click('#modalCaja [data-accion="cerrar"]');
-  ok('error asíncrono real: rollback íntegro de ocho almacenes, borrador y bytes de fotos incluidos');
+  ok('error asíncrono real: rollback íntegro de los siete almacenes, bytes de fotos incluidos');
   await pagina.reload(); await pagina.waitForSelector('html[data-listo="1"]');
   assert.deepEqual(await estado(), antes);
   await ctx.close(); await abrir();
@@ -141,16 +186,15 @@ try {
   ok('recarga y cierre/reapertura del proceso Chromium conservan exactamente el estado anterior');
   await previa(guardar('actualizacion.json', JSON.stringify(raw2)), '#inputDatos');
   await pagina.check('[name="destino"][value="actualizar"]'); await confirmar();
-  assert.equal((await estado()).borradores.length, 1);
   assert.equal(await pagina.evaluate(() => Escritorio.estado.raw.logs.length), raw2.logs.length);
-  ok('reintento tras fallo guarda la instantánea nueva y preserva el borrador');
+  ok('reintento tras fallo guarda la instantánea nueva');
 
   // Accesibilidad y captura con datos sintéticos, también en ventana estrecha.
   if (process.env.AXE_MODULE){
     const axe = fs.readFileSync(require.resolve(process.env.AXE_MODULE), 'utf8');
     for (const ancho of [1366, 420]){
       await pagina.setViewportSize({ width: ancho, height: 900 });
-      for (const seccion of ['resumen', 'entrenamiento', 'fisica', 'recuperacion', 'rutina', 'informes', 'datos']){
+      for (const seccion of ['resumen', 'entrenamiento', 'fisica', 'recuperacion', 'nutricion', 'rutina', 'informes', 'datos']){
         await pagina.evaluate(s => { location.hash = '#' + s; }, seccion);
         await pagina.waitForFunction(s => Escritorio.estado.seccion === s, seccion);
         // Herramienta de auditoría en DevTools, sin relajar la CSP de la app.
@@ -163,15 +207,15 @@ try {
         if (seccion === 'resumen') await foto(`36-resumen-${ancho}.png`);
       }
     }
-    ok('axe WCAG 2.1 A/AA: siete secciones a 1366 y 420 px sin infracciones ni desbordamiento');
+    ok('axe WCAG 2.1 A/AA: ocho secciones a 1366 y 420 px sin infracciones ni desbordamiento');
   } else console.log('# OMITIDO axe: define AXE_MODULE para validar accesibilidad');
 
   await pagina.waitForFunction(() => !!navigator.serviceWorker.controller);
   await pagina.evaluate(async () => { await caches.open('tlcoach-ajena'); await caches.open('otra-ajena'); });
   const antesSW = await estado();
-  version = 'v10-validacion';
+  version = `${VERSION_SW}-validacion`;
   await pagina.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-  await pagina.waitForFunction(async () => (await caches.keys()).includes('tlescritorio-v10-validacion') && !(await caches.keys()).includes('tlescritorio-v10'));
+  await pagina.waitForFunction(async v => (await caches.keys()).includes(`tlescritorio-${v}-validacion`) && !(await caches.keys()).includes(`tlescritorio-${v}`), VERSION_SW);
   assert.ok((await pagina.evaluate(() => caches.keys())).includes('tlcoach-ajena'));
   assert.ok((await pagina.evaluate(() => caches.keys())).includes('otra-ajena'));
   assert.deepEqual(await estado(), antesSW);
@@ -183,7 +227,7 @@ try {
   await ctx.setOffline(true);
   await pagina.reload(); await pagina.waitForSelector('html[data-listo="1"]');
   assert.deepEqual(await estado(), antesSW);
-  ok('sin conexión tras actualizar: reapertura con datos, fotos y borrador intactos');
+  ok('sin conexión tras actualizar: reapertura con datos y fotos intactos');
   await ctx.close(); ctx = null;
   falloServidor = false;
 

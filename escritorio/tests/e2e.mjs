@@ -753,170 +753,78 @@ try {
   ok('fotos: ZIP independiente conserva medidas, metadatos ausentes y separación de encuadres entre espacios');
   await pagina.close(); servidorSoloZip.close(); pagina = paginaConJSON;
 
-  // --- Fase 6. Planificador personal: borradores, edición con teclado,
-  // comparación, exportación, actualización de la copia y recuperación ---
+  // --- Mi rutina: solo consulta (sin borradores, editor ni exportación) ---
   {
-    const paginaAntes6 = pagina;
-    const servidor6 = http.createServer(servidor.listeners('request')[0]);
-    await new Promise(ok => servidor6.listen(0, '127.0.0.1', ok));
-    servidor6.unref();
-    const origen6 = `http://127.0.0.1:${servidor6.address().port}`;
-    origenesPrueba.add(origen6);
-    const raw6 = copiaRica();
-    const p6 = escribir('copia_truelift_2026-07-02.json', JSON.stringify(raw6));
-    pagina = await ctx.newPage();
-    await pagina.setViewportSize({ width: 1366, height: 900 });
-    await pagina.goto(`${origen6}/escritorio/`);
-    await pagina.waitForSelector('html[data-listo="1"]');
-    const importar6 = async (ruta, destino = null) => {
-      await pagina.setInputFiles('#inputDatos', [ruta]);
-      await pagina.getByText('Revisa la importación').waitFor();
-      if (destino) await pagina.check(`input[name="destino"][value="${destino}"]`);
-      await pagina.click('[data-accion="confirmar"]');
-      await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
-      await pagina.click('#modalCaja [data-accion="cerrar"]');
-      // Tras importar se abre «Mis datos»; se vuelve a Mi rutina.
-      await pagina.evaluate(() => { location.hash = '#rutina'; });
-      await pagina.waitForSelector('.rut-estado');
-    };
-    await importar6(p6);
     await pagina.evaluate(() => { location.hash = '#rutina'; });
     await pagina.getByRole('heading', { name: 'Mi rutina', exact: true }).waitFor();
-    const cont = () => pagina.locator('#contenido').innerText();
-    assert.match(await cont(), /EN TU MÓVIL[\s\S]*progresión doble · 2 días/i);
-    assert.match(await cont(), /Es de consulta: para preparar cambios crea un borrador/);
-    // Crear el borrador con el teclado.
-    await pagina.focus('[data-rut-accion="nuevo-movil"]');
-    await pagina.keyboard.press('Enter');
-    await pagina.waitForSelector('.rut-dias');
-    await pagina.waitForFunction(id => document.activeElement && document.activeElement.id === id, 'rutExportar', { timeout: 5000 });
-    assert.match(await cont(), /Tu borrador es igual que la rutina del móvil/);
-    // Editar: series, modalidad, nuevo ejercicio con patrón deducido y orden.
-    await pagina.fill('#rut-0-1-series', '4');
-    await pagina.press('#rut-0-1-series', 'Tab');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores[0]?.rutina.dias[0].filas[1].series === 4);
-    await pagina.selectOption('#rut-1-0-modalidad', 'topBack');
-    await pagina.waitForSelector('#rut-1-0-backoffPct');
-    await pagina.waitForFunction(id => document.activeElement && document.activeElement.id === id, 'rut-1-0-modalidad', { timeout: 5000 });
-    await pagina.click('#rut-1-nueva');
-    await pagina.waitForFunction(id => document.activeElement && document.activeElement.id === id, 'rut-1-1-ejercicio', { timeout: 5000 });
-    await pagina.keyboard.type('Peso muerto rumano con barra');
-    await pagina.keyboard.press('Tab');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores[0]?.rutina.dias[1].filas[1].patron === 'Bisagra');
-    await pagina.focus('#rut-1-1-arriba');
-    await pagina.keyboard.press('Enter');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores[0]?.rutina.dias[1].filas[0].ejercicio === 'Peso muerto rumano con barra');
-    await pagina.waitForFunction(id => document.activeElement && document.activeElement.id === id, 'rut-1-0-abajo', { timeout: 5000 });
-    const cambios = await pagina.locator('#rutCambios').innerText();
-    assert.match(cambios, /Dominada asistida en máquina: Series 3 → 4/);
-    assert.match(cambios, /Sentadilla con barra: Modalidad Series normales → Top set \+ back-off/);
-    assert.match(cambios, /Nuevo\s*Peso muerto rumano con barra · 3 × 8-10/i);
-    const avisos6 = await pagina.locator('#rutAvisos').innerText();
-    assert.match(avisos6, /máximo debe superar al mínimo; la app usará 8–10/);
-    const tablaGrupos = await pagina.locator('table', { has: pagina.locator('caption', { hasText: 'rutina del móvil frente al borrador' }) }).innerText();
-    assert.match(tablaGrupos, /Espalda\s+3\s+5,5\s+\+2,5/);
-    await foto('27-rutina-editor.png');
-    ok('rutina: borrador desde el móvil con teclado; series, modalidad, ejercicio nuevo y orden; cambios, avisos y grupos');
+    const txt = await pagina.locator('#contenido').innerText();
+    assert.match(txt, /Es de consulta: los cambios se hacen en la app/);
+    assert.match(txt, /Series planificadas por semana/i);
+    assert.doesNotMatch(txt, /borrador|Exportar|Excel/i);
+    assert.equal(await pagina.locator('#contenido input, #contenido select, #contenido textarea, [data-rut-accion]').count(), 0);
+    ok('mi rutina: la rutina del móvil solo se consulta; no hay editor, borradores ni exportación');
+  }
 
-    // Deshacer / rehacer y volver a la rutina de partida.
-    await pagina.focus('#rutDeshacer');
-    await pagina.keyboard.press('Control+z');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores[0]?.rutina.dias[1].filas[1].ejercicio === 'Peso muerto rumano con barra');
-    await pagina.click('#rutRehacer');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores[0]?.rutina.dias[1].filas[0].ejercicio === 'Peso muerto rumano con barra');
-    await pagina.click('[data-rut-accion="partida"]');
-    await pagina.getByText('Tu borrador es igual que la rutina del móvil').waitFor();
-    await pagina.click('#rutDeshacer');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores[0]?.rutina.dias[1].filas.length === 2);
-    ok('rutina: deshacer, rehacer y volver a la rutina de partida (también deshacible)');
-
-    // Fallo de escritura: el cambio no se aplica y lo guardado sigue intacto.
-    const antesFallo = await pagina.evaluate(() => JSON.stringify(Escritorio.estado.rut.borradores[0].rutina));
-    await pagina.evaluate(() => Almacen.simularFalloEscritura());
-    await pagina.fill('#rut-0-0-series', '9');
-    await pagina.press('#rut-0-0-series', 'Tab');
-    await pagina.getByText('No hay espacio en el navegador para guardar el borrador').waitFor();
-    assert.equal(await pagina.evaluate(() => JSON.stringify(Escritorio.estado.rut.borradores[0].rutina)), antesFallo);
-    await pagina.reload();
-    await pagina.waitForSelector('.rut-dias');
-    assert.equal(await pagina.evaluate(() => JSON.stringify(Escritorio.estado.rut.borradores[0].rutina)), antesFallo);
-    assert.equal(await pagina.inputValue('#rut-0-0-series'), '3');
-    ok('rutina: fallo de cuota conserva el borrador guardado; la recarga lo recupera');
-
-    // Exportar: Excel descargado, exportación anotada y sin aplicar.
-    await pagina.click('#rutExportar');
-    await pagina.getByText('Tu móvil no cambia todavía').waitFor();
-    const [descarga] = await Promise.all([pagina.waitForEvent('download'), pagina.click('[data-rut-accion="exportar-confirmar"]')]);
-    assert.match(descarga.suggestedFilename(), /^mi_rutina_truelift_[A-Za-z0-9_]+_\d{4}-\d{2}-\d{2}\.xlsx$/);
-    const rutaXlsx = path.join(tmp, descarga.suggestedFilename());
-    await descarga.saveAs(rutaXlsx);
-    assert.deepEqual([...fs.readFileSync(rutaXlsx).subarray(0, 2)], [0x50, 0x4B]);
-    await pagina.getByText('Sin comprobar').waitFor();
-    assert.equal(await pagina.evaluate(() => Escritorio.estado.rut.borradores[0].exportaciones.length), 1);
-    // Abrir el Excel exportado como borrador: es la misma rutina para la app.
-    await pagina.setInputFiles('#rutExcel', rutaXlsx);
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores.length === 2);
-    const mismas = await pagina.evaluate(() => {
-      const [a, b] = Escritorio.estado.rut.borradores, raw = Escritorio.estado.raw;
-      return Planificador.firma(Planificador.comoLaApp(a.rutina, raw).normal) === Planificador.firma(Planificador.comoLaApp(b.rutina, raw).normal);
-    });
-    assert.ok(mismas);
-    assert.equal(await pagina.inputValue('#rutSelBorrador'), await pagina.evaluate(() => Escritorio.estado.rut.borradores[1].id));
-    ok('rutina: exportar descarga un Excel compatible, se anota «sin comprobar» y al reabrirlo produce la misma rutina');
-
-    // Una copia nueva del móvil con la rutina aplicada A PRUEBA: el borrador
-    // sigue, la exportación se reconoce y se avisa del cambio de origen.
-    await pagina.selectOption('#rutSelBorrador', await pagina.evaluate(() => Escritorio.estado.rut.borradores[0].id));
-    const plan6 = await pagina.evaluate(() => {
-      const b = Escritorio.estado.rut.borradores[0];
-      const sim = Planificador.comoLaApp(b.rutina, Escritorio.estado.raw);
-      return sim.dias.flatMap(d => d.lineas.map((l, i) => ({ dia: d.nombre, orden: i + 1, patron: '', grupo: '', ...l })));
-    });
-    const aplicada6 = structuredClone(raw6);
-    aplicada6.planMod = plan6;
-    aplicada6.importPendiente = { nombre: 'mi_rutina', origen: 'rutina_excel', ejerciciosAnadidos: [], previo: {} };
-    aplicada6.logs.push({ ...structuredClone(raw6.logs.at(-2)), fecha: '2026-07-03T18:00:00.000' });
-    await importar6(escribir('copia-aprueba.json', JSON.stringify(aplicada6)), 'actualizar');
-    assert.equal(await pagina.evaluate(() => Escritorio.estado.rut.borradores.length), 2);
-    await pagina.getByText('A prueba en el móvil').first().waitFor();
-    assert.match(await cont(), /La rutina de tu última copia no es la misma de la que partió este borrador/);
-    await foto('28-rutina-a-prueba.png');
-    delete aplicada6.importPendiente;
-    aplicada6.logs.push({ ...structuredClone(raw6.logs.at(-2)), fecha: '2026-07-04T18:00:00.000' });
-    await importar6(escribir('copia-confirmada.json', JSON.stringify(aplicada6)), 'actualizar');
-    await pagina.getByText('En tu móvil', { exact: true }).nth(1).waitFor();
-    assert.match(await cont(), /Tu borrador es igual que la rutina del móvil/);
-    await pagina.click('[data-rut-accion="rebasar"]');
-    await pagina.waitForFunction(() => !document.body.innerText.includes('no es la misma de la que partió'));
-    ok('rutina: actualizar la copia conserva los borradores; reconoce la rutina a prueba y luego aplicada; la discrepancia se resuelve');
-
-    // Una rutina de un solo día no se exporta; eliminar pide confirmación.
-    await pagina.click('[data-rut-accion="nuevo-blanco"]');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores.length === 3);
-    await pagina.click('#rutExportar');
-    await pagina.getByText('Aún no se puede exportar').waitFor();
-    assert.match(await pagina.locator('#modalCaja').innerText(), /entre 2 y 5 días con ejercicios; ahora hay 0/);
-    await pagina.click('#modalCaja [data-accion="cerrar"]');
-    await pagina.click('[data-rut-accion="eliminar"]');
-    await pagina.click('[data-rut-accion="eliminar-ok"]');
-    await pagina.waitForFunction(() => Escritorio.estado.rut.borradores.length === 2);
-    ok('rutina: sin días suficientes no se exporta; eliminar un borrador pide confirmación');
-
-    // Ventana estrecha y cierre/reapertura.
-    await pagina.setViewportSize({ width: 420, height: 900 });
-    await pagina.waitForTimeout(100);
-    assert.ok(await pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
-    await foto('29-rutina-estrecha.png');
-    await pagina.setViewportSize({ width: 1366, height: 900 });
-    const activo = await pagina.evaluate(() => Escritorio.estado.rut.activoId);
-    await pagina.close();
+  // --- Nutrición (solo consulta) con la copia de ejemplo: pauta, evolución,
+  // temporada con imágenes y reproducción, historial; nada cambia los datos ---
+  {
+    const paginaAntesN = pagina;
+    const servidorN = http.createServer(servidor.listeners('request')[0]);
+    await new Promise(ok => servidorN.listen(0, '127.0.0.1', ok));
+    servidorN.unref();
+    const origenN = `http://127.0.0.1:${servidorN.address().port}`;
+    origenesPrueba.add(origenN);
     pagina = await ctx.newPage();
-    await pagina.goto(`${origen6}/escritorio/#rutina`);
-    await pagina.waitForSelector('.rut-dias');
-    assert.equal(await pagina.evaluate(() => Escritorio.estado.rut.activoId), activo);
-    assert.equal(await pagina.evaluate(() => Escritorio.estado.rut.borradores.length), 2);
-    ok('rutina: 420 px sin desbordamiento; cerrar y reabrir conserva borradores y el activo');
-    await pagina.close(); servidor6.close(); pagina = paginaAntes6;
+    await pagina.setViewportSize({ width: 1366, height: 900 });
+    await pagina.goto(`${origenN}/escritorio/`);
+    await pagina.waitForSelector('html[data-listo="1"]');
+    await pagina.setInputFiles('#inputDatos', [new URL('../ejemplo/copia_truelift_2026-11-01.json', import.meta.url).pathname]);
+    await pagina.getByText('Revisa la importación').waitFor();
+    await pagina.click('[data-accion="confirmar"]');
+    await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+    await pagina.click('#modalCaja [data-accion="cerrar"]');
+    const textoAntes = await pagina.evaluate(() => Escritorio.estado.inst.texto);
+    await pagina.keyboard.press('Alt+5');
+    await pagina.getByRole('heading', { name: 'Nutrición', exact: true }).waitFor();
+    const txt = () => pagina.locator('#contenido').innerText();
+    assert.match(await txt(), /DÉFICIT · SEMANA \d+/i);
+    assert.match(await txt(), /Es de consulta: tu pauta y tu plan se cambian en la app/);
+    assert.match(await txt(), /come unas 171 kcal más al día que antes/);
+    await foto('40-nutricion-pauta.png');
+    await pagina.click('[data-ir="nutricion:evolucion"]');
+    await pagina.getByText('Tu peso en la fase').waitFor();
+    assert.match(await txt(), /Plan inicial/);
+    await pagina.click('[data-ir="nutricion:temporada"]');
+    await pagina.waitForSelector('#nutImagenes .nut-cuerpo img');
+    assert.match(await txt(), /Definición 1[\s\S]*Normocalórica[\s\S]*Volumen[\s\S]*Definición 2/);
+    assert.equal(await pagina.locator('#nutImagenes .nut-cuerpo img').count(), 2);
+    assert.ok((await pagina.locator('#nutImagenes .nut-cuerpo img').first().getAttribute('src')).startsWith('estados/hombre/'));
+    // Mover la imagen de partida con el teclado cambia solo lo que se ve.
+    await pagina.focus('#nutImgIzq');
+    await pagina.keyboard.press('ArrowRight');
+    await pagina.waitForFunction(() => Escritorio.estado.nut.izq != null && document.activeElement.id === 'nutImgIzq');
+    await foto('41-nutricion-temporada.png');
+    await pagina.click('[data-nut-modo="superponer"]');
+    await pagina.click('[data-accion="nut-reproducir"]');
+    await pagina.waitForFunction(() => document.querySelector('.nut-repro-etapa')?.textContent.trim().length > 1);
+    await pagina.waitForFunction(() => Number(document.querySelector('.nut-repro-avance')?.getAttribute('aria-valuenow')) > 20);
+    await pagina.click('[data-accion="nut-repro-pausa"]');
+    await pagina.keyboard.press('Escape');
+    await pagina.click('[data-ir="nutricion:historial"]');
+    await pagina.getByText('Historial de tu pauta').waitFor();
+    assert.match(await txt(), /Revisiones semanales/);
+    // Ningún control de la sección escribe: solo deslizadores de vista y botones.
+    assert.equal(await pagina.locator('#contenido input:not([type="range"]), #contenido select, #contenido textarea').count(), 0);
+    assert.equal(await pagina.evaluate(() => Escritorio.estado.inst.texto), textoAntes);
+    await pagina.setViewportSize({ width: 420, height: 900 });
+    for (const sub of ['pauta', 'evolucion', 'temporada', 'historial']){
+      await pagina.evaluate(s => { location.hash = `#nutricion/${s}`; }, sub);
+      await pagina.waitForSelector('.subnav button.activa');
+      const d = await pagina.evaluate(() => [innerWidth, document.documentElement.scrollWidth]);
+      assert.ok(d[1] <= d[0] + 2, `${sub}: ${d}`);
+    }
+    ok('nutrición: pauta, evolución, temporada con imágenes y reproducción, historial; solo consulta y 420 px sin desbordamiento');
+    await pagina.close(); servidorN.close(); pagina = paginaAntesN;
   }
 
   // --- Fase 7. Informe de un periodo: selección, fotos solo elegidas,
@@ -948,7 +856,7 @@ try {
     await pagina.click('[data-accion="confirmar"]');
     await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
     await pagina.click('#modalCaja [data-accion="cerrar"]');
-    await pagina.keyboard.press('Alt+6');
+    await pagina.keyboard.press('Alt+7');
     await pagina.getByRole('heading', { name: 'Septiembre de 2026', exact: true }).waitFor();
     const doc = () => pagina.locator('.informe-doc').innerText();
     for (const t of ['RESUMEN DEL PERIODO', 'CONSTANCIA', 'PROGRESIÓN VERIFICABLE', 'EVOLUCIÓN FÍSICA', 'VOLUMEN REALIZADO', 'RECUPERACIÓN',
@@ -957,7 +865,7 @@ try {
     assert.match(await doc(), /Cintura\s+84,6 cm\s*4 sep 2026\s+84 cm\s*25 sep 2026\s+−0,6 cm/);
     assert.match(await doc(), /Fotos registradas en el periodo: 3 \(1 sin imagen importada\)/);
     assert.equal(await pagina.locator('[data-inf-foto]').count(), 0);
-    ok('informe: Alt + 6 abre el último mes completo con todas sus secciones, contornos sin arrastre y sin fotos');
+    ok('informe: Alt + 7 abre el último mes completo con todas sus secciones, contornos sin arrastre y sin fotos');
     await foto('30-informe.png');
 
     // Fechas con el teclado: invertidas se rechazan sin guardar; válidas se
@@ -1071,7 +979,7 @@ try {
     await pagina.click('#modalCaja [data-accion="cerrar"]');
     await pagina.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
     await pagina.getByText('esta página ya se puede abrir sin conexión en este navegador').waitFor();
-    assert.deepEqual((await pagina.evaluate(() => caches.keys())).sort(), ['otra-pagina', 'tlcoach-v16', 'tlescritorio-v12']);
+    assert.deepEqual((await pagina.evaluate(() => caches.keys())).sort(), ['otra-pagina', 'tlcoach-v16', 'tlescritorio-v14']);
     // Sin red ni servidor: la página, los datos y el informe siguen disponibles.
     await ctx.setOffline(true);
     servidor8.closeAllConnections(); await new Promise(ok => servidor8.close(ok));

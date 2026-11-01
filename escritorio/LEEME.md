@@ -4,11 +4,16 @@ Versión de escritorio de TrueLift para la persona que entrena: importa en el
 ordenador la copia de seguridad de la app y, si quieres, tus fotos de
 progreso, para consultar tu evolución en pantalla grande.
 
+**Es un visor de la app.** Aquí no se edita ni se exporta nada que la app
+cobre: la rutina, la dieta y los registros solo se cambian en el móvil, que es
+la que manda. Desde el 01/11/2026 ya no hay editor de rutinas, exportación a
+Excel ni vídeo de progreso.
+
 **Estado:** fases 0–8 implementadas y validadas en el entorno indicado en
 `VALIDACION.md`. Pendiente de revisión, comprobación en Safari/Firefox y prueba
 de transferencia en dispositivos iOS/Android reales. Esta entrega no publica
-ni fusiona cambios. Ver `PLAN.md`; definiciones en `METRICAS.md` y contrato
-del planificador en `PLANIFICADOR.md`.
+ni fusiona cambios. Ver `PLAN.md` (registro histórico, incluidas fases que ya
+no existen) y las definiciones en `METRICAS.md`.
 
 ## Secciones
 
@@ -24,24 +29,27 @@ del planificador en `PLANIFICADOR.md`.
   sesiones), rendimiento por sesión, volumen por grupo muscular y semana y comparación de dos periodos.
 - **Evolución física:** peso tendencia y fase con el progreso de la fase
   frente a lo pactado (como «Cómo vas» de la app), composición (estimación),
-  contornos con gráficas y tablas, galería por fecha/pose, comparación de fotos
-  y **vídeo de progreso** como el de la app (las fotos de una pose en orden de
-  fecha, con fundido, el encuadre de la app, igualar luz, blanco y negro,
-  zonas pixeladas, la música TrueLift con el drop en la última foto y la marca
-  TRUELIFT; se graba en el navegador a 1080 de ancho y se descarga en MP4 o
-  WebM, `video.js`).
+  contornos con gráficas y tablas, galería por fecha/pose y comparación de fotos.
 - **Recuperación:** estado para entrenar, cuestionarios, VFC, FC en reposo y
-  datos del reloj.
-- **Mi rutina:** la rutina de tu móvil (consulta) y tus borradores: editor con
-  todos los días a la vista, cambios frente a la rutina del móvil, series por
-  grupo, avisos y exportación al Excel que importa la app.
+  datos del reloj. Las tarjetas de VFC y FC en reposo llevan el **semáforo** de
+  la app: qué papel juega cada señal en tu disponibilidad (a favor, vigilando o
+  frena; apagada si no cuenta) y lo que dice la otra (`senales.js`).
+- **Nutrición:** solo consulta (`nutricion-esc.js` y `nutricion-vista.js`).
+  *Tu pauta* (fase y semana, cómo la sigues, objetivo de calorías o último
+  cambio acordado, pasos, proteína, macros y comidas), *Evolución* (progreso de
+  la fase con «Llevas» y «Tu objetivo», tendencia, tu objetivo en azul y el plan
+  inicial en morado), *Temporada* (proyección del plan como la app, gráficas,
+  etapas con su «Final» e ilustraciones del cuerpo lado a lado o superpuestas
+  con ▶ Reproducir) e *Historial* (versiones de la pauta y revisiones
+  semanales). Los mandos solo cambian lo que se ve.
+- **Mi rutina:** la rutina de tu móvil, de consulta, con sus series por grupo.
 - **Informes:** informe de un mes o de unas fechas (constancia, progresión
   verificable, evolución física, volumen, recuperación, cambios, aspectos que
   revisar y limitaciones) para leer, imprimir o guardar en PDF.
 - **Mis datos:** importación, almacenamiento, fotos con incidencias e
   historial de importaciones.
 
-Teclado: Alt + 1…7 cambia de sección; Atrás y Adelante del navegador
+Teclado: Alt + 1…8 cambia de sección; Atrás y Adelante del navegador
 funcionan entre secciones.
 
 **Tema:** oscuro o claro, como en la app. Por defecto sigue el de la app
@@ -61,6 +69,8 @@ Coach conserva los suyos para el papel.
 - **Barra lateral:** secciones agrupadas (Analizar · Planificar y compartir ·
   Mis datos) con su atajo, hasta qué día llegan tus datos, la importación y el
   aviso de privacidad. En pantallas estrechas pasa a ser una fila arriba.
+  Grupos: Analizar (Mi resumen, Entrenamiento, Evolución física,
+  Recuperación, Nutrición) · Tu rutina e informes · Mis datos.
 - **Mi resumen:** cuatro cifras clave con mini gráfica, «Lo más relevante» en
   tarjetas, la **línea de tiempo** del bloque (rendimiento por sesión, peso y
   entrenos sobre las mismas fechas, con fases y descargas; cada capa se puede
@@ -70,13 +80,11 @@ Coach conserva los suyos para el papel.
 - **Entrenamiento:** la ficha de un ejercicio lleva al lado la lista de tus
   ejercicios para pasar de uno a otro. Comparar periodos empieza con una
   franja de diferencias principales de A a B, sin declarar un ganador.
-- **Mi rutina:** el recorrido móvil → borrador → archivo exportado en tres
-  pasos numerados.
 - **Dibujos de los ejercicios:** cada ejercicio de la biblioteca lleva el
   mismo dibujo que en la app: en las tablas de ejercicios, sesiones y
   comparación, en la lista junto a la ficha, en la cabecera de la ficha (con
-  su nota técnica), en la rutina del móvil y en el editor de borradores.
-  Pulsar el dibujo de la ficha o del editor lo amplía con lo que la app
+  su nota técnica) y en la rutina del móvil.
+  Pulsar el dibujo de la ficha lo amplía con lo que la app
   cuenta del ejercicio. Los ejercicios que creaste tú no tienen dibujo: su
   hueco lleva la inicial. Al imprimir no salen.
 - **Informes:** en pantalla el documento ya se ve como una hoja de papel, con
@@ -116,7 +124,7 @@ pantallas de móvil.
 5. Revisa la vista previa y confirma. Hasta que confirmas no se guarda nada.
 
 Para probarlo sin exportar datos propios está la copia de ejemplo
-`ejemplo/copia_truelift_2026-10-16.json` (el historial del modo DEMO de la app), la misma que se descarga desde la
+`ejemplo/copia_truelift_2026-11-01.json` (el historial del modo DEMO de la app), la misma que se descarga desde la
 sección «TrueLift Escritorio» de la web. No registra fotos de progreso: para
 probar la galería y la comparación importa un ZIP de fotos de la app.
 
@@ -197,42 +205,21 @@ para los entrenamientos y fases históricas necesitas la copia JSON.
 La perspectiva, la luz y la postura afectan a la comparación; los ajustes
 no corrigen esas diferencias. Masa magra estimada no equivale a músculo.
 
-## Preparar y aplicar un cambio de rutina (fase 6)
+## Mi rutina (solo consulta)
 
-1. Importa tu copia de datos y abre **Mi rutina**. Arriba ves tres cosas
-   distintas: la rutina **en tu móvil** (según la copia), tu **borrador** y el
-   último **archivo exportado**.
-2. Pulsa **Nuevo borrador desde la rutina del móvil** (o **Nuevo en blanco**, o
-   **Abrir un Excel de rutina…**). Puedes tener varios borradores.
-3. Edita: nombre y orden de los días, ejercicios (escribe o elige; si eliges
-   uno del catálogo sin patrón, se rellena solo), series, repeticiones, RIR,
-   descanso, modalidad (series normales, top set + back-off, drop set,
-   rest-pause) y superseries. Todo se maneja con el teclado; ↑ ↓ cambian el
-   orden. Cada cambio se guarda en este navegador.
-4. **Deshacer** / **Rehacer** (Ctrl + Z / Ctrl + Y fuera de un campo de texto)
-   y **Volver a la rutina de partida** recuperan versiones anteriores.
-5. Revisa **Cambios frente a la rutina del móvil**, **Series por grupo**,
-   **Avisos antes de exportar** (lo que la app interpretará de otra forma) y
-   **Tus cargas al aplicar esta rutina**.
-6. **Exportar Excel para la app** descarga `mi_rutina_truelift_….xlsx`.
-   **Tu móvil no cambia todavía.**
-7. Pasa el archivo al móvil e impórtalo en la app: **Rutina → Importar**. La
-   app te enseña la rutina a prueba; confírmala o descártala allí.
-8. Para comprobarlo, exporta una copia nueva desde el móvil e impórtala aquí:
-   el archivo exportado aparecerá como **A prueba en el móvil** o **En tu
-   móvil**.
+Enseña la rutina personalizada que trae tu copia (días, ejercicios, series,
+reps, RIR, descanso y modalidades) y sus series por grupo y semana. Si usas
+una rutina prefijada de la app, no viaja en la copia. Los cambios se hacen
+en la app.
 
-- Importar una copia nueva **no borra** tus borradores. Si la rutina del móvil
-  cambió desde que empezaste un borrador, se avisa con los cambios y eliges
-  entre mantener tu borrador o crear otro desde la rutina actual.
-- El historial importado no se edita aquí; los borradores son aparte.
-- Si la app no admite algo del archivo con tu versión, te lo explica al
-  importarlo. Un ejercicio que no tengas en tu biblioteca se añade solo si lo
-  aceptas en la app.
+Hasta el 01/11/2026 el escritorio tenía un editor de borradores con
+exportación al Excel de la app. Se retiró: al abrir, el navegador borra los
+borradores que quedaran guardados (IndexedDB v2). Los Excel que ya
+descargaste siguen siendo tuyos y la app los importa con sus propias reglas.
 
 ## Informe de un periodo (fase 7)
 
-1. Abre **Informes** (Alt + 6). Sale el último mes natural completo de tus
+1. Abre **Informes** (Alt + 7). Sale el último mes natural completo de tus
    datos; elige otro mes u **Otras fechas** y pulsa **Ver informe**. El periodo
    se guarda para este espacio (también tras actualizar la copia).
 2. Las fotos no se incluyen por defecto. Marca **Añadir fotos al informe** y
@@ -283,9 +270,28 @@ pierde al cerrar.
   datos sin el ZIP.
 - Como último recurso: **Borrar todos los datos del escritorio** y volver a
   importar tus archivos originales.
-- Un borrador que no se pudo guardar (falta de espacio) se queda como estaba
-  en su último guardado; el aviso lo dice. Los Excel ya exportados son
-  archivos tuyos: puedes volver a abrirlos con **Abrir un Excel de rutina…**.
+
+## Al día con la app (01/11/2026)
+
+Cambios de App-PRO del 21/10 al 01/11/2026 que afectan a lo que se consulta:
+
+- **Cardio duplicado:** el cardio apuntado a mano que repite una sesión del
+  reloj (`duplicadaDe`) no cuenta en constancia, línea de tiempo ni informes.
+- **Rango de reps subido tras el paso atrás:** cada sesión se juzga con el
+  objetivo que tenía ese día (`repsExtra`) y la ficha dice el de hoy.
+- **Déficit:** la ficha recoge cuando se vuelve a estancar tras bajar el peso
+  y la app propone cambiar el ejercicio.
+- **Volumen:** series que la autorregulación quitó del plan (`seriesPlan`).
+- **Enfoques nuevos** de la rutina y **nombre del usuario** (saludo en Mi
+  resumen y portada del informe).
+- **Semáforo de VFC y FC en reposo** en Recuperación.
+- **Nutrición** completa en modo consulta, con el planificador de temporada,
+  sus ilustraciones y la reproducción.
+- **Copia de ejemplo** = demo de la app del 01/11/2026.
+
+No se han traído la ficha técnica nueva (fotos de inicio y final del
+movimiento) ni el mapa muscular: sus imágenes vienen de un pack con licencia
+que no permite publicarlas en bruto en una web.
 
 ## Al día con la app (20/10/2026)
 
@@ -314,9 +320,6 @@ Cambios de App-PRO del 11 al 20/10/2026 que afectan al escritorio:
 node --test escritorio/tests/*.test.mjs     # módulos (Node 20+)
 PLAYWRIGHT_MODULE=/ruta/playwright node escritorio/tests/e2e.mjs   # si no está en node_modules
 node escritorio/tests/e2e.mjs [capturas/]   # navegador (requiere Playwright)
-node escritorio/tests/video.e2e.mjs [capturas/]   # vídeo de progreso: vista previa, pixelar, grabar con música y descargar
 PLAYWRIGHT_MODULE=/ruta/playwright AXE_MODULE=/ruta/axe-core/axe.min.js node escritorio/tests/integral.e2e.mjs [capturas/]
                                             # fase 8: persistencia real, proceso, ZIP, caché, accesibilidad
-DART=/ruta/dart node --test escritorio/tests/planificador.test.mjs
-                                            # + lector real del Excel de la app (App-PRO al lado)
 ```

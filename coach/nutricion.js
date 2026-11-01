@@ -53,8 +53,8 @@ const NUT = {
 
   // §6.4 — Proteína
   proteinaGPorKg: 1.8,
-  proteinaGPorKgMin: 1.6,
-  proteinaGPorKgMax: 2.2,
+  proteinaGPorKgMin: 1.4,
+  proteinaGPorKgMax: 3.0,
 
   // §3.3 — Asentamiento
   settlingMinDays: 21,
@@ -114,7 +114,7 @@ const NUT = {
   grasaRegistroMaxPct: 60.0,
 
   // Implantación §3–§4 — Partición y reparto
-  particionDeficitAnclas: { 10: 0.70, 15: 0.78, 20: 0.85, 25: 0.90, 30: 0.95 },
+  particionDeficitAnclas: { 10: 0.85, 15: 0.90, 20: 0.95, 25: 0.95, 30: 0.95 },
   particionDesplazamientoMujerPp: 8.0,
   particionPenalizacionAmbar: 0.05,
   particionPenalizacionRojo: 0.10,
@@ -780,8 +780,11 @@ const Particion = {
 
   /* `p` esperado: base por fase + penalización por la banda del ritmo. En
      déficit correr más deja peor reparto; en superávit, engorda más. */
+  /* Mantenimiento (app, 20/09/2026): el mismo `p` que en superávit sin
+     penalizar, en los dos sentidos, para que la oscilación diaria de la
+     tendencia no deje residuo. */
   esperado({ tipo, grasaPct, sexo = null, experiencia = null, banda = 'verde' }){
-    if (tipo === 'MAINTENANCE') return 0;
+    if (tipo === 'MAINTENANCE') return this.superavitBase(experiencia);
     if (tipo === 'DEFICIT'){
       const pen = banda === 'ambar' ? NUT.particionPenalizacionAmbar
                 : banda === 'rojo'  ? NUT.particionPenalizacionRojo : 0;

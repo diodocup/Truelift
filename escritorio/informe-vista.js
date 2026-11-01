@@ -84,6 +84,7 @@ function documento(M, R, { inst, fotos = [] } = {}){
   out.push(`<header class="inf-cab">
     <p class="inf-marca">TrueLift · Informe personal</p>
     <h2 id="informeTitulo">${esc(titulo)}</h2>
+    ${M.nombre && r.titulo ? `<p class="inf-saludo">Tu mes, ${esc(M.nombre)}</p>` : M.nombre ? `<p class="inf-saludo">Tu periodo, ${esc(M.nombre)}</p>` : ''}
     <p class="muted">${rango(r.desde, r.hasta)} · ${F.plural(r.dias, 'día', 'días')}</p>
     <p class="muted inf-meta">Tus datos llegan hasta el ${F.dia(R.ref)}${inst ? ` · copia importada el ${F.dia(new Date(inst.importadoEn))}` : ''} · informe preparado el ${F.dia(new Date())}.</p>
   </header>`);

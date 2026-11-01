@@ -121,15 +121,18 @@ arrancan solos y muestran los controles nativos. Los vídeos están grabados en 
 
 ## TrueLift Escritorio
 
-La sección `#escritorio` presenta la versión para ordenador (`escritorio/`, ver su `LEEME.md`): la
-persona importa la copia de seguridad de la app y ve sus métricas en grande, alguna que no está en
-el móvil, sus informes y su rutina, que exporta al Excel que importa la app (importarlo en el móvil es
-PRO, por eso la tarjeta lo marca). El botón del hero lleva a esa sección.
+La sección `#escritorio` presenta la versión para ordenador (`escritorio/`, ver su `LEEME.md`): un
+visor de la app. La persona importa la copia de seguridad y consulta en grande sus métricas (alguna
+vista que no está en el móvil), su nutrición, sus informes y su rutina. **No edita ni exporta nada
+que la app cobre**: la rutina, la dieta y los registros solo se cambian en la app, que es la que
+manda. El botón del hero lleva a esa sección.
 
-La copia que se descarga para probarlo es `escritorio/ejemplo/copia_truelift_2026-10-16.json`.
+El informe mensual es PRO en la app: la comparativa y la lista de Gratis no lo incluyen.
+
+La copia que se descarga para probarlo es `escritorio/ejemplo/copia_truelift_2026-11-01.json`.
 Es la única copia de ejemplo del sitio: el mismo historial que el modo DEMO de la app
-(`assets/demo/historial_demo.json` en App-PRO). La usan también `escritorio/tests/planificador.test.mjs`
-y `escritorio/tests/progreso-fase.test.mjs`.
+(`assets/demo/historial_demo.json` en App-PRO). La usan también las pruebas del escritorio
+(`progreso-fase.test.mjs`, `nutricion-esc.test.mjs` y el recorrido e2e de Nutrición).
 
 TrueLift Coach se ha retirado de la web: `coach/index.html` solo redirige a `escritorio/`. El resto
 de `coach/` se conserva porque el escritorio carga de ahí su motor y sus estilos.

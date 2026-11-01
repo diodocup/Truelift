@@ -87,6 +87,7 @@ function resumen(M, ctx){
   }
   const P = Analisis.peso(M);
   out.push(`<div class="cabecera-seccion"><h1>Mi resumen</h1>
+    ${M.nombre ? `<p class="saludo">Hola, ${esc(M.nombre)}</p>` : ''}
     <p class="muted">Tus datos llegan hasta el <b>${F.dia(r.ultimoRegistro)}</b> (${antig}). Último entrenamiento: ${F.dia(r.ultimoEntreno)}. Copia importada el ${F.dia(new Date(ctx.inst.importadoEn))}.
     ${dias > 14 ? '<br>Para ver lo más reciente, exporta una copia nueva en el móvil e impórtala.' : ''}</p>
     ${contextoBloque(M, P)}</div>`);
@@ -287,7 +288,7 @@ function tarjetaVolumenGrupos(M){
   const max = filas[0][1];
   return tarjeta('Volumen por grupo', `<p class="muted tarjeta-sub">${sub}</p>
     <ul class="vol-lista">${filas.map(([g, v]) => `<li><span>${esc(g)}</span><span class="vol-barra" aria-hidden="true"><i style="width:${(v / max * 100).toFixed(1)}%"></i></span><b>${F.num(v, 1).replace(/,0$/, '')}</b></li>`).join('')}</ul>
-    <div class="fila-botones">${ir('entrenamiento:volumen', 'Ver volumen por semana')}${ir('rutina', 'Ajustar en Mi rutina')}</div>`);
+    <div class="fila-botones">${ir('entrenamiento:volumen', 'Ver volumen por semana')}${ir('rutina', 'Ver Mi rutina')}</div>`);
 }
 
 // ---------- accesos del escritorio ----------
@@ -295,7 +296,7 @@ const TILES = [
   ['informes', 'Informe del último mes', 'Tu mes en un documento para imprimir o guardar en PDF', '<path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-10z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h6"/>'],
   ['entrenamiento:comparar', 'Compara dos periodos', 'Tus últimas semanas frente a las anteriores, lado a lado', '<path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/>'],
   ['fisica', 'Compara tus fotos', 'Dos fechas lado a lado, con el peso de cada una', '<rect x="3" y="5" width="8" height="14" rx="2"/><rect x="13" y="5" width="8" height="14" rx="2"/>'],
-  ['rutina', 'Prepara tu próximo bloque', 'Todos los días a la vista y exportación a la app', '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/>'],
+  ['nutricion', 'Tu nutrición', 'Tu pauta, tu plan de temporada y cómo vas', '<path d="M12 21c-4.4 0-8-3.6-8-8 0-3.3 2.2-6.4 5-7.5 1 .9 2 1.4 3 1.4s2-.5 3-1.4c2.8 1.1 5 4.2 5 7.5 0 4.4-3.6 8-8 8z"/><path d="M12 7c0-2 1-3.5 3-4"/>'],
 ];
 function tarjetaSiguiente(){
   return `<section class="siguiente" aria-labelledby="t-siguiente"><h2 id="t-siguiente">Sigue en el escritorio</h2>
@@ -425,8 +426,14 @@ function progresoFase(N){
   const barra = (fr, color, marca, nombre) => `<div class="fase-barra" role="img" aria-label="${esc(nombre)}"><i style="width:${Math.round(fr * 1000) / 10}%;background:${color}"></i>${marca != null ? `<b style="left:${Math.round(marca * 1000) / 10}%" title="Lo previsto a esta fecha"></b>` : ''}</div>`;
   const color = !ver ? 'var(--txt4)' : clase === 'verde' ? 'var(--lima)' : 'var(--ambar)';
   const filas = [];
-  if (p.fraccionPeso != null && p.totalKg != null)
-    filas.push(`<div class="fase-fila"><span>Peso</span><b class="mono">${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPeso, color, p.fraccionPrevista, `Llevas ${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}`)}`);
+  // Como «Cómo vas» de la app (28-29/10/2026): dos barras a la misma escala,
+  // lo que llevas y tu objetivo, que se rellena hasta lo que el objetivo
+  // vigente esperaba llevar hoy.
+  if (p.fraccionPeso != null && p.totalKg != null){
+    filas.push(`<div class="fase-fila"><span>Llevas</span><b class="mono">${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPeso, color, null, `Llevas ${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}`)}`);
+    if (p.fraccionPrevista != null)
+      filas.push(`<div class="fase-fila"><span>Tu objetivo</span><b class="mono">${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPrevista, 'var(--azul, #4F8EF7)', null, `Tu objetivo esperaba llevar ${F.num(Math.max(0, p.previstoKg), 1)} de ${F.kg(p.totalKg)} a esta fecha`)}`);
+  }
   if (p.fraccionTiempo != null && p.semanasTotales != null){
     const sem = Math.min(p.semanaActual, Math.ceil(p.semanasTotales));
     filas.push(`<div class="fase-fila"><span>Tiempo</span><b class="mono">Semana ${sem} de ${F.num(p.semanasTotales, p.semanasTotales % 1 ? 1 : 0)}</b></div>${barra(p.fraccionTiempo, 'var(--txt3)', null, `Semana ${sem} de ${F.num(p.semanasTotales, 1)}`)}`);
@@ -763,7 +770,7 @@ function fichaEjercicio(M, nombre, st = {}){
     ${ficha && ficha.nota ? `<p class="ej-nota ficha-nota">${esc(ficha.nota)}</p>` : ''}
     ${etiquetas.length ? `<p class="ficha-etiquetas">${etiquetas.map(t => `<span>${esc(String(t))}</span>`).join('')}</p>` : ''}
     <p>${est.map(({ s, t }) => `${chip(t.clase, t.corto)}${s.dia ? ` <span class="muted">${esc(s.dia)}</span>` : ''}`).join(' · ')}</p>
-    ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
+    ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.repsExtra ? ` Como bajaste el peso por estancamiento, ahora buscas ${esc(s.repsHoy)} reps; al conseguirlo volverá a subir la carga y recuperarás tu rango de siempre.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.trasPasoAtras ? ' La app marcó que se volvió a estancar tras bajar el peso y te propuso cambiarlo por una variante equivalente.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
     ${porQue.length ? `<details class="detalle"><summary>Por qué este estado</summary>${porQue.join('')}
       <p class="muted" style="font-size:12.5px">Son las sesiones más recientes de tu rutina actual que cuentan para la progresión, igual que en la app. Las descargas, las sesiones con molestias o con un cambio de un día y las que tienen series principales sin anotar no aparecen porque no cuentan.</p></details>` : ''}
     <div class="cifras">${cifra(String(ej.sesiones), 'sesiones')}
@@ -966,16 +973,22 @@ function volumen(M){
   if (!cubos.length) return tarjeta('Volumen', vacio('No hay sesiones de fuerza.'));
   const ult = cubos.slice(-12);
   const presentes = Motor.GRUPOS_VOLUMEN.filter(g => ult.some(c => c.series.get(g) > 0));
+  const hayRecortes = ult.some(c => Motor.recorteSemanal(c) > 0);
   const filas = ult.slice().reverse().map(c => [
     `${F.corta(c.inicio)}–${F.corta(new Date(+c.finExclusivo - 86400000))}${c.enCurso ? ' <span class="muted">(en curso)</span>' : c.dias < 7 ? ' <span class="muted">(parcial)</span>' : ''}${c.cambioRutina ? ' ' + chip('azul', 'Cambio de rutina') : ''}`,
     String(c.sesiones),
     ...presentes.map(g => { const v = c.series.get(g); return v ? F.num(v, 1) : '<span class="muted">0</span>'; }),
-    `<b>${F.num(Motor.tasaSemanal(c), 1)}</b>`]);
+    `<b>${F.num(Motor.tasaSemanal(c), 1)}</b>`,
+    ...(hayRecortes ? [Motor.recorteSemanal(c) > 0 ? `<span class="nowrap" style="color:${ROJO}">${F.num(Motor.recorteSemanal(c), 1)}</span>` : '<span class="muted">0</span>'] : [])]);
+  const grafCubos = cubos.filter(c => !c.enCurso).slice(-26);
   const total = Charts.lineas({ series: [{ nombre: 'Series efectivas por semana', color: TL.lima,
-    puntos: cubos.filter(c => !c.enCurso).slice(-26).map(c => ({ x: c.inicio, y: Math.round(Motor.tasaSemanal(c) * 10) / 10 })), unidad: 'series' }], w: 960, h: 220 });
+    puntos: grafCubos.map(c => ({ x: c.inicio, y: Math.round(Motor.tasaSemanal(c) * 10) / 10 })), unidad: 'series' },
+    ...(grafCubos.some(c => Motor.recorteSemanal(c) > 0) ? [{ nombre: 'Series que la app quitó de tu plan', color: ROJO, dash: '5 4',
+      puntos: grafCubos.map(c => ({ x: c.inicio, y: Math.round(Motor.recorteSemanal(c) * 10) / 10 })), unidad: 'series' }] : [])], w: 960, h: 220 });
   return tarjeta('Series por grupo muscular y semana', `
     <div class="chart-caja" role="img" aria-label="Series efectivas por semana, últimas semanas completas">${total}</div>
-    ${tabla(['Semana', 'Sesiones', ...presentes.map(esc), 'Total'], filas, { caption: 'Series por grupo y semana' })}
+    ${tabla(['Semana', 'Sesiones', ...presentes.map(esc), 'Total', ...(hayRecortes ? ['Quitadas por la app'] : [])], filas, { caption: 'Series por grupo y semana' })}
+    ${hayRecortes ? '<p class="muted" style="font-size:12.5px">«Quitadas por la app» son las series que la app retiró de tu plan para adaptarse a cómo llegabas (días en rojo, descargas o tu fase de nutrición). No cuentan como hechas.</p>' : ''}
     ${sinGrupo.length ? `<p class="muted" style="font-size:12.5px">No se reconoce el grupo de ${F.plural(sinGrupo.length, 'ejercicio', 'ejercicios')} (${sinGrupo.slice(0, 5).map(esc).join(', ')}${sinGrupo.length > 5 ? '…' : ''}): sus series no se reparten, como en la app.</p>` : ''}
     ${ayuda('Cuenta las series que anotaste, con el mismo reparto que la app: cada serie suma entera a su grupo principal y media a los grupos que también trabaja. Los ejercicios marcados como no realizados no suman. Las semanas van de lunes a domingo; la primera y la última pueden estar incompletas y se señalan.')}`);
 }
@@ -1038,7 +1051,7 @@ function fisica(M, ctx){
         ${N.fase && N.fase.pesoObjetivoKg > 0 ? cifra(F.kg(N.fase.pesoObjetivoKg), 'peso objetivo') : ''}</div>
       ${progresoFase(N)}
       ${grafica(svg, 'Pesajes y peso tendencia', tabla(['Fecha', 'Pesaje', 'Tendencia', '<span class="sr-only">Observación</span>'], filas, { caption: 'Pesajes' }))}
-      ${ayuda('La línea es el peso tendencia que calcula la app: suaviza las subidas y bajadas diarias de agua y comida para ver hacia dónde va tu peso. Los pesajes de días de refeed o tras una pausa se muestran, pero no mueven la tendencia. El progreso de la fase compara dónde está tu tendencia con dónde la ponía lo que pactaste al empezar, teniendo en cuenta los cambios de ritmo que aceptaste por el camino; la marca de la barra de peso es lo previsto. Ir por detrás no se recupera solo: el ajuste semanal de la app corrige el ritmo, no el terreno perdido.')}`));
+      ${ayuda('La línea es el peso tendencia que calcula la app: suaviza las subidas y bajadas diarias de agua y comida para ver hacia dónde va tu peso. Los pesajes de días de refeed o tras una pausa se muestran, pero no mueven la tendencia. El progreso de la fase compara dónde está tu tendencia con dónde la ponía lo que pactaste al empezar, teniendo en cuenta los cambios de ritmo que aceptaste por el camino: «Llevas» es lo que has avanzado y «Tu objetivo» se rellena hasta donde deberías estar hoy. Ir por detrás no se recupera solo: el ajuste semanal de la app corrige el ritmo, no el terreno perdido.')}`));
   } else {
     out.push(tarjeta('Peso', vacio(M.pc ? `Tu copia no trae pesajes (la nutrición de la app no está activa). Peso de tu perfil: ${F.kg(M.pc)}.` : 'Tu copia no trae pesajes.')));
   }
@@ -1082,6 +1095,8 @@ function recuperacion(M){
         tabla(['Fecha', 'Estado', 'Sueño', 'Ánimo', 'Estrés', 'Agujetas', 'Dolor', 'Enfermo'], r60.slice().reverse().map(fila), { caption: 'Cuestionarios diarios' }))}
       ${ayuda('Es el estado para entrenar que la app calculó cada día con tu cuestionario (0 a 100). En verde la app propone entrenar con normalidad; en ámbar o rojo ajusta la intensidad. Se muestran los dos meses previos a tu último registro.')}`));
   }
+  // --- Semáforo de las señales nocturnas (29/10/2026) ---
+  const luces = typeof Senales === 'object' ? Senales.preparar(M.raw, R, M.datos.perfil, M.ref) : null;
   // --- VFC ---
   const vfcV = VFC.validas(R);
   if (vfcV.length){
@@ -1096,7 +1111,7 @@ function recuperacion(M){
     ], leyendaExtra: media.some((m, i) => m.y < umbral[i].y) ? [{ color: ROJO, texto: 'Media por debajo del umbral' }] : [], w: 960, h: 240 });
     const filas = vfcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => { const t = tend.get(v.clave);
       return [F.dia(v.fecha), F.num(v.vfc, 0), t ? F.num(t.media7, 1) : '—', t ? F.num(t.umbral, 1) : '—']; });
-    out.push(tarjeta('Variabilidad de la frecuencia cardiaca (VFC)', grafica(svg, 'VFC nocturna, media de 7 días y umbral', tabla(['Noche', 'VFC (ms)', 'Media 7 días', 'Umbral'], filas, { caption: 'VFC' })) +
+    out.push(tarjeta('Variabilidad de la frecuencia cardiaca (VFC)', pastillaSenal(luces && luces.vfc, true, M.ref) + grafica(svg, 'VFC nocturna, media de 7 días y umbral', tabla(['Noche', 'VFC (ms)', 'Media 7 días', 'Umbral'], filas, { caption: 'VFC' })) +
       ayuda('La media de varias noches se compara con tu propia referencia. Si queda por debajo de forma sostenida, la app lo tiene en cuenta como señal de cansancio. Las noches que descartaste no cuentan.')));
   }
   // --- FC en reposo ---
@@ -1110,7 +1125,7 @@ function recuperacion(M){
     const svg = Charts.lineas({ series: [{ nombre: 'FC en reposo', color: TL.azul, puntos: pts, unidad: 'ppm' },
       { nombre: 'Límite alto para ti', color: TL.ambar, puntos: alta, unidad: 'ppm', dash: '5 4', sinPuntos: true }],
       leyendaExtra: pts.some(p => p.c) ? [{ color: ROJO, texto: 'Por encima de tu límite' }] : [], w: 960, h: 220 });
-    out.push(tarjeta('Frecuencia cardiaca en reposo', grafica(svg, 'FC en reposo y su límite alto',
+    out.push(tarjeta('Frecuencia cardiaca en reposo', pastillaSenal(luces && luces.fc, false, M.ref) + grafica(svg, 'FC en reposo y su límite alto',
       tabla(['Día', 'FC (ppm)', 'Límite alto'], fcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => [F.dia(v.fecha), F.num(v.fcReposo, 0), banda.get(v.clave) ? F.num(banda.get(v.clave).alta, 1) : '—']), { caption: 'FC en reposo' }))));
   }
   // --- reloj: sueño y pasos ---
@@ -1141,6 +1156,20 @@ function recuperacion(M){
   if (out.length === 1) out.push(tarjeta('Recuperación', vacio('Tu copia no trae datos de recuperación.')));
   return out.join('');
 }
+/* Pastilla con tres luces: qué papel juega la señal en tu disponibilidad a
+   fecha de tu último registro (a favor, vigilando o frena; apagada si no
+   cuenta). No depende solo del color: cambia la luz encendida, su relleno
+   (anillo o punto) y el fondo. */
+function pastillaSenal(a, esVfc, ref){
+  if (!a) return '';
+  const t = Senales.texto(a, esVfc);
+  const luz = { aFavor: 0, vigilando: 1, frena: 2 }[a.estado];
+  const clase = luz == null ? 'apagada' : ['verde', 'ambar', 'rojo'][luz];
+  const luces = [0, 1, 2].map(i => `<i class="${i === luz ? 'on' : ''}"></i>`).join('');
+  return `<div class="pastilla-senal ${clase}" role="status"><span class="ps-luces" aria-hidden="true">${luces}</span>
+    <span class="ps-txt"><b>${esc(t.principal)}</b>${t.segunda ? `<span>${esc(t.segunda)}</span>` : ''}</span>
+    <span class="ps-fecha muted">a ${F.dia(ref)}</span></div>`;
+}
 const COLOR_ESTADO = { verde: TL.lima, ambar: TL.ambar, rojo: '#F04438' };
 // Rojo de aviso de las gráficas de recuperación, por variable para el papel.
 const ROJO = 'var(--rojo-vivo, #F04438)';
@@ -1164,6 +1193,8 @@ function mediaPasos7(salud){
 // ---------------------------------------------------------------
 // MI RUTINA
 // ---------------------------------------------------------------
+/* Enfoque de la rutina (AppState.sexo): nombres de la app desde el 28/10/2026. */
+const ENFOQUE = { hombre: 'enfoque equilibrado', mujer: 'enfoque glúteo y cadena posterior', torso: 'enfoque torso y brazos', pierna: 'enfoque pierna completa' };
 function rutina(M, { sinCabecera = false } = {}){
   const out = [sinCabecera ? '' : '<div class="cabecera-seccion"><h1>Mi rutina</h1></div>'];
   const lineas = M.planMod;
@@ -1172,7 +1203,7 @@ function rutina(M, { sinCabecera = false } = {}){
     return out.join('');
   }
   const aviso = M.planConocido
-    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: para preparar cambios crea un borrador.</p>`
+    ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${ENFOQUE[M.raw.sexo] ? `${esc(ENFOQUE[M.raw.sexo])}, ` : ''}${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: los cambios se hacen en la app.</p>`
     : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días, sistema o lugar de entrenamiento que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
   const dias = [...new Set(lineas.map(l => l.dia))];
   const bloques = dias.map(d => {
@@ -1199,5 +1230,5 @@ function rutina(M, { sinCabecera = false } = {}){
   return out.join('');
 }
 
-return { resumen, entrenamiento, detalleSesionHtml, fisica, contornos, recuperacion, rutina, estadoTexto, F, SITIOS, tabla };
+return { resumen, entrenamiento, detalleSesionHtml, fisica, contornos, recuperacion, rutina, estadoTexto, F, SITIOS, tabla, progresoFase, grafica, TIPO_REC, ESTADO_REC, FASE_NUT };
 })();

@@ -244,16 +244,18 @@ test('las bandas de superávit dependen de la experiencia declarada', () => {
 
 test('la partición interpola entre anclas y desplaza los umbrales de mujer', () => {
   const api = cargar();
-  assert.equal(api.Particion.deficitBase(20, 'M'), 0.85);
-  assert.ok(Math.abs(api.Particion.deficitBase(22, 'M') - 0.87) < 1e-9);
-  assert.ok(Math.abs(api.Particion.deficitBase(20, 'F') - 0.732) < 1e-9);
-  assert.equal(api.Particion.deficitBase(5, 'M'), 0.70);    // satura por abajo
+  // Anclas de la app (constantes.dart): 10 → 0,85 · 15 → 0,90 · 20-30 → 0,95.
+  assert.equal(api.Particion.deficitBase(20, 'M'), 0.95);
+  assert.ok(Math.abs(api.Particion.deficitBase(12.5, 'M') - 0.875) < 1e-9);
+  assert.ok(Math.abs(api.Particion.deficitBase(20, 'F') - 0.87) < 1e-9);
+  assert.equal(api.Particion.deficitBase(5, 'M'), 0.85);    // satura por abajo
   assert.equal(api.Particion.deficitBase(45, 'M'), 0.95);   // satura por arriba
   // Correr más penaliza el reparto en déficit.
-  assert.ok(Math.abs(api.Particion.esperado({ tipo: 'DEFICIT', grasaPct: 20, banda: 'ambar' }) - 0.80) < 1e-9);
+  assert.ok(Math.abs(api.Particion.esperado({ tipo: 'DEFICIT', grasaPct: 20, banda: 'ambar' }) - 0.90) < 1e-9);
   // En superávit la penalización va en sentido contrario: más grasa ganada.
   assert.ok(Math.abs(api.Particion.esperado({ tipo: 'SURPLUS', experiencia: 'NOVICE', grasaPct: 15, banda: 'rojo' }) - 0.55) < 1e-9);
-  assert.equal(api.Particion.esperado({ tipo: 'MAINTENANCE', grasaPct: 20 }), 0);
+  // Mantenimiento (app, 20/09/2026): el de superávit sin penalizar.
+  assert.equal(api.Particion.esperado({ tipo: 'MAINTENANCE', grasaPct: 20 }), 0.50);
 });
 
 test('el reparto valora el último tramo y explica cuándo se calla', () => {
@@ -268,9 +270,9 @@ test('el reparto valora el último tramo y explica cuándo se calla', () => {
   assert.equal(r.deltaPesoKg, -4);
   assert.ok(Math.abs(r.deltaGrasaKg - -2.6) < 1e-9);
   assert.ok(Math.abs(r.fraccionGrasaObservada - 0.65) < 1e-9);
-  // p_esp: tabla en 22 % (0,87) menos la penalización de banda ámbar (0,05).
-  assert.ok(Math.abs(r.fraccionGrasaEsperada - 0.82) < 1e-9);
-  assert.equal(r.banda, 'ambar');   // 0,65 cae entre 0,82−0,25 y 0,82−0,10
+  // p_esp: tabla en 22 % (0,95) menos la penalización de banda ámbar (0,05).
+  assert.ok(Math.abs(r.fraccionGrasaEsperada - 0.90) < 1e-9);
+  assert.equal(r.banda, 'ambar');   // 0,65 cae entre 0,90−0,25 y 0,90−0,10
 
   // Menos de 14 días: cifras sí, semáforo no.
   const corto = api.Reparto.valorar({
