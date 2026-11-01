@@ -1095,6 +1095,8 @@ function recuperacion(M){
         tabla(['Fecha', 'Estado', 'Sueño', 'Ánimo', 'Estrés', 'Agujetas', 'Dolor', 'Enfermo'], r60.slice().reverse().map(fila), { caption: 'Cuestionarios diarios' }))}
       ${ayuda('Es el estado para entrenar que la app calculó cada día con tu cuestionario (0 a 100). En verde la app propone entrenar con normalidad; en ámbar o rojo ajusta la intensidad. Se muestran los dos meses previos a tu último registro.')}`));
   }
+  // --- Semáforo de las señales nocturnas (29/10/2026) ---
+  const luces = typeof Senales === 'object' ? Senales.preparar(M.raw, R, M.datos.perfil, M.ref) : null;
   // --- VFC ---
   const vfcV = VFC.validas(R);
   if (vfcV.length){
@@ -1109,7 +1111,7 @@ function recuperacion(M){
     ], leyendaExtra: media.some((m, i) => m.y < umbral[i].y) ? [{ color: ROJO, texto: 'Media por debajo del umbral' }] : [], w: 960, h: 240 });
     const filas = vfcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => { const t = tend.get(v.clave);
       return [F.dia(v.fecha), F.num(v.vfc, 0), t ? F.num(t.media7, 1) : '—', t ? F.num(t.umbral, 1) : '—']; });
-    out.push(tarjeta('Variabilidad de la frecuencia cardiaca (VFC)', grafica(svg, 'VFC nocturna, media de 7 días y umbral', tabla(['Noche', 'VFC (ms)', 'Media 7 días', 'Umbral'], filas, { caption: 'VFC' })) +
+    out.push(tarjeta('Variabilidad de la frecuencia cardiaca (VFC)', pastillaSenal(luces && luces.vfc, true, M.ref) + grafica(svg, 'VFC nocturna, media de 7 días y umbral', tabla(['Noche', 'VFC (ms)', 'Media 7 días', 'Umbral'], filas, { caption: 'VFC' })) +
       ayuda('La media de varias noches se compara con tu propia referencia. Si queda por debajo de forma sostenida, la app lo tiene en cuenta como señal de cansancio. Las noches que descartaste no cuentan.')));
   }
   // --- FC en reposo ---
@@ -1123,7 +1125,7 @@ function recuperacion(M){
     const svg = Charts.lineas({ series: [{ nombre: 'FC en reposo', color: TL.azul, puntos: pts, unidad: 'ppm' },
       { nombre: 'Límite alto para ti', color: TL.ambar, puntos: alta, unidad: 'ppm', dash: '5 4', sinPuntos: true }],
       leyendaExtra: pts.some(p => p.c) ? [{ color: ROJO, texto: 'Por encima de tu límite' }] : [], w: 960, h: 220 });
-    out.push(tarjeta('Frecuencia cardiaca en reposo', grafica(svg, 'FC en reposo y su límite alto',
+    out.push(tarjeta('Frecuencia cardiaca en reposo', pastillaSenal(luces && luces.fc, false, M.ref) + grafica(svg, 'FC en reposo y su límite alto',
       tabla(['Día', 'FC (ppm)', 'Límite alto'], fcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => [F.dia(v.fecha), F.num(v.fcReposo, 0), banda.get(v.clave) ? F.num(banda.get(v.clave).alta, 1) : '—']), { caption: 'FC en reposo' }))));
   }
   // --- reloj: sueño y pasos ---
@@ -1153,6 +1155,20 @@ function recuperacion(M){
   }
   if (out.length === 1) out.push(tarjeta('Recuperación', vacio('Tu copia no trae datos de recuperación.')));
   return out.join('');
+}
+/* Pastilla con tres luces: qué papel juega la señal en tu disponibilidad a
+   fecha de tu último registro (a favor, vigilando o frena; apagada si no
+   cuenta). No depende solo del color: cambia la luz encendida, su relleno
+   (anillo o punto) y el fondo. */
+function pastillaSenal(a, esVfc, ref){
+  if (!a) return '';
+  const t = Senales.texto(a, esVfc);
+  const luz = { aFavor: 0, vigilando: 1, frena: 2 }[a.estado];
+  const clase = luz == null ? 'apagada' : ['verde', 'ambar', 'rojo'][luz];
+  const luces = [0, 1, 2].map(i => `<i class="${i === luz ? 'on' : ''}"></i>`).join('');
+  return `<div class="pastilla-senal ${clase}" role="status"><span class="ps-luces" aria-hidden="true">${luces}</span>
+    <span class="ps-txt"><b>${esc(t.principal)}</b>${t.segunda ? `<span>${esc(t.segunda)}</span>` : ''}</span>
+    <span class="ps-fecha muted">a ${F.dia(ref)}</span></div>`;
 }
 const COLOR_ESTADO = { verde: TL.lima, ambar: TL.ambar, rojo: '#F04438' };
 // Rojo de aviso de las gráficas de recuperación, por variable para el papel.
