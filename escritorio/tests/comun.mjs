@@ -7,12 +7,13 @@ import zlib from 'node:zlib';
 const dir = new URL('../', import.meta.url);
 const cargados = new Set();
 export function cargar(...archivos){
-  // vistas.js usa las gráficas del rediseño y los dibujos: se cargan antes,
+  // vistas.js usa las gráficas del rediseño y los dibujos (con el mapa de
+  // fotos de RepDB): se cargan antes,
   // como en index.html.
-  for (const a of archivos.flatMap(x => x === 'vistas.js' ? ['graficas.js', 'dibujos.js', x] : [x])){
+  for (const a of archivos.flatMap(x => x === 'vistas.js' ? ['graficas.js', 'repdb.js', 'dibujos.js', x] : [x])){
     if (cargados.has(a)) continue;
     const codigo = fs.readFileSync(new URL(a, dir), 'utf8');
-    const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'comparacion.js': 'Comparacion', 'vistas.js': 'VistasEsc', 'graficas.js': 'GraficasEsc', 'dibujos.js': 'DibujosEsc',
+    const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'comparacion.js': 'Comparacion', 'vistas.js': 'VistasEsc', 'graficas.js': 'GraficasEsc', 'dibujos.js': 'DibujosEsc', 'repdb.js': 'REPDB_FOTO',
                      'fotos.js': 'FotosTL', 'evolucion.js': 'Evolucion', 'fisica-vista.js': 'FisicaVista', 'almacen.js': 'Almacen',
                      'informe.js': 'Informe', 'informe-vista.js': 'InformeVista', 'nutricion-esc.js': 'NutricionEsc', 'senales.js': 'Senales', 'nutricion-vista.js': 'NutricionVista' }[a];
     vm.runInThisContext(`${codigo}\n;globalThis.${nombre} = ${nombre};`, { filename: a });

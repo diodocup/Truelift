@@ -87,14 +87,27 @@ Coach conserva los suyos para el papel.
   Pulsar el dibujo de la ficha lo amplía con lo que la app
   cuenta del ejercicio. Los ejercicios que creaste tú no tienen dibujo: su
   hueco lleva la inicial. Al imprimir no salen.
+  Como en la app, los ejercicios con equivalente en RepDB enseñan su foto
+  (figura de hombre o de mujer según el sexo que declaraste en la app); los
+  demás conservan el dibujo de siempre.
 - **Informes:** en pantalla el documento ya se ve como una hoja de papel, con
   los mismos colores con los que se imprime.
 
 Las gráficas nuevas están en `graficas.js` (SVG en texto, sin dependencias).
-Los dibujos (`dibujos.js`) no se duplican: son los que ya publica el Coach en
-`../coach/media/ejercicios/`, así que una biblioteca nueva llega a los dos a
-la vez. No se precachean (son cientos); el service worker los guarda a medida
-que se ven y después salen también sin conexión.
+Las imágenes de los ejercicios (`dibujos.js`) son las mismas que en la app:
+- **Fotos de RepDB** en `media/repdb/<hombre|mujer>/<id>-<peak|main>.webp`
+  (punto de máxima contracción, o la única postura de los isométricos) y el
+  mapa nombre → foto en `repdb.js`. Los genera
+  `python3 tool/escritorio_repdb.py` en el repo de la app (con `--check`
+  comprueba que no estén desfasados) desde `lib/ejercicio_repdb.dart` y
+  `assets/images/repdb/`. Son una figura en color sobre transparente: van
+  sobre superficie 2 y no se invierten en el tema claro (clase `ej-foto`).
+- **Dibujos propios** para los ejercicios sin foto: no se duplican, son los
+  que ya publica el Coach en `../coach/media/ejercicios/` (el Coach sigue
+  enseñando sus dibujos).
+
+No se precachean (son cientos); el service worker las guarda a medida que se
+ven y después salen también sin conexión.
 Todo color de estado va acompañado de altura, posición o texto.
 
 **Sin desplazamiento horizontal.** Las tablas dejan que sus textos salten de
