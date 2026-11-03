@@ -2353,6 +2353,34 @@ h3 {
   line-height: 1.15;
 }
 
+/* ---------- Vídeo de la temporada (dentro de Planificador) ---------- */
+
+.celebrate.season-reel {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  margin: 0 0 56px;
+  padding-top: 56px;
+}
+
+.season-reel .clip.season-reel-clip {
+  margin-top: 0;
+}
+
+.season-reel .clip.season-reel-clip .clip-device {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 70px rgba(226, 186, 74, 0.12);
+}
+
+.season-reel .clip video {
+  aspect-ratio: 576 / 1224;
+}
+
+.celebrate-copy > p.season-reel-note {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--gold);
+  color: var(--muted);
+  font-size: 14px;
+}
+
 /* ---------- Récords y niveles (dentro de Progreso) ---------- */
 
 .sub-kicker.is-lime {
@@ -2757,6 +2785,15 @@ h3 {
 
   .celebrate-videos {
     width: min(100%, 520px);
+    justify-self: center;
+  }
+
+  .celebrate.season-reel {
+    grid-template-columns: 1fr;
+  }
+
+  .season-reel-clip {
+    width: min(100%, 300px);
     justify-self: center;
   }
 }
