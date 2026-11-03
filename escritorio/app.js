@@ -93,6 +93,7 @@ async function cargarEstado(){
   const id = meta && E.espacios.some(e => e.id === meta.valor) ? meta.valor : (E.espacios[0]?.id ?? null);
   E.espacio = E.espacios.find(e => e.id === id) || null;
   E.inst = null; E.raw = null; E.rawError = null; E.indiceJson = null;
+  DibujosEsc.figuraDesdeCopia(null);
   E.fotosMeta = []; E.galeria = []; E.importaciones = []; E.M = null; E.errorModelo = null;
   if (E.espacio){
     if (E.espacio.instantaneaId){
@@ -102,6 +103,7 @@ async function cargarEstado(){
       try { E.raw = E.inst ? JSON.parse(E.inst.texto) : null; }
       catch (e) { E.rawError = 'La copia guardada no se puede leer.'; }
       TemaEsc.desdeCopia(E.raw);
+      DibujosEsc.figuraDesdeCopia(E.raw);
     }
     if (E.raw && E.raw.medidas && typeof E.raw.medidas === 'object' && !Array.isArray(E.raw.medidas))
       E.indiceJson = FotosTL.leerIndice(E.raw.medidas);

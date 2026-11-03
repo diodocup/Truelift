@@ -664,6 +664,9 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
 .ej-dibujo-cab{width:168px;height:168px;border-radius:14px;font-size:44px}
 .ej-dibujo-rut{width:52px;height:52px;border-radius:9px;font-size:15px}
 #modalCaja .ej-ficha .ej-dibujo-xl{width:min(360px,100%);height:auto;aspect-ratio:1}
+/* Fotos de RepDB: figura en color sobre transparente. Como en la app, van
+   sobre superficie 2 en los dos temas y enteras (sin recortar). */
+img.ej-dibujo.ej-foto{background:var(--sup2);object-fit:contain}
 @media (max-width:640px){
   .ficha-cab-fila{flex-direction:column-reverse;gap:12px}
   .ej-dibujo-cab{width:120px;height:120px}
@@ -780,7 +783,7 @@ img.ej-dibujo[data-ejercicio]{cursor:pointer}
   html[data-tema="claro"] .card.ficha-lista{scrollbar-color:rgba(14,24,18,.20) transparent}
   /* Los dibujos son trazo blanco sobre negro: en claro se invierten a trazo
      oscuro sobre el gris del campo, como las láminas de la app. */
-  html[data-tema="claro"] img.ej-dibujo{filter:invert(1) brightness(.93)}
+  html[data-tema="claro"] img.ej-dibujo:not(.ej-foto){filter:invert(1) brightness(.93)}
   /* Las fotos de progreso no se tocan. El informe ya es una hoja clara. */
   html[data-tema="claro"] .informe-doc{box-shadow:0 10px 40px rgba(14,24,18,.14)}
 }

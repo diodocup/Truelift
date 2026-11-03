@@ -1,10 +1,15 @@
 'use strict';
 /* ================================================================
    TrueLift Escritorio — dibujos.js
-   Dibujo de cada ejercicio de la biblioteca de TrueLift, el mismo que
-   ves en la app. No se duplican: son los que el Coach ya publica en
-   ../coach/media/ejercicios/ (copiados de la app por el generador de
-   catalogo.js), así que una biblioteca nueva llega a los dos a la vez.
+   Imagen de cada ejercicio de la biblioteca de TrueLift, la misma que
+   ves en la app:
+   - si el ejercicio tiene foto de RepDB (repdb.js), esa foto, con la
+     figura del sexo que declaraste (media/repdb/<hombre|mujer>/,
+     copiadas de la app por tool/escritorio_repdb.py). Es una figura en
+     color sobre fondo transparente: se pinta tal cual, sin invertir.
+   - si no, el dibujo propio que ya publica el Coach en
+     ../coach/media/ejercicios/ (copiados de la app por el generador de
+     catalogo.js). Trazo blanco sobre negro.
 
    - mini(): miniatura junto al nombre en tablas y listas. Es decorativa
      (alt vacío): el nombre que la acompaña ya dice qué ejercicio es.
@@ -22,6 +27,17 @@ const DibujosEsc = (() => {
 
 // imagenEjercicio() (catalogo.js) devuelve la ruta relativa al Coach.
 const BASE = '../coach/';
+const FOTOS = 'media/repdb/';
+
+/* Figura de las fotos de RepDB, como `personajeLaminas` en la app: la de
+   mujer solo si la copia lo declara; sin declarar, la de hombre. */
+let figura = 'hombre';
+function figuraDesdeCopia(raw){
+  const s = raw && typeof raw === 'object'
+    ? (raw.sexoUsuario ?? (raw.sexo === 'hombre' || raw.sexo === 'mujer' ? raw.sexo : null))
+    : null;
+  figura = s === 'mujer' ? 'mujer' : 'hombre';
+}
 
 const limpio = nombre => String(nombre ?? '').trim();
 
@@ -33,11 +49,18 @@ function canonico(n){
   return typeof CANON_ES === 'object' && CANON_ES[n] ? CANON_ES[n] : n;
 }
 
-/** Ruta del dibujo de un ejercicio, o null si no está en la biblioteca. */
+/** Ruta de la imagen de un ejercicio, o null si no está en la biblioteca. */
 function src(nombre){
-  const r = typeof imagenEjercicio === 'function' ? imagenEjercicio(canonico(limpio(nombre))) : null;
+  const n = canonico(limpio(nombre));
+  const foto = typeof REPDB_FOTO === 'object' && Object.hasOwn(REPDB_FOTO, n) ? REPDB_FOTO[n] : null;
+  if (foto) return `${FOTOS}${figura}/${foto}.webp`;
+  const r = typeof imagenEjercicio === 'function' ? imagenEjercicio(n) : null;
   return r ? BASE + r : null;
 }
+
+/** ¿Es [ruta] una foto de RepDB y no un dibujo de trazo blanco? */
+const esFoto = ruta => typeof ruta === 'string' && ruta.startsWith(FOTOS);
+const claseFoto = s => esFoto(s) ? ' ej-foto' : '';
 
 function hueco(n, clase){
   return `<span class="ej-dibujo ${clase} ej-dibujo-hueco" aria-hidden="true">${esc(n.charAt(0).toUpperCase())}</span>`;
@@ -48,7 +71,7 @@ function hueco(n, clase){
 function mini(nombre, { clase = 'ej-dibujo-s', extra = '' } = {}){
   const n = limpio(nombre), s = src(n);
   if (!s) return hueco(n, clase);
-  return `<img class="ej-dibujo ${clase}" src="${esc(s)}" alt="" loading="lazy" decoding="async"${extra}>`;
+  return `<img class="ej-dibujo ${clase}${claseFoto(s)}" src="${esc(s)}" alt="" loading="lazy" decoding="async"${extra}>`;
 }
 
 /* Dibujo que abre la ficha ampliada: un botón de verdad, con nombre, para
@@ -57,7 +80,7 @@ function grande(nombre, { clase = 'ej-dibujo-l' } = {}){
   const n = limpio(nombre), s = src(n);
   if (!s) return hueco(n, clase);
   return `<button type="button" class="ej-dibujo-btn" data-dibujo="${esc(n)}" aria-label="Ampliar el dibujo de ${esc(n)}" title="Ampliar el dibujo">`
-    + `<img class="ej-dibujo ${clase}" src="${esc(s)}" alt="" decoding="async"></button>`;
+    + `<img class="ej-dibujo ${clase}${claseFoto(s)}" src="${esc(s)}" alt="" decoding="async"></button>`;
 }
 
 /* Celda de tabla: miniatura y, a su lado, el nombre (normalmente el enlace
@@ -79,12 +102,12 @@ function fichaHtml(nombre){
     : '';
   const cuerpo = s
     ? `<div class="ej-ficha">
-        <img class="ej-dibujo ej-dibujo-xl" src="${esc(s)}" alt="Dibujo de ${esc(n)}" decoding="async">
+        <img class="ej-dibujo ej-dibujo-xl${claseFoto(s)}" src="${esc(s)}" alt="Dibujo de ${esc(n)}" decoding="async">
         ${datos ? `<div class="ej-ficha-datos">${datos}</div>` : ''}
       </div>`
     : '<p class="muted">Este ejercicio no está en la biblioteca de TrueLift (lo creaste tú o llegó de otra app), así que no tiene dibujo.</p>';
   return `<h2 id="modalTitulo">${esc(n)}</h2>${cuerpo}`;
 }
 
-return { src, mini, grande, celda, fichaHtml };
+return { src, esFoto, figuraDesdeCopia, mini, grande, celda, fichaHtml };
 })();
