@@ -91,7 +91,6 @@
     "16 sesiones de entrenamiento con PRO completo": "Full PRO access for 16 training sessions",
     "Sin suscripción ni cuotas": "No subscription or recurring fees",
     "Si no lo compras, sigues con la versión gratis": "If you do not upgrade, you keep the free version",
-    "Probar PRO gratis durante 16 sesiones": "Try PRO free for 16 training sessions",
     "Condiciones de la prueba PRO": "PRO trial terms",
     "Funciones PRO": "PRO features",
     "Rutina totalmente configurable": "A fully customisable routine",
