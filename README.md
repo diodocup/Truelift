@@ -129,7 +129,7 @@ manda. El botón del hero lleva a esa sección.
 
 El informe mensual es PRO en la app: la comparativa y la lista de Gratis no lo incluyen.
 
-La copia que se descarga para probarlo es `escritorio/ejemplo/copia_truelift_2026-11-01.json`.
+La copia que se descarga para probarlo es `escritorio/ejemplo/copia_truelift_2026-11-06.json`.
 Es la única copia de ejemplo del sitio: el mismo historial que el modo DEMO de la app
 (`assets/demo/historial_demo.json` en App-PRO). La usan también las pruebas del escritorio
 (`progreso-fase.test.mjs`, `nutricion-esc.test.mjs` y el recorrido e2e de Nutrición).
