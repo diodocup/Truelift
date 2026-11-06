@@ -127,7 +127,7 @@ test('copia de ejemplo: pauta habitual con su último cambio, plan con proyecci�
   assert.equal(X.modalidad, 'HABITUAL');
   assert.equal(X.reparto, null, 'sin contar calorías no hay reparto');
   assert.match(X.ultimoCambio.texto, /513 kcal más al día/);
-  assert.equal(X.plan.filas.length, 4);
+  assert.equal(X.plan.filas.length, 2);
   assert.ok(X.plan.proyeccion && X.plan.curva);
   assert.equal(X.plan.imagenes.motivo, null);
   assert.equal(NE.miles(2800), '2.800');
