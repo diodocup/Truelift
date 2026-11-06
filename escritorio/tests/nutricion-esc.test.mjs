@@ -120,13 +120,13 @@ test('reproducción (nutricion_plan_reproduccion_test): fundido, etapa por día 
 });
 
 test('copia de ejemplo: pauta habitual con su último cambio, plan con proyección e imágenes', () => {
-  const raw = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-01.json', import.meta.url), 'utf8'));
+  const raw = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
   const M = Analisis.preparar(raw, ImportarJSON.resumen(raw));
   const X = NE.preparar(M.raw, M.datos.nut, M.ref);
   assert.equal(X.presente, true);
   assert.equal(X.modalidad, 'HABITUAL');
   assert.equal(X.reparto, null, 'sin contar calorías no hay reparto');
-  assert.match(X.ultimoCambio.texto, /171 kcal más al día/);
+  assert.match(X.ultimoCambio.texto, /513 kcal más al día/);
   assert.equal(X.plan.filas.length, 4);
   assert.ok(X.plan.proyeccion && X.plan.curva);
   assert.equal(X.plan.imagenes.motivo, null);
