@@ -189,7 +189,6 @@ const englishTranslations = {
   "Rendimiento": "Performance",
   "De cada sesión frente a tu propio histórico, no frente a una tabla.": "Of every session against your own history, not against a table.",
   "Nivel": "Level",
-  "¿Ya usabas TrueLift gratis antes de este cambio? Conservas la progresión automática en la versión gratuita.": "Already using TrueLift for free before this change? You keep automatic progression in the free version.",
   "Progresión automática: carga sugerida en cada serie": "Automatic progression: suggested load for every set",
   "1RM estimado, tonelaje y celebración de récords y niveles": "Estimated 1RM, tonnage and record and level celebrations",
   "Nivel de fuerza por ejercicio y por grupo muscular": "Strength level by exercise and by muscle group",
