@@ -149,6 +149,9 @@ const Motor = {
       progresionPausadaRegistrada: typeof raw.progresionPausada === 'boolean',
       estadoEjercicio: estado,
       neutra: raw.neutra === true,
+      // EntryLog.sinProgresion: guardada sin progresión automática (versión
+      // gratuita, 07/11/2026). Clave aditiva.
+      sinProgresion: raw.sinProgresion === true,
       noDisponible: raw.noDisponible === true,
       molestias: raw.molestias === true,
       sustitucion: raw.sustitucion === true,
@@ -363,6 +366,10 @@ const Motor = {
       const e = this.entradasDe(l).find(x => x.ejercicio === ejercicio);
       if (!e || e.noDisponible) continue;
       if (e.progresionPausada || e.modulada || this.noEvaluable(e)) continue;
+      // Guardada sin progresión automática (versión gratuita, App-PRO
+      // 07/11/2026): repetía el peso porque la app no proponía otro, no porque
+      // fallara una subida. Ni suma intento ni rompe la racha.
+      if (e.sinProgresion) continue;
       if (!this.oportunidadCompleta(e)) continue;
       const marca = e.progresionPausadaRegistrada || e.moduladaRegistrada;
       if (!marca && this.estadoSemaforo(l) !== 'verde') continue;
@@ -374,6 +381,22 @@ const Motor = {
       out.push({ kg: e.kg, completo, fecha: l.fecha, indice: i, entrada: e, extra });
     }
     return out;
+  },
+  /* ¿La última sesión de la rutina actual con este ejercicio (y día) se
+     guardó sin progresión automática? Es la versión gratuita de la app: no
+     propone peso ni cuenta intentos (`AppState.progresionActiva`). */
+  ultimaSinProgresion(raw, ejercicio, dia){
+    const logs = Array.isArray(raw.logs) ? raw.logs : [];
+    for (let i = logs.length - 1; i >= 0; i--){
+      const l = logs[i];
+      if (!l || typeof l !== 'object' || !this.esLogDeRutinaActual(l, raw)) continue;
+      if (dia != null && l.dia !== dia) continue;
+      if (l.descarga === true) continue;
+      const e = this.entradasDe(l).find(x => x.ejercicio === ejercicio);
+      if (!e || e.noDisponible) continue;
+      return e.sinProgresion === true;
+    }
+    return false;
   },
   intentosConsumidos(raw, ejercicio, dia, objetivo){
     const op = this.oportunidades(raw, ejercicio, dia, objetivo, { max: this.intentosMax(raw.fasePeso) + 5 });

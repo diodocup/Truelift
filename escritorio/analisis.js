@@ -179,6 +179,9 @@ const Analisis = {
       const r = { ...base, consumidos, oportunidades: op.length, ultima: op[0] || null, recurrente: !!recurrente,
                   trasPasoAtras: !!trasPasoAtras, repsExtra, repsHoy: Motor.repsConExtra(linea.reps, repsExtra),
                   descarga: M.descarga, op };
+      // Versión gratuita sin progresión automática: la app no cuenta intentos,
+      // así que el escritorio tampoco valora la racha.
+      if (Motor.ultimaSinProgresion(M.raw, ej.nombre, dia)) return { ...r, tipo: 'sinProgresion' };
       if (!op.length) return { ...r, tipo: 'sinOportunidades' };
       if (op[0].completo) return { ...r, tipo: 'objetivoCumplido' };
       if (consumidos >= base.max) return { ...r, tipo: 'intentosAgotados' };
