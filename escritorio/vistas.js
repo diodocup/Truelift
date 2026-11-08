@@ -63,6 +63,8 @@ function estadoTexto(st){
     case 'fueraDeRutina': return { clase: 'gris', corto: 'Fuera de tu rutina', largo: 'No está en tu rutina actual: se muestra su historial, sin valorar su progresión.' };
     case 'rutinaDesconocida': return { clase: 'gris', corto: 'Sin valorar', largo: 'Tu copia no incluye la rutina que usas ahora, así que solo se muestra su historial.' };
     case 'sinObjetivo': return { clase: 'gris', corto: 'Sin objetivo', largo: 'Su línea de la rutina no fija un número de repeticiones.' };
+    case 'sinProgresion': return { clase: 'gris', corto: 'Sin progresión automática',
+      largo: 'Sus últimas sesiones se registraron sin la progresión automática, que es parte de PRO: la app no cuenta intentos con ellas. Su historial, sus marcas y su nivel sí se muestran.' };
     case 'sinOportunidades': return { clase: 'gris', corto: 'Datos insuficientes', largo: 'Aún no hay sesiones de tu rutina actual que cuenten para su progresión.' };
     case 'objetivoCumplido': return { clase: 'verde', corto: 'Objetivo cumplido', largo: 'En su última sesión válida llegaste al objetivo de repeticiones.' };
     case 'enCurso': return { clase: 'azul', corto: `Buscando el objetivo (${st.consumidos} de ${st.max} intentos)`,

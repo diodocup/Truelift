@@ -80,3 +80,30 @@ test('nombre del usuario (nombre_usuario_test): limpio, recortado y opcional', (
   assert.equal(Analisis.nombreUsuario(undefined), null);
   assert.equal(Analisis.nombreUsuario('x'.repeat(40)).length, 30);
 });
+
+// --- plan_gratis_sin_progresion_test.dart: versión gratuita sin progresión
+// automática. Las entradas `sinProgresion` ni suman intento ni rompen la racha,
+// y la ficha lo dice en lugar de contar intentos.
+test('sin progresión automática: las sesiones marcadas no cuentan como intento', () => {
+  const marcadas = [log(90, [10, 10, 10], { sinProgresion: true }, '2026-11-03T10:00:00.000'),
+                    log(90, [10, 10, 10], { sinProgresion: true }, '2026-11-05T10:00:00.000')];
+  assert.equal(Motor.intentosConsumidos(estado(marcadas), 'Sentadilla', 'Pierna 1', 12), 0);
+  // Una sesión PRO fallida anterior sigue contando; las marcadas no la rompen.
+  const mixto = estado([log(90, [10, 10, 10], {}, '2026-11-01T10:00:00.000'), ...marcadas]);
+  assert.equal(Motor.intentosConsumidos(mixto, 'Sentadilla', 'Pierna 1', 12), 1);
+  // Sin la clave (copias anteriores) nada cambia.
+  assert.equal(Motor.intentosConsumidos(estado([log(90, [10, 10, 10]), log(90, [10, 10, 10])]), 'Sentadilla', 'Pierna 1', 12), 2);
+});
+
+test('sin progresión automática: la ficha muestra el estado propio', () => {
+  const raw = estado([log(90, [10, 10, 10], {}, '2026-11-01T10:00:00.000'),
+                      log(90, [10, 10, 10], { sinProgresion: true }, '2026-11-05T10:00:00.000')], { planModKey: 'hombre_doble|3' });
+  const M = Analisis.preparar(raw, ImportarJSON.resumen(raw));
+  assert.equal(M.ejercicios.get('Sentadilla').estados[0].tipo, 'sinProgresion');
+  // Si la última sesión vuelve a ser con progresión (PRO), se valora como siempre.
+  const pro = estado([log(90, [10, 10, 10], { sinProgresion: true }, '2026-11-01T10:00:00.000'),
+                      log(90, [10, 10, 10], {}, '2026-11-05T10:00:00.000')], { planModKey: 'hombre_doble|3' });
+  const M2 = Analisis.preparar(pro, ImportarJSON.resumen(pro));
+  assert.equal(M2.ejercicios.get('Sentadilla').estados[0].tipo, 'enCurso');
+  assert.equal(M2.ejercicios.get('Sentadilla').estados[0].consumidos, 1);
+});

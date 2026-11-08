@@ -47,7 +47,10 @@ kg sin cumplir el objetivo de reps. Una oportunidad es válida si:
 - todas las series **top** están anotadas (`oportunidadCompleta`);
 - con marca por ejercicio (`progresionPausada`/`modulada` registradas) cuenta
   aunque el día no fuera verde; sin marca, solo en verde;
-- una entrada **neutra** fallida se ignora; una neutra cumplida corta la racha.
+- una entrada **neutra** fallida se ignora; una neutra cumplida corta la racha;
+- la entrada no se guardó sin progresión automática (`sinProgresion`, versión
+  gratuita de la app desde el 07/11/2026): esas sesiones ni suman intento ni
+  rompen la racha.
 
 El objetivo es el primer número del rango en sistema simple y el último en
 doble; en rest-pause cuenta la **suma** de reps. Los intentos son 5 en
@@ -61,6 +64,7 @@ fecha). Estados que muestra:
 | Objetivo cumplido | La oportunidad válida más reciente cumplió el objetivo. |
 | Buscando el objetivo (n de N intentos) | 0 < n < N. |
 | Intentos agotados | n ≥ N. El escritorio **no** dice qué hará la app: en un déficit prolongado no baja la carga. |
+| Sin progresión automática | La última sesión de la rutina actual con el ejercicio se guardó con `sinProgresion` (versión gratuita): la app no cuenta intentos y el escritorio no valora la racha. Tiene prioridad sobre los demás estados. |
 | Datos insuficientes | Ninguna oportunidad válida en la rutina actual. |
 | Fuera de tu rutina / Sin valorar | El ejercicio no está en la rutina actual, o la copia no trae la rutina en uso. Solo se describe. |
 
