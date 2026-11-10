@@ -35,6 +35,7 @@ toman su valor por defecto (copias antiguas toleradas).
 | `enCasa` | bool | Entrena en casa (18/10/2026). Solo vale con `dias` 3 o 4 (`AppState.diasCasa`). La rutina prefijada y `planModKey` usan entonces `casaN` en vez de `N`: `sexo_sistema\|casa3`. `Motor.comboRutina`. Ausente = gimnasio. |
 | `pesoFijoMaquina` | object | Peso fijo inicial por máquina en kg (14/10/2026), con la clave de `claveLadosCarga` (familias `hack squat`, `prensa 45`, `sentadilla pendular`; el resto, nombre en minúsculas). Lo anotado sigue siendo lo que se pone; e1RM, marcas y tonelaje suman el peso fijo con su valor **actual**. Nunca en peso corporal ni asistidos. `Motor.pesoFijoDe`. |
 | `temaClaro` | bool | Tema de la app (16/10/2026). El escritorio lo usa como tema por defecto («Como en tu app»). |
+| `planEntrenador` | object | Último plan de entrenador aplicado y su historial (10/11/2026, §1.4). Solo lo lee el modo entrenador para la columna «En su copia». Ausente en copias anteriores y en quien nunca importó un plan. |
 
 **No existe** fecha de exportación de la propia copia ni identificador de
 usuario o instalación. `onboardingCompletadoEn` (ISO, solo instalaciones
@@ -104,6 +105,43 @@ Aditivo: las copias v1–v7 se siguen leyendo.
   pesoMetaKg, fin, reconstruido}` (18/10/2026): foto fija al abrir la fase.
   Sin él se reconstruye como `ServicioNutricion._completarCompromiso`.
   `ProgresoFase` (coach/nutricion.js) replica `lib/nutricion/progreso.dart`.
+
+### 1.4 `planEntrenador` (10/11/2026)
+
+**Origen:** `EstadoPlanEntrenador.toJson()` (`lib/plan_entrenador/estado.dart`
+de App-PRO), dentro de `_datosAjustes()`. Aditivo: sin la clave (copias
+antiguas o quien nunca importó un plan) la app arranca con un estado vacío, y
+cualquier valor de tipo inesperado se lee como ausente. No lleva el contenido
+del plan (rutina ni nota completa del archivo): la rutina aplicada está, como
+siempre, en `planMod`.
+
+```
+planEntrenador: {
+  aplicado: {                         // último paquete aplicado, o null
+    id, emitido, entrenador, cliente, nota, aplicadoEn,   // texto; fechas AAAA-MM-DD
+    rutina:    'aplicada' | 'aPrueba' | 'descartada' | null,   // null: el plan no traía rutina
+    temporada: 'aplicada' | 'pendiente' | 'descartada' | null, // null: no traía temporada
+    propuestaTemporada: { bloques: [ { tipo, semanas, tasaPctSemana } ] } | null
+  } | null,
+  historial: [ { id, aplicadoEn } ]   // más reciente al final; máximo 20; incluye el aplicado
+}
+```
+
+- `rutina: 'aPrueba'` mientras la rutina del plan está a prueba; pasa a
+  `aplicada` al confirmarla y a `descartada` al descartarla (o si otra
+  importación la sustituye a prueba). Desde el onboarding se guarda ya
+  `aplicada`.
+- `propuestaTemporada` solo existe mientras `temporada` es `pendiente`: al
+  aplicarla o descartarla pasa a `null`. Los bloques son **relativos**, como
+  en el paquete; la temporada aplicada vive en `nutricion` (plan de
+  temporada), anclada al día en que se aplicó.
+- Un paquete nuevo sustituye a `aplicado`; el anterior queda solo como línea
+  de `historial`, y con él se va su propuesta pendiente.
+- **Escritorio:** solo el modo entrenador lo lee
+  (`TemporadaEntrenador.estadoEmitido`, `entrenador/temporada.js`) para decir
+  qué pasó con cada plan emitido: a prueba, aplicado, temporada pendiente,
+  descartado, sustituido (está en `historial` pero no es el `aplicado`),
+  copia anterior al plan, caducado o sin rastro. El visor no lo usa.
 
 ## 2. Medidas y fotos
 
