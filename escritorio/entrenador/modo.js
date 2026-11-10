@@ -17,6 +17,7 @@
 const EntrenadorModo = (() => {
 
 const PL = PlanificadorEntrenador;
+const TE = TemporadaEntrenador;
 const P = PaqueteEntrenador;
 const V = EntrenadorVista;
 const META_CLAVE = 'entrenador:clave';
@@ -81,9 +82,20 @@ function pilaDe(id){
 function ctx(){
   const b = borradorActivo();
   const p = b ? pilaDe(b.id) : { deshacer: [], rehacer: [] };
+  const hoy = new Date();
+  const datos = A.E.espacio ? TE.datosCliente(A.E.raw, A.E.espacio.ficha, hoy) : null;
   return { E: A.E, raw: A.E.raw, inst: A.E.inst, copia: PL.rutinaCopia(A.E.raw), borrador: b, borradores: borradores(),
            emitidos: emitidos(), pila: { deshacer: p.deshacer.length, rehacer: p.rehacer.length }, error: S.error,
-           nombreEntrenador: S.clave?.nombre || '', errorEmision: S.errorEmision };
+           nombreEntrenador: S.clave?.nombre || '', errorEmision: S.errorEmision, hoy, datos,
+           temporada: b && b.temporada ? TE.analizar(b.temporada, { datos, hoy }) : null,
+           fechaCopia: fechaCopia() };
+}
+/* Fecha de la copia del cliente: la del nombre del archivo o la del último
+   registro, la más reciente (la copia no trae su fecha de exportación). */
+function fechaCopia(){
+  const r = A.E.inst?.resumen;
+  if (!r) return null;
+  return [r.fechaNombreArchivo, r.ultimoRegistro].filter(f => typeof f === 'string' && /^\d{4}-\d{2}-\d{2}/.test(f)).map(f => f.slice(0, 10)).sort().pop() || null;
 }
 
 // ---------- HTML ----------
@@ -127,14 +139,27 @@ async function guardar({ put = [], del = [], activo, foco = null, msg = null, he
   return true;
 }
 
+/* Cambia el contenido del plan (rutina, si va o no, temporada) y apila
+   lo anterior para deshacer. */
+async function cambiarContenido(nuevo, foco, msg = null){
+  const b = borradorActivo();
+  if (!b) return false;
+  const p = pilaDe(b.id);
+  const antes = PL.contenido(b);
+  return guardar({ put: [{ ...b, ...nuevo, actualizado: ahoraISO() }], foco, msg,
+    hecho: () => { p.deshacer.push(antes); if (p.deshacer.length > PL.MAX_DESHACER) p.deshacer.shift(); p.rehacer = []; } });
+}
 async function editar(op, foco){
   const b = borradorActivo();
   if (!b) return;
   const r = PL.editar(b.rutina, op);
-  if (!r) return;
-  const p = pilaDe(b.id);
-  await guardar({ put: [{ ...b, rutina: r, actualizado: ahoraISO() }], foco,
-    hecho: () => { p.deshacer.push(b.rutina); if (p.deshacer.length > PL.MAX_DESHACER) p.deshacer.shift(); p.rehacer = []; } });
+  if (r) await cambiarContenido({ rutina: r }, foco);
+}
+async function editarTemporada(op, foco, msg = null){
+  const b = borradorActivo();
+  if (!b) return;
+  const t = TE.editar(b.temporada, op);
+  if (t) await cambiarContenido({ temporada: t }, foco, msg);
 }
 
 const crear = (b, msg) => guardar({ put: [b], activo: b.id, foco: 'entEmitir', msg });
@@ -235,17 +260,30 @@ async function emitir(){
   if (!b || !S.clave) return;
   const nombre = ($id('entNombreEntrenador')?.value || '').trim();
   const nota = ($id('entNota')?.value || '').trim();
+  const conCaducidad = !!$id('entCaduca')?.checked;
+  const caduca = conCaducidad ? ($id('entCaducaFecha')?.value || '') : null;
   const L = P.LIMITES;
-  if (!nombre || [...nombre].length > L.textoMax){
-    S.errorEmision = 'Escribe tu nombre: el cliente lo verá en el plan.';
+  const hoy = P.hoyLocal();
+  const reabrir = msg => {
+    S.errorEmision = msg;
     A.abrirModal(V.confirmarEmision(ctx()), { ancho: true });
+    $id('entNombreEntrenador').value = nombre;
     $id('entNota').value = nota;
+    $id('entCaduca').checked = conCaducidad;
+    $id('entCaducaFecha').disabled = !conCaducidad;
+    if (caduca) $id('entCaducaFecha').value = caduca;
     S.errorEmision = null;
+  };
+  if (!nombre || [...nombre].length > L.textoMax){ reabrir('Escribe tu nombre: el cliente lo verá en el plan.'); return; }
+  if (conCaducidad && (!/^\d{4}-\d{2}-\d{2}$/.test(caduca) || caduca <= hoy)){
+    reabrir('La fecha límite para importarlo tiene que ser posterior a hoy. Si no quieres límite, desmarca la casilla.');
     return;
   }
   const cliente = [...String(A.E.espacio.nombre).trim()].slice(0, L.textoMax).join('') || 'Cliente';
-  const sim = PL.simular(b.rutina, A.E.raw, { nombre: b.nombre });
-  const carga = P.construirCarga({ entrenador: nombre, cliente, nota: [...nota].slice(0, L.notaMax).join(''), rutina: sim.paquete });
+  const sim = b.incluirRutina ? PL.simular(b.rutina, A.E.raw, { nombre: b.nombre }) : null;
+  const temporada = TE.paquete(b.temporada);
+  const carga = P.construirCarga({ entrenador: nombre, cliente, nota: [...nota].slice(0, L.notaMax).join(''),
+    caduca: caduca || undefined, rutina: sim ? sim.paquete : undefined, temporada: temporada || undefined });
   let r;
   try { r = await P.emitir(carga, { clavePrivada: S.clave.privada, idClave: S.clave.id, clavePublica: S.clave.publica }); }
   catch (e) {
@@ -254,8 +292,11 @@ async function emitir(){
     return;
   }
   const registro = { id: carga.id, tipo: 'emitido', espacioId: A.E.espacio.id, fecha: ahoraISO(), emitido: carga.emitido,
+    caduca: carga.caduca || null,
     archivo: r.nombreArchivo, sha256: r.sha256, borradorId: b.id, borradorNombre: b.nombre, entrenador: nombre, cliente,
-    conNota: !!carga.nota, rutina: { sistema: sim.sistema, dias: sim.dias.length, firma: PL.firma(sim.normal) } };
+    conNota: !!carga.nota,
+    rutina: sim ? { sistema: sim.sistema, dias: sim.dias.length, firma: PL.firma(sim.normal) } : null,
+    temporada: temporada ? { bloques: temporada.bloques.map(x => ({ ...x })), semanas: TE.totalSemanas(temporada) } : null };
   A.cerrarModal();
   // Se descarga aunque no se pueda anotar: el archivo ya está verificado.
   descargar(r.texto, r.nombreArchivo);
@@ -351,15 +392,15 @@ async function accion(nombre, el){
       const p = pilaDe(b.id);
       const [de, a] = nombre === 'deshacer' ? [p.deshacer, p.rehacer] : [p.rehacer, p.deshacer];
       if (!de.length) return;
-      await guardar({ put: [{ ...b, rutina: de[de.length - 1], actualizado: ahoraISO() }], foco: nombre === 'deshacer' ? 'entDeshacer' : 'entRehacer',
-                      msg: nombre === 'deshacer' ? 'Cambio deshecho' : 'Cambio rehecho', hecho: () => { de.pop(); a.push(b.rutina); } });
+      await guardar({ put: [{ ...b, ...de[de.length - 1], actualizado: ahoraISO() }], foco: nombre === 'deshacer' ? 'entDeshacer' : 'entRehacer',
+                      msg: nombre === 'deshacer' ? 'Cambio deshecho' : 'Cambio rehecho', hecho: () => { de.pop(); a.push(PL.contenido(b)); } });
       return;
     }
     case 'partida': {
       if (!b) return;
       const p = pilaDe(b.id);
       await guardar({ put: [{ ...b, rutina: PL.clonar(b.origen.rutina), actualizado: ahoraISO() }], foco: 'entDeshacer', msg: 'Recuperada la rutina de partida. Puedes deshacerlo.',
-                      hecho: () => { p.deshacer.push(b.rutina); p.rehacer = []; } });
+                      hecho: () => { p.deshacer.push(PL.contenido(b)); p.rehacer = []; } });
       return;
     }
     case 'rebasar': {
@@ -370,12 +411,41 @@ async function accion(nombre, el){
     }
     case 'emitir': {
       if (!b) return;
-      const av = PL.avisos(b.rutina, A.E.raw, { nombre: b.nombre });
-      if (av.bloquea){
-        A.modalMensaje('Aún no se puede emitir', `<p>La app no podría aplicar este borrador:</p><ul class="lista-plana">${av.avisos.filter(a => a.nivel === 'rojo').map(a => `<li>${esc(a.txt)}</li>`).join('')}</ul>`);
+      const motivos = [];
+      if (!b.incluirRutina && !b.temporada) motivos.push('El plan no lleva ni rutina ni temporada: incluye al menos una de las dos.');
+      if (b.incluirRutina) motivos.push(...PL.avisos(b.rutina, A.E.raw, { nombre: b.nombre }).avisos.filter(a => a.nivel === 'rojo').map(a => a.txt));
+      if (b.temporada) motivos.push(...TE.errores(b.temporada));
+      if (motivos.length){
+        A.modalMensaje('Aún no se puede emitir', `<p>La app no podría aplicar este borrador:</p><ul class="lista-plana">${motivos.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`);
         return;
       }
       A.abrirModal(V.confirmarEmision(ctx()), { ancho: true });
+      return;
+    }
+    case 'temporada-nueva':
+      if (b && !b.temporada) await cambiarContenido({ temporada: TE.nueva(el?.dataset.tipoBloque || 'CUT') }, 'ent-t-0-tipo', 'Temporada añadida. Puedes deshacerlo.');
+      return;
+    case 'temporada-copia': {
+      const t = TE.desdePlanCopia(TE.datosCliente(A.E.raw, esp?.ficha).planCopia);
+      if (b && t) await cambiarContenido({ temporada: t }, 'ent-t-0-tipo', 'Temporada creada desde la que tiene en la app. Puedes deshacerlo.');
+      return;
+    }
+    case 'temporada-emitida': {
+      const e = emitidos().find(x => x.id === el?.dataset.emitido);
+      const t = e && e.temporada ? TE.desdePaquete(e.temporada) : null;
+      if (b && t) await cambiarContenido({ temporada: t }, 'ent-t-0-tipo', 'Temporada recuperada del último plan emitido. Puedes deshacerlo.');
+      return;
+    }
+    case 'temporada-quitar':
+      if (b && b.temporada) await cambiarContenido({ temporada: null }, 'entTemporadaNueva', 'Temporada quitada del plan. Puedes deshacerlo.');
+      return;
+    case 'bloque-nuevo': await editarTemporada({ tipo: 'addBloque' }, `ent-t-${b?.temporada ? b.temporada.bloques.length : 0}-tipo`); return;
+    case 'bloque-arriba': await editarTemporada({ tipo: 'moverBloque', i: Number(el.dataset.i), delta: -1 }, `ent-t-${Number(el.dataset.i) - 1}-tipo`); return;
+    case 'bloque-abajo': await editarTemporada({ tipo: 'moverBloque', i: Number(el.dataset.i), delta: 1 }, `ent-t-${Number(el.dataset.i) + 1}-tipo`); return;
+    case 'bloque-quitar': {
+      const i = Number(el.dataset.i), n = b?.temporada ? b.temporada.bloques.length : 0;
+      if (n <= 1){ await accion('temporada-quitar'); return; }
+      await editarTemporada({ tipo: 'delBloque', i }, `ent-t-${Math.min(i, n - 2)}-tipo`, 'Bloque quitado. Puedes deshacerlo.');
       return;
     }
     case 'emitir-confirmar': {
@@ -406,7 +476,13 @@ async function accion(nombre, el){
 async function cambio(el){
   const tipo = el.dataset.ent;
   if (tipo === 'borrador'){ await guardar({ activo: el.value, foco: 'entSelBorrador', msg: 'Borrador cambiado' }); return; }
+  if (tipo === 'caduca'){ const f = $id('entCaducaFecha'); if (f) f.disabled = !el.checked; return; }
   if (!borradorActivo()) return;
+  if (tipo === 'incluirRutina'){
+    await cambiarContenido({ incluirRutina: el.checked }, 'entIncluirRutina', el.checked ? 'La rutina vuelve al plan' : 'El plan ya no lleva rutina. Puedes deshacerlo.');
+    return;
+  }
+  if (tipo === 'bloque'){ await editarTemporada({ tipo: el.dataset.k, i: Number(el.dataset.i), valor: el.value }, el.id); return; }
   if (tipo === 'sistema') await editar({ tipo: 'sistema', valor: el.value }, 'entSistema');
   else if (tipo === 'nombreDia') await editar({ tipo: 'nombreDia', d: Number(el.dataset.d), valor: el.value }, el.id);
   else if (tipo === 'campo'){

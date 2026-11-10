@@ -56,3 +56,14 @@
   .rut-campo.pat,.rut-campo.n4{width:calc(50% - 4px)}
   .rut-barra .spacer{display:none}
 }
+/* ---------- Temporada (F5) ---------- */
+.ent-incluir{padding-bottom:9px}
+.ent-partida{font-size:13px;margin:0 0 10px}
+.ent-temporada .cifras{margin:4px 0 12px}
+.ent-bloques{margin:6px 0 4px}
+.ent-bloque{padding:8px 10px;background:var(--sup2);border:1px solid var(--borde);border-radius:12px}
+.ent-bloque-meta{font-size:12.5px;color:var(--txt2)}
+.ent-bloque-meta .chip{font-size:9px}
+.ent-lleva{margin:0 0 8px}
+.ent-caducidad input[type="date"]{max-width:220px}
+.ent-caducidad input[type="date"]:disabled{opacity:.5}

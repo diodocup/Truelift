@@ -934,3 +934,65 @@ emitidos quedan para F5; la documentación de uso, para F6.
   de esta fase; no se toca aquí.
 - Sin SDK de Dart en el entorno: no se ha ejecutado el verificador de la app
   sobre paquetes recién emitidos (§8.1, opcional).
+
+## Plan de entrenador F5 — Temporada, caducidad y estado de los planes (10/11/2026)
+
+Especificación: `PLAN_ENTRENADOR.md` §7.4, §7.5 y §8.3 de App-PRO; contrato
+en `CONTRATO_PLAN_ENTRENADOR.md` (sin cambios). La documentación de uso
+queda para F6.
+
+### Decisiones
+
+- **Un borrador es el plan entero**: la rutina (con la casilla «Incluir la
+  rutina en el plan»; sin ella el paquete solo lleva temporada) y la
+  temporada (`null` si no lleva). Los borradores de F3 se leen con rutina y
+  sin temporada. Deshacer y rehacer guardan todo el contenido
+  (`PlanificadorEntrenador.contenido`), no solo la rutina.
+- **Editor de temporada** (`entrenador/temporada.js`, puro): lista ordenada
+  de bloques `{tipo, semanas, ritmo}`; el signo del ritmo lo pone el tipo y
+  la normocalórica va a 0. Al editar se aplican los límites del contrato
+  (bloques, horizonte total); los tipos seguidos, que pueden salir al mover o
+  quitar, se avisan en rojo e impiden emitir. Se puede empezar en blanco,
+  desde la temporada que el cliente tiene en la app (lo que le queda, en
+  relativo) o desde la del último plan emitido.
+- **Lo que hará la app**: `analizar` ancla el primer bloque hoy y encadena
+  los demás como `construirPlan` (`lib/plan_entrenador/temporada.dart`), y
+  lleva cada ritmo a lo que el selector de la app deja elegir con los datos
+  del cliente (`PlanificadorTemporada.topeDe` → `topeTasaInicial`, y el
+  mínimo del selector, como `ritmoAjustado`). Los datos salen de la copia y,
+  si faltan, de la ficha manual (su % graso cuenta como medido hoy).
+- **Proyección**: con `NutricionEsc.proyectar`, la réplica de
+  `PlanificadorTemporada.proyectar` de la app con el cupo de masa magra, y
+  los ritmos que aplicará la app. Nota sobre §7.4: el plan nombra
+  `PlanTemporada.proyectar` de `coach/nutricion.js`, que no lleva el cupo;
+  la prueba comprueba que coinciden en peso en todos los bloques y en % graso
+  en definición y normocalórica, y que la del editor es la de la app.
+- **Avisos** sin topes ni cifras del criterio: ritmo que la app bajará o
+  subirá, duración fuera de lo habitual, final de la proyección por debajo
+  de un peso razonable o con un % graso alto o muy bajo, y sin proyección
+  por falta de datos. Texto fijo junto al editor: la app ancla la temporada
+  al día en que el cliente la aplica y la ajusta a sus datos reales.
+- **Caducidad**: «Fecha límite para importarlo», marcada por defecto a 90
+  días; se puede cambiar o quitar. Una fecha que no sea posterior a hoy no
+  se emite.
+- **Estado de los planes emitidos**: columna «En su copia», leyendo
+  `planEntrenador` de la copia más reciente del cliente: rutina a prueba,
+  aplicado (con el detalle de rutina y temporada), temporada pendiente,
+  descartado, sustituido por otro plan, copia anterior al plan, caducado o
+  sin rastro. El registro guarda también la caducidad y la temporada.
+- `sw.js` sube a `v18` por el cambio de `app.js` (`temporada.js` entra en la
+  carga a demanda del modo; no en la caché).
+
+### Verificación (Chromium de Playwright, Node 22)
+
+- `node --test escritorio/tests/*.test.mjs`: 219/219 (nuevas en
+  `entrenador-temporada.test.mjs`).
+- `node escritorio/tests/entrenador.e2e.mjs`: 10/10 (temporada con avisos,
+  tipos seguidos y deshacer; plan sin rutina con fecha límite que verifica y
+  caduca; estado del plan con una copia posterior; cliente con nutrición,
+  temporada desde la de su app, proyección y plan sin fecha límite).
+- `node escritorio/tests/integral.e2e.mjs`: 13/13.
+- `node escritorio/tests/e2e.mjs`: sigue fallando en el paso 41 por la copia
+  de ejemplo, igual que antes de F3; no se toca aquí.
+- Sin SDK de Dart en el entorno: no se ha ejecutado el verificador de la app
+  sobre los paquetes con temporada (§8.1, opcional).

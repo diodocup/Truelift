@@ -12,6 +12,7 @@
 const EntrenadorVista = (() => {
 
 const PL = PlanificadorEntrenador;
+const TE = TemporadaEntrenador;
 const F = () => VistasEsc.F;
 const tarjeta = (titulo, cuerpo, extra = '') => `<section class="card"${extra}><h2>${esc(titulo)}</h2>${cuerpo}</section>`;
 const chip = (clase, texto, titulo = '') => `<span class="chip ${clase}"${titulo ? ` title="${esc(titulo)}"` : ''}>${esc(texto)}</span>`;
@@ -287,7 +288,7 @@ function rutina(ctx){
   const sel = borradores.length > 1
     ? `<label class="rut-campo nombre" for="entSelBorrador"><span>Borrador</span><select id="entSelBorrador" data-ent="borrador">
         ${borradores.map(b => `<option value="${esc(b.id)}"${borrador && b.id === borrador.id ? ' selected' : ''}>${esc(b.nombre)}</option>`).join('')}</select></label>` : '';
-  out.push(`<section class="card rut-barra" aria-labelledby="entRutinaTitulo"><h2 id="entRutinaTitulo">Rutina para ${esc(ctx.E.espacio.nombre)}</h2>
+  out.push(`<section class="card rut-barra" aria-labelledby="entRutinaTitulo"><h2 id="entRutinaTitulo">Plan para ${esc(ctx.E.espacio.nombre)}</h2>
     <div class="fila-botones">${sel}
       ${copia ? btn('nuevo-copia', 'Nuevo borrador desde su rutina', { clase: borrador ? 'sec' : 'pri' }) : ''}
       ${btn('nuevo-blanco', 'Nuevo en blanco', { clase: !borrador && !copia ? 'pri' : 'sec' })}
@@ -298,7 +299,8 @@ function rutina(ctx){
       ${btn('deshacer', 'Deshacer', { des: !pila.deshacer, titulo: 'Ctrl + Z fuera de un campo de texto', extra: ' id="entDeshacer"' })}
       ${btn('rehacer', 'Rehacer', { des: !pila.rehacer, titulo: 'Ctrl + Y fuera de un campo de texto', extra: ' id="entRehacer"' })}
       ${btn('partida', 'Volver a la rutina de partida', { titulo: 'Recupera la rutina con la que empezaste este borrador. Se puede deshacer.' })}
-      <label class="rut-campo n4" for="entSistema"><span>Sistema</span><select id="entSistema" data-ent="sistema">
+      <label class="rut-ss ent-incluir" for="entIncluirRutina"><input id="entIncluirRutina" type="checkbox" data-ent="incluirRutina"${borrador.incluirRutina ? ' checked' : ''}> Incluir la rutina en el plan</label>
+      <label class="rut-campo n4" for="entSistema"><span>Sistema</span><select id="entSistema" data-ent="sistema"${borrador.incluirRutina ? '' : ' disabled'}>
         <option value="doble"${borrador.rutina.sistema === 'doble' ? ' selected' : ''}>Progresión doble</option>
         <option value="simple"${borrador.rutina.sistema === 'simple' ? ' selected' : ''}>Progresión simple</option></select></label>
       <span class="spacer"></span>
@@ -308,6 +310,11 @@ function rutina(ctx){
   </section>`);
   if (!borrador){
     out.push(`<p class="muted">${copia ? 'Empieza un borrador desde la rutina que tiene ahora en su móvil, en blanco o desde el borrador de otro cliente.' : 'Su copia no trae una rutina personalizada: empieza en blanco o desde el borrador de otro cliente.'}</p>`);
+    return out.join('');
+  }
+  if (!borrador.incluirRutina){
+    out.push(`<section class="card" id="entSinRutina" aria-labelledby="entSinRutinaTitulo"><h2 id="entSinRutinaTitulo">Rutina</h2>
+      <p>Este plan no lleva rutina: el cliente conservará la que tiene en su móvil. Marca «Incluir la rutina en el plan» para editarla y enviarla.</p></section>`);
     return out.join('');
   }
   out.push(editor(ctx));
@@ -332,13 +339,130 @@ function rutina(ctx){
   return out.join('');
 }
 
+const ESTADO_EMITIDO = {
+  sinCopia: ['gris', 'Sin copia'], aPrueba: ['azul', 'Rutina a prueba'], aplicado: ['verde', 'Aplicado'],
+  pendiente: ['ambar', 'Temporada pendiente'], descartado: ['rojo', 'Descartado'], sustituido: ['gris', 'Sustituido'],
+  copiaAnterior: ['gris', 'Copia anterior'], caducado: ['ambar', 'Caducado'], sinRastro: ['gris', 'Sin rastro'],
+};
+const RUTINA_APP = { aplicada: 'rutina confirmada', aPrueba: 'rutina a prueba', descartada: 'rutina descartada' };
+const TEMPORADA_APP = { aplicada: 'temporada aplicada', pendiente: 'temporada aún sin aplicar', descartada: 'temporada descartada' };
+
+/* Qué pasó con un plan emitido, según la copia más reciente del cliente. */
+function estadoHtml(e, ctx){
+  const st = TE.estadoEmitido(e, ctx.raw, { fechaCopia: ctx.fechaCopia, hoy: ctx.hoy });
+  const [cl, txt] = ESTADO_EMITIDO[st.estado];
+  const cuando = st.aplicadoEn ? ` el ${esc(F().dia(st.aplicadoEn))}` : '';
+  const detalle = {
+    sinCopia: 'Importa una copia suya para saberlo.',
+    aPrueba: `Lo importó${cuando}; aún no ha confirmado la rutina.`,
+    aplicado: `Lo importó${cuando}.`,
+    pendiente: `Lo importó${cuando}; aún no ha aplicado la temporada.`,
+    descartado: `Lo importó${cuando} y lo descartó.`,
+    sustituido: `Lo importó${cuando}; después importó otro plan.`,
+    copiaAnterior: 'Su copia es anterior a este plan.',
+    caducado: 'No consta que lo importase y ya no se puede importar.',
+    sinRastro: 'Su copia no muestra que lo haya importado.',
+  }[st.estado];
+  const partes = [st.rutina ? RUTINA_APP[st.rutina] : '', st.temporada ? TEMPORADA_APP[st.temporada] : ''].filter(Boolean);
+  return `${chip(cl, txt)}<br><span class="muted">${detalle}${partes.length && ['aplicado', 'pendiente', 'descartado', 'aPrueba'].includes(st.estado) ? ` (${esc(partes.join(', '))})` : ''}</span>`;
+}
+
 function emitidos(ctx){
   const lista = ctx.emitidos;
   if (!lista.length) return '';
-  const filas = lista.map(e => [esc(momento(e.fecha)), `${esc(e.borradorNombre || '—')}<br><span class="muted">${esc(SISTEMA[e.rutina?.sistema] || '')} · ${e.rutina?.dias ?? '—'} días</span>`,
-    `<code>${esc(e.archivo)}</code>`, `<code title="SHA-256 del archivo">${esc(String(e.sha256 || '').slice(0, 16))}…</code>`]);
-  return tarjeta('Planes emitidos', VistasEsc.tabla(['Fecha', 'Borrador', 'Archivo', 'Huella'], filas, { caption: 'Planes emitidos para este cliente', clase: 'ent-emitidos' }) +
-    '<p class="muted" style="font-size:12.5px">Una revisión es otro plan: edita el borrador (o crea uno desde su copia más reciente) y vuelve a emitir.</p>', ' id="entEmitidos"');
+  const filas = lista.map(e => {
+    const lleva = [e.rutina ? `Rutina: ${esc(SISTEMA[e.rutina.sistema] || '')} · ${e.rutina.dias ?? '—'} días` : '',
+      e.temporada ? `Temporada: ${F().plural(e.temporada.bloques.length, 'bloque', 'bloques')} · ${e.temporada.semanas} semanas` : ''].filter(Boolean);
+    return [esc(momento(e.fecha)),
+      `${esc(e.borradorNombre || '—')}<br><span class="muted">${lleva.join('<br>') || '—'}</span>`,
+      e.caduca ? esc(F().dia(e.caduca)) : '<span class="muted">Sin límite</span>',
+      estadoHtml(e, ctx),
+      `<code>${esc(e.archivo)}</code><br><code class="muted" title="SHA-256 del archivo">${esc(String(e.sha256 || '').slice(0, 16))}…</code>`];
+  });
+  return tarjeta('Planes emitidos', VistasEsc.tabla(['Fecha', 'Plan', 'Importable hasta', 'En su copia', 'Archivo'], filas, { caption: 'Planes emitidos para este cliente', clase: 'ent-emitidos' }) +
+    '<p class="muted" style="font-size:12.5px">«En su copia» sale de la copia de seguridad más reciente que hayas importado de este cliente: para saber si ha aplicado un plan, pídele una copia nueva. Una revisión es otro plan: edita el borrador (o crea uno desde su copia más reciente) y vuelve a emitir.</p>', ' id="entEmitidos"');
+}
+
+// ---------------------------------------------------------------
+// Temporada
+// ---------------------------------------------------------------
+const DURACION = { verde: null, ambar: ['ambar', 'Duración poco habitual'], rojo: ['rojo', 'Duración fuera de lo habitual'] };
+const ritmoTxt = tasa => tasa === 0 ? 'mantener el peso' : `${F().signo(tasa, 2)} / semana`;
+
+function datosHtml(d){
+  if (!d) return '';
+  const de = k => d.origen[k] === 'ficha' ? ' <span class="muted">(ficha)</span>' : '';
+  const partes = [];
+  if (d.pesoKg != null) partes.push(`${esc(F().kg(d.pesoKg))}${de('peso')}`);
+  if (d.grasaPct != null) partes.push(`${esc(F().num(d.grasaPct, 1))} % graso${de('grasa')}`);
+  if (d.perfil.alturaCm != null) partes.push(`${esc(F().num(d.perfil.alturaCm, 0))} cm${de('altura')}`);
+  const faltan = { peso: 'peso', grasa: '% graso', altura: 'altura', sexo: 'sexo' };
+  return `<p class="ent-partida"><b>Datos del cliente:</b> ${partes.length ? partes.join(' · ') : '<span class="muted">ninguno</span>'}${d.faltan.length ? ` <span class="muted">· falta: ${esc(d.faltan.map(k => faltan[k]).join(', '))}</span>` : ''}</p>`;
+}
+
+function bloqueHtml(b, n, an){
+  const id = k => `ent-t-${b.i}-${k}`;
+  const p = b.proyeccion;
+  const dur = DURACION[b.duracion];
+  const libres = PaqueteEntrenador.LIMITES.horizonteMaxSemanas - an.totalSemanas + b.semanas;
+  const chips = [dur ? chip(dur[0], dur[1]) : '',
+    b.ajuste ? chip('ambar', b.ajuste === 'baja' ? 'La app bajará el ritmo' : 'La app subirá el ritmo') : ''].filter(Boolean).join(' ');
+  return `<li class="ent-bloque" data-i="${b.i}" aria-label="Bloque ${b.i + 1}: ${esc(b.nombre)}, ${b.semanas} semanas">
+    <div class="rut-fila-cab">
+      <span class="rut-num" aria-hidden="true">${b.i + 1}</span>
+      <label class="rut-campo n3" for="${id('tipo')}"><span>Tipo</span><select id="${id('tipo')}" data-ent="bloque" data-i="${b.i}" data-k="tipo">
+        ${TE.TIPOS.map(t => `<option value="${t}"${t === b.tipo ? ' selected' : ''}>${esc(TE.NOMBRE[t])}</option>`).join('')}</select></label>
+      <label class="rut-campo n2" for="${id('semanas')}"><span>Semanas</span><input id="${id('semanas')}" type="number" inputmode="numeric" min="1" max="${libres}" step="1" data-ent="bloque" data-i="${b.i}" data-k="semanas" value="${b.semanas}"></label>
+      ${b.tipo === 'BRIDGE'
+        ? '<span class="rut-campo n3 rut-fijo"><span>Ritmo</span><b>mantener el peso</b></span>'
+        : `<label class="rut-campo n3" for="${id('ritmo')}"><span title="Porcentaje del peso por semana">Ritmo (% / sem)</span><input id="${id('ritmo')}" type="number" inputmode="decimal" min="${TE.RITMO_MIN}" max="${TE.RITMO_MAX}" step="${TE.RITMO_PASO}" data-ent="bloque" data-i="${b.i}" data-k="ritmo" value="${Math.abs(b.tasa)}"></label>`}
+      <span class="rut-mover">
+        <button type="button" class="btn-mini" id="${id('arriba')}" data-ent-accion="bloque-arriba" data-i="${b.i}" aria-label="Subir el bloque ${b.i + 1}"${b.i === 0 ? ' disabled' : ''}>↑</button>
+        <button type="button" class="btn-mini" id="${id('abajo')}" data-ent-accion="bloque-abajo" data-i="${b.i}" aria-label="Bajar el bloque ${b.i + 1}"${b.i === n - 1 ? ' disabled' : ''}>↓</button>
+        <button type="button" class="btn-mini peligro" id="${id('quitar')}" data-ent-accion="bloque-quitar" data-i="${b.i}" aria-label="Quitar el bloque ${b.i + 1}">✕</button>
+      </span>
+    </div>
+    <p class="rut-meta ent-bloque-meta">${esc(F().corta(b.inicio))} – ${esc(F().dia(b.fin))}${b.tipo === 'BRIDGE' ? ' · mantener el peso' : ` · ${esc(ritmoTxt(b.tasa))}`}${p ? ` · al final: <b>${esc(F().kg(p.pesoFinKg))}</b> y <b>${esc(F().num(p.grasaFinPct, 1))} %</b> graso` : ''}${chips ? `<br>${chips}` : ''}</p>
+  </li>`;
+}
+
+function temporada(ctx){
+  const b = ctx.borrador, an = ctx.temporada, d = ctx.datos;
+  const cab = `<h2 id="entTemporadaTitulo">Temporada de nutrición</h2>`;
+  if (!b.temporada || !an){
+    const deCopia = d && d.planCopia ? TE.desdePlanCopia(d.planCopia, ctx.hoy) : null;
+    const ultima = ctx.emitidos.find(e => e.temporada && e.temporada.bloques && e.temporada.bloques.length);
+    return `<section class="card ent-temporada" id="entTemporada" aria-labelledby="entTemporadaTitulo">${cab}
+      <p>${b.temporada ? '' : 'Este plan no lleva temporada. '}Puedes añadirle una: bloques de definición, volumen o normocalórica, cada uno con su duración y su ritmo. El cliente la recibe como una propuesta y la aplica desde la pestaña Nutrición de la app.</p>
+      <div class="fila-botones">
+        ${btn('temporada-nueva', 'Añadir una temporada', { clase: b.incluirRutina ? 'sec' : 'pri', extra: ' id="entTemporadaNueva"' })}
+        ${deCopia ? btn('temporada-copia', 'Partir de la temporada que tiene en la app', { extra: ' id="entTemporadaCopia"' }) : ''}
+        ${ultima ? btn('temporada-emitida', 'Partir de la del último plan emitido', { extra: ` data-emitido="${esc(ultima.id)}"` }) : ''}
+      </div></section>`;
+  }
+  const L = PaqueteEntrenador.LIMITES;
+  const n = an.bloques.length;
+  const puedeAnadir = n < L.bloquesMax && an.totalSemanas < L.horizonteMaxSemanas;
+  const pr = an.proyeccion;
+  const out = [`<section class="card ent-temporada" id="entTemporada" aria-labelledby="entTemporadaTitulo">${cab}
+    ${datosHtml(d)}
+    ${pr ? `<div class="cifras">
+      ${`<div class="cifra"><b>${esc(F().kg(pr.pesoPartidaKg))}</b><span>${esc(`al aplicarla · ${F().num(pr.grasaPartidaPct, 1)} % graso`)}</span></div>`}
+      ${`<div class="cifra"><b>${esc(F().kg(pr.pesoFinKg))}</b><span>${esc(`al final · ${F().num(pr.grasaFinPct, 1)} % graso`)}</span></div>`}
+      ${`<div class="cifra"><b>${esc(String(an.totalSemanas))}</b><span>${esc(`semanas · hasta el ${F().dia(an.fin)}`)}</span></div>`}
+    </div>` : `<p class="muted">${esc(F().plural(an.totalSemanas, 'semana', 'semanas'))} en ${esc(F().plural(n, 'bloque', 'bloques'))}, hasta el ${esc(F().dia(an.fin))} si la aplica hoy.</p>`}
+    <ol class="rut-filas ent-bloques">${an.bloques.map(x => bloqueHtml(x, n, an)).join('')}</ol>
+    <div class="fila-botones">
+      ${btn('bloque-nuevo', `+ Bloque (${n}/${L.bloquesMax})`, { des: !puedeAnadir, extra: ' id="ent-t-nuevo"', titulo: puedeAnadir ? '' : `Hasta ${L.bloquesMax} bloques y ${L.horizonteMaxSemanas} semanas en total` })}
+      <span class="spacer"></span>
+      ${btn('temporada-quitar', 'Quitar la temporada del plan', { clase: 'peligro', extra: ' id="entTemporadaQuitar"' })}
+    </div>
+    <p class="muted" style="font-size:12.5px">La app ancla la temporada al día en que el cliente la aplica y ajusta cada ritmo a sus datos reales de ese día. Las fechas y la proyección de aquí suponen que la aplica hoy, con los datos de su copia o de su ficha.</p>
+  </section>`];
+  out.push(tarjeta('Avisos de la temporada', an.avisos.length
+    ? an.avisos.map(a => `<div class="alerta ${a.nivel}"><span class="tag">${a.nivel === 'rojo' ? 'Impide emitir' : a.nivel === 'ambar' ? 'Revisa' : 'Nota'}</span><span>${esc(a.txt)}</span></div>`).join('')
+    : '<p class="muted">Sin avisos: la app aplicará esta temporada tal cual.</p>', ' id="entAvisosTemporada"'));
+  return out.join('');
 }
 
 // ---------------------------------------------------------------
@@ -352,11 +476,13 @@ function seccion(ctx){
   if (!ctx.E.espacio) return out.join('');
   out.push(ficha(ctx));
   out.push(rutina(ctx));
+  if (ctx.borrador) out.push(temporada(ctx));
   out.push(emitidos(ctx));
   out.push(ayuda(`<ul class="lista-plana">
     <li><b>Borrador:</b> lo que preparas aquí, guardado solo en este navegador. Puedes tener varios por cliente; importar una copia nueva no los toca.</li>
-    <li><b>Plan emitido:</b> un archivo firmado con tu clave. Envíaselo al cliente por WhatsApp o correo; lo importa en la app desde la bienvenida o desde las herramientas de su rutina.</li>
-    <li>La app le enseña el plan antes de aplicarlo y, si ya tenía una rutina, la deja a prueba hasta que la confirme.</li>
+    <li><b>Plan emitido:</b> un archivo firmado con tu clave, con la rutina, la temporada o las dos. Envíaselo al cliente por WhatsApp o correo; lo importa en la app desde la bienvenida o desde las herramientas de su rutina.</li>
+    <li>La app le enseña el plan antes de aplicarlo y, si ya tenía una rutina, la deja a prueba hasta que la confirme. La temporada le llega como una propuesta que aplica desde Nutrición.</li>
+    <li><b>Importable hasta:</b> pasada esa fecha la app rechaza el archivo y tendrás que emitirle otro.</li>
     <li>Para saber si lo aplicó, pídele una copia de seguridad nueva e impórtala aquí.</li>
   </ul>`));
   return out.join('');
@@ -365,18 +491,29 @@ function seccion(ctx){
 /* Contenido del diálogo de emisión. */
 function confirmarEmision(ctx){
   const { borrador, copia } = ctx;
-  const sim = PL.simular(borrador.rutina, ctx.raw, { nombre: borrador.nombre });
-  const dif = copia ? PL.diferencias(copia.normal, sim.normal) : null;
+  const sim = borrador.incluirRutina ? PL.simular(borrador.rutina, ctx.raw, { nombre: borrador.nombre }) : null;
+  const dif = sim && copia ? PL.diferencias(copia.normal, sim.normal) : null;
+  const t = TE.paquete(borrador.temporada);
   const L = PaqueteEntrenador.LIMITES;
+  const hoy = TE.iso(ctx.hoy || new Date());
+  const manana = TE.iso(new Date((ctx.hoy || new Date()).getFullYear(), (ctx.hoy || new Date()).getMonth(), (ctx.hoy || new Date()).getDate() + 1));
+  const lleva = [
+    sim ? `<li>Rutina «${esc(borrador.nombre)}»: ${sim.dias.length} días, ${esc(SISTEMA[sim.sistema])}.</li>` : '<li>Sin rutina: el cliente conserva la suya.</li>',
+    t ? `<li>Temporada: ${t.bloques.map(x => `${esc(TE.NOMBRE[x.tipo])} ${x.semanas} sem`).join(' → ')} (${TE.totalSemanas(t)} semanas).</li>` : '<li>Sin temporada.</li>',
+  ];
   return `<h2 id="modalTitulo">Emitir plan para ${esc(ctx.E.espacio.nombre)}</h2>
-    <p>Rutina «${esc(borrador.nombre)}»: ${sim.dias.length} días, ${esc(SISTEMA[sim.sistema])}. Se firmará con tu clave y se descargará un archivo <code>.json</code> para enviárselo.</p>
+    <ul class="lista-plana ent-lleva">${lleva.join('')}</ul>
+    <p>Se firmará con tu clave y se descargará un archivo <code>.json</code> para enviárselo.</p>
     ${dif ? `<details class="detalle"${dif.iguales ? '' : ' open'}><summary>Cambios frente a la rutina de su copia</summary>${cambiosHtml(dif, { vacio: 'Igual que la rutina de su copia.' })}</details>` : ''}
     <div class="mod-fila"><label for="entNombreEntrenador">Tu nombre (lo verá el cliente)</label>
       <input id="entNombreEntrenador" type="text" maxlength="${L.textoMax}" value="${esc(ctx.nombreEntrenador || '')}" autocomplete="name" autofocus></div>
     <div class="mod-fila"><label for="entNota">Nota para el cliente (opcional)</label>
       <textarea id="entNota" class="ent-nota" maxlength="${L.notaMax}" placeholder="Cómo empezar, en qué fijarse…"></textarea></div>
+    <div class="mod-fila ent-caducidad"><label class="rut-ss" for="entCaduca"><input id="entCaduca" type="checkbox" data-ent="caduca" checked> Fecha límite para importarlo</label>
+      <input id="entCaducaFecha" type="date" min="${manana}" value="${TE.caducidadDefecto(ctx.hoy || new Date())}" aria-label="Importable hasta">
+      <p class="muted" style="font-size:12.5px;margin:4px 0 0">Pasada esa fecha la app rechaza el archivo y tendrías que emitirle otro. Por defecto, ${TE.CADUCIDAD_DIAS} días desde hoy (${esc(F().dia(hoy))}).</p></div>
     ${ctx.errorEmision ? `<div class="alerta rojo" role="alert"><span class="tag">Revisa</span><span>${esc(ctx.errorEmision)}</span></div>` : ''}
-    <p class="muted" style="font-size:12.5px">El archivo solo lleva tu nombre, el del cliente, la nota y la rutina. Su ficha y sus datos no salen de este navegador.</p>
+    <p class="muted" style="font-size:12.5px">El archivo solo lleva tu nombre, el del cliente, la nota${sim ? ', la rutina' : ''}${t ? ', la temporada' : ''} y la fecha límite. Su ficha y sus datos no salen de este navegador.</p>
     <div class="mod-acciones"><button class="btn sec" type="button" data-accion="cerrar">Cancelar</button>
       <button class="btn pri" type="button" data-ent-accion="emitir-confirmar" id="entEmitirConfirmar">Firmar y descargar</button></div>`;
 }

@@ -486,25 +486,38 @@ const PlanificadorEntrenador = {
   // ---------------------------------------------------------------
 
   /* origen: {tipo:'copia'|'blanco'|'borrador', rutina, firma?, normal?,
-     instantaneaId?, desde?, deEspacio?, deBorrador?} */
-  nuevoBorrador({ espacioId, nombre, rutina, origen, ahora = new Date().toISOString(), id = null }){
+     instantaneaId?, desde?, deEspacio?, deBorrador?}
+     Un borrador es el plan entero: la rutina (que puede no ir en el plan,
+     `incluirRutina: false`) y la temporada (null si no lleva;
+     entrenador/temporada.js). */
+  nuevoBorrador({ espacioId, nombre, rutina, origen, temporada = null, incluirRutina = true, ahora = new Date().toISOString(), id = null }){
     const r = this.normalizarRutina(rutina);
     return {
       id: id || `bor_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
       tipo: 'borrador', version: this.VERSION_BORRADOR, espacioId,
       nombre: String(nombre || 'Borrador').slice(0, 80),
       creado: ahora, actualizado: ahora, rutina: r,
+      incluirRutina: incluirRutina !== false,
+      temporada: TemporadaEntrenador.normalizar(temporada),
       origen: { tipo: 'blanco', ...origen, rutina: this.normalizarRutina(origen && origen.rutina ? origen.rutina : r) },
     };
   },
 
   /* Registros incompletos o de versiones anteriores: valores por defecto
-     sin perder lo que traen. */
+     sin perder lo que traen. Los borradores de antes de la temporada
+     (F3) llevan rutina y nada más. */
   leerBorrador(b){
     if (!b || typeof b !== 'object' || !b.id || b.tipo !== 'borrador') return null;
     return { ...b, version: b.version || 1, nombre: String(b.nombre || 'Borrador'),
              rutina: this.normalizarRutina(b.rutina),
+             incluirRutina: b.incluirRutina !== false,
+             temporada: TemporadaEntrenador.normalizar(b.temporada),
              origen: { tipo: 'blanco', ...(b.origen || {}), rutina: this.normalizarRutina(b.origen && b.origen.rutina ? b.origen.rutina : b.rutina) } };
+  },
+
+  /* Lo que se deshace y rehace: todo el contenido del plan. */
+  contenido(b){
+    return this.clonar({ rutina: b.rutina, incluirRutina: b.incluirRutina !== false, temporada: b.temporada || null });
   },
 
   /* ¿Ha cambiado la rutina de la copia desde que se creó el borrador a

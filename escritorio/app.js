@@ -49,7 +49,7 @@ const FUENTE_TXT = {
    de estilos se cargan a demanda: solo al abrir #entrenador o si este
    navegador ya tiene una clave de entrenador guardada. Ni index.html ni la
    caché de sw.js los mencionan, así que un usuario normal no los descarga. */
-const SCRIPTS_ENTRENADOR = ['../coach/planner.js', 'entrenador/paquete.js', 'entrenador/clave.js',
+const SCRIPTS_ENTRENADOR = ['../coach/planner.js', 'entrenador/paquete.js', 'entrenador/clave.js', 'entrenador/temporada.js',
   'entrenador/planificador.js', 'entrenador/vista.js', 'entrenador/modo.js'];
 let cargaEntrenador = null, errorEntrenador = null;
 const modoEntrenador = () => (typeof EntrenadorModo !== 'undefined' && EntrenadorModo.listo) ? EntrenadorModo : null;

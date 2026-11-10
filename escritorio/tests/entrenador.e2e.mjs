@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { cargar, cargarCoach, copiaRica } from './comun.mjs';
 import { archivoClave, CLAVE_PRUEBAS, CONTRASENA_PRUEBAS } from './clave-pruebas.mjs';
@@ -22,7 +23,7 @@ if (!pw){ console.error('No se encontró Playwright. Define PLAYWRIGHT_MODULE.')
 
 cargarCoach('motor.js', 'data.js', 'nutricion.js', 'catalogo.js', 'canonico.js', 'planner.js');
 const { PaqueteEntrenador: P, PlanificadorEntrenador: PL, ImportarJSON } =
-  cargar('analisis.js', 'importar.js', 'entrenador/paquete.js', 'entrenador/planificador.js');
+  cargar('analisis.js', 'importar.js', 'nutricion-esc.js', 'entrenador/paquete.js', 'entrenador/temporada.js', 'entrenador/planificador.js');
 const CLAVES = { [CLAVE_PRUEBAS.id]: CLAVE_PRUEBAS.publica };
 
 const raiz = path.resolve(new URL('../../', import.meta.url).pathname);
@@ -72,6 +73,10 @@ async function cambiar(sel, valor){
   else { await el.fill(String(valor)); await el.press('Tab'); }
   await pagina.waitForFunction(([s, v]) => { const e = document.querySelector(s); return e && !e.dataset.prueba && e.value === String(v); }, [sel, valor]);
 }
+const enDias = n => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+/* Fila de «Planes emitidos» de un archivo (por su huella: dos planes del mismo
+   cliente y día comparten nombre). */
+const filaDe = d => pagina.locator('#entEmitidos tr', { hasText: createHash('sha256').update(d.bytes).digest('hex').slice(0, 16) });
 async function descargarPlan(){
   const [dl] = await Promise.all([pagina.waitForEvent('download'), pagina.click('#entEmitirConfirmar')]);
   const ruta = path.join(tmp, dl.suggestedFilename());
@@ -176,10 +181,10 @@ try {
   assert.equal(v1.carga.entrenador.nombre, 'Ana Pérez');
   assert.equal(v1.carga.nota, 'Empieza el lunes. Calienta bien el hombro.');
   assert.equal(v1.carga.temporada, undefined);
-  assert.equal(v1.carga.caduca, undefined);
+  assert.equal(v1.carga.caduca, enDias(90));   // fecha límite por defecto (F5)
   assert.deepEqual(v1.carga.rutina.dias.map(d => d.ejercicios.map(e => [e.ejercicio, e.reps, e.dropSet])),
     [[['Press banca con barra', '6-8', false]], [['Sentadilla con barra', '8', true], ['Curl de bíceps con barra', '8-10', false]]]);
-  assert.doesNotMatch(new TextDecoder().decode(P.desdeB64url(JSON.parse(d1.bytes).carga)), /Hombro derecho delicado|82/);
+  assert.doesNotMatch(new TextDecoder().decode(P.desdeB64url(JSON.parse(d1.bytes).carga)), /Hombro derecho delicado|82[.,]5/);
   await pagina.locator('#entEmitidos').getByText(d1.nombre).waitFor();
   ok('cliente sin copia: ficha manual, borrador en blanco, deshacer, y el plan descargado verifica (sin la ficha)');
 
@@ -208,6 +213,108 @@ try {
   assert.match(await pagina.inputValue('#entSelBorrador').then(id => pagina.locator(`#entSelBorrador option[value="${id}"]`).innerText()), /de Luis Gómez/);
   ok('cliente con copia: borrador desde su rutina, comparación, plan verificado igual a la simulación; plantilla de otro cliente');
 
+  // --- 4b. F5: temporada en el plan, sin rutina, con fecha límite ---
+  const avisosT = () => pagina.locator('#entAvisosTemporada').innerText();
+  await pagina.click('#entTemporadaNueva');
+  await pagina.locator('#ent-t-0-tipo').waitFor();
+  assert.match(await pagina.locator('#entTemporada').innerText(), /falta: .*% graso/);   // su copia no trae nutrición
+  await cambiar('#ent-t-0-ritmo', '1.8');
+  assert.match(await avisosT(), /lo bajará al aplicarlo/);
+  assert.match(await avisosT(), /no hay proyección/);
+  await pagina.click('#ent-t-nuevo'); await pagina.locator('#ent-t-1-tipo').waitFor();
+  await pagina.click('#ent-t-nuevo'); await pagina.locator('#ent-t-2-tipo').waitFor();
+  assert.deepEqual(await pagina.$$eval('[id^="ent-t-"][id$="-tipo"]', l => l.map(e => e.value)), ['CUT', 'BRIDGE', 'BULK']);
+  await cambiar('#ent-t-1-tipo', 'CUT');
+  assert.match(await avisosT(), /impide emitir[\s\S]*dos bloques seguidos del mismo tipo/i);
+  await pagina.click('#entEmitir');
+  await pagina.getByRole('heading', { name: 'Aún no se puede emitir' }).waitFor();
+  await pagina.click('#modalCaja [data-accion="cerrar"]');
+  await pagina.click('#entDeshacer');
+  await pagina.waitForFunction(() => document.getElementById('ent-t-1-tipo')?.value === 'BRIDGE');
+  assert.doesNotMatch(await avisosT(), /impide emitir/i);
+  await pagina.click('#entIncluirRutina');
+  await pagina.locator('#entSinRutina').waitFor();
+  assert.equal(await pagina.locator('#ent-0-0-ejercicio').count(), 0);
+  await foto('e04-temporada.png');
+  await pagina.click('#entEmitir');
+  await pagina.locator('#entNombreEntrenador').waitFor();
+  assert.match(await pagina.locator('#modalCaja').innerText(), /Sin rutina[\s\S]*Temporada: Definición 8 sem → Normocalórica 2 sem → Volumen 16 sem/);
+  assert.equal(await pagina.isChecked('#entCaduca'), true);
+  assert.equal(await pagina.inputValue('#entCaducaFecha'), enDias(90));
+  await pagina.fill('#entCaducaFecha', '2020-01-01');
+  await pagina.click('#entEmitirConfirmar');
+  await pagina.getByText('tiene que ser posterior a hoy').waitFor();
+  assert.equal(await pagina.inputValue('#entCaducaFecha'), '2020-01-01');
+  await pagina.fill('#entCaducaFecha', enDias(30));
+  await foto('e05-emitir-temporada.png');
+  const d3 = await descargarPlan();
+  const v3 = await P.verificar(d3.bytes, { claves: CLAVES });
+  assert.equal(v3.ok, true, v3.detalle);
+  assert.equal(v3.carga.rutina, undefined);
+  assert.equal(v3.carga.caduca, enDias(30));
+  assert.deepEqual(v3.carga.temporada, { bloques: [{ tipo: 'CUT', semanas: 8, tasaPctSemana: -1.8 }, { tipo: 'BRIDGE', semanas: 2, tasaPctSemana: 0 },
+    { tipo: 'BULK', semanas: 16, tasaPctSemana: 0.25 }] });
+  assert.equal((await P.verificar(d3.bytes, { claves: CLAVES, hoy: enDias(31) })).error, 'caducado');
+  const fila3 = filaDe(d3);
+  await fila3.waitFor();
+  assert.match(await fila3.innerText(), /Temporada: 3 bloques · 26 semanas[\s\S]*Copia anterior/);
+  ok('temporada: bloques, avisos, tipos seguidos que impiden emitir, deshacer; plan sin rutina con fecha límite que verifica y caduca');
+
+  // --- 4c. F5: estado del plan emitido con una copia posterior del cliente ---
+  const copiaTras = { ...copia, planEntrenador: { aplicado: { id: v3.carga.id, emitido: v3.carga.emitido, entrenador: 'Ana Pérez', cliente: 'Mis datos',
+    nota: '', aplicadoEn: enDias(0), rutina: null, temporada: 'pendiente', propuestaTemporada: v3.carga.temporada }, historial: [{ id: v3.carga.id, aplicadoEn: enDias(0) }] } };
+  await pagina.click('[data-accion="importar-datos"]').catch(() => {});
+  await pagina.setInputFiles('#inputDatos', escribir(`copia_truelift_${enDias(0)}.json`, JSON.stringify(copiaTras)));
+  await pagina.getByText('Revisa la importación').waitFor();
+  if (await pagina.locator('input[name="destino"][value="actualizar"]').count()) await pagina.check('input[name="destino"][value="actualizar"]');
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+  await pagina.click('#modalCaja [data-accion="cerrar"]');
+  await pagina.click('#tabs [data-seccion="entrenador"]');
+  await pagina.locator('#entEmitidos').waitFor();
+  assert.match(await filaDe(d3).innerText(), /Temporada pendiente[\s\S]*aún no ha aplicado la temporada/);
+  assert.match(await filaDe(d2).innerText(), /Sin rastro/);
+  ok('estado de los planes emitidos con su copia nueva: temporada pendiente; el anterior, sin rastro');
+
+  // --- 4d. F5: cliente con nutrición, desde la temporada de su app, con proyección ---
+  const ej = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
+  ej.nutricion.planTemporada = { id: 'plan-x', creado: enDias(-5), replanificado: null, transicionPropuesta: null, bloques: [
+    { id: 'bloque-0', tipo: 'BULK', inicio: enDias(-5), fin: enDias(120), tasaPctSemana: 0.2 },
+    { id: 'bloque-1', tipo: 'CUT', inicio: enDias(121), fin: enDias(197), tasaPctSemana: -0.5 }] };
+  await pagina.click('[data-ent-accion="cliente-copia"]');
+  await pagina.setInputFiles('#inputDatos', escribir('copia_truelift_2026-11-06.json', JSON.stringify(ej)));
+  await pagina.getByText('Revisa la importación').waitFor();
+  await pagina.fill('#nombreNuevo', 'Marta Ruiz');
+  await pagina.click('[data-accion="confirmar"]');
+  await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
+  await pagina.click('#modalCaja [data-accion="cerrar"]');
+  if (!(await pagina.locator('[data-ent-accion="nuevo-blanco"]').count())) await pagina.click('#tabs [data-seccion="entrenador"]');
+  await pagina.getByRole('heading', { name: 'Marta Ruiz', exact: true }).waitFor();
+  await pagina.click('[data-ent-accion="nuevo-blanco"]');
+  await pagina.locator('#entTemporadaCopia').waitFor();
+  await pagina.click('#entIncluirRutina');
+  await pagina.locator('#entSinRutina').waitFor();
+  await pagina.click('#entTemporadaCopia');
+  await pagina.locator('#ent-t-1-tipo').waitFor();
+  assert.deepEqual(await pagina.$$eval('[id^="ent-t-"][id$="-tipo"]', l => l.map(e => e.value)), ['BULK', 'CUT']);
+  assert.deepEqual(await pagina.$$eval('[id^="ent-t-"][id$="-semanas"]', l => l.map(e => e.value)), ['17', '11']);
+  const tem = await pagina.locator('#entTemporada').innerText();
+  assert.match(tem, /al aplicarla[\s\S]*al final[\s\S]*28\s*semanas/i);
+  assert.match(tem, /176 cm/);
+  assert.match(tem, /ancla la temporada al día en que el cliente la aplica/);
+  await foto('e06-temporada-proyeccion.png');
+  await pagina.click('#entEmitir');
+  await pagina.locator('#entNombreEntrenador').waitFor();
+  await pagina.uncheck('#entCaduca');
+  assert.equal(await pagina.isDisabled('#entCaducaFecha'), true);
+  const d4 = await descargarPlan();
+  const v4 = await P.verificar(d4.bytes, { claves: CLAVES, hoy: '2099-01-01' });
+  assert.equal(v4.ok, true, v4.detalle);
+  assert.equal(v4.carga.caduca, undefined);
+  assert.deepEqual(v4.carga.temporada.bloques.map(b => [b.tipo, b.semanas, b.tasaPctSemana]), [['BULK', 17, 0.2], ['CUT', 11, -0.5]]);
+  assert.match(await filaDe(d4).innerText(), /Sin límite/);
+  ok('cliente con nutrición: temporada desde la de su app, proyección con sus datos, plan sin fecha límite que verifica');
+
   // --- 5. Recarga: la clave sigue; salir la borra ---
   await pagina.reload(); await pagina.waitForSelector('html[data-listo="1"]');
   await pagina.locator('#tabs [data-seccion="entrenador"]').waitFor();
@@ -221,7 +328,7 @@ try {
   assert.deepEqual(delModo(), []);
   assert.equal(await pagina.locator('#tabs [data-seccion="entrenador"]').count(), 0);
   const quedan = await pagina.evaluate(() => Escritorio.estado.espacios.map(e => e.nombre));
-  assert.deepEqual(quedan, ['Mis datos', 'Luis Gómez']);
+  assert.deepEqual(quedan, ['Mis datos', 'Luis Gómez', 'Marta Ruiz']);
   ok('recarga con la clave guardada; «Salir del modo entrenador» la borra y la página vuelve a no pedir sus scripts');
 
   // --- 6. Migración IndexedDB v2 → v3 con la copia de ejemplo ---

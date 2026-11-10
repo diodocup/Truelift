@@ -12,7 +12,7 @@ import { archivoClave, CLAVE_PRUEBAS, CONTRASENA_PRUEBAS } from './clave-pruebas
 
 cargarCoach('motor.js', 'data.js', 'nutricion.js', 'catalogo.js', 'canonico.js', 'planner.js');
 const { PlanificadorEntrenador: PL, ClaveEntrenador: CE, PaqueteEntrenador: P } =
-  cargar('analisis.js', 'entrenador/paquete.js', 'entrenador/clave.js', 'entrenador/planificador.js');
+  cargar('analisis.js', 'nutricion-esc.js', 'entrenador/paquete.js', 'entrenador/clave.js', 'entrenador/temporada.js', 'entrenador/planificador.js');
 const plain = x => JSON.parse(JSON.stringify(x));
 const CLAVES = { [CLAVE_PRUEBAS.id]: CLAVE_PRUEBAS.publica };
 
