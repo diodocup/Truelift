@@ -1,0 +1,3 @@
+# Claves privadas del plan de entrenador (tool/entrenador_claves.mjs de App-PRO).
+# Nunca se suben al repositorio.
+clave_entrenador*.json

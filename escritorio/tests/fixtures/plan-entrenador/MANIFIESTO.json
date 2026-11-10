@@ -1,0 +1,177 @@
+{
+  "formato": "truelift-plan-entrenador-vectores",
+  "v": 1,
+  "generador": "escritorio/tests/generar-vectores-plan-entrenador.mjs",
+  "hoy": "2026-11-10",
+  "clavePruebas": "CLAVE_PRUEBAS.json",
+  "archivos": [
+    {
+      "archivo": "CLAVE_PRUEBAS.json",
+      "sha256": "e7619d9ff79d83d1ee2a064bff0d35b63c686aed5943b5fb9be22cb84bfb216f",
+      "esperado": null,
+      "descripcion": "Clave de pruebas"
+    },
+    {
+      "archivo": "v01_solo_rutina.json",
+      "sha256": "bb40e088aa8e94a8182fe03121b4781cffb7c137fc73ddf456bf60f9c84bfc8f",
+      "esperado": "valido",
+      "descripcion": "Solo rutina"
+    },
+    {
+      "archivo": "v02_rutina_y_temporada.json",
+      "sha256": "b6dbc76445c5cccfc012a63e7a7077293afa67ca279ecc5b87d7e53871036302",
+      "esperado": "valido",
+      "descripcion": "Rutina y temporada, con caducidad lejana"
+    },
+    {
+      "archivo": "v03_solo_temporada.json",
+      "sha256": "48b3ddecb6ae2ed9539bd50377037cb66f9a550ab2eaae32a05c7e664a181b9b",
+      "esperado": "valido",
+      "descripcion": "Solo temporada"
+    },
+    {
+      "archivo": "v04_modalidades_y_propios.json",
+      "sha256": "265a88fd261f200ded230d7ce0ec5367922712d0d1a168a13e26e99c516e511c",
+      "esperado": "valido",
+      "descripcion": "Cada modalidad y ejercicios propios"
+    },
+    {
+      "archivo": "v05_revision.json",
+      "sha256": "dcc67a4d7cb8115f2d2a5537e34f792898d4eb9f950c7869374111ac47dbd9fa",
+      "esperado": "valido",
+      "descripcion": "Revisión del plan v01 (otro id, otra rutina, con temporada)"
+    },
+    {
+      "archivo": "i01_byte_alterado.json",
+      "sha256": "aeb10c6f1e55df871c3966b986dd0c3b1d2edea2f5c98f03865eefc68572e46a",
+      "esperado": "firmaInvalida",
+      "descripcion": "Un byte de la carga alterado"
+    },
+    {
+      "archivo": "i02_firma_otra_clave.json",
+      "sha256": "a88b25fce376316e03e2f4153e7ffeec60c7c5c9c434482129ed7c9e8c4b36ab",
+      "esperado": "firmaInvalida",
+      "descripcion": "Firmado con otra clave pero declara la de pruebas"
+    },
+    {
+      "archivo": "i03_clave_desconocida.json",
+      "sha256": "d92c078fdc06f145b55283f197c197d7dd20bd1208cc53abe87a105862fbc1fd",
+      "esperado": "claveDesconocida",
+      "descripcion": "Firmado con una clave que la app no conoce"
+    },
+    {
+      "archivo": "i04_firma_truncada.json",
+      "sha256": "2e428f5b81c519704353f84ceee81921babdc86517672c8008a35511adc639d4",
+      "esperado": "firmaInvalida",
+      "descripcion": "Firma truncada"
+    },
+    {
+      "archivo": "i05_base64_mal_formado.json",
+      "sha256": "2532fb96ae9a42968daa8aa6604715d9edb024dca189c4c511e72a94264aa7ab",
+      "esperado": "firmaInvalida",
+      "descripcion": "Carga en base64 con relleno y caracteres ajenos"
+    },
+    {
+      "archivo": "i06_version_2.json",
+      "sha256": "00074392fa3fd7b1d2bfb15e2e182c456ea5e7d925c9173a132f3dac3c85fbc2",
+      "esperado": "versionNoSoportada",
+      "descripcion": "Versión del sobre mayor que la soportada"
+    },
+    {
+      "archivo": "i07_formato_ajeno.json",
+      "sha256": "7e409b39af82a22e8f38a13ff31b771cd10893d465fd7b22316e74e1d0c12c8d",
+      "esperado": "noEsUnPlan",
+      "descripcion": "Otro formato"
+    },
+    {
+      "archivo": "i08_copia_seguridad.json",
+      "sha256": "0ac15046d4750a38400554a4879d0f87b7cfc3a3b4338fd25188538dd67f3226",
+      "esperado": "esUnaCopia",
+      "descripcion": "Una copia de seguridad de la app"
+    },
+    {
+      "archivo": "i09_json_roto.json",
+      "sha256": "f0fe715411148b0a4b179eb6d80e163cedfa7a120ec1e4dac72c97ed93b9705a",
+      "esperado": "noEsUnPlan",
+      "descripcion": "JSON roto"
+    },
+    {
+      "archivo": "i10_demasiado_grande.json",
+      "sha256": "81bee4623da04585eefad645f88548d81d3488eb82601963bc992d27c3e6a2f1",
+      "esperado": "demasiadoGrande",
+      "descripcion": "Archivo de más de 256 KB"
+    },
+    {
+      "archivo": "i11_caducado.json",
+      "sha256": "0f9c6bf98a342f411ea92ef3c38b677330e83a175f6bfe5d5bb314f8787275c8",
+      "esperado": "caducado",
+      "descripcion": "Caducó antes de hoy"
+    },
+    {
+      "archivo": "i12_un_dia.json",
+      "sha256": "d7030cacfd155127f38c00ff7da456c7d64b2cd89fa3c203f5d105e9fbcff7ac",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Un solo día"
+    },
+    {
+      "archivo": "i13_seis_dias.json",
+      "sha256": "9476e992fc4a64f57c54e12e245639fe585d42c1c4ec6129a6b70caea6281ee2",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Seis días"
+    },
+    {
+      "archivo": "i14_once_ejercicios.json",
+      "sha256": "b8ffd040d327a3a4728af927eeba445d39184d7d50f2171d84d7cf9b4c8fc3d3",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Once ejercicios en un día"
+    },
+    {
+      "archivo": "i15_sistema_invalido.json",
+      "sha256": "b81db55baad51ec0ace7a48c1b96c65397595b8d63b3399a29af8dbc9067f3ad",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Sistema de progresión inválido"
+    },
+    {
+      "archivo": "i16_series_texto.json",
+      "sha256": "0c165c630b1b95b9e4e3430df8438e06ea72daa18e5ff0d5509408eb3e56f949",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Series como texto"
+    },
+    {
+      "archivo": "i17_siete_bloques.json",
+      "sha256": "f04a547e85ffe0440bf2fc7146546f80e3b7f85a0d1d60bc4901f583da6e16bd",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Siete bloques"
+    },
+    {
+      "archivo": "i18_bloques_mismo_tipo.json",
+      "sha256": "067de683a0f4dbeb722bb4dbb5930f141b3d8d1cce6c249ace55981a19635ff7",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Dos bloques seguidos del mismo tipo"
+    },
+    {
+      "archivo": "i19_tasa_signo.json",
+      "sha256": "e7e4570be63eae6573ccb08b50cd485ca19c1d5956cea1d8538aee22921053bf",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Tasa con signo contrario al tipo"
+    },
+    {
+      "archivo": "i20_semanas_cero.json",
+      "sha256": "8c74e9fbf393f6d1437742231099c0961b42edde1105266b147270ecd2df3e47",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Bloque de cero semanas"
+    },
+    {
+      "archivo": "i21_horizonte_excesivo.json",
+      "sha256": "d6e80a1d0bd4647f061c41f9c107f4d53804fc7de657585d9e091f3c0220c61c",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Más semanas en total que el horizonte máximo"
+    },
+    {
+      "archivo": "i22_sin_rutina_ni_temporada.json",
+      "sha256": "93b6916bd859a27597fe2e4c2746affa3789aa55d8444d959bb5e04f07c0dee8",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Ni rutina ni temporada"
+    }
+  ]
+}
