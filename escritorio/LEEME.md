@@ -9,6 +9,10 @@ cobre: la rutina, la dieta y los registros solo se cambian en el móvil, que es
 la que manda. Desde el 01/11/2026 ya no hay editor de rutinas, exportación a
 Excel ni vídeo de progreso.
 
+Aparte del visor hay un **modo entrenador** para los entrenadores de TrueLift
+(ver «Modo entrenador», más abajo). Sin su archivo de clave no aparece ni se
+descarga: quien entrena con la app no ve ninguna diferencia.
+
 **Estado:** fases 0–8 implementadas y validadas en el entorno indicado en
 `VALIDACION.md`. Pendiente de revisión, comprobación en Safari/Firefox y prueba
 de transferencia en dispositivos iOS/Android reales. Esta entrega no publica
@@ -249,6 +253,172 @@ descargaste siguen siendo tuyos y la app los importa con sus propias reglas.
 - El estado actual (intentos agotados, recuperación reciente) solo aparece
   si el periodo incluye tu último registro.
 
+## Modo entrenador
+
+Sección aparte, **solo para entrenadores de TrueLift**, para preparar el
+*plan de entrenador* de un cliente (una rutina, una temporada de nutrición o
+las dos) y enviárselo como un archivo firmado que el cliente importa en la
+app. Especificación: `PLAN_ENTRENADOR.md` de App-PRO. Formato del archivo:
+`CONTRATO_PLAN_ENTRENADOR.md` (idéntico en los dos repositorios).
+
+Quien abre el escritorio sin clave no ve la sección ni descarga sus scripts:
+para esa persona el escritorio sigue siendo el visor de siempre. La
+protección no es esconder la página (el sitio es público) sino la firma: la
+app solo acepta archivos firmados con una clave de entrenador que conoce.
+
+### Lo que necesitas
+
+- Tu **archivo de clave** (`clave_entrenador_<id>.json`) y **su contraseña**.
+  Te los da TrueLift por un canal seguro. Guárdalos en un gestor de
+  contraseñas; no los envíes por WhatsApp ni por correo y no los subas a
+  ningún repositorio (`clave_entrenador*.json` está en `.gitignore`).
+- Un navegador reciente con firmas Ed25519 (Chrome, Edge, Firefox o Safari).
+  Si no las admite, la sección lo dice y no arranca. Probado en Chromium.
+- **Tu** ordenador. No desbloquees el modo entrenador en uno compartido.
+
+### Entrar y salir
+
+1. Abre `escritorio/#entrenador`. No hay enlace en la página ni en la web.
+2. **Desbloquear con tu archivo de clave**: elige el archivo, escribe la
+   contraseña y pulsa **Desbloquear**.
+3. En la barra lateral aparece el grupo **Entrenador** con **Clientes y
+   planes**. El navegador lo recuerda: al volver no hace falta la contraseña.
+   La clave se guarda de forma que no se puede volver a sacar del navegador,
+   y la contraseña no se guarda nunca.
+4. **Salir del modo entrenador** → **Salir y borrar la clave**: borra la clave
+   de este navegador y la sección desaparece. Tus clientes, borradores y el
+   registro de planes emitidos se quedan; para volver hace falta el archivo y
+   la contraseña.
+
+Mensajes al desbloquear: «La contraseña no es correcta…», «El archivo de clave
+está dañado o se ha modificado», «Este archivo no es un archivo de clave…» o
+«…es de una versión más reciente» (actualiza la página).
+
+### Clientes
+
+Cada cliente es un **espacio** de este navegador.
+
+- **Cliente nuevo con su copia**: pide al cliente su copia de seguridad (en la
+  app, **Ajustes → Copia de seguridad → Exportar copia**) e impórtala. Además
+  de preparar su plan, verás su historial en el resto de secciones.
+- **Cliente nuevo sin copia**: una ficha manual (nombre, sexo, peso, altura,
+  % graso estimado, experiencia, días disponibles y notas). Solo la ves tú:
+  sirve para preparar el plan y proyectar la temporada. Del cliente, el
+  archivo solo lleva su nombre.
+- En la ficha del cliente: **Importar su copia** / **Actualizar con una copia
+  nueva**, **Rellenar ficha** / **Editar ficha** y **Borrar cliente**.
+
+Como todo el escritorio, esto vive en el navegador: no es una copia de
+seguridad y no se envía a ningún servidor.
+
+### Preparar el plan
+
+En **Plan para <cliente>**:
+
+- Empieza con **Nuevo borrador desde su rutina** (la rutina personalizada de
+  su copia), **Nuevo en blanco** o **Desde un borrador de otro cliente…** (se
+  copia; el del otro cliente no cambia). Puedes tener varios borradores por
+  cliente: **Duplicar**, **Renombrar** y **Eliminar**. Importar una copia
+  nueva no los toca.
+- Cada cambio se guarda solo. **Deshacer** y **Rehacer** (Ctrl + Z y Ctrl + Y
+  fuera de un campo de texto) y **Volver a la rutina de partida**.
+- **Incluir la rutina en el plan**: sin marcar, el plan solo lleva temporada y
+  el cliente conserva la rutina que tiene en el móvil.
+
+**Rutina.** Sistema (progresión doble o simple), de 2 a 5 días con hasta 10
+ejercicios por día, series, repeticiones, RIR, descanso y las modalidades de
+la app (top set + back-off, drop set, superserie con el anterior y
+rest-pause), que se excluyen entre sí igual que en la app. Debajo:
+
+- **Avisos** de lo que la app haría distinto o no admitiría. «Sin avisos: la
+  app aplicará este borrador tal cual» es lo que buscas.
+- **Series por grupo y semana**, con el mismo reparto que la pestaña de
+  volumen de la app.
+- **Cambios frente a la rutina de su copia** y, si mantiene sistema y días, el
+  recordatorio de que la app seguirá proponiéndole los pesos que ya usaba en
+  los ejercicios que se repiten.
+- Un ejercicio que no está en el catálogo ni en la biblioteca del cliente se
+  señala: en la app entrará como ejercicio nuevo y se le avisará al aplicar.
+
+Si importas una copia más reciente y su rutina ya no es la del borrador, el
+escritorio lo dice y enseña **qué cambió en su móvil**: puedes mantener el
+borrador y compararlo con su rutina actual, o crear otro desde ella.
+
+**Temporada de nutrición** (opcional). **Añadir una temporada**, **Partir de
+la temporada que tiene en la app** (lo que le queda de ella) o **Partir de la
+del último plan emitido**. Es una lista ordenada de bloques —Definición,
+Volumen o Normocalórica—, cada uno con sus semanas y su ritmo; **+ Bloque**
+hasta el máximo que admite la app. Dos bloques seguidos del mismo tipo se
+marcan en rojo e impiden emitir. Con los datos de su copia (o de su ficha) se
+proyecta la temporada y se avisa cuando la app vaya a ajustar un ritmo o
+falten datos. La app ancla la temporada al día en que el cliente la aplica y
+ajusta cada ritmo a sus datos reales de ese día: las fechas que ves aquí
+suponen que la aplica hoy. **Quitar la temporada del plan** la retira.
+
+### Emitir y enviar
+
+1. **Emitir plan para el cliente**: tu nombre (lo verá el cliente; se
+   recuerda), una nota opcional para él y la **fecha límite para importarlo**
+   (por defecto a 90 días; se puede cambiar o dejar **Sin límite**). Pasada
+   esa fecha la app rechaza el archivo y tendrás que emitirle otro.
+2. **Firmar y descargar**: se firma con tu clave, se comprueba la firma y se
+   descarga `plan_truelift_<cliente>_<AAAA-MM-DD>.json`. Si la comprobación
+   fallara, no se descarga nada.
+3. Envíaselo por WhatsApp o por correo **tal cual**, como archivo. Cualquier
+   cambio en su contenido hace que la app lo rechace.
+
+Lo que tiene que saber el cliente:
+
+- Importar un plan requiere **TrueLift PRO de por vida**. La prueba gratuita y
+  las suscripciones no lo incluyen. Si ya lo compró y acaba de instalar la
+  app, el aviso le ofrece **Restaurar compra** y sigue solo.
+- Dónde: en la **bienvenida** de la app recién instalada («Tengo un plan
+  personalizado por un entrenador») o en **Rutina → Herramientas → Plan de tu
+  entrenador**.
+- La app le enseña el plan antes de aplicarlo. Desde Rutina, si ya tenía una
+  rutina, la nueva queda **a prueba** hasta que la confirme o la descarte (y
+  entonces vuelve la anterior entera). Desde la bienvenida queda aplicada.
+- La temporada le llega como una **propuesta** en Nutrición: la activa junto
+  con la nutrición o la aplica sobre la que tenga en marcha. El aviso legal de
+  nutrición lo acepta siempre él en su móvil.
+
+Si la app no acepta el archivo, el mensaje dice por qué:
+
+| Mensaje en la app | Qué pasa | Qué hacer |
+|---|---|---|
+| «Este archivo no viene de un entrenador de TrueLift o se ha modificado.» | El archivo ha cambiado por el camino, o la app aún no conoce tu clave | Reenvía el archivo descargado, sin abrirlo ni copiar su texto. Si persiste, que actualice la app y avisa a TrueLift |
+| «Este plan ha caducado…» | Pasó la fecha límite | Emite otro |
+| «Este plan necesita una versión más reciente de la app…» | Su app es antigua | Que la actualice |
+| «Esto es una copia de seguridad, no un plan…» / «Este archivo no es un plan…» | Ha elegido otro archivo | Que elija el `plan_truelift_….json` |
+| «El plan está incompleto o trae datos que la app no admite…» | No debería pasar con un archivo emitido aquí | Emite otro y avisa a TrueLift |
+| «El archivo es demasiado grande…» | No es un plan | Que elija el archivo correcto |
+
+### Revisiones
+
+Una revisión es **otro plan**: edita el borrador (o crea uno desde su copia
+más reciente) y vuelve a emitir. El cliente lo importa por la misma entrada;
+sustituye al anterior y su rutina vuelve a quedar a prueba sobre la actual.
+La app no tiene recordatorios ni calendario de revisiones: eso lo acordáis
+fuera de la app.
+
+### Saber si lo ha aplicado
+
+La tabla **Planes emitidos** del cliente lista fecha, plan, fecha límite,
+**En su copia** y archivo. «En su copia» sale de la copia de seguridad más
+reciente que hayas importado de ese cliente: rutina a prueba, aplicado (con
+el detalle de rutina y temporada), temporada pendiente, descartado,
+sustituido por otro plan, copia anterior al plan, caducado o sin rastro. Para
+saberlo, pídele una copia nueva e impórtala.
+
+### Si pierdes la clave
+
+- Sin el archivo o sin la contraseña no se puede recuperar: pide a TrueLift
+  una clave nueva. Los planes ya emitidos siguen valiendo mientras la app
+  conozca la clave con que se firmaron.
+- Si crees que alguien más tiene tu archivo **y** tu contraseña, avisa a
+  TrueLift para retirarla de la app. Los planes firmados con ella dejarán de
+  aceptarse cuando los clientes actualicen la app.
+
 ## Sin conexión
 
 Tras abrir el escritorio con conexión y completar la preparación de su caché,
@@ -335,4 +505,8 @@ PLAYWRIGHT_MODULE=/ruta/playwright node escritorio/tests/e2e.mjs   # si no está
 node escritorio/tests/e2e.mjs [capturas/]   # navegador (requiere Playwright)
 PLAYWRIGHT_MODULE=/ruta/playwright AXE_MODULE=/ruta/axe-core/axe.min.js node escritorio/tests/integral.e2e.mjs [capturas/]
                                             # fase 8: persistencia real, proceso, ZIP, caché, accesibilidad
+node escritorio/tests/entrenador.e2e.mjs    # modo entrenador en el navegador (requiere Playwright)
+DART=/ruta/dart node --test escritorio/tests/plan-entrenador-app.test.mjs
+                                            # verificador real de la app sobre planes recién emitidos
+                                            # (con App-PRO al lado y `flutter pub get` hecho en él)
 ```

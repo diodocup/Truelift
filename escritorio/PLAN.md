@@ -996,3 +996,30 @@ queda para F6.
   de ejemplo, igual que antes de F3; no se toca aquí.
 - Sin SDK de Dart en el entorno: no se ha ejecutado el verificador de la app
   sobre los paquetes con temporada (§8.1, opcional).
+
+## Plan de entrenador F6 — Documentación y revisión final (10/11/2026)
+
+Especificación: `PLAN_ENTRENADOR.md` §7.6, §8.1 y §9 (F6) de App-PRO. Sin
+cambios de comportamiento en el escritorio.
+
+- **Manual de uso del modo entrenador** en `LEEME.md` («Modo entrenador»):
+  qué hace falta, entrar y salir, clientes, preparar rutina y temporada,
+  emitir y enviar, qué tiene que saber el cliente (PRO de por vida, dónde se
+  importa, a prueba, propuesta de temporada), los mensajes de error de la app
+  con qué hacer en cada caso, revisiones, «En su copia» y qué hacer si se
+  pierde la clave. La introducción dice que existe y que sin clave no
+  aparece. `README.md` de la web y las páginas públicas siguen sin
+  mencionarlo.
+- **`CONTRATO_DATOS.md`**: clave `planEntrenador` de la copia (§1.4) con su
+  forma, sus estados y quién la lee.
+- **`VALIDACION.md`**: validación final del plan de entrenador, con la
+  matriz de §8.1 y §8.3.
+- **Prueba cruzada con la app** (§8.1, la parte opcional que F0–F5 no
+  pudieron ejecutar por falta de Dart): `tests/plan-entrenador-app.test.mjs`
+  ejecuta el verificador real de App-PRO (`tests/arnes-plan-entrenador/`)
+  sobre los vectores dorados y sobre planes recién emitidos. Se omite si no
+  hay App-PRO, sus dependencias o Dart.
+- `sw.js` sube a `v19` (§7.6). No cambia la lista de precarga: los scripts
+  del modo entrenador siguen fuera.
+
+Verificación en `VALIDACION.md` («Plan de entrenador — validación final»).

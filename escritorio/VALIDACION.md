@@ -216,3 +216,77 @@ El registro de este bloqueo se guarda en un commit documental posterior.
 y abrir la PR en borrador, sin fusionar ni desplegar. Queda resuelto el bloqueo
 de autorización descrito arriba. La entrega remota se realiza mediante la
 conexión autenticada de GitHub; la CLI local no dispone de credenciales.
+
+---
+
+## Plan de entrenador — validación final (F6, 10/11/2026)
+
+Especificación: `PLAN_ENTRENADOR.md` de App-PRO (§8.1 y §8.3; la F6 de §9).
+Base: `f8a90e6` de `diodocup/Truelift` (F0, F3 y F5 ya fusionadas) y
+`9d393f3` de `diodocup/App-PRO` (F0, F1, F2 y F4). Contrato:
+`CONTRATO_PLAN_ENTRENADOR.md`, idéntico en los dos repositorios (lo
+comprueba `plan-entrenador.test.mjs`).
+
+**Resultado:** el modo entrenador y el contrato compartido pasan todas sus
+pruebas automáticas. Por primera vez se ha ejecutado el **verificador real de
+la app** (Dart, `lib/plan_entrenador/sobre.dart`) sobre planes recién emitidos
+por el escritorio: los acepta y se queda exactamente con lo emitido. Queda la
+comprobación en dispositivos reales (§8.4), que hace una persona con la lista
+de `COMPROBACION_PLAN_ENTRENADOR.md` (App-PRO).
+
+### Resultados ejecutados (Chromium de Playwright, Node 22, Dart 3.13 de Flutter 3.47.9)
+
+| Batería | Resultado |
+|---|---|
+| `node --test escritorio/tests/*.test.mjs` (con App-PRO al lado y `DART`) | 222/222, ninguna omitida |
+| `escritorio/tests/plan-entrenador-app.test.mjs` (nueva) | 3/3: vectores dorados con el verificador de la app; tres planes recién emitidos (rutina de la copia de ejemplo, rutina con todas las modalidades, un ejercicio propio y uno desconocido más temporada, y solo temporada) aceptados y leídos campo a campo igual; alterado → `firmaInvalida`, de otra clave → `claveDesconocida`, caducidad inclusiva y después `caducado` |
+| `node escritorio/tests/entrenador.e2e.mjs` | 10/10 |
+| `node escritorio/tests/integral.e2e.mjs` | 13/13 (el visor no cambia para quien no es entrenador) |
+| `node escritorio/tests/e2e.mjs` | falla en el paso 41 (Nutrición espera «DÉFICIT» y la copia de ejemplo está en superávit), igual que antes de F3; no es del plan de entrenador |
+
+### Matriz de §8.1 y §8.3
+
+| Requisito | Dónde se prueba |
+|---|---|
+| Vectores dorados idénticos en los dos repositorios, con su SHA-256 | `plan-entrenador.test.mjs` (manifiesto, regeneración determinista, App-PRO al lado) |
+| Cada vector da su resultado esperado | `plan-entrenador.test.mjs` (escritorio) y `plan-entrenador-app.test.mjs` (app) |
+| Verificador real de la app sobre paquetes recién emitidos (§8.1, opcional) | `plan-entrenador-app.test.mjs` + `tests/arnes-plan-entrenador/verificar.dart` |
+| `paquete.js`: construir, firmar, verificar; RFC 8032 | `plan-entrenador.test.mjs` |
+| Archivo de clave: contraseña correcta e incorrecta, archivo corrupto, manipulado o ajeno | `entrenador.test.mjs`; e2e paso 2 |
+| Editor de rutina (pruebas recuperadas de `planificador.test.mjs`) | `entrenador.test.mjs` |
+| Editor de temporada: límites y coherencia con la proyección | `entrenador-temporada.test.mjs`; e2e pasos 5 y 7 |
+| Migración IndexedDB v2 → v3 con la copia de ejemplo | e2e paso 9 |
+| Sin clave no hay sección ni se piden sus scripts | e2e pasos 1 y 8; `sw.js` no los precachea |
+| Con clave de pruebas: cliente, emisión y archivo que verifica | e2e pasos 3, 4, 5 y 7 |
+| Estado de los planes emitidos leyendo `planEntrenador` | `entrenador-temporada.test.mjs`; e2e paso 6 |
+| Pruebas existentes del escritorio en verde | todas las baterías de arriba |
+
+### Arnés Dart
+
+`tests/arnes-plan-entrenador/verificar.dart` no copia código de la app:
+resuelve `package:rutinas_app` con `--packages` de App-PRO, así que prueba
+el verificador tal cual está en su rama. La clave de pruebas entra por el
+parámetro de pruebas (`clavesDePrueba`); el mapa de producción no se lee. Sin
+App-PRO al lado (o `APP_PRO_DIR`), sin `flutter pub get` hecho en él o sin
+Dart (`DART=/ruta/dart` o `dart` en el PATH), las tres pruebas se omiten y lo
+dicen.
+
+### Reproducir
+
+```sh
+# en App-PRO, una vez
+flutter pub get
+# en Truelift
+DART=/ruta/flutter/bin/cache/dart-sdk/bin/dart node --test escritorio/tests/*.test.mjs
+node escritorio/tests/entrenador.e2e.mjs
+node escritorio/tests/integral.e2e.mjs
+```
+
+### Pendiente (persona)
+
+- Comprobación en Android e iOS reales (§8.4): lista paso a paso en
+  `COMPROBACION_PLAN_ENTRENADOR.md` de App-PRO.
+- Primera clave de producción en `lib/plan_entrenador/claves.dart` (§11.1):
+  hasta entonces la app rechaza todos los planes.
+- Modo entrenador en Firefox, Safari y Edge reales: no ejecutado (solo
+  Chromium), igual que el resto del escritorio.
