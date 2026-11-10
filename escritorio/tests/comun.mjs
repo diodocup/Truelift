@@ -17,7 +17,7 @@ export function cargar(...archivos){
                      'fotos.js': 'FotosTL', 'evolucion.js': 'Evolucion', 'fisica-vista.js': 'FisicaVista', 'almacen.js': 'Almacen',
                      'informe.js': 'Informe', 'informe-vista.js': 'InformeVista', 'nutricion-esc.js': 'NutricionEsc', 'senales.js': 'Senales', 'nutricion-vista.js': 'NutricionVista',
                      'entrenador/paquete.js': 'PaqueteEntrenador', 'entrenador/clave.js': 'ClaveEntrenador',
-                     'entrenador/planificador.js': 'PlanificadorEntrenador' }[a];
+                     'entrenador/planificador.js': 'PlanificadorEntrenador', 'entrenador/temporada.js': 'TemporadaEntrenador' }[a];
     vm.runInThisContext(`${codigo}\n;globalThis.${nombre} = ${nombre};`, { filename: a });
     cargados.add(a);
   }
