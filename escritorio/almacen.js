@@ -19,8 +19,8 @@
 const Almacen = {
 
   NOMBRE: 'truelift-escritorio',
-  VERSION: 2,
-  ALMACENES: ['meta', 'espacios', 'instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones'],
+  VERSION: 3,
+  ALMACENES: ['meta', 'espacios', 'instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones', 'entrenador'],
 
   db: null,
   modo: null,              // 'persistente' | 'temporal'
@@ -65,7 +65,11 @@ const Almacen = {
   },
 
   /* Cada versión añade lo suyo. La 2 retira los borradores de rutina: el
-     escritorio es solo de consulta y ya no tiene editor. */
+     escritorio es solo de consulta y ya no tiene editor. La 3 añade el
+     almacén «entrenador» (borradores del modo entrenador y registro de
+     paquetes emitidos, por espacio): solo crea, no borra nada. No reutiliza
+     el nombre «borradores»: un perfil v1 a medio migrar lo volvería a
+     borrar. */
   _migrar(db, desde, tx){
     if (desde < 1){
       db.createObjectStore('meta', { keyPath: 'clave' });
@@ -87,6 +91,9 @@ const Almacen = {
         if (String(c.key).startsWith('borradorActivo:')) c.delete();
         c.continue();
       };
+    }
+    if (desde < 3 && !db.objectStoreNames.contains('entrenador')){
+      db.createObjectStore('entrenador', { keyPath: 'id' }).createIndex('espacioId', 'espacioId');
     }
   },
 
@@ -240,12 +247,13 @@ const Almacen = {
 
   opsBorrarEspacio(espacioId){
     return [
-      ...['instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones']
+      ...['instantaneas', 'fotos', 'imagenes', 'miniaturas', 'importaciones', 'entrenador']
         .map(a => ({ almacen: a, delEspacio: espacioId })),
       { almacen: 'espacios', del: espacioId },
       { almacen: 'meta', del: `encuadres:${espacioId}` },
       { almacen: 'meta', del: `periodos:${espacioId}` },
       { almacen: 'meta', del: `informe:${espacioId}` },
+      { almacen: 'meta', del: `entBorradorActivo:${espacioId}` },
     ];
   },
 
