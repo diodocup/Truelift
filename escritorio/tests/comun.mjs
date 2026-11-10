@@ -16,7 +16,8 @@ export function cargar(...archivos){
     const nombre = { 'importar.js': 'ImportarJSON', 'zip-seguro.js': 'ZipSeguro', 'analisis.js': 'Analisis', 'comparacion.js': 'Comparacion', 'vistas.js': 'VistasEsc', 'graficas.js': 'GraficasEsc', 'dibujos.js': 'DibujosEsc', 'repdb.js': 'REPDB_FOTO',
                      'fotos.js': 'FotosTL', 'evolucion.js': 'Evolucion', 'fisica-vista.js': 'FisicaVista', 'almacen.js': 'Almacen',
                      'informe.js': 'Informe', 'informe-vista.js': 'InformeVista', 'nutricion-esc.js': 'NutricionEsc', 'senales.js': 'Senales', 'nutricion-vista.js': 'NutricionVista',
-                     'entrenador/paquete.js': 'PaqueteEntrenador' }[a];
+                     'entrenador/paquete.js': 'PaqueteEntrenador', 'entrenador/clave.js': 'ClaveEntrenador',
+                     'entrenador/planificador.js': 'PlanificadorEntrenador' }[a];
     vm.runInThisContext(`${codigo}\n;globalThis.${nombre} = ${nombre};`, { filename: a });
     cargados.add(a);
   }

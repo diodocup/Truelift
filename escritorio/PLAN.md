@@ -884,3 +884,53 @@ sobre el mismo eje, lista y ficha a la vez, comparación lado a lado, papel).
 
 - Revisión visual en Safari y Firefox.
 - El diseño de referencia está en un lienzo de diseño fuera del repositorio.
+
+## Plan de entrenador F3 — Modo entrenador (10/11/2026)
+
+Especificación: `PLAN_ENTRENADOR.md` §7 y §8.3 de App-PRO; contrato en
+`CONTRATO_PLAN_ENTRENADOR.md`. Esta fase cubre acceso, clientes, editor de
+rutina y emisión del paquete. Temporada, caducidad y estado de los paquetes
+emitidos quedan para F5; la documentación de uso, para F6.
+
+### Decisiones
+
+- **Acceso** por `#entrenador`, sin enlace en la interfaz. El archivo de
+  clave (`tool/entrenador_claves.mjs` de App-PRO) se descifra en
+  `entrenador/clave.js` (PBKDF2-SHA-256 ≥ 600 000 iteraciones, AES-256-GCM),
+  se comprueba firmando y verificando con su pública y se guarda en `meta`
+  (`entrenador:clave`) como CryptoKey **no extraíble**. La contraseña no se
+  guarda. «Salir del modo entrenador» borra la clave.
+- **Carga a demanda**: `app.js` solo pide `entrenador/*.js`,
+  `entrenador/entrenador.css` y `../coach/planner.js` al abrir `#entrenador` o
+  si ya hay clave. No están en `index.html` ni en la caché de `sw.js` (sube a
+  `v17` por los cambios de `app.js` y `almacen.js`).
+- **Clientes = espacios**. Alta con copia (importación de siempre, que
+  propone un espacio nuevo) o sin copia, con una ficha manual que solo ve el
+  entrenador y no viaja en el paquete.
+- **IndexedDB v3**: almacén nuevo `entrenador` (borradores y registro de
+  planes emitidos, por espacio). La migración solo crea; no reutiliza el
+  nombre `borradores`.
+- **Editor** recuperado de `a4fd1ef^` (`entrenador/planificador.js`,
+  `entrenador/vista.js`, `entrenador/modo.js`) sin Excel: borradores con
+  guardado atómico, deshacer, avisos, series por grupo y comparación con la
+  rutina de la copia. Plantillas: rutina de la copia, borrador de otro
+  cliente o en blanco. `paqueteRutina` aplica las lecturas del antiguo lector
+  del Excel y `comoLaApp` reproduce `AppState.importarRutina` sobre el
+  paquete, así que lo que se ve es lo que la app construirá.
+- **Emitir**: nombre del entrenador (se recuerda), nota y rutina;
+  `PaqueteEntrenador.emitir` firma y verifica antes de descargar.
+
+### Verificación (Chromium de Playwright, Node 22)
+
+- `node --test escritorio/tests/*.test.mjs`: 206/206 (nuevas en
+  `entrenador.test.mjs`; con App-PRO al lado, el archivo que genera su
+  herramienta se desbloquea aquí).
+- `node escritorio/tests/entrenador.e2e.mjs`: 7/7 (sin clave no hay sección
+  ni scripts; desbloqueo; cliente sin y con copia; los paquetes descargados
+  verifican; salir; migración v2 → v3 con la copia de ejemplo).
+- `node escritorio/tests/integral.e2e.mjs`: 13/13.
+- `node escritorio/tests/e2e.mjs`: falla en el paso 41 (Nutrición espera
+  «DÉFICIT» y la copia de ejemplo actual está en superávit) igual que antes
+  de esta fase; no se toca aquí.
+- Sin SDK de Dart en el entorno: no se ha ejecutado el verificador de la app
+  sobre paquetes recién emitidos (§8.1, opcional).

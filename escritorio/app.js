@@ -29,6 +29,9 @@ const E = {
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
   inf: { conFotos: false, fotos: new Set(), error: null, borrador: null }, espacioInforme: null,
+  // Modo entrenador (entrenador/modo.js, a demanda): adónde volver tras
+  // importar la copia de un cliente y si la próxima importación crea uno.
+  trasImportar: null, importarComoNuevo: false,
 };
 
 const SECCIONES = {
@@ -41,6 +44,41 @@ const FUENTE_TXT = {
   zip: 'Datos del índice del ZIP',
   nombre: 'Fecha y pose deducidas del nombre',
 };
+
+/* Modo entrenador (PLAN_ENTRENADOR.md §7, App-PRO). Sus scripts y su hoja
+   de estilos se cargan a demanda: solo al abrir #entrenador o si este
+   navegador ya tiene una clave de entrenador guardada. Ni index.html ni la
+   caché de sw.js los mencionan, así que un usuario normal no los descarga. */
+const SCRIPTS_ENTRENADOR = ['../coach/planner.js', 'entrenador/paquete.js', 'entrenador/clave.js',
+  'entrenador/planificador.js', 'entrenador/vista.js', 'entrenador/modo.js'];
+let cargaEntrenador = null, errorEntrenador = null;
+const modoEntrenador = () => (typeof EntrenadorModo !== 'undefined' && EntrenadorModo.listo) ? EntrenadorModo : null;
+function cargarModoEntrenador(){
+  if (cargaEntrenador) return cargaEntrenador;
+  cargaEntrenador = (async () => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet'; css.href = 'entrenador/entrenador.css';
+    document.head.appendChild(css);
+    for (const src of SCRIPTS_ENTRENADOR){
+      await new Promise((ok, ko) => {
+        const sc = document.createElement('script');
+        sc.src = src; sc.async = false;
+        sc.onload = ok; sc.onerror = () => ko(new Error(`No se pudo cargar ${src}.`));
+        document.body.appendChild(sc);
+      });
+    }
+    await EntrenadorModo.iniciar({
+      E, abrirModal, cerrarModal, modalMensaje, anunciar, render, irA,
+      recargar: async () => { await cargarEstado(); render(); },
+      avisarOtras: () => { if (E.canal) E.canal.postMessage({ tipo: 'cambio' }); },
+      importarClienteNuevo: () => { E.importarComoNuevo = true; E.trasImportar = 'entrenador'; $('#inputDatos').click(); },
+    });
+    await EntrenadorModo.cargar();
+    errorEntrenador = null;
+  })();
+  cargaEntrenador.catch(e => { cargaEntrenador = null; errorEntrenador = e && e.message ? e.message : String(e); });
+  return cargaEntrenador;
+}
 
 // ---------- formato ----------
 const fmtDia = iso => { const d = iso ? parseFecha(iso) : null;
@@ -129,6 +167,7 @@ async function cargarEstado(){
   if (espacioId !== E.espacioInforme){ E.inf = { conFotos: false, fotos: new Set(), error: null, borrador: null }; E.espacioInforme = espacioId; }
   E.estimacion = await Almacen.estimacion();
   E.persistido = await Almacen.persistido();
+  if (modoEntrenador()) await EntrenadorModo.cargar();
 }
 
 // ---------- recepción de archivos ----------
@@ -285,6 +324,12 @@ async function prepararImportacion({ json, zip, rechazados = [] }){
     else if (!hayDatos) P.destino = 'actualizar';
     else P.destino = null;   // decisión explícita
     P.destinoFijo = P.destino !== null;
+    // Modo entrenador, «Cliente nuevo con su copia»: se propone un espacio
+    // nuevo (se puede cambiar) en lugar de actualizar el cliente abierto.
+    if (E.importarComoNuevo && E.espacio && P.json && P.json.ok){
+      P.destino = 'nuevo'; P.destinoFijo = false; P.nombreNuevo = `Cliente ${E.espacios.length + 1}`;
+    }
+    E.importarComoNuevo = false;
     E.P = P;
     E.ocupado = false;
     mostrarPrevia();
@@ -602,7 +647,8 @@ async function confirmarImportacion(){
   E.ocupado = false;
   if (E.canal) E.canal.postMessage({ tipo: 'cambio' });
   await cargarEstado();
-  irA('datos', { foco: false });
+  irA(E.trasImportar || 'datos', { foco: false });
+  E.trasImportar = null;
   const piezas = [];
   if (registro.datos) piezas.push('datos de entrenamiento actualizados');
   if (registro.fotos && registro.fotos.guardadas) piezas.push(plural(registro.fotos.guardadas, 'foto guardada', 'fotos guardadas'));
@@ -974,7 +1020,15 @@ function irA(destino, { foco = true, historial = true } = {}){
   const m = String(destino || '').match(/^([^:/]*)(?:[:/]([^:/]*)(?:[:/](.*))?)?$/) || [];
   const [sec, sub] = [m[1], m[2]];
   const resto = m[3] != null && m[3] !== '' ? [m[3]] : [];
-  if (!SECCIONES[sec]) return;
+  if (!SECCIONES[sec] && sec !== 'entrenador') return;
+  if (sec !== 'entrenador'){ E.trasImportar = null; E.importarComoNuevo = false; }
+  if (sec === 'entrenador' && !modoEntrenador() && !errorEntrenador){
+    // Primera visita a #entrenador: se cargan sus scripts y se vuelve aquí.
+    E.seccion = 'entrenador';
+    $('#contenido').innerHTML = '<p class="muted" style="padding:24px">Cargando…</p>';
+    cargarModoEntrenador().then(() => irA(destino, { foco, historial }), () => render());
+    return;
+  }
   const cambiaSec = sec !== E.seccion;
   if (cambiaSec || sub !== E.st.sub) E.st.verTodas = false;
   E.st.sub = sub || null;
@@ -997,7 +1051,7 @@ function setSeccion(s, foco = true){
     if (activa) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   render();
-  document.title = `${SECCIONES[s]} · TrueLift Escritorio`;
+  document.title = `${SECCIONES[s] || 'Entrenador'} · TrueLift Escritorio`;
   if (foco) $('#contenido').focus({ preventScroll: true });
 }
 
@@ -1010,6 +1064,15 @@ function render(){
     aviso.push(`<div class="alerta rojo"><span class="tag">Modo temporal</span><span>No se puede guardar en este navegador: lo que importes se perderá al cerrar la pestaña.</span></div>`);
   $('#avisoGlobal').innerHTML = aviso.join('');
   const cont = $('#contenido');
+  if (E.seccion === 'entrenador'){
+    const modo = modoEntrenador();
+    cont.innerHTML = modo ? modo.html() : `<section class="card"><h1>Modo entrenador</h1>
+      <div class="alerta rojo"><span class="tag">Error</span><span>${esc(errorEntrenador || 'No se pudo cargar el modo entrenador.')} Comprueba la conexión y recarga la página.</span></div></section>`;
+    activarMiniaturas();
+    marcarDesplazables();
+    if (modo) modo.tras();
+    return;
+  }
   if (E.seccion === 'datos' || !E.espacio){
     cont.innerHTML = renderDatos();
     activarMiniaturas();
@@ -1033,7 +1096,7 @@ function estadoDatos(){
   // Un solo hijo: el párrafo es flex (punto + texto) y cada nodo suelto
   // sería una columna.
   if (!E.espacio){ el.innerHTML = '<span>Aún no has importado tus datos.</span>'; return; }
-  if (!ult){ el.innerHTML = `<span>${E.inst ? 'Tu copia aún no tiene registros.' : 'Solo fotos: falta tu copia de datos.'}</span>`; return; }
+  if (!ult){ el.innerHTML = `<span>${E.inst ? 'Tu copia aún no tiene registros.' : E.espacio.ficha && !E.fotosMeta.length ? 'Cliente sin copia: solo su ficha.' : 'Solo fotos: falta tu copia de datos.'}</span>`; return; }
   el.classList.add(diasEntre(parseFecha(ult), new Date()) > 14 ? 'antigua' : 'al-dia');
   el.innerHTML = `<span>Datos hasta el <b>${esc(fmtDia(ult))}</b> · ${esc(hace(ult))}</span>`;
 }
@@ -1329,7 +1392,8 @@ async function accion(nombre, el){
 }
 
 function init(){
-  $$('#tabs button').forEach(b => b.addEventListener('click', () => irA(b.dataset.seccion)));
+  // Delegado: la pestaña del modo entrenador se añade después.
+  $('#tabs').addEventListener('click', ev => { const b = ev.target.closest('button[data-seccion]'); if (b) irA(b.dataset.seccion); });
   $('#btnImportarDatos').addEventListener('click', () => $('#inputDatos').click());
   $('#btnImportarFotos').addEventListener('click', () => $('#inputFotos').click());
   // El selector de datos admite elegir la copia JSON y el ZIP a la vez.
@@ -1569,7 +1633,14 @@ async function arrancar(){
   // Con datos se abre el resumen (o la sección del enlace); sin ellos, el
   // estado vacío con los pasos para importar.
   const h = location.hash.slice(1);
-  irA(h && SECCIONES[h.split('/')[0]] ? h : (E.inst ? 'resumen' : 'datos'), { foco: false, historial: false });
+  // Modo entrenador: solo si se pide (#entrenador) o ya hay una clave aquí.
+  let conClave = false;
+  try { conClave = !!(await Almacen.leer('meta', 'entrenador:clave'))?.valor; } catch (_) { /* sin almacén */ }
+  if (conClave || h.split('/')[0] === 'entrenador'){
+    try { await cargarModoEntrenador(); } catch (_) { /* se dice al abrir la sección */ }
+  }
+  const valida = h && (SECCIONES[h.split('/')[0]] || h.split('/')[0] === 'entrenador');
+  irA(valida ? h : (E.inst ? 'resumen' : 'datos'), { foco: false, historial: false });
   document.documentElement.dataset.listo = '1';
   registrarSinConexion();
 }
