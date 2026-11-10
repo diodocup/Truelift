@@ -1,0 +1,10 @@
+{
+  "aviso": "CLAVE DE PRUEBAS. Es pública a propósito: solo firma los vectores dorados. Nunca debe figurar en lib/plan_entrenador/claves.dart.",
+  "id": "7c42c1e07c7f8e1e",
+  "publica": "HmxoYhYgvSruul6TUc92byIvgkSucqAtAifwIu2o8vA",
+  "semilla": "mJcDHJ0gfjZLLWLTYxe-5wQEf1zmKqIMy2lRXWnTw84",
+  "otraClave": {
+    "id": "96a8b3314f6485d4",
+    "publica": "y8fCK6ZDZytLTeFJWQak8PmSruy1iE-MTcca0UkEhFo"
+  }
+}
