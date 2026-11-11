@@ -274,21 +274,6 @@ h3 {
   font-size: 15px;
 }
 
-.link-mono {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--quiet);
-  font: 700 12px var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  transition: color 0.18s ease;
-}
-
-.link-mono:hover {
-  color: var(--lime);
-}
-
 /* ---------- Marcos de móvil ---------- */
 
 .device {
@@ -819,15 +804,6 @@ h3 {
   line-height: 1.4;
   letter-spacing: 0;
   text-transform: none;
-}
-
-/* Aviso pequeño junto a una descarga (la copia de ejemplo del escritorio). */
-.file-note {
-  display: block;
-  font: 700 9px var(--mono);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--faint);
 }
 
 /* Los cuatro argumentos de venta, separados por barras. */
@@ -2169,11 +2145,6 @@ h3 {
   padding-left: 32px;
   border-left: 1px solid rgba(168, 238, 25, 0.18);
   text-align: center;
-}
-
-.desk-cta .link-mono {
-  justify-content: center;
-  margin-top: 4px;
 }
 
 .desk-meta {

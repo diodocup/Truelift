@@ -126,7 +126,7 @@ test('rutina de la copia: modelo del editor con modalidades, contexto y forma ca
 });
 
 test('un borrador sin cambios produce en la app la misma rutina que trae la copia', () => {
-  const ejemplo = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
+  const ejemplo = JSON.parse(fs.readFileSync(new URL('./fixtures/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
   for (const raw of [copiaPlan(), copiaRica(), ejemplo]){
     const m = PL.rutinaCopia(raw);
     const sim = PL.simular(m.rutina, raw);

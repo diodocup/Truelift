@@ -120,7 +120,7 @@ test('reproducción (nutricion_plan_reproduccion_test): fundido, etapa por día 
 });
 
 test('copia de ejemplo: pauta habitual con su último cambio, plan con proyección e imágenes', () => {
-  const raw = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
+  const raw = JSON.parse(fs.readFileSync(new URL('./fixtures/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
   const M = Analisis.preparar(raw, ImportarJSON.resumen(raw));
   const X = NE.preparar(M.raw, M.datos.nut, M.ref);
   assert.equal(X.presente, true);

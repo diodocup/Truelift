@@ -140,10 +140,9 @@ pantallas de móvil.
    ventana.
 5. Revisa la vista previa y confirma. Hasta que confirmas no se guarda nada.
 
-Para probarlo sin exportar datos propios está la copia de ejemplo
-`ejemplo/copia_truelift_2026-11-06.json` (el historial del modo DEMO de la app), la misma que se descarga desde la
-sección «TrueLift Escritorio» de la web. No registra fotos de progreso: para
-probar la galería y la comparación importa un ZIP de fotos de la app.
+La web no ofrece una copia de ejemplo para descargar. Las pruebas usan
+`tests/fixtures/copia_truelift_2026-11-06.json` (el historial del modo DEMO de la app),
+que no registra fotos de progreso.
 
 ### Actualizar
 

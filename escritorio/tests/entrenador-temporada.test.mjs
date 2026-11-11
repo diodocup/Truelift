@@ -14,7 +14,7 @@ const plain = x => JSON.parse(JSON.stringify(x));
 const CLAVES = { [CLAVE_PRUEBAS.id]: CLAVE_PRUEBAS.publica };
 const HOY = new Date(2026, 10, 10);
 const L = P.LIMITES;
-const ejemplo = () => JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
+const ejemplo = () => JSON.parse(fs.readFileSync(new URL('./fixtures/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
 const datos = (o = {}) => ({ perfil: { sexo: 'M', alturaCm: 178, experienciaFuerza: 'INTERMEDIATE' }, pesoKg: 80, grasaPct: 18,
   diasDesdeMedicion: 3, origen: {}, faltan: [], ...o });
 const editar = (t, ...ops) => ops.reduce((acc, op) => TE.editar(acc, op), t);

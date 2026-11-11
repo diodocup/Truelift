@@ -95,7 +95,7 @@ test('vistas: Mi resumen y Evolución física enseñan el progreso de la fase de
   const { cargar } = await import('./comun.mjs');
   cargarCoach('motor.js', 'charts.js', 'catalogo.js');
   const { Analisis, VistasEsc, ImportarJSON } = cargar('importar.js', 'fotos.js', 'evolucion.js', 'analisis.js', 'comparacion.js', 'vistas.js', 'fisica-vista.js');
-  const raw = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
+  const raw = JSON.parse(fs.readFileSync(new URL('./fixtures/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
   const resumen = ImportarJSON.resumen(raw);
   const M = Analisis.preparar(raw, resumen);
   assert.ok(M.datos.nut.progreso, 'la fase de la copia tiene lectura');

@@ -277,7 +277,7 @@ try {
   ok('estado de los planes emitidos con su copia nueva: temporada pendiente; el anterior, sin rastro');
 
   // --- 4d. F5: cliente con nutrición, desde la temporada de su app, con proyección ---
-  const ej = JSON.parse(fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
+  const ej = JSON.parse(fs.readFileSync(new URL('./fixtures/copia_truelift_2026-11-06.json', import.meta.url), 'utf8'));
   ej.nutricion.planTemporada = { id: 'plan-x', creado: enDias(-5), replanificado: null, transicionPropuesta: null, bloques: [
     { id: 'bloque-0', tipo: 'BULK', inicio: enDias(-5), fin: enDias(120), tasaPctSemana: 0.2 },
     { id: 'bloque-1', tipo: 'CUT', inicio: enDias(121), fin: enDias(197), tasaPctSemana: -0.5 }] };
@@ -332,7 +332,7 @@ try {
   ok('recarga con la clave guardada; «Salir del modo entrenador» la borra y la página vuelve a no pedir sus scripts');
 
   // --- 6. Migración IndexedDB v2 → v3 con la copia de ejemplo ---
-  const texto = fs.readFileSync(new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url), 'utf8');
+  const texto = fs.readFileSync(new URL('./fixtures/copia_truelift_2026-11-06.json', import.meta.url), 'utf8');
   const an = await ImportarJSON.analizar(texto, { nombreArchivo: 'copia_truelift_2026-11-06.json', bytes: Buffer.byteLength(texto) });
   assert.equal(an.ok, true);
   const p2 = await ctx.newPage();
