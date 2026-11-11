@@ -121,7 +121,7 @@ function documento(M, R, { inst, fotos = [] } = {}){
   const filasP = p.ejercicios.map(x => {
     const [cl, txt] = LECTURA[x.lectura];
     const nota = x.lectura !== 'insuficiente' && !x.firme ? ' <span class="muted">(orientativa)</span>' : '';
-    return [`<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}">${esc(x.nombre)}</button>`,
+    return [`<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}"${x.dia ? ` data-dia="${esc(x.dia)}"` : ''}>${esc(x.nombre)}</button>${x.dia ? ` <span class="muted">${esc(x.dia)}</span>` : ''}`,
       esc(Analisis.MODALIDAD_TXT[x.config] || '—'), `${x.n} <span class="muted">de ${x.enPeriodo}</span>`,
       x.inicio != null ? F.kg(x.inicio) : '—', x.fin != null ? F.kg(x.fin) : '—', x.deltaPct != null ? F.signo(x.deltaPct) : '—', chip(cl, txt) + nota];
   });

@@ -218,6 +218,8 @@ img[data-mini]:not([src]){visibility:hidden}
 .graf-rango .fila-botones .btn{padding:6px 10px;font-size:11px}
 .graf-fechas{display:flex;gap:12px;flex-wrap:wrap}
 .graf-fechas .mod-fila{margin:0}
+.graf-dia{margin-bottom:10px;max-width:420px}
+.graf-dia select{width:100%}
 @media (max-width:640px){
   .tabla-series td:nth-child(3){min-width:160px}
 }

@@ -371,9 +371,9 @@ const Analisis = {
   /* Evolución del 1RM estimado de un ejercicio en [desde, hasta]: puntos
      comparables con la modalidad de la sesión válida más reciente; extremos y
      cortes del informe mensual de la app. */
-  evolucionEjercicio(M, ej, desde, hasta){
+  evolucionEjercicio(M, ej, desde, hasta, dia = null){
     const a = +soloDia(desde), b = +soloDia(hasta);
-    const enPeriodo = ej.puntos.filter(p => { const d = +soloDia(p.fecha); return d >= a && d <= b; });
+    const enPeriodo = ej.puntos.filter(p => { const d = +soloDia(p.fecha); return d >= a && d <= b && (dia == null || p.dia === dia); });
     const excluidos = {};
     const validos = [];
     enPeriodo.forEach(p => {
@@ -395,10 +395,39 @@ const Analisis = {
     const firme = n >= this.MIN_PUNTOS_FIRME && (
       lectura === 'baja' ? serie[n - 1] < inicio && serie[n - 2] < inicio
       : lectura === 'sube' ? serie[n - 1] > inicio && serie[n - 2] > inicio : false);
-    return { ej, nombre: ej.nombre, desde: new Date(a), hasta: new Date(b), puntos, excluidos, config,
+    return { ej, nombre: ej.nombre, dia, etiqueta: dia ? `${ej.nombre} (${dia})` : ej.nombre,
+             desde: new Date(a), hasta: new Date(b), puntos, excluidos, config,
              inicio, fin, deltaPct, lectura, firme, n, enPeriodo: enPeriodo.filter(p => p.hechas > 0).length,
              cambioRutina: new Set(puntos.map(p => p.sesion.rutina)).size > 1,
              seriesDistintas: new Set(puntos.map(p => p.hechas)).size > 1 };
+  },
+
+  /* Sesiones de la rutina (días) en las que aparece un ejercicio con carga,
+     de la más reciente a la más antigua, sobre todo el historial. Un mismo
+     ejercicio repetido en dos días suele llevar cargas distintas (pesado un
+     día, ligero otro): mezclados, el 1RM estimado sale en dientes de sierra.
+     Misma lista que el selector «Sesión» de Progreso en la app. */
+  diasEjercicio(ej){
+    const dias = [];
+    for (let i = ej.puntos.length - 1; i >= 0; i--){
+      const p = ej.puntos[i];
+      const d = typeof p.dia === 'string' ? p.dia.trim() : '';
+      if (!d || d === '—' || p.e.kg == null || p.hechas <= 0 || dias.includes(p.dia)) continue;
+      dias.push(p.dia);
+    }
+    return dias;
+  },
+
+  /* Evoluciones de un ejercicio en [desde, hasta]. Si en el periodo se
+     entrenó en varios días de la rutina, una por día, porque cada día tiene
+     su propia carga y su tendencia se evalúa por separado; si no, una sola
+     del ejercicio entero. Solo las que tienen sesiones en el periodo. */
+  evolucionesEjercicio(M, ej, desde, hasta){
+    const dias = this.diasEjercicio(ej);
+    const porDia = dias.length > 1 ? dias.map(d => this.evolucionEjercicio(M, ej, desde, hasta, d)).filter(ev => ev.enPeriodo) : [];
+    if (porDia.length > 1) return porDia;
+    const ev = this.evolucionEjercicio(M, ej, desde, hasta);
+    return ev.enPeriodo ? [ev] : [];
   },
 
   comparables(M, { dias = this.VENTANA_DIAS } = {}){
@@ -406,13 +435,12 @@ const Analisis = {
     const out = [];
     M.ejercicios.forEach(ej => {
       if (ej.porTiempo) return;
-      const ev = this.evolucionEjercicio(M, ej, desde, hasta);
-      if (ev.enPeriodo) out.push(ev);
+      out.push(...this.evolucionesEjercicio(M, ej, desde, hasta));
     });
     const orden = { baja: 0, sube: 1, sinCambios: 2, insuficiente: 3 };
     return out.sort((x, y) => orden[x.lectura] - orden[y.lectura] ||
       (x.deltaPct == null || y.deltaPct == null ? 0 : (x.lectura === 'baja' ? x.deltaPct - y.deltaPct : y.deltaPct - x.deltaPct)) ||
-      x.nombre.localeCompare(y.nombre));
+      x.etiqueta.localeCompare(y.etiqueta));
   },
 
   // ---------- ficha: series, marcas y comparación ----------
@@ -549,7 +577,7 @@ const Analisis = {
       c.push({ id: 'intentos', prioridad: 1, tono: 'ambar',
         titulo: nombres.length === 1 ? `Intentos agotados en ${nombres[0]}` : `Intentos agotados en ${nombres.length} ejercicios`,
         texto: `Con la misma carga no has llegado al objetivo de repeticiones en las sesiones que cuentan para tu progresión: ${this._lista(nombres)}.` +
-          (tambienBaja.length ? ` Su 1RM estimado de las últimas semanas también baja: ${this._lista(tambienBaja.map(x => `${x.nombre} (${this._pct(x.deltaPct)})`))}.` : ''),
+          (tambienBaja.length ? ` Su 1RM estimado de las últimas semanas también baja: ${this._lista(tambienBaja.map(x => `${x.etiqueta}: ${this._pct(x.deltaPct)}`))}.` : ''),
         periodo: { desde: filas[0].fecha, hasta: filas[filas.length - 1].fecha },
         datos: { cabecera: ['Fecha', 'Ejercicio', 'Día', 'Carga', 'Reps de las series principales', 'Objetivo'], filas },
         limitaciones: ['Es el mismo recuento que la app para tu rutina actual. Lo que se hace después con la carga lo decide la app según tu fase; aquí no se reproduce.',
@@ -590,7 +618,7 @@ const Analisis = {
       const lista = comp.filter(x => x.lectura === lectura && x.firme && !yaDichos.has(x.nombre)).slice(0, 3);
       if (!lista.length) return;
       const filas = [];
-      lista.forEach(x => x.puntos.forEach(p => filas.push({ fecha: p.fecha, indice: p.sesion.indice, celdas: [x.nombre,
+      lista.forEach(x => x.puntos.forEach(p => filas.push({ fecha: p.fecha, indice: p.sesion.indice, celdas: [x.etiqueta,
         this.serieTxt(p.e, p.marcaSerie),
         this._kg(p.e1rmMarca)] })));
       filas.sort((a, b) => +a.fecha - +b.fecha);
@@ -601,7 +629,10 @@ const Analisis = {
       if (lectura === 'baja' && lista.some(x => x.ej.estados.some(st => st.tipo === 'objetivoCumplido')))
         lim.push('Que el 1RM estimado baje no contradice un objetivo de repeticiones cumplido: son medidas distintas.');
       c.push({ id: `ejercicios-${lectura}`, prioridad, tono,
-        titulo: lista.length === 1 ? `${titulo1} en ${lista[0].nombre}` : `${tituloN} en ${lista.length} ejercicios`,
+        // Un ejercicio repetido en varios días cuenta como un solo ejercicio.
+        titulo: lista.length === 1 ? `${titulo1} en ${lista[0].etiqueta}`
+          : new Set(lista.map(x => x.nombre)).size === 1 ? `${titulo1} en ${lista[0].nombre}`
+          : `${tituloN} en ${new Set(lista.map(x => x.nombre)).size} ejercicios`,
         texto: texto(lista),
         periodo: { desde: filas[0].fecha, hasta: filas[filas.length - 1].fecha },
         datos: { cabecera: ['Fecha', 'Ejercicio', 'Serie que da la estimación', '1RM estimado'], filas },
@@ -609,7 +640,7 @@ const Analisis = {
         enlace: { destino: `entrenamiento:ejercicios:${encodeURIComponent(lista[0].nombre)}`, texto: lista.length === 1 ? 'Ver la ficha del ejercicio' : `Ver la ficha de ${lista[0].nombre}` } });
     };
     conclusionEj('baja', 3, 'ambar', '1RM estimado a la baja', '1RM estimado a la baja',
-      l => `Comparando el principio y el final de las últimas semanas: ${this._lista(l.map(x => `${x.nombre} (${this._pct(x.deltaPct)}, ${this._n(x.n, 'sesión', 'sesiones')})`))}.`);
+      l => `Comparando el principio y el final de las últimas semanas: ${this._lista(l.map(x => `${x.etiqueta}: ${this._pct(x.deltaPct)}, ${this._n(x.n, 'sesión', 'sesiones')}`))}.`);
 
     // 5 · Constancia con la rutina de cada semana.
     const k = this.constancia(M);
@@ -646,7 +677,7 @@ const Analisis = {
         enlace: { destino: `entrenamiento:ejercicios:${encodeURIComponent(nombres[0])}`, texto: nombres.length === 1 ? 'Ver la ficha del ejercicio' : `Ver la ficha de ${nombres[0]}` } });
     }
     conclusionEj('sube', 4.5, 'verde', '1RM estimado al alza', '1RM estimado al alza',
-      l => `Comparando el principio y el final de las últimas semanas: ${this._lista(l.map(x => `${x.nombre} (${this._pct(x.deltaPct)}, ${this._n(x.n, 'sesión', 'sesiones')})`))}.`);
+      l => `Comparando el principio y el final de las últimas semanas: ${this._lista(l.map(x => `${x.etiqueta}: ${this._pct(x.deltaPct)}, ${this._n(x.n, 'sesión', 'sesiones')}`))}.`);
 
     return c.sort((a, b) => a.prioridad - b.prioridad);
   },

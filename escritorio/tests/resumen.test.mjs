@@ -208,3 +208,54 @@ test('copia mínima y antigua: el resumen y la ficha no fallan', () => {
   assert.ok(!/undefined|NaN/.test(h.replace(/data-tt="[^"]*"/g, '')));
   assert.ok(h.includes('Hace falta al menos otra sesión'));
 });
+
+/* Un mismo ejercicio en dos días de la rutina con cargas distintas: el press
+   del Día A se estanca y el del Día C (más ligero) sube. Mezclados salen
+   dientes de sierra; cada día se valora por separado. */
+function copiaPressDosDias(){
+  const raw = copiaFase3();
+  raw.logs.filter(l => l.dia === 'Día C').forEach((l, i) =>
+    l.entradas.unshift({ ejercicio: 'Press banca con barra', kg: 60, reps: [10 + i, 10 + i, 10 + i], rir: [2, 2, 2], obs: '' }));
+  raw.planMod.push({ id: 'c0', dia: 'Día C', orden: 0, patron: 'Empuje horizontal', grupo: 'Pectoral', ejercicio: 'Press banca con barra', series: 3, reps: '10-15', rir: '2' });
+  return raw;
+}
+
+test('ejercicio en varios días: lista de días, evolución y Mi resumen por día', () => {
+  const M = preparar(copiaPressDosDias());
+  const ej = M.ejercicios.get('Press banca con barra');
+  // De la más reciente a la más antigua, sobre todo el historial.
+  assert.deepEqual(Analisis.diasEjercicio(ej).slice(0, 2), ['Día C', 'Día A']);
+  const press = Analisis.comparables(M).filter(x => x.nombre === 'Press banca con barra');
+  assert.deepEqual(press.map(x => x.dia).sort(), ['Día A', 'Día C']);
+  const a = press.find(x => x.dia === 'Día A'), c = press.find(x => x.dia === 'Día C');
+  assert.equal(a.lectura, 'baja'); assert.equal(c.lectura, 'sube');
+  assert.ok(a.puntos.every(p => p.dia === 'Día A') && c.puntos.every(p => p.dia === 'Día C'));
+  assert.equal(c.etiqueta, 'Press banca con barra (Día C)');
+  // Sin el segundo día, una sola fila sin día, como siempre.
+  const solo = Analisis.comparables(preparar()).filter(x => x.nombre === 'Press banca con barra');
+  assert.equal(solo.length, 1); assert.equal(solo[0].dia, null);
+  // Mi resumen: una fila por día con su enlace al día.
+  const res = VistasEsc.resumen(M, { inst: { resumen: ref9 } });
+  assert.match(res, /data-ejercicio="Press banca con barra" data-dia="Día A"/);
+  assert.match(res, /data-ejercicio="Press banca con barra" data-dia="Día C"/);
+});
+
+test('ejercicio en varios días: la ficha ofrece elegir la sesión y filtra por ella', () => {
+  const M = preparar(copiaPressDosDias());
+  const todas = VistasEsc.entrenamiento(M, { sub: 'ejercicios', ejercicio: 'Press banca con barra' });
+  assert.match(todas, /<select id="ejDia">/);
+  assert.match(todas, /<option value="" selected>Todas las sesiones<\/option>/);
+  // Con todas las sesiones, «Tus últimas semanas» da una lectura por día.
+  assert.match(todas, /Sesiones comparables recientes de Día A/);
+  assert.match(todas, /Sesiones comparables recientes de Día C/);
+  const soloC = VistasEsc.entrenamiento(M, { sub: 'ejercicios', ejercicio: 'Press banca con barra', diaEj: 'Día C' });
+  assert.match(soloC, /<option value="Día C" selected>/);
+  assert.match(soloC, /Ves solo las sesiones de Día C/);
+  assert.doesNotMatch(soloC, /Sesiones comparables recientes de Día A/);
+  // La tabla del historial solo trae sesiones de ese día.
+  const hist = soloC.match(/<caption class="sr-only">Historial de Press banca con barra por serie<\/caption>[\s\S]*?<\/table>/);
+  assert.ok(hist && !/Día A/.test(hist[0]) && /Día C/.test(hist[0]));
+  // Un ejercicio en un solo día no lleva selector.
+  const sent = VistasEsc.entrenamiento(M, { sub: 'ejercicios', ejercicio: 'Sentadilla con barra' });
+  assert.doesNotMatch(sent, /id="ejDia"/);
+});
