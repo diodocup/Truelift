@@ -354,6 +354,37 @@ test('ficha manual: valores saneados; nada de ella viaja en el paquete', () => {
   assert.equal(PL.leerFicha({ pesoKg: 9000 }).pesoKg, null);
 });
 
+test('ficha: rangos de la app, valores fuera de rango señalados y datos que viajan en el plan', () => {
+  // Los mismos rangos que el contrato (cliente.datos) y que la app admite a mano.
+  const L = P.LIMITES;
+  assert.deepEqual(plain(PL.rangosFicha()).pesoKg.slice(0, 2), [L.pesoMinKg, L.pesoMaxKg]);
+  assert.equal(PL.leerFicha({ pesoKg: 160, alturaCm: 120, grasaPct: 65 }).pesoKg, null);
+  assert.deepEqual(plain(PL.fueraDeRango({ pesoKg: '160', alturaCm: '', grasaPct: '18', notas: 'x' })).map(x => x.campo), ['pesoKg']);
+  assert.deepEqual(plain(PL.fueraDeRango({ pesoKg: '82,5', alturaCm: 'abc' })).map(x => x.campo), ['alturaCm']);
+  assert.match(PL.fueraDeRango({ grasaPct: 2 })[0].txt, /entre 3 y 60 %/);
+  // Solo sexo, peso, altura y % graso viajan; experiencia, días y notas no.
+  assert.deepEqual(plain(PL.datosPaquete({ sexo: 'mujer', pesoKg: '61,5', alturaCm: 168, grasaPct: 'x', experiencia: 'intermedio', dias: 4, notas: 'Rodilla' })),
+    { sexo: 'mujer', pesoKg: 61.5, alturaCm: 168 });
+  assert.equal(PL.datosPaquete({ notas: 'solo notas' }), null);
+  assert.equal(PL.datosPaquete(null), null);
+});
+
+test('emitir con datos de la ficha: sale v2 con cliente.datos y verifica; sin datos, v1 como siempre', async () => {
+  const k = await CE.desbloquear(await archivoClave(), CONTRASENA_PRUEBAS);
+  const temporada = { bloques: [{ tipo: 'BRIDGE', semanas: 2, tasaPctSemana: 0 }] };
+  const firma = c => P.emitir(c, { clavePrivada: k.privada, idClave: k.id, clavePublica: k.publica, hoy: '2026-11-10' });
+  const datos = PL.datosPaquete({ sexo: 'hombre', pesoKg: 82.5, alturaCm: 178, grasaPct: 18, notas: 'Hombro' });
+  const con = await firma(P.construirCarga({ entrenador: 'Ana', cliente: { nombre: 'Luis', datos }, emitido: '2026-11-10', temporada }));
+  assert.equal(JSON.parse(con.texto).v, 2);
+  const v = await P.verificar(con.texto, { claves: CLAVES, hoy: '2026-11-10' });
+  assert.equal(v.ok, true, v.detalle);
+  assert.deepEqual(v.carga.cliente, { nombre: 'Luis', datos: { sexo: 'hombre', pesoKg: 82.5, alturaCm: 178, grasaPct: 18 } });
+  assert.doesNotMatch(new TextDecoder().decode(v.bytesCarga), /Hombro/);
+  const sin = await firma(P.construirCarga({ entrenador: 'Ana', cliente: { nombre: 'Luis', datos: null }, emitido: '2026-11-10', temporada }));
+  assert.equal(JSON.parse(sin.texto).v, 1);
+  assert.deepEqual((await P.verificar(sin.texto, { claves: CLAVES, hoy: '2026-11-10' })).carga.cliente, { nombre: 'Luis' });
+});
+
 test('del borrador al archivo: lo que se emite verifica y su rutina es la de la simulación', async () => {
   const raw = copiaPlan();
   const k = await CE.desbloquear(await archivoClave(), CONTRASENA_PRUEBAS);

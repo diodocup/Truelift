@@ -138,6 +138,11 @@ try {
   await pagina.click('[data-ent-accion="cliente-nuevo"]');
   await pagina.fill('#entFNombre', 'Luis Gómez');
   await pagina.selectOption('#entFSexo', 'hombre');
+  // Un peso que la app no admite no se guarda en silencio: se avisa.
+  await pagina.fill('#entFPeso', '200');
+  await pagina.click('[data-ent-accion="ficha-guardar"]');
+  await pagina.locator('#entFichaError', { hasText: 'entre 40 y 150 kg' }).waitFor();
+  assert.equal(await pagina.locator('#modalTitulo').innerText(), 'Cliente nuevo sin copia');
   await pagina.fill('#entFPeso', '82.5');
   await pagina.fill('#entFNotas', 'Hombro derecho delicado');
   await pagina.click('[data-ent-accion="ficha-guardar"]');
@@ -184,9 +189,12 @@ try {
   assert.equal(v1.carga.caduca, enDias(90));   // fecha límite por defecto (F5)
   assert.deepEqual(v1.carga.rutina.dias.map(d => d.ejercicios.map(e => [e.ejercicio, e.reps, e.dropSet])),
     [[['Press banca con barra', '6-8', false]], [['Sentadilla con barra', '8', true], ['Curl de bíceps con barra', '8-10', false]]]);
-  assert.doesNotMatch(new TextDecoder().decode(P.desdeB64url(JSON.parse(d1.bytes).carga)), /Hombro derecho delicado|82[.,]5/);
+  // Sexo y peso de la ficha viajan como datos de partida (v2); las notas, no.
+  assert.equal(JSON.parse(d1.bytes).v, 2);
+  assert.deepEqual(v1.carga.cliente.datos, { sexo: 'hombre', pesoKg: 82.5 });
+  assert.doesNotMatch(new TextDecoder().decode(P.desdeB64url(JSON.parse(d1.bytes).carga)), /Hombro derecho delicado/);
   await pagina.locator('#entEmitidos').getByText(d1.nombre).waitFor();
-  ok('cliente sin copia: ficha manual, borrador en blanco, deshacer, y el plan descargado verifica (sin la ficha)');
+  ok('cliente sin copia: ficha manual, borrador en blanco, deshacer, y el plan descargado verifica (con sus datos de partida, sin sus notas)');
 
   // --- 4. Cliente con copia: borrador desde su rutina, igual que la app ---
   await pagina.click('[data-ent-accion="cliente-abrir"]');

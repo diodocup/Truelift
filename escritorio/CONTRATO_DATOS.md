@@ -121,7 +121,8 @@ planEntrenador: {
     id, emitido, entrenador, cliente, nota, aplicadoEn,   // texto; fechas AAAA-MM-DD
     rutina:    'aplicada' | 'aPrueba' | 'descartada' | null,   // null: el plan no traía rutina
     temporada: 'aplicada' | 'pendiente' | 'descartada' | null, // null: no traía temporada
-    propuestaTemporada: { bloques: [ { tipo, semanas, tasaPctSemana } ] } | null
+    propuestaTemporada: { bloques: [ { tipo, semanas, tasaPctSemana } ] } | null,
+    datosCliente: { sexo?, pesoKg?, alturaCm?, grasaPct? }   // opcional (11/11/2026)
   } | null,
   historial: [ { id, aplicadoEn } ]   // más reciente al final; máximo 20; incluye el aplicado
 }
@@ -135,6 +136,10 @@ planEntrenador: {
   aplicarla o descartarla pasa a `null`. Los bloques son **relativos**, como
   en el paquete; la temporada aplicada vive en `nutricion` (plan de
   temporada), anclada al día en que se aplicó.
+- `datosCliente`: los datos de partida que traía el plan (contrato v2,
+  `cliente.datos`, de la ficha del entrenador). Ausente si el plan no los
+  traía. La app los propone en el alta de nutrición mientras el plan sea el
+  vigente; el escritorio no los lee.
 - Un paquete nuevo sustituye a `aplicado`; el anterior queda solo como línea
   de `historial`, y con él se va su propuesta pendiente.
 - **Escritorio:** solo el modo entrenador lo lee

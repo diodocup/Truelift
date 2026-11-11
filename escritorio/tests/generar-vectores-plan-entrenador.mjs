@@ -100,7 +100,9 @@ const carga = (extra = {}) => ({
 
 const enc = new TextEncoder();
 const bytesDe = c => enc.encode(JSON.stringify(c));
-const firmar = (c, par = pruebas, id = par.id) => P.firmarBytes(bytesDe(c), { clavePrivada: par.privada, idClave: id });
+// Cada carga va en la versión mínima que la describe (v2 solo con datos del
+// cliente); `v` la fuerza para los vectores que prueban la versión.
+const firmar = (c, par = pruebas, id = par.id, v = P.versionDe(c)) => P.firmarBytes(bytesDe(c), { clavePrivada: par.privada, idClave: id, v });
 const sobre = (campos) => JSON.stringify({ formato: P.FORMATO, v: 1, ...campos }, null, 1) + '\n';
 
 const vectores = [];
@@ -121,6 +123,10 @@ v('v05_revision.json', 'valido', 'Revisión del plan v01 (otro id, otra rutina, 
     rutina: (() => { const r = rutinaBase(); r.nombre = 'Torso / Pierna (revisión)';
       r.dias.forEach(d => { d.ejercicios[0].series = 4; }); return r; })(),
     temporada: { bloques: [{ tipo: 'BRIDGE', semanas: 2, tasaPctSemana: 0 }, { tipo: 'BULK', semanas: 12, tasaPctSemana: 0.25 }] } })));
+const datosCliente = { sexo: 'mujer', pesoKg: 63.5, alturaCm: 166, grasaPct: 24.5 };
+const conDatos = (datos, extra = {}) => carga({ id: 'pe_00000000-0000-4000-8000-000000000006',
+  cliente: { nombre: 'Cliente de pruebas', datos }, rutina: rutinaBase(), temporada: temporadaBase(), ...extra });
+v('v06_datos_cliente.json', 'valido', 'v2: rutina, temporada y datos de partida del cliente', await firmar(conDatos(datosCliente)));
 
 // ---------- Sobre inválido ----------
 const base = JSON.parse(await firmar(carga({ rutina: rutinaBase() })));
@@ -137,8 +143,8 @@ v('i03_clave_desconocida.json', 'claveDesconocida', 'Firmado con una clave que l
 v('i04_firma_truncada.json', 'firmaInvalida', 'Firma truncada', sobre({ clave: base.clave, carga: base.carga, firma: base.firma.slice(0, 80) }));
 v('i05_base64_mal_formado.json', 'firmaInvalida', 'Carga en base64 con relleno y caracteres ajenos',
   sobre({ clave: base.clave, carga: base.carga.slice(0, 40) + '+/' + base.carga.slice(42) + '==', firma: base.firma }));
-v('i06_version_2.json', 'versionNoSoportada', 'Versión del sobre mayor que la soportada',
-  JSON.stringify({ ...base, v: 2 }, null, 1) + '\n');
+v('i06_version_3.json', 'versionNoSoportada', 'Versión del sobre mayor que la soportada',
+  JSON.stringify({ ...base, v: 3 }, null, 1) + '\n');
 v('i07_formato_ajeno.json', 'noEsUnPlan', 'Otro formato', JSON.stringify({ ...base, formato: 'otra-cosa' }, null, 1) + '\n');
 v('i08_copia_seguridad.json', 'esUnaCopia', 'Una copia de seguridad de la app',
   JSON.stringify({ sexo: 'hombre', sistema: 'doble', dias: '4', logs: [], fechaUltimaCopia: '2026-11-01' }, null, 1) + '\n');
@@ -169,6 +175,14 @@ v('i20_semanas_cero.json', 'contenidoInvalido', 'Bloque de cero semanas', await 
 v('i21_horizonte_excesivo.json', 'contenidoInvalido', 'Más semanas en total que el horizonte máximo', await firmar(conTemporada([
   { tipo: 'CUT', semanas: 40, tasaPctSemana: -0.5 }, { tipo: 'BULK', semanas: 39, tasaPctSemana: 0.25 }])));
 v('i22_sin_rutina_ni_temporada.json', 'contenidoInvalido', 'Ni rutina ni temporada', await firmar(carga()));
+v('i23_datos_en_v1.json', 'contenidoInvalido', 'Datos del cliente en un sobre v1',
+  await firmar(conDatos(datosCliente), pruebas, pruebas.id, 1));
+v('i24_peso_texto.json', 'contenidoInvalido', 'Peso del cliente como texto',
+  await firmar(conDatos({ ...datosCliente, pesoKg: '63.5' })));
+v('i25_altura_fuera_de_rango.json', 'contenidoInvalido', 'Altura del cliente fuera de lo que admite la app',
+  await firmar(conDatos({ ...datosCliente, alturaCm: 250 })));
+v('i26_datos_vacios.json', 'contenidoInvalido', 'Datos del cliente sin ningún dato',
+  await firmar(conDatos({})));
 
 // ---------- Clave de pruebas ----------
 const clave = JSON.stringify({

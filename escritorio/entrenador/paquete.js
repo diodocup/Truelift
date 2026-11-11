@@ -15,7 +15,10 @@
 
 const PaqueteEntrenador = (() => {
   const FORMATO = 'truelift-plan-entrenador';
-  const V = 1;
+  // Versión más alta que se sabe leer. Un plan se emite con la más baja que
+  // lo describe (versionDe): sin datos del cliente sigue siendo v1, que leen
+  // todas las versiones de la app.
+  const V = 2;
   const TAM_MAX = 256 * 1024;
   const PREFIJO_FIRMA = 'truelift-plan-entrenador:v1\n';
 
@@ -33,7 +36,11 @@ const PaqueteEntrenador = (() => {
     pausaRpMin: 10, pausaRpMax: 50,
     ejerciciosPropiosMax: 200, secundariosMax: 10,
     bloquesMax: 6, horizonteMaxSemanas: 78,
+    // Datos de partida del cliente (v2): los rangos que la app admite a mano
+    // (pesaje, stepper de altura y registro de % graso).
+    pesoMinKg: 40, pesoMaxKg: 150, alturaMinCm: 130, alturaMaxCm: 220, grasaMinPct: 3, grasaMaxPct: 60,
   });
+  const CLAVES_DATOS = Object.freeze(['sexo', 'pesoKg', 'alturaCm', 'grasaPct']);
 
   const ERRORES = Object.freeze(['noEsUnPlan', 'esUnaCopia', 'versionNoSoportada',
     'firmaInvalida', 'claveDesconocida', 'contenidoInvalido', 'caducado', 'demasiadoGrande']);
@@ -190,11 +197,26 @@ const PaqueteEntrenador = (() => {
     exige(total <= LIMITES.horizonteMaxSemanas, `temporada: más de ${LIMITES.horizonteMaxSemanas} semanas en total`);
   }
 
+  function validarDatos(d){
+    exige(esObj(d), 'cliente.datos: debe ser un objeto');
+    soloClaves(d, CLAVES_DATOS, 'cliente.datos');
+    exige(Object.keys(d).length >= 1, 'cliente.datos: vacío');
+    opcional(d, 'sexo', v => exige(v === 'hombre' || v === 'mujer', 'cliente.datos.sexo: «hombre» o «mujer»'));
+    const enRango = (k, a, b) => opcional(d, k, v => exige(esNum(v) && v >= a && v <= b, `cliente.datos.${k}: número entre ${a} y ${b}`));
+    enRango('pesoKg', LIMITES.pesoMinKg, LIMITES.pesoMaxKg);
+    enRango('alturaCm', LIMITES.alturaMinCm, LIMITES.alturaMaxCm);
+    enRango('grasaPct', LIMITES.grasaMinPct, LIMITES.grasaMaxPct);
+  }
+
+  /** Versión mínima que describe la carga: v2 solo si lleva datos del cliente. */
+  const versionDe = c => (esObj(c) && esObj(c.cliente) && 'datos' in c.cliente ? 2 : 1);
+
   /**
-   * Valida una carga ya analizada. `hoy` es `AAAA-MM-DD`.
+   * Valida una carga ya analizada. `hoy` es `AAAA-MM-DD`; `v`, la versión del
+   * sobre (la v1 no admite datos del cliente).
    * Devuelve null si vale, o `{ error, detalle }`.
    */
-  function validarCarga(c, { hoy } = {}){
+  function validarCarga(c, { hoy, v = V } = {}){
     try {
       exige(esObj(c), 'la carga debe ser un objeto');
       soloClaves(c, ['id', 'emitido', 'caduca', 'entrenador', 'cliente', 'nota', 'rutina', 'temporada'], 'carga');
@@ -203,9 +225,10 @@ const PaqueteEntrenador = (() => {
       opcional(c, 'caduca', v => exige(fechaValida(v), 'caduca: fecha AAAA-MM-DD'));
       for (const k of ['entrenador', 'cliente']){
         exige(esObj(c[k]), `${k}: debe ser un objeto`);
-        soloClaves(c[k], ['nombre'], k);
+        soloClaves(c[k], k === 'cliente' && v >= 2 ? ['nombre', 'datos'] : ['nombre'], k);
         texto(c[k].nombre, `${k}.nombre`, { min: 1 });
       }
+      opcional(c.cliente, 'datos', validarDatos);
       opcional(c, 'nota', v => texto(v, 'nota', { max: LIMITES.notaMax }));
       exige('rutina' in c || 'temporada' in c, 'falta la rutina y la temporada');
       opcional(c, 'rutina', validarRutina);
@@ -263,7 +286,7 @@ const PaqueteEntrenador = (() => {
     let carga;
     try { carga = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytesCarga)); }
     catch { return mal('contenidoInvalido', 'la carga no es JSON'); }
-    const err = validarCarga(carga, { hoy });
+    const err = validarCarga(carga, { hoy, v: sobre.v });
     if (err) return mal(err.error, err.detalle);
     return { ok: true, carga, bytesCarga, clave: sobre.clave };
   }
@@ -286,6 +309,13 @@ const PaqueteEntrenador = (() => {
     if (caduca) c.caduca = caduca;
     c.entrenador = { nombre: entrenador?.nombre ?? entrenador };
     c.cliente = { nombre: cliente?.nombre ?? cliente };
+    // Datos de partida del cliente (v2): solo los que vienen, en orden fijo.
+    const d = cliente?.datos;
+    if (esObj(d)){
+      const datos = {};
+      for (const k of CLAVES_DATOS) if (d[k] != null && d[k] !== '') datos[k] = d[k];
+      if (Object.keys(datos).length) c.cliente.datos = datos;
+    }
     if (nota) c.nota = nota;
     if (rutina) c.rutina = rutina;
     if (temporada) c.temporada = temporada;
@@ -293,9 +323,9 @@ const PaqueteEntrenador = (() => {
   }
 
   /** Firma bytes de carga ya serializados y monta el sobre (texto). */
-  async function firmarBytes(bytesCarga, { clavePrivada, idClave }){
+  async function firmarBytes(bytesCarga, { clavePrivada, idClave, v = 1 }){
     const firma = new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, clavePrivada, mensajeAFirmar(bytesCarga)));
-    return JSON.stringify({ formato: FORMATO, v: V, clave: idClave, carga: b64url(bytesCarga), firma: b64url(firma) }, null, 1) + '\n';
+    return JSON.stringify({ formato: FORMATO, v, clave: idClave, carga: b64url(bytesCarga), firma: b64url(firma) }, null, 1) + '\n';
   }
 
   /**
@@ -303,9 +333,10 @@ const PaqueteEntrenador = (() => {
    * Devuelve el texto del archivo.
    */
   async function firmar(carga, { clavePrivada, idClave, hoy }){
-    const err = validarCarga(carga, { hoy });
+    const v = versionDe(carga);
+    const err = validarCarga(carga, { hoy, v });
     if (err) throw new Error(`Paquete no válido (${err.error}): ${err.detalle}`);
-    return firmarBytes(enc.encode(JSON.stringify(carga)), { clavePrivada, idClave });
+    return firmarBytes(enc.encode(JSON.stringify(carga)), { clavePrivada, idClave, v });
   }
 
   /**
@@ -338,6 +369,6 @@ const PaqueteEntrenador = (() => {
   return Object.freeze({
     FORMATO, V, TAM_MAX, PREFIJO_FIRMA, LIMITES, ERRORES,
     b64url, desdeB64url, hex, idDeClave, mensajeAFirmar,
-    validarCarga, verificar, construirCarga, firmar, firmarBytes, emitir, nombreArchivo, importarSemilla, hoyLocal,
+    CLAVES_DATOS, versionDe, validarCarga, verificar, construirCarga, firmar, firmarBytes, emitir, nombreArchivo, importarSemilla, hoyLocal,
   });
 })();

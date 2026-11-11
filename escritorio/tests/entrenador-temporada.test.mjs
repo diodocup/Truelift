@@ -168,7 +168,9 @@ test('avisos: ajustes de ritmo, duración y final de la proyección, sin topes n
   const txt = an.avisos.map(a => `${a.nivel}:${a.txt}`).join('\n');
   assert.match(txt, /ambar:Bloque 1 \(definición\): el ritmo es más rápido de lo que la app permite/);
   assert.match(txt, /ambar:Bloque 3 \(volumen\): el ritmo es más lento de lo que la app deja elegir/);
-  assert.match(txt, /ambar:Bloque 1 \(definición\): la duración se sale de lo habitual/);
+  // La duración dice hacia dónde se sale y lo habitual, como el semáforo de la app.
+  assert.match(txt, /ambar:Bloque 1 \(definición\): es muy largo \(30 semanas\); lo habitual para una definición es de 6 a 12 semanas\./);
+  assert.match(txt, /ambar:Bloque 3 \(volumen\): es muy largo \(38 semanas\); lo habitual para un volumen es de 12 a 20 semanas\./);
   assert.match(txt, /Bloque 1 \(definición\): .*(peso razonable|porcentaje graso muy bajo)/);
   assert.doesNotMatch(txt, /%|umbral|tope|ventana|\d+[.,]\d/i);
   // Dos bloques seguidos del mismo tipo: aviso rojo, primero.
@@ -177,6 +179,20 @@ test('avisos: ajustes de ritmo, duración y final de la proyección, sin topes n
   // Datos parciales: se avisa de que la app puede ajustar distinto.
   const parcial = TE.analizar({ bloques: [{ tipo: 'CUT', semanas: 8, ritmo: 0.5 }] }, { datos: datos({ perfil: { sexo: 'M' }, faltan: ['altura'] }), hoy: HOY });
   assert.match(parcial.avisos.map(a => a.txt).join('\n'), /Faltan datos del cliente/);
+  // Cortos: «muy corto» (rojo en la app → Revisa) o «algo corto» (ámbar → Nota).
+  const cortos = TE.analizar({ bloques: [{ tipo: 'CUT', semanas: 2, ritmo: 0.5 }, { tipo: 'BULK', semanas: 10, ritmo: 0.1 }] }, { datos: datos(), hoy: HOY });
+  const tc = cortos.avisos.map(a => `${a.nivel}:${a.txt}`).join('\n');
+  assert.match(tc, /ambar:Bloque 1 \(definición\): es muy corto \(2 semanas\); lo habitual para una definición es de 6 a 12 semanas\./);
+  assert.match(tc, /azul:Bloque 2 \(volumen\): es algo corto \(10 semanas\)/);
+  // Un volumen con el % graso de partida algo alto: la app marca el ritmo en
+  // ámbar y el aviso lo dice (antes la línea de tiempo salía ámbar sin aviso).
+  const ambar = TE.analizar({ bloques: [{ tipo: 'BULK', semanas: 16, ritmo: 0.25 }] },
+    { datos: TE.datosCliente(null, { sexo: 'hombre', pesoKg: 82, alturaCm: 178, grasaPct: 18 }), hoy: HOY });
+  assert.equal(ambar.bloques[0].color, 'ambar');
+  assert.match(ambar.avisos.map(a => a.txt).join('\n'), /Bloque 1 \(volumen\): con los datos del cliente, la app marca este ritmo en ámbar/);
+  // Todo bloque que no sale en verde en la línea de tiempo tiene su aviso.
+  for (const x of [an, cortos, ambar]) for (const b of x.bloques.filter(b => b.color !== 'verde'))
+    assert.ok(x.avisos.some(a => a.txt.startsWith(`Bloque ${b.i + 1} `)), `bloque ${b.i + 1} ${b.color} sin aviso`);
   // Una temporada corriente no da avisos.
   assert.deepEqual(TE.analizar({ bloques: [{ tipo: 'CUT', semanas: 8, ritmo: 0.5 }, { tipo: 'BRIDGE', semanas: 2, ritmo: 0 }] }, { datos: datos(), hoy: HOY }).avisos, []);
 });
@@ -185,7 +201,7 @@ test('avisos: ajustes de ritmo, duración y final de la proyección, sin topes n
 // Datos del cliente y temporada de su copia
 // ---------------------------------------------------------------
 
-test('datos del cliente: de su copia y, si faltan, de su ficha', () => {
+test('datos del cliente: manda su ficha y lo que no trae sale de su copia', () => {
   const raw = ejemplo();
   const d = TE.datosCliente(raw, null, HOY);
   const N = Nutricion.contexto(normalizarNutricion(raw), { hoy: HOY });
@@ -196,11 +212,21 @@ test('datos del cliente: de su copia y, si faltan, de su ficha', () => {
   assert.deepEqual(d.faltan, []);
   assert.equal(d.origen.peso, 'copia');
   assert.ok(d.planCopia && d.planCopia.bloques.length === 2);
-  // La ficha completa lo que la copia no trae; su % graso cuenta como de hoy.
+  // La ficha manda sobre la copia: es el punto de partida que viaja en el
+  // plan. Su % graso cuenta como de hoy.
   const sinNut = { ...copiaRica(), nutricion: undefined, sexo: 'mujer', pesoCorporal: undefined };
   const f = TE.datosCliente(sinNut, { sexo: 'hombre', pesoKg: 64, alturaCm: 165, grasaPct: 27, experiencia: 'principiante' }, HOY);
-  assert.deepEqual(plain(f.perfil), { sexo: 'F', alturaCm: 165, experienciaFuerza: 'NOVICE' });
-  assert.deepEqual([f.pesoKg, f.grasaPct, f.diasDesdeMedicion, f.origen.sexo, f.origen.grasa], [64, 27, 0, 'copia', 'ficha']);
+  assert.deepEqual(plain(f.perfil), { sexo: 'M', alturaCm: 165, experienciaFuerza: 'NOVICE' });
+  assert.deepEqual([f.pesoKg, f.grasaPct, f.diasDesdeMedicion, f.origen.sexo, f.origen.grasa], [64, 27, 0, 'ficha', 'ficha']);
+  // Con copia con nutrición, cada dato de la ficha sustituye al de la copia;
+  // lo que la ficha no trae sigue saliendo de la copia.
+  const mixto = TE.datosCliente(raw, { pesoKg: 90, grasaPct: 21 }, HOY);
+  assert.deepEqual([mixto.pesoKg, mixto.grasaPct, mixto.diasDesdeMedicion, mixto.perfil.alturaCm],
+    [90, 21, 0, 176]);
+  assert.deepEqual([mixto.origen.peso, mixto.origen.grasa, mixto.origen.altura, mixto.origen.sexo], ['ficha', 'ficha', 'copia', 'copia']);
+  // La proyección parte de los datos de la ficha.
+  const an = TE.analizar(TE.nueva('CUT'), { datos: mixto, hoy: HOY });
+  assert.deepEqual([an.proyeccion.pesoPartidaKg, an.proyeccion.grasaPartidaPct], [90, 21]);
   // Sin copia ni ficha.
   const nada = TE.datosCliente(null, null, HOY);
   assert.deepEqual(nada.faltan, ['peso', 'grasa', 'altura', 'sexo']);

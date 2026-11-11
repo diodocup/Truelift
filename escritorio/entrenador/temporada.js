@@ -155,10 +155,11 @@ function desdePaquete(t){
 // ---------------------------------------------------------------
 
 /* Lo que la app usa para los topes y la proyección: peso tendencia de
-   hoy, % graso vigente y su antigüedad, sexo, altura y experiencia. De
-   la copia si los trae; si no, de la ficha manual del entrenador (su %
-   graso estimado se toma como medido hoy: es el que el cliente meterá al
-   activar la nutrición). */
+   hoy, % graso vigente y su antigüedad, sexo, altura y experiencia. Manda
+   la ficha del entrenador: lo que ha anotado es el punto de partida que
+   viaja en el plan (cliente.datos) y el que la app propondrá al cliente. Lo
+   que la ficha no trae sale de la copia. El % graso de la ficha cuenta como
+   medido hoy. */
 function datosCliente(raw, ficha, hoy = new Date()){
   let N = null;
   try {
@@ -168,8 +169,8 @@ function datosCliente(raw, ficha, hoy = new Date()){
   const f = ficha && typeof ficha === 'object' ? PlanificadorEntrenador.leerFicha(ficha) : null;
   const origen = {};
   const tomar = (k, deCopia, deFicha) => {
-    if (deCopia != null){ origen[k] = 'copia'; return deCopia; }
     if (deFicha != null){ origen[k] = 'ficha'; return deFicha; }
+    if (deCopia != null){ origen[k] = 'copia'; return deCopia; }
     return null;
   };
   const sexoCopia = N?.perfil?.sexo === 'M' || N?.perfil?.sexo === 'F' ? N.perfil.sexo
@@ -253,7 +254,10 @@ function analizar(temporada, { datos = null, hoy = new Date() } = {}){
     const fin = mas(inicio, b.semanas * 7 - 1);
     const r = { i, tipo: b.tipo, nombre: NOMBRE[b.tipo], semanas: b.semanas, tasa, tasaApp,
       ajuste: Math.abs(tasaApp - tasa) < 1e-9 ? null : Math.abs(tasaApp) < Math.abs(tasa) ? 'baja' : 'sube',
-      inicio, fin, duracion: PlanTemporada.colorDuracion({ tipo: b.tipo, semanas: b.semanas }), proyeccion: null };
+      inicio, fin, duracion: PlanTemporada.colorDuracion({ tipo: b.tipo, semanas: b.semanas }),
+      // Hacia dónde se sale la duración (PlanificadorTemporada.motivoDuracion)
+      // y lo habitual para su tipo: lo que la app enseña en su semáforo.
+      motivoDuracion: motivoDuracion(b), habitual: PlanTemporada.rangosDuracion(b.tipo).slice(0, 2), proyeccion: null };
     inicio = mas(fin, 1);
     return r;
   });
@@ -278,32 +282,68 @@ function analizar(temporada, { datos = null, hoy = new Date() } = {}){
         colorGrasaFinal: p.pesoFinRazonable ? PlanTemporada.colorGrasaFinal({ tipo: b.tipo, grasaFinPct: p.grasaFinPct, sexo, sueloPct: proy.sueloPct }) : 'rojo' };
     });
   }
+  // Semáforo de cada bloque, como el borde de LineaTiempoPlan en la app: el
+  // peor de sus chequeos (duración, ritmo y % graso final).
+  const PESO = { verde: 0, ambar: 1, rojo: 2 };
+  bloques.forEach(b => {
+    const cs = [b.duracion, b.proyeccion?.colorRitmo, b.proyeccion?.colorGrasaFinal].filter(c => c in PESO);
+    b.color = cs.reduce((a, c) => (PESO[c] > PESO[a] ? c : a), 'verde');
+  });
   const ult = bloques[bloques.length - 1];
   const res = { bloques, inicio: h, fin: ult.fin, totalSemanas: totalSemanas(t), errores: errores(t), datos: d,
+    // Curva diaria de la proyección (la de la gráfica del planificador de la app).
+    curva: proy ? NutricionEsc.curva(proy, { hoy: h }) : null,
     proyeccion: proy && ult.proyeccion ? { pesoPartidaKg: proy.pesoPartidaKg, grasaPartidaPct: proy.grasaPartidaPct,
       pesoFinKg: ult.proyeccion.pesoFinKg, grasaFinPct: ult.proyeccion.grasaFinPct } : null };
   res.avisos = avisos(res);
   return res;
 }
 
-/* Avisos para el entrenador: qué hará la app y qué conviene revisar.
-   Sin topes, umbrales ni cifras del criterio. */
+/* 'corta' | 'larga' | null: por qué lado se sale del verde la duración. */
+function motivoDuracion(b){
+  const [vMin, vMax] = PlanTemporada.rangosDuracion(b.tipo);
+  return b.semanas < vMin ? 'corta' : b.semanas > vMax ? 'larga' : null;
+}
+
+/* «una definición», «un volumen», «una normocalórica». */
+const CON_ARTICULO = { CUT: 'una definición', BULK: 'un volumen', BRIDGE: 'una normocalórica' };
+
+/* Avisos para el entrenador: qué hará la app y qué conviene revisar. Uno por
+   cada chequeo del semáforo de la app que no salga en verde (duración, ritmo y
+   % graso final), para que lo que se ve en la línea de tiempo tenga siempre su
+   explicación. Rojo en la app → «Revisa»; ámbar → «Nota». La duración dice
+   hacia dónde se sale y lo habitual, como el semáforo de la app; el resto, sin
+   topes ni cifras del criterio. */
 function avisos(an){
   const out = [];
   const add = (nivel, txt) => out.push({ nivel, txt });
+  const nivel = color => color === 'rojo' ? 'ambar' : 'azul';
   an.errores.forEach(e => add('rojo', e));
   const sinDatos = an.datos.faltan.filter(k => k === 'peso' || k === 'grasa' || k === 'altura');
   an.bloques.forEach(b => {
     const q = `Bloque ${b.i + 1} (${b.nombre.toLowerCase()})`;
+    // Duración.
+    if (b.duracion !== 'verde' && b.motivoDuracion){
+      const [a, z] = b.habitual;
+      const cuanto = `${b.duracion === 'rojo' ? 'muy' : 'algo'} ${b.motivoDuracion === 'corta' ? 'corto' : 'largo'}`;
+      add(nivel(b.duracion), `${q}: es ${cuanto} (${F_SEM(b.semanas)}); lo habitual para ${CON_ARTICULO[b.tipo]} es de ${a} a ${z} semanas.`);
+    }
+    // Ritmo: primero lo que la app cambiará al aplicarlo; si no lo cambia,
+    // cómo lo verá su semáforo con los datos del cliente.
+    const p = b.proyeccion;
     if (b.ajuste === 'baja') add('ambar', `${q}: el ritmo es más rápido de lo que la app permite con los datos ${sinDatos.length ? 'que tienes' : 'actuales'} del cliente; lo bajará al aplicarlo.`);
     else if (b.ajuste === 'sube') add('ambar', `${q}: el ritmo es más lento de lo que la app deja elegir; lo subirá al aplicarlo.`);
-    if (b.duracion === 'rojo') add('ambar', `${q}: la duración se sale de lo habitual para este tipo de bloque.`);
-    else if (b.duracion === 'ambar') add('azul', `${q}: duración algo fuera de lo habitual para este tipo de bloque.`);
-    const p = b.proyeccion;
-    if (p && !p.razonable) add('ambar', `${q}: con este ritmo y esta duración la proyección acaba por debajo de un peso razonable.`);
-    else if (p && p.colorGrasaFinal === 'rojo') add('ambar', b.tipo === 'BULK'
-      ? `${q}: la proyección acaba con un porcentaje graso alto. Valora acortarlo o bajar el ritmo.`
-      : `${q}: la proyección acaba con un porcentaje graso muy bajo. Valora acortarlo o bajar el ritmo.`);
+    else if (p && b.tipo !== 'BRIDGE' && p.colorRitmo !== 'verde') add(nivel(p.colorRitmo), p.colorRitmo === 'rojo'
+      ? `${q}: con los datos del cliente, la app marca este ritmo en rojo. Bájalo.`
+      : `${q}: con los datos del cliente, la app marca este ritmo en ámbar. Valora bajarlo un poco.`);
+    // Final del bloque.
+    if (p && !p.razonable) add('ambar', `${q}: con este ritmo y esta duración la proyección acaba por debajo de un peso razonable. Acórtalo o baja el ritmo.`);
+    else if (p && b.tipo !== 'BRIDGE' && p.colorGrasaFinal !== 'verde'){
+      const alto = b.tipo === 'BULK';
+      add(nivel(p.colorGrasaFinal), p.colorGrasaFinal === 'rojo'
+        ? `${q}: la proyección acaba con un porcentaje graso ${alto ? 'alto' : 'muy bajo'}. Acórtalo o baja el ritmo.`
+        : `${q}: la proyección acaba con un porcentaje graso ${alto ? 'algo alto' : 'algo bajo'}. Valora acortarlo o bajar el ritmo.`);
+    }
   });
   if (!an.proyeccion){
     add('azul', 'Sin el peso y el porcentaje graso del cliente no hay proyección. Importa su copia o complétalo en su ficha.');
@@ -314,6 +354,8 @@ function avisos(an){
   out.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
   return out;
 }
+
+const F_SEM = n => `${n} ${n === 1 ? 'semana' : 'semanas'}`;
 
 // ---------------------------------------------------------------
 // Estado de un plan emitido en la copia más reciente del cliente

@@ -60,6 +60,7 @@ Map<String, Object?> _resumen(PaquetePlanEntrenador p) => {
       'caduca': p.caduca,
       'entrenador': p.entrenador,
       'cliente': p.cliente,
+      'datosCliente': p.datosCliente?.toJson(),
       'nota': p.nota,
       'clave': p.clave,
       'rutina': p.rutina == null

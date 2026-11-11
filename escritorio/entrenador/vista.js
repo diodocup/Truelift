@@ -23,6 +23,9 @@ const SISTEMA = { simple: 'progresión simple', doble: 'progresión doble' };
 const MODO = { normal: 'Series normales', topBack: 'Top set + back-off', drop: 'Drop set', rp: 'Rest-pause' };
 const SEXO = { hombre: 'Hombre', mujer: 'Mujer' };
 const EXPERIENCIA = { principiante: 'Principiante', intermedio: 'Intermedio', avanzado: 'Avanzado' };
+/* «Mujer · 63,5 kg · 166 cm · 24,5 % graso» (datos de partida del plan). */
+const datosTxt = d => [d.sexo ? SEXO[d.sexo] : null, d.pesoKg != null ? `${fmtNum(d.pesoKg, 1)} kg` : null,
+  d.alturaCm != null ? `${fmtNum(d.alturaCm, 0)} cm` : null, d.grasaPct != null ? `${fmtNum(d.grasaPct, 1)} % graso` : null].filter(Boolean).join(' · ');
 const momento = iso => {
   const d = iso ? new Date(iso) : null;
   if (!d || isNaN(d)) return '—';
@@ -114,26 +117,28 @@ function ficha(ctx){
       ${btn('ficha-editar', f ? 'Editar ficha' : 'Rellenar ficha')}
       <button class="btn peligro" type="button" data-accion="borrar-espacio">Borrar cliente</button>
     </div>
-    <p class="muted" style="font-size:12.5px">La ficha solo sirve para que prepares su plan: no viaja en el paquete, que solo lleva su nombre.</p></section>`;
+    <p class="muted" style="font-size:12.5px">Lo que pongas en la ficha manda sobre su copia al proyectar la temporada. El sexo, el peso, la altura y el % graso viajan en su plan como punto de partida; la experiencia, los días y las notas solo los ves tú.</p></section>`;
 }
 
 /* Formulario del alta sin copia y de la ficha (modal). */
 function fichaForm({ nombre = '', ficha = null, nuevo = false } = {}){
   const f = PL.leerFicha(ficha);
+  const R = PL.rangosFicha();
   const op = (v, t, sel) => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(t)}</option>`;
   return `<h2 id="modalTitulo">${nuevo ? 'Cliente nuevo sin copia' : `Ficha de ${esc(nombre)}`}</h2>
     <form id="entFicha" class="ent-ficha" novalidate>
       <label class="ancho" for="entFNombre">Nombre del cliente (lo verá en su plan)
         <input id="entFNombre" type="text" maxlength="60" value="${esc(nombre)}" required autofocus></label>
       <label for="entFSexo">Sexo<select id="entFSexo">${op('', '—', f.sexo)}${op('hombre', 'Hombre', f.sexo)}${op('mujer', 'Mujer', f.sexo)}</select></label>
-      <label for="entFPeso">Peso (kg)<input id="entFPeso" type="number" inputmode="decimal" min="25" max="350" step="0.1" value="${f.pesoKg ?? ''}"></label>
-      <label for="entFAltura">Altura (cm)<input id="entFAltura" type="number" inputmode="numeric" min="100" max="250" step="1" value="${f.alturaCm ?? ''}"></label>
-      <label for="entFGrasa">% graso estimado<input id="entFGrasa" type="number" inputmode="decimal" min="3" max="70" step="0.5" value="${f.grasaPct ?? ''}"></label>
+      <label for="entFPeso">Peso (kg)<input id="entFPeso" type="number" inputmode="decimal" min="${R.pesoKg[0]}" max="${R.pesoKg[1]}" step="0.1" value="${f.pesoKg ?? ''}"></label>
+      <label for="entFAltura">Altura (cm)<input id="entFAltura" type="number" inputmode="numeric" min="${R.alturaCm[0]}" max="${R.alturaCm[1]}" step="1" value="${f.alturaCm ?? ''}"></label>
+      <label for="entFGrasa">% graso estimado<input id="entFGrasa" type="number" inputmode="decimal" min="${R.grasaPct[0]}" max="${R.grasaPct[1]}" step="0.5" value="${f.grasaPct ?? ''}"></label>
       <label for="entFExp">Experiencia<select id="entFExp">${op('', '—', f.experiencia)}${Object.entries(EXPERIENCIA).map(([k, t]) => op(k, t, f.experiencia)).join('')}</select></label>
       <label for="entFDias">Días disponibles<select id="entFDias">${op('', '—', String(f.dias ?? ''))}${[2, 3, 4, 5, 6, 7].map(n => op(String(n), String(n), String(f.dias ?? ''))).join('')}</select></label>
       <label class="ancho" for="entFNotas">Notas<textarea id="entFNotas" maxlength="2000">${esc(f.notas)}</textarea></label>
     </form>
-    <p class="muted" style="font-size:12.5px">Solo la ves tú, en este navegador.</p>
+    <div class="alerta rojo" id="entFichaError" role="alert" hidden><span class="tag">Revisa</span><span></span></div>
+    <p class="muted" style="font-size:12.5px">El sexo, el peso, la altura y el % graso son el punto de partida de su temporada aquí y viajan en su plan: la app se los propone al cliente, que puede cambiarlos. La experiencia, los días y las notas solo los ves tú, en este navegador.</p>
     <div class="mod-acciones"><button class="btn sec" type="button" data-accion="cerrar">Cancelar</button>
       <button class="btn pri" type="button" data-ent-accion="ficha-guardar"${nuevo ? ' data-nuevo="1"' : ''}>${nuevo ? 'Crear cliente' : 'Guardar ficha'}</button></div>`;
 }
@@ -386,7 +391,8 @@ function emitidos(ctx){
 // ---------------------------------------------------------------
 // Temporada
 // ---------------------------------------------------------------
-const DURACION = { verde: null, ambar: ['ambar', 'Duración poco habitual'], rojo: ['rojo', 'Duración fuera de lo habitual'] };
+/* Chip de la duración: hacia dónde se sale (como el semáforo de la app). */
+const DURACION = { ambar: { corta: 'Algo corto', larga: 'Algo largo' }, rojo: { corta: 'Muy corto', larga: 'Muy largo' } };
 const ritmoTxt = tasa => tasa === 0 ? 'mantener el peso' : `${F().signo(tasa, 2)} / semana`;
 
 function datosHtml(d){
@@ -403,7 +409,7 @@ function datosHtml(d){
 function bloqueHtml(b, n, an){
   const id = k => `ent-t-${b.i}-${k}`;
   const p = b.proyeccion;
-  const dur = DURACION[b.duracion];
+  const dur = DURACION[b.duracion] && b.motivoDuracion ? [b.duracion, DURACION[b.duracion][b.motivoDuracion]] : null;
   const libres = PaqueteEntrenador.LIMITES.horizonteMaxSemanas - an.totalSemanas + b.semanas;
   const chips = [dur ? chip(dur[0], dur[1]) : '',
     b.ajuste ? chip('ambar', b.ajuste === 'baja' ? 'La app bajará el ritmo' : 'La app subirá el ritmo') : ''].filter(Boolean).join(' ');
@@ -424,6 +430,36 @@ function bloqueHtml(b, n, an){
     </div>
     <p class="rut-meta ent-bloque-meta">${esc(F().corta(b.inicio))} – ${esc(F().dia(b.fin))}${b.tipo === 'BRIDGE' ? ' · mantener el peso' : ` · ${esc(ritmoTxt(b.tasa))}`}${p ? ` · al final: <b>${esc(F().kg(p.pesoFinKg))}</b> y <b>${esc(F().num(p.grasaFinPct, 1))} %</b> graso` : ''}${chips ? `<br>${chips}` : ''}</p>
   </li>`;
+}
+
+/* Línea de tiempo y gráficas de la temporada, como el planificador de la
+   app: un segmento por bloque con el color de su tipo, la inicial y el borde
+   de su semáforo (LineaTiempoPlan), y la curva diaria de peso, masa magra y
+   masa grasa con una raya en el comienzo de cada bloque (_PintorPlan). */
+const COLOR_TIPO = { BULK: TL.lima, CUT: TL.azul, BRIDGE: TL.txt3 };
+function graficaTemporada(an){
+  const total = an.bloques.reduce((s, b) => s + b.semanas, 0);
+  const SEM = { verde: 'sin avisos', ambar: 'conviene revisarlo', rojo: 'fuera de lo habitual' };
+  const segmentos = an.bloques.map(b => `<span class="ent-lt-seg tipo-${b.tipo.toLowerCase()} borde-${b.color}" style="flex-grow:${b.semanas}"
+      title="${esc(`${b.nombre}: ${F().plural(b.semanas, 'semana', 'semanas')}, ${b.tipo === 'BRIDGE' ? 'mantener el peso' : ritmoTxt(b.tasaApp)} · ${SEM[b.color]}`)}"><b aria-hidden="true">${esc(b.nombre[0])}</b></span>`).join('');
+  const rotulos = an.bloques.map(b => `<span><i class="ent-lt-punto tipo-${b.tipo.toLowerCase()}" aria-hidden="true"></i>${esc(b.nombre)} hasta el ${esc(F().corta(b.fin))}</span>`).join('');
+  const linea = `<div class="ent-linea-tiempo" role="img" aria-label="${esc(`Temporada de ${F().plural(total, 'semana', 'semanas')}: ${an.bloques.map(b => `${b.nombre} ${F().plural(b.semanas, 'semana', 'semanas')}`).join(', ')}`)}">${segmentos}</div>
+    <p class="ent-lt-rotulos">${rotulos}</p>`;
+  const c = an.curva;
+  if (!c) return linea;
+  const marcas = an.bloques.slice(1).map(b => ({ x: b.inicio, color: TL.txt4, label: `Empieza ${b.nombre.toLowerCase()}`, tipo: 'cambio de bloque' }));
+  const serie = k => c.puntos.map(x => ({ x: x.fecha, y: Math.round(x[k] * 100) / 100 }));
+  const peso = Charts.lineas({ series: [{ nombre: 'Peso', color: TL.lima, puntos: serie('pesoKg'), unidad: 'kg', sinPuntos: true }], marcas, w: 960, h: 220 });
+  const masas = Charts.lineas({ series: [
+    { nombre: 'Masa magra', color: TL.azul, puntos: serie('magraKg'), unidad: 'kg', sinPuntos: true },
+    { nombre: 'Masa grasa', color: TL.ambar, puntos: serie('grasaKg'), unidad: 'kg', sinPuntos: true, eje: 'der' },
+  ], marcas, w: 960, h: 200 });
+  return `${linea}
+    <div class="ent-graficas" id="entGraficaTemporada">
+      ${VistasEsc.grafica(peso, 'Peso proyectado a lo largo de la temporada', '')}
+      ${VistasEsc.grafica(masas, 'Masa magra (eje izquierdo) y masa grasa (eje derecho) proyectadas a lo largo de la temporada', '')}
+    </div>
+    ${ayuda('La misma proyección que verá el cliente en el planificador de la app si la aplica hoy, con los ritmos que la app le dejará. Las rayas verticales marcan el comienzo de cada bloque. Es una estimación: el reparto entre masa magra y grasa depende de su entrenamiento, su descanso y su punto de partida.')}`;
 }
 
 function temporada(ctx){
@@ -451,13 +487,15 @@ function temporada(ctx){
       ${`<div class="cifra"><b>${esc(F().kg(pr.pesoFinKg))}</b><span>${esc(`al final · ${F().num(pr.grasaFinPct, 1)} % graso`)}</span></div>`}
       ${`<div class="cifra"><b>${esc(String(an.totalSemanas))}</b><span>${esc(`semanas · hasta el ${F().dia(an.fin)}`)}</span></div>`}
     </div>` : `<p class="muted">${esc(F().plural(an.totalSemanas, 'semana', 'semanas'))} en ${esc(F().plural(n, 'bloque', 'bloques'))}, hasta el ${esc(F().dia(an.fin))} si la aplica hoy.</p>`}
+    ${graficaTemporada(an)}
     <ol class="rut-filas ent-bloques">${an.bloques.map(x => bloqueHtml(x, n, an)).join('')}</ol>
+    ${ctx.notaTemporada ? `<div class="alerta ambar" id="entNotaTemporada"><span class="tag">Ajustado</span><span>${esc(ctx.notaTemporada)}</span></div>` : ''}
     <div class="fila-botones">
       ${btn('bloque-nuevo', `+ Bloque (${n}/${L.bloquesMax})`, { des: !puedeAnadir, extra: ' id="ent-t-nuevo"', titulo: puedeAnadir ? '' : `Hasta ${L.bloquesMax} bloques y ${L.horizonteMaxSemanas} semanas en total` })}
       <span class="spacer"></span>
       ${btn('temporada-quitar', 'Quitar la temporada del plan', { clase: 'peligro', extra: ' id="entTemporadaQuitar"' })}
     </div>
-    <p class="muted" style="font-size:12.5px">La app ancla la temporada al día en que el cliente la aplica y ajusta cada ritmo a sus datos reales de ese día. Las fechas y la proyección de aquí suponen que la aplica hoy, con los datos de su copia o de su ficha.</p>
+    <p class="muted" style="font-size:12.5px">La app ancla la temporada al día en que el cliente la aplica y ajusta cada ritmo a sus datos reales de ese día. Las fechas y la proyección de aquí suponen que la aplica hoy, con los datos de su ficha y, lo que falte, de su copia.</p>
   </section>`];
   out.push(tarjeta('Avisos de la temporada', an.avisos.length
     ? an.avisos.map(a => `<div class="alerta ${a.nivel}"><span class="tag">${a.nivel === 'rojo' ? 'Impide emitir' : a.nivel === 'ambar' ? 'Revisa' : 'Nota'}</span><span>${esc(a.txt)}</span></div>`).join('')
@@ -494,12 +532,14 @@ function confirmarEmision(ctx){
   const sim = borrador.incluirRutina ? PL.simular(borrador.rutina, ctx.raw, { nombre: borrador.nombre }) : null;
   const dif = sim && copia ? PL.diferencias(copia.normal, sim.normal) : null;
   const t = TE.paquete(borrador.temporada);
+  const datos = PL.datosPaquete(ctx.E.espacio.ficha);
   const L = PaqueteEntrenador.LIMITES;
   const hoy = TE.iso(ctx.hoy || new Date());
   const manana = TE.iso(new Date((ctx.hoy || new Date()).getFullYear(), (ctx.hoy || new Date()).getMonth(), (ctx.hoy || new Date()).getDate() + 1));
   const lleva = [
     sim ? `<li>Rutina «${esc(borrador.nombre)}»: ${sim.dias.length} días, ${esc(SISTEMA[sim.sistema])}.</li>` : '<li>Sin rutina: el cliente conserva la suya.</li>',
     t ? `<li>Temporada: ${t.bloques.map(x => `${esc(TE.NOMBRE[x.tipo])} ${x.semanas} sem`).join(' → ')} (${TE.totalSemanas(t)} semanas).</li>` : '<li>Sin temporada.</li>',
+    datos ? `<li>Datos de partida (de su ficha): ${esc(datosTxt(datos))}. La app se los propone; el cliente puede cambiarlos.</li>` : '<li>Sin datos de partida: la app usará los que el cliente tenga en su móvil.</li>',
   ];
   return `<h2 id="modalTitulo">Emitir plan para ${esc(ctx.E.espacio.nombre)}</h2>
     <ul class="lista-plana ent-lleva">${lleva.join('')}</ul>
@@ -513,7 +553,7 @@ function confirmarEmision(ctx){
       <input id="entCaducaFecha" type="date" min="${manana}" value="${TE.caducidadDefecto(ctx.hoy || new Date())}" aria-label="Importable hasta">
       <p class="muted" style="font-size:12.5px;margin:4px 0 0">Pasada esa fecha la app rechaza el archivo y tendrías que emitirle otro. Por defecto, ${TE.CADUCIDAD_DIAS} días desde hoy (${esc(F().dia(hoy))}).</p></div>
     ${ctx.errorEmision ? `<div class="alerta rojo" role="alert"><span class="tag">Revisa</span><span>${esc(ctx.errorEmision)}</span></div>` : ''}
-    <p class="muted" style="font-size:12.5px">El archivo solo lleva tu nombre, el del cliente, la nota${sim ? ', la rutina' : ''}${t ? ', la temporada' : ''} y la fecha límite. Su ficha y sus datos no salen de este navegador.</p>
+    <p class="muted" style="font-size:12.5px">El archivo solo lleva tu nombre, el del cliente, la nota${sim ? ', la rutina' : ''}${t ? ', la temporada' : ''}${datos ? ', sus datos de partida' : ''} y la fecha límite. Su historial, sus notas y el resto de su ficha no salen de este navegador.</p>
     <div class="mod-acciones"><button class="btn sec" type="button" data-accion="cerrar">Cancelar</button>
       <button class="btn pri" type="button" data-ent-accion="emitir-confirmar" id="entEmitirConfirmar">Firmar y descargar</button></div>`;
 }

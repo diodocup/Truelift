@@ -301,11 +301,31 @@ Cada cliente es un **espacio** de este navegador.
   app, **Ajustes → Copia de seguridad → Exportar copia**) e impórtala. Además
   de preparar su plan, verás su historial en el resto de secciones.
 - **Cliente nuevo sin copia**: una ficha manual (nombre, sexo, peso, altura,
-  % graso estimado, experiencia, días disponibles y notas). Solo la ves tú:
-  sirve para preparar el plan y proyectar la temporada. Del cliente, el
-  archivo solo lleva su nombre.
+  % graso estimado, experiencia, días disponibles y notas).
 - En la ficha del cliente: **Importar su copia** / **Actualizar con una copia
-  nueva**, **Rellenar ficha** / **Editar ficha** y **Borrar cliente**.
+  nueva**, **Rellenar ficha** / **Editar ficha** y **Borrar cliente**. Un
+  cliente con copia también puede tener ficha.
+
+**La ficha es su punto de partida** (desde el 11/11/2026):
+
+- Lo que anotes en ella **manda sobre su copia** al proyectar la temporada; lo
+  que no anotes sale de la copia. Junto a los datos se ve de dónde sale cada
+  uno («(ficha)»).
+- El **sexo, el peso, la altura y el % graso** de la ficha **viajan en el
+  plan** como datos de partida. En la app: en la bienvenida rellenan «Sobre
+  ti»; desde Rutina, con la nutrición sin activar, pasan a ser su sexo, su
+  peso y su altura (la vista previa se lo dice antes de aplicar); y la altura
+  y el % graso le llegan puestos en el alta de nutrición. Siempre los puede
+  cambiar. Con la nutrición ya en marcha mandan sus pesajes y mediciones y no
+  se toca nada.
+- La experiencia, los días disponibles y las notas **solo los ves tú**.
+- Solo admite lo que la app admite a mano: peso de 40 a 150 kg, altura de
+  130 a 220 cm y % graso de 3 a 60. Un valor fuera de rango no se guarda: se
+  dice cuál.
+- Un plan con datos de partida necesita una versión de la app que ya los
+  entienda (la primera que se publique después del 11/11/2026); una anterior
+  dice «Este plan necesita una versión más reciente de la app». Sin datos en
+  la ficha, el plan lo lee cualquier versión.
 
 Como todo el escritorio, esto vive en el navegador: no es una copia de
 seguridad y no se envía a ningún servidor.
@@ -348,11 +368,32 @@ la temporada que tiene en la app** (lo que le queda de ella) o **Partir de la
 del último plan emitido**. Es una lista ordenada de bloques —Definición,
 Volumen o Normocalórica—, cada uno con sus semanas y su ritmo; **+ Bloque**
 hasta el máximo que admite la app. Dos bloques seguidos del mismo tipo se
-marcan en rojo e impiden emitir. Con los datos de su copia (o de su ficha) se
-proyecta la temporada y se avisa cuando la app vaya a ajustar un ritmo o
-falten datos. La app ancla la temporada al día en que el cliente la aplica y
-ajusta cada ritmo a sus datos reales de ese día: las fechas que ves aquí
-suponen que la aplica hoy. **Quitar la temporada del plan** la retira.
+marcan en rojo e impiden emitir. Si escribes más semanas de las que caben en
+la temporada, el bloque se queda en las que caben y se dice.
+
+Con los datos de su ficha (y, lo que falte, de su copia) se proyecta la
+temporada **como en el planificador de la app**:
+
+- una **línea de tiempo** con un tramo por bloque, del color de su tipo
+  (definición en azul, volumen en lima, normocalórica en gris), su inicial y
+  el borde de su semáforo (verde, ámbar o rojo, como en la app);
+- las gráficas del **peso** y de la **masa magra y la masa grasa** a lo largo
+  de la temporada, con una raya en el comienzo de cada bloque.
+
+**Avisos de la temporada**: uno por cada cosa que la app no vería en verde, de
+modo que todo tramo ámbar o rojo de la línea de tiempo tiene su explicación.
+«Revisa» corresponde al rojo de la app y «Nota», al ámbar:
+
+- **Duración**: si el bloque es algo o muy corto, o algo o muy largo, y lo
+  habitual para su tipo (lo mismo que enseña el semáforo de la app).
+- **Ritmo**: si la app lo bajará o lo subirá al aplicarlo, o si con los datos
+  del cliente lo marca en ámbar o en rojo.
+- **Final del bloque**: si la proyección acaba por debajo de un peso razonable
+  o con un % graso alto (volumen) o muy bajo (definición).
+
+La app ancla la temporada al día en que el cliente la aplica y ajusta cada
+ritmo a sus datos reales de ese día: las fechas que ves aquí suponen que la
+aplica hoy. **Quitar la temporada del plan** la retira.
 
 ### Emitir y enviar
 
@@ -360,6 +401,8 @@ suponen que la aplica hoy. **Quitar la temporada del plan** la retira.
    recuerda), una nota opcional para él y la **fecha límite para importarlo**
    (por defecto a 90 días; se puede cambiar o dejar **Sin límite**). Pasada
    esa fecha la app rechaza el archivo y tendrás que emitirle otro.
+   La ventana de emitir resume qué lleva el plan, también los datos de
+   partida de su ficha.
 2. **Firmar y descargar**: se firma con tu clave, se comprueba la firma y se
    descarga `plan_truelift_<cliente>_<AAAA-MM-DD>.json`. Si la comprobación
    fallara, no se descarga nada.
@@ -387,7 +430,7 @@ Si la app no acepta el archivo, el mensaje dice por qué:
 |---|---|---|
 | «Este archivo no viene de un entrenador de TrueLift o se ha modificado.» | El archivo ha cambiado por el camino, o la app aún no conoce tu clave | Reenvía el archivo descargado, sin abrirlo ni copiar su texto. Si persiste, que actualice la app y avisa a TrueLift |
 | «Este plan ha caducado…» | Pasó la fecha límite | Emite otro |
-| «Este plan necesita una versión más reciente de la app…» | Su app es antigua | Que la actualice |
+| «Este plan necesita una versión más reciente de la app…» | Su app es antigua (por ejemplo, el plan lleva datos de partida y su versión aún no los entiende) | Que la actualice |
 | «Esto es una copia de seguridad, no un plan…» / «Este archivo no es un plan…» | Ha elegido otro archivo | Que elija el `plan_truelift_….json` |
 | «El plan está incompleto o trae datos que la app no admite…» | No debería pasar con un archivo emitido aquí | Emite otro y avisa a TrueLift |
 | «El archivo es demasiado grande…» | No es un plan | Que elija el archivo correcto |

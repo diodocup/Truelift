@@ -1023,3 +1023,35 @@ cambios de comportamiento en el escritorio.
   del modo entrenador siguen fuera.
 
 Verificación en `VALIDACION.md` («Plan de entrenador — validación final»).
+
+## Plan de entrenador — ficha como punto de partida, gráfica y avisos de la temporada (11/11/2026)
+
+Peticiones de la persona responsable tras probar el modo entrenador. Cambia el
+contrato (v2) en los dos repositorios; el resto es del escritorio.
+
+- **Contrato v2** (`CONTRATO_PLAN_ENTRENADOR.md`, idéntico en App-PRO): la
+  carga puede llevar `cliente.datos` (sexo, peso, altura y % graso, con los
+  rangos que la app admite a mano). `paquete.js` emite la versión mínima: v1
+  sin datos (la lee cualquier app) y v2 con ellos (una app antigua dice
+  «actualiza la app»). Vectores dorados: `v06_datos_cliente` y los inválidos
+  `i23`–`i26`; `i06` pasa a `v: 3`. Prueba cruzada con el verificador Dart
+  ampliada a un plan v2. Esto sustituye a §7.2 de `PLAN_ENTRENADOR.md` («la
+  ficha no viaja más allá del nombre»).
+- **Ficha**: manda sobre la copia en `datosCliente` (cada dato, por separado);
+  rangos de la app (`PlanificadorEntrenador.rangosFicha`) y aviso visible si
+  un valor se sale (`fueraDeRango`); `datosPaquete` es lo que viaja. La
+  ventana de emitir lo resume.
+- **Gráfica de la temporada** (`graficaTemporada` en `entrenador/vista.js`):
+  línea de tiempo como `LineaTiempoPlan` de la app (color por tipo, inicial y
+  borde del semáforo del bloque, `analizar` → `bloques[].color`) y las
+  gráficas de peso y de masa magra y grasa con `NutricionEsc.curva`, la misma
+  curva diaria que `_DatosGraficaPlan`.
+- **Avisos**: uno por cada chequeo no verde del semáforo de la app (duración,
+  ritmo y % graso final), así que ningún tramo ámbar o rojo queda sin
+  explicar (antes, un volumen con ritmo ámbar salía «Sin avisos»). La
+  duración dice si es corta o larga y lo habitual, como
+  `planDuracionCorta`/`Larga` de la app. Las semanas que no caben ya no se
+  recortan en silencio: se dice en la tarjeta.
+
+Verificación: `node --test escritorio/tests/*.test.mjs` 224/224 (con Dart);
+`entrenador.e2e.mjs` 10/10; `integral.e2e.mjs` 13/13.
