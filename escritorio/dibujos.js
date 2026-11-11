@@ -7,6 +7,10 @@
      figura del sexo que declaraste (media/repdb/<hombre|mujer>/,
      copiadas de la app por tool/escritorio_repdb.py). Es una figura en
      color sobre fondo transparente: se pinta tal cual, sin invertir.
+   - si RepDB no lo tiene pero hay ficha propia de TrueLift, su
+     ilustración en el mismo estilo (media/propias/<hombre|mujer>/, mapa
+     PROPIA_FOTO de repdb.js, mismo script): el final del movimiento o,
+     si esa figura solo tiene el inicio, el inicio. También en color.
    - si no, el dibujo propio que ya publica el Coach en
      ../coach/media/ejercicios/ (copiados de la app por el generador de
      catalogo.js). Trazo blanco sobre negro.
@@ -28,6 +32,7 @@ const DibujosEsc = (() => {
 // imagenEjercicio() (catalogo.js) devuelve la ruta relativa al Coach.
 const BASE = '../coach/';
 const FOTOS = 'media/repdb/';
+const PROPIAS = 'media/propias/';
 
 /* Figura de las fotos de RepDB, como `personajeLaminas` en la app: la de
    mujer solo si la copia lo declara; sin declarar, la de hombre. */
@@ -54,12 +59,15 @@ function src(nombre){
   const n = canonico(limpio(nombre));
   const foto = typeof REPDB_FOTO === 'object' && Object.hasOwn(REPDB_FOTO, n) ? REPDB_FOTO[n] : null;
   if (foto) return `${FOTOS}${figura}/${foto}.webp`;
+  const propia = typeof PROPIA_FOTO === 'object' && Object.hasOwn(PROPIA_FOTO, n) ? PROPIA_FOTO[n] : null;
+  if (propia && propia[figura]) return `${PROPIAS}${figura}/${propia[figura]}.webp`;
   const r = typeof imagenEjercicio === 'function' ? imagenEjercicio(n) : null;
   return r ? BASE + r : null;
 }
 
-/** ¿Es [ruta] una foto de RepDB y no un dibujo de trazo blanco? */
-const esFoto = ruta => typeof ruta === 'string' && ruta.startsWith(FOTOS);
+/** ¿Es [ruta] una foto en color (RepDB o ilustración propia) y no un
+    dibujo de trazo blanco? */
+const esFoto = ruta => typeof ruta === 'string' && (ruta.startsWith(FOTOS) || ruta.startsWith(PROPIAS));
 const claseFoto = s => esFoto(s) ? ' ej-foto' : '';
 
 function hueco(n, clase){
