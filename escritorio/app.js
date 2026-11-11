@@ -25,7 +25,7 @@ const E = {
   // Nutrición: solo cómo se ven las imágenes del plan (posición, modo y
   // transparencia) y la reproducción en curso. Nada de esto toca datos.
   nut: { izq: null, der: null, modo: 'lado', opacidad: 50, rep: null },
-  st: { sub: null, ejercicio: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null, capasOcultas: new Set() },
+  st: { sub: null, ejercicio: null, diaEj: null, busca: '', verTodas: false, compA: null, compB: null, graf: null, periodos: null, informe: null, capasOcultas: new Set() },
   // Informe (fase 7): la selección del periodo se guarda por espacio; las
   // fotos elegidas viven solo en memoria y empiezan siempre vacías.
   inf: { conFotos: false, fotos: new Set(), error: null, borrador: null }, espacioInforme: null,
@@ -1014,7 +1014,7 @@ function pedirRenombrar(){
 /* Destino «seccion[:apartado]». La sección y el apartado viajan en el
    hash (#entrenamiento/ejercicios/Press%20banca) para que Atrás y Adelante
    del navegador funcionen y una recarga vuelva al mismo sitio. */
-function irA(destino, { foco = true, historial = true } = {}){
+function irA(destino, { foco = true, historial = true, dia } = {}){
   // Solo los dos primeros separadores parten: el nombre de un ejercicio
   // puede llevar «:» o «/».
   const m = String(destino || '').match(/^([^:/]*)(?:[:/]([^:/]*)(?:[:/](.*))?)?$/) || [];
@@ -1034,7 +1034,9 @@ function irA(destino, { foco = true, historial = true } = {}){
   E.st.sub = sub || null;
   const ejercicio = resto.length ? (() => { try { return decodeURIComponent(resto[0]); } catch (_) { return resto[0]; } })() : null;
   // Las sesiones elegidas para comparar son de un ejercicio concreto.
-  if (ejercicio !== E.st.ejercicio){ E.st.compA = null; E.st.compB = null; }
+  if (ejercicio !== E.st.ejercicio){ E.st.compA = null; E.st.compB = null; E.st.diaEj = null; }
+  // Día de la rutina elegido al llegar desde una fila de un día concreto.
+  if (dia !== undefined) E.st.diaEj = dia;
   E.st.ejercicio = ejercicio;
   if (historial){
     const h = '#' + [sec, sub, E.st.ejercicio && encodeURIComponent(E.st.ejercicio)].filter(Boolean).join('/');
@@ -1434,7 +1436,7 @@ function init(){
     const ej = ev.target.closest('[data-ejercicio]');
     if (ej){
       if (!$('#modal').classList.contains('oculto')) cerrarModal();
-      irA(`entrenamiento:ejercicios:${encodeURIComponent(ej.dataset.ejercicio)}`); return;
+      irA(`entrenamiento:ejercicios:${encodeURIComponent(ej.dataset.ejercicio)}`, { dia: ej.dataset.dia || null }); return;
     }
     const av = ev.target.closest('[data-accion-vista]');
     if (av && av.dataset.accionVista === 'periodos-defecto'){
@@ -1559,6 +1561,11 @@ function init(){
     // en el mismo selector.
     // Fechas de la gráfica del ejercicio: un campo vacío o a medio escribir
     // no repinta (el navegador deja value en '').
+    // Sesión de la rutina de la ficha (ejercicio repetido en varios días).
+    if (ev.target.id === 'ejDia'){
+      E.st.diaEj = ev.target.value || null;
+      render(); $('#ejDia')?.focus(); anunciar(E.st.diaEj ? `Ves solo las sesiones de ${E.st.diaEj}` : 'Ves todas las sesiones'); return;
+    }
     if (ev.target.id === 'grafDesde' || ev.target.id === 'grafHasta'){
       const id = ev.target.id, d = $('#grafDesde').value, h = $('#grafHasta').value;
       if (!d || !h) return;

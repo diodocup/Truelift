@@ -184,3 +184,14 @@ test('el informe no muta la copia original', () => {
   Informe.generar(M, { tipo: 'fechas', desde: '2026-06-01', hasta: '2026-07-02' });
   assert.equal(JSON.stringify(raw), antes);
 });
+
+test('progresión: un ejercicio en varios días se valora por día', () => {
+  const raw = copiaFase3();
+  raw.logs.filter(l => l.dia === 'Día C').forEach((l, i) =>
+    l.entradas.unshift({ ejercicio: 'Press banca con barra', kg: 60, reps: [10 + i, 10 + i, 10 + i], rir: [2, 2, 2], obs: '' }));
+  const M = M3(raw);
+  const I = Informe.generar(M, sept);
+  const press = I.progresion.ejercicios.filter(x => x.nombre === 'Press banca con barra');
+  assert.deepEqual(press.map(x => x.dia).sort(), ['Día A', 'Día C']);
+  assert.ok(press.every(x => x.puntos.every(p => p.dia === x.dia)));
+});

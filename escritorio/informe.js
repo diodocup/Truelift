@@ -108,10 +108,11 @@ function progresion(M, P){
     const hechas = ej.puntos.filter(p => p.hechas > 0 && dentro(p.fecha, P));
     if (!hechas.length) return;
     if (ej.porTiempo){ porTiempo.push({ nombre: ej.nombre, sesiones: new Set(hechas.map(p => p.sesion.indice)).size }); return; }
-    ejercicios.push(Analisis.evolucionEjercicio(M, ej, P.desde, P.hasta));
+    // Un ejercicio en varios días de la rutina se evalúa por día.
+    ejercicios.push(...Analisis.evolucionesEjercicio(M, ej, P.desde, P.hasta));
   });
   const orden = { baja: 0, sube: 1, sinCambios: 2, insuficiente: 3 };
-  ejercicios.sort((x, y) => orden[x.lectura] - orden[y.lectura] || y.n - x.n || x.nombre.localeCompare(y.nombre));
+  ejercicios.sort((x, y) => orden[x.lectura] - orden[y.lectura] || y.n - x.n || x.etiqueta.localeCompare(y.etiqueta));
   const marcas = [];
   M.ejercicios.forEach(ej => Analisis.marcas(ej).forEach(m => {
     if (m.anterior != null && dentro(m.p.fecha, P)) marcas.push({ nombre: ej.nombre, fecha: m.p.fecha, indice: m.p.sesion.indice,
@@ -217,7 +218,7 @@ function cambios(M, P, prog, fis){
       texto: ms.length === 1 ? `Nueva mejor marca estimada en ${nombre}: ${fmtNum(u.valor, 1)} kg (antes ${fmtNum(u.anterior, 1)} kg).`
         : `${ms.length} nuevas mejores marcas estimadas en ${nombre}; la última, ${fmtNum(u.valor, 1)} kg (antes del periodo, ${fmtNum(ms[0].anterior, 1)} kg).` }); });
   prog.firmes.forEach(x => c.push({ fecha: x.puntos[x.puntos.length - 1].fecha, tipo: `e1rm-${x.lectura}`, ejercicio: x.nombre,
-    texto: `1RM estimado ${MODALIDAD[x.lectura]} en ${x.nombre}: de ${fmtNum(x.inicio, 1)} a ${fmtNum(x.fin, 1)} kg en ${x.n} sesiones comparables.` }));
+    texto: `1RM estimado ${MODALIDAD[x.lectura]} en ${x.etiqueta}: de ${fmtNum(x.inicio, 1)} a ${fmtNum(x.fin, 1)} kg en ${x.n} sesiones comparables.` }));
   fis.fases.forEach(f => {
     const T = { DEFICIT: 'déficit', SURPLUS: 'superávit', MAINTENANCE: 'mantenimiento' }[f.tipo] || 'nutrición';
     if (f.inicio && dentro(f.inicio, P)) c.push({ fecha: soloDia(f.inicio), tipo: 'fase', texto: `Empieza una fase de ${T}.` });
@@ -249,8 +250,8 @@ function limitaciones(M, r, P, cob, k, prog, fis, vol, rec){
   }
   if (!k.completas) l.push('No hay ninguna semana completa (de lunes a domingo) dentro del periodo con datos: no se calculan medias semanales.');
   if (k.completas && !k.conocidas) l.push('No se puede saber qué rutina tenías en estas semanas, así que no se calculan días previstos.');
-  if (prog.insuficientes.length) l.push(`Ejercicios sin sesiones comparables suficientes para describir su evolución: ${listaTxt(prog.insuficientes.map(x => x.nombre))}.`);
-  if (prog.orientativas.length) l.push(`Lectura solo orientativa (pocas sesiones comparables): ${listaTxt(prog.orientativas.map(x => x.nombre))}.`);
+  if (prog.insuficientes.length) l.push(`Ejercicios sin sesiones comparables suficientes para describir su evolución: ${listaTxt(prog.insuficientes.map(x => x.etiqueta))}.`);
+  if (prog.orientativas.length) l.push(`Lectura solo orientativa (pocas sesiones comparables): ${listaTxt(prog.orientativas.map(x => x.etiqueta))}.`);
   if (prog.ejercicios.some(x => x.ej.pesoCorporal)) l.push('En los ejercicios con tu peso corporal el 1RM estimado usa tu peso de perfil actual, también en sesiones antiguas.');
   if (prog.ejercicios.some(x => x.ej.pesoFijo)) l.push('En las máquinas con peso fijo el 1RM estimado suma el peso fijo que tienes guardado ahora, también en sesiones antiguas.');
   if (!fis.peso.n) l.push('No hay pesajes en el periodo.');
@@ -267,7 +268,7 @@ function limitaciones(M, r, P, cob, k, prog, fis, vol, rec){
 function revisar(M, r, P, k, prog, fis, rec){
   const x = [];
   const incluyeRef = +r.hasta >= +soloDia(M.ref) && +r.desde <= +soloDia(M.ref);
-  prog.firmes.filter(e => e.lectura === 'baja').forEach(e => x.push({ texto: `El 1RM estimado de ${e.nombre} baja en el periodo. Revisa sus sesiones y su estado de progresión.`,
+  prog.firmes.filter(e => e.lectura === 'baja').forEach(e => x.push({ texto: `El 1RM estimado de ${e.etiqueta} baja en el periodo. Revisa sus sesiones y su estado de progresión.`,
     destino: `entrenamiento:ejercicios:${encodeURIComponent(e.nombre)}` }));
   if (incluyeRef){
     const agot = [];

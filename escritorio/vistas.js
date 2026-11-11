@@ -385,10 +385,13 @@ function tarjetaComparables(M){
   const desdeLargo = +soloDia(M.ref) - 83 * 86400000;
   const filas = lista.map(x => {
     const [cl, txt] = LECTURA[x.lectura];
-    const serie = x.ej.puntos.filter(p => p.e1rmMarca != null && +p.fecha >= desdeLargo).map(p => p.e1rmMarca);
-    const sub = [x.ej.lineas[0] && x.ej.lineas[0].dia, x.ej.grupo].filter(Boolean).map(esc).join(' · ');
-    return [DibujosEsc.celda(x.nombre, `<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}">${esc(x.nombre)}</button>${sub ? `<span class="ej-sub">${sub}</span>` : ''}`, { extra: ` data-ejercicio="${esc(x.nombre)}"` }),
-      GraficasEsc.linea(serie, { etiqueta: serie.length > 1 ? `1RM estimado de ${x.nombre} en las últimas semanas: de ${F.kg(serie[0])} a ${F.kg(serie[serie.length - 1])}` : '' }),
+    // Un ejercicio en varios días de la rutina sale en una fila por día, con
+    // la mini línea solo de ese día: mezclados, salen dientes de sierra.
+    const serie = x.ej.puntos.filter(p => p.e1rmMarca != null && +p.fecha >= desdeLargo && (x.dia == null || p.dia === x.dia)).map(p => p.e1rmMarca);
+    const sub = [x.dia || (x.ej.lineas[0] && x.ej.lineas[0].dia), x.ej.grupo].filter(Boolean).map(esc).join(' · ');
+    const conDia = x.dia ? ` data-dia="${esc(x.dia)}"` : '';
+    return [DibujosEsc.celda(x.nombre, `<button type="button" class="enlace" data-ejercicio="${esc(x.nombre)}"${conDia}>${esc(x.nombre)}</button>${sub ? `<span class="ej-sub">${sub}</span>` : ''}`, { extra: ` data-ejercicio="${esc(x.nombre)}"${conDia}` }),
+      GraficasEsc.linea(serie, { etiqueta: serie.length > 1 ? `1RM estimado de ${x.etiqueta} en las últimas semanas: de ${F.kg(serie[0])} a ${F.kg(serie[serie.length - 1])}` : '' }),
       `${x.inicio != null && x.fin != null ? `<span class="mono"><span class="muted nowrap">${F.num(x.inicio, 1)} →</span> <b class="nowrap">${F.kg(x.fin)}</b></span>` : '—'}
         <span class="ej-sub">${x.n} de ${F.plural(x.enPeriodo, 'sesión comparable', 'sesiones comparables')}</span>`,
       x.deltaPct != null ? `<b class="mono nowrap ${x.deltaPct > 0 ? 'sube' : x.deltaPct < 0 ? 'baja' : ''}">${F.signo(x.deltaPct)}</b>` : '—',
@@ -396,7 +399,7 @@ function tarjetaComparables(M){
   });
   return tarjeta('Evolución de tus ejercicios', `${tabla(['Ejercicio', 'Evolución', '1RM estimado', 'Cambio', 'Lectura'], filas, { caption: 'Evolución del 1RM estimado en las últimas semanas', clase: 'tabla-ejercicios' })}
     <div class="fila-botones">${ir('entrenamiento:comparar', 'Comparar dos periodos')}</div>
-    ${ayuda('Compara el 1RM estimado del principio y del final de tus últimas semanas, solo con las sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias ni cambios de un día) y con la misma modalidad de series. «Sin cambios claros» describe una diferencia pequeña; no significa que estés estancado. Con pocas sesiones comparables la lectura es orientativa y no se usa como conclusión. El 1RM es una estimación a partir de tus series.')}`);
+    ${ayuda('Compara el 1RM estimado del principio y del final de tus últimas semanas, solo con las sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias ni cambios de un día) y con la misma modalidad de series. Si un ejercicio está en varios días de tu rutina, cada día se valora por separado, porque suele llevar su propia carga. «Sin cambios claros» describe una diferencia pequeña; no significa que estés estancado. Con pocas sesiones comparables la lectura es orientativa y no se usa como conclusión. El 1RM es una estimación a partir de tus series.')}`);
 }
 
 /* Progreso de la fase frente a lo pactado, como «Cómo vas» de la app
@@ -785,9 +788,13 @@ function fichaEjercicio(M, nombre, st = {}){
     ${DibujosEsc.src(nombre) ? DibujosEsc.grande(nombre, { clase: 'ej-dibujo-cab' }) : ''}</div></section>`);
 
   // --- evolución: gráfica con marcas de contexto y tabla por serie ---
+  // Un ejercicio en varios días de la rutina suele llevar una carga distinta
+  // cada día: se puede ver uno solo para no mezclarlas (como en la app).
+  const diasEj = Analisis.diasEjercicio(ej);
+  const dia = diasEj.length > 1 && diasEj.includes(st.diaEj) ? st.diaEj : null;
   const R = rangoGrafica(M, ej, st.graf);
-  const ptsG = pts.filter(p => p.fecha >= R.desde && p.fecha < R.hastaExcl);
-  const selRango = selectorRango(R);
+  const ptsG = pts.filter(p => p.fecha >= R.desde && p.fecha < R.hastaExcl && (dia == null || p.dia === dia));
+  const selRango = (diasEj.length > 1 ? selectorDiaEjercicio(diasEj, dia) : '') + selectorRango(R);
   const marcasCtx = [];
   ptsG.forEach(p => {
     if (p.sesion.descarga) marcasCtx.push({ x: p.fecha, tipo: 'Descarga', label: 'Descarga', color: TL.azul });
@@ -799,7 +806,7 @@ function fichaEjercicio(M, nombre, st = {}){
     marcasPunto(p)]);
   const cabTabla = ['Fecha', 'Sesión', `Series (${unidadCarga} × ${ej.porTiempo ? 'segundos' : 'reps'} @RIR)`, ...(ej.porTiempo ? [] : ['1RM est. (kg)']), 'Marcas'];
   const tablaHist = tabla(cabTabla, filas, { caption: `Historial de ${nombre} por serie`, clase: 'tabla-series' });
-  const avisoVacio = vacio(`No entrenaste este ejercicio entre el ${F.dia(R.desde)} y el ${F.dia(R.hasta)}.`);
+  const avisoVacio = vacio(`No entrenaste este ejercicio${dia ? ` en ${dia}` : ''} entre el ${F.dia(R.desde)} y el ${F.dia(R.hasta)}.`);
   if (!ptsG.length){
     out.push(tarjeta(ej.porTiempo ? 'Historial' : 'Evolución', selRango + avisoVacio));
   } else if (!ej.porTiempo){
@@ -821,7 +828,7 @@ function fichaEjercicio(M, nombre, st = {}){
   }
 
   if (!ej.porTiempo){
-    out.push(tarjetaEvolucionReciente(M, ej));
+    out.push(tarjetaEvolucionReciente(M, ej, dia));
     out.push(tarjetaMarcas(M, ej));
   }
   out.push(tarjetaCompararSesiones(M, ej, st));
@@ -884,17 +891,37 @@ function selectorRango(R){
       </div></div>`;
 }
 
-function tarjetaEvolucionReciente(M, ej){
+/* Elección de la sesión de la rutina cuando el ejercicio está en varias
+   (mismo selector «Sesión» que Progreso en la app). */
+function selectorDiaEjercicio(diasEj, dia){
+  const opciones = [`<option value=""${dia == null ? ' selected' : ''}>Todas las sesiones</option>`,
+    ...diasEj.map(d => `<option value="${esc(d)}"${d === dia ? ' selected' : ''}>${esc(d)}</option>`)].join('');
+  return `<div class="graf-dia"><div class="mod-fila"><label for="ejDia">Sesión</label><select id="ejDia">${opciones}</select></div>
+    <p class="muted" style="font-size:12.5px;margin:4px 0 0">${dia == null
+      ? 'Este ejercicio está en varias sesiones de tu rutina. Elige una para ver su evolución sin mezclar cargas.'
+      : `Ves solo las sesiones de ${esc(dia)}.`}</p></div>`;
+}
+
+/* Lectura de las últimas semanas. Con el ejercicio en varios días de la
+   rutina y «Todas las sesiones», una lectura por día: cada día lleva su
+   propia carga y su tendencia se valora por separado, igual que en Mi
+   resumen. dia = null para todas las sesiones. */
+function tarjetaEvolucionReciente(M, ej, dia = null){
   const hasta = soloDia(M.ref), desde = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate() - (Analisis.VENTANA_DIAS - 1));
-  const x = Analisis.evolucionEjercicio(M, ej, desde, hasta);
-  if (!x.enPeriodo) return tarjeta('Tus últimas semanas', vacio(`No entrenaste este ejercicio entre el ${F.dia(desde)} y el ${F.dia(hasta)}.`));
-  const [cl, txt] = LECTURA[x.lectura];
-  const exc = Object.entries(x.excluidos).map(([m, n]) => `${n} ${esc(Analisis.MOTIVO_TXT[m] || m)}`);
-  const filas = x.puntos.map(p => [fechaSesion(p), esc(p.dia), esc(Analisis.serieTxt(p.e, p.marcaSerie)), F.kg(p.e1rmMarca)]);
-  return tarjeta('Tus últimas semanas', `<p>${chip(cl, txt)} ${x.deltaPct != null ? `De ${F.kg(x.inicio)} a ${F.kg(x.fin)} (${F.signo(x.deltaPct)}) en ${F.plural(x.n, 'sesión comparable', 'sesiones comparables')}.` : `Hay ${F.plural(x.n, 'sesión comparable', 'sesiones comparables')}: hacen falta más para ver una evolución.`}</p>
+  const lista = dia ? [Analisis.evolucionEjercicio(M, ej, desde, hasta, dia)].filter(x => x.enPeriodo) : Analisis.evolucionesEjercicio(M, ej, desde, hasta);
+  if (!lista.length) return tarjeta('Tus últimas semanas', vacio(`No entrenaste este ejercicio${dia ? ` en ${esc(dia)}` : ''} entre el ${F.dia(desde)} y el ${F.dia(hasta)}.`));
+  const varios = lista.length > 1;
+  const bloque = x => {
+    const cab = varios ? `<p class="sub-h">${esc(x.dia)}</p>` : '';
+    const [cl, txt] = LECTURA[x.lectura];
+    const exc = Object.entries(x.excluidos).map(([m, n]) => `${n} ${esc(Analisis.MOTIVO_TXT[m] || m)}`);
+    const filas = x.puntos.map(p => [fechaSesion(p), esc(p.dia), esc(Analisis.serieTxt(p.e, p.marcaSerie)), F.kg(p.e1rmMarca)]);
+    return `${cab}<p>${chip(cl, txt)} ${x.deltaPct != null ? `De ${F.kg(x.inicio)} a ${F.kg(x.fin)} (${F.signo(x.deltaPct)}) en ${F.plural(x.n, 'sesión comparable', 'sesiones comparables')}.` : `Hay ${F.plural(x.n, 'sesión comparable', 'sesiones comparables')}: hacen falta más para ver una evolución.`}</p>
     <p class="muted" style="font-size:12.5px">Periodo: ${F.dia(desde)} – ${F.dia(hasta)}. Modalidad comparada: ${esc(Analisis.MODALIDAD_TXT[x.config] || '—')}.${exc.length ? ` No entran: ${exc.join(', ')}.` : ''}${x.cambioRutina ? ' Incluye sesiones de rutinas distintas.' : ''}${x.seriesDistintas ? ' El número de series cambia entre sesiones; el 1RM estimado usa solo la mejor serie.' : ''}${x.lectura !== 'insuficiente' && !x.firme ? ' Con estas pocas sesiones la lectura es orientativa y no aparece en Mi resumen.' : ''}</p>
-    ${x.puntos.length ? tabla(['Fecha', 'Sesión', 'Serie que da la estimación', '1RM estimado'], filas, { caption: 'Sesiones comparables recientes' }) : ''}
-    ${ayuda('Es la misma lectura que la tabla «Evolución de tus ejercicios» de Mi resumen: compara el principio y el final de tus últimas semanas usando solo las sesiones normales del ejercicio y con la misma modalidad de series. «Sin cambios claros» no significa estancamiento: el estado de progresión de arriba es el que usa la app.')}`);
+    ${x.puntos.length ? tabla(['Fecha', 'Sesión', 'Serie que da la estimación', '1RM estimado'], filas, { caption: `Sesiones comparables recientes${x.dia ? ` de ${x.dia}` : ''}` }) : ''}`;
+  };
+  return tarjeta('Tus últimas semanas', `${lista.map(bloque).join('')}
+    ${ayuda(`Es la misma lectura que la tabla «Evolución de tus ejercicios» de Mi resumen: compara el principio y el final de tus últimas semanas usando solo las sesiones normales del ejercicio y con la misma modalidad de series.${varios ? ' Como el ejercicio está en varios días de tu rutina, cada día se valora por separado.' : ''} «Sin cambios claros» no significa estancamiento: el estado de progresión de arriba es el que usa la app.`)}`);
 }
 
 function tarjetaMarcas(M, ej){
