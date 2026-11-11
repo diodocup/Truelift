@@ -89,6 +89,9 @@ test('planes recién emitidos: la app los acepta y se queda exactamente con lo e
     modalidades: P.construirCarga({ entrenador: 'Ana', cliente: 'José María Núñez', emitido: HOY,
       rutina: PL.simular(conDesconocido, mod, { nombre: 'Bloque fuerza' }).paquete, temporada: TE.paquete(temporada) }),
     soloTemporada: P.construirCarga({ entrenador: 'Ana', cliente: 'Luis', emitido: HOY, temporada: TE.paquete(temporada) }),
+    // v2: con los datos de partida de la ficha del cliente.
+    conDatos: P.construirCarga({ entrenador: 'Ana', emitido: HOY, temporada: TE.paquete(temporada),
+      cliente: { nombre: 'Marta', datos: PL.datosPaquete({ sexo: 'mujer', pesoKg: '63,5', alturaCm: 166, grasaPct: 24.5, notas: 'no viaja' }) } }),
   };
   const dir = tmp();
   const rutas = {};
@@ -114,12 +117,17 @@ test('planes recién emitidos: la app los acepta y se queda exactamente con lo e
       assert.equal(p.rutina, null, n);
     }
     assert.deepEqual(p.temporada, c.temporada ? plain(c.temporada.bloques) : null, n);
+    assert.deepEqual(p.datosCliente, c.cliente.datos ?? null, n);
   }
   // El de modalidades lleva de verdad cada modalidad y el ejercicio que la app no conoce.
   const filas = cargas.modalidades.rutina.dias.flatMap(d => d.ejercicios);
   for (const m of ['topBack', 'dropSet', 'restPause']) assert.ok(filas.some(e => e[m] === true), m);
   assert.ok(filas.some(e => e.superserie > 0), 'superserie');
   assert.deepEqual(cargas.modalidades.rutina.ejercicios.map(e => e.nombre).sort(), ['Plancha lastrada', 'Remo inventado']);
+  // El de los datos sale como v2 y los demás como v1.
+  assert.deepEqual(Object.fromEntries(Object.keys(cargas).map(n => [n, JSON.parse(fs.readFileSync(rutas[n], 'utf8')).v])),
+    { ejemplo: 1, modalidades: 1, soloTemporada: 1, conDatos: 2 });
+  assert.deepEqual(cargas.conDatos.cliente.datos, { sexo: 'mujer', pesoKg: 63.5, alturaCm: 166, grasaPct: 24.5 });
 });
 
 test('planes recién emitidos: alterados, de otra clave o caducados, la app los rechaza', { skip: omitir }, async () => {

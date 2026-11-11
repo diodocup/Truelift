@@ -1,4 +1,4 @@
-# Contrato del plan de entrenador (v1)
+# Contrato del plan de entrenador (v1 y v2)
 
 Este archivo es **idéntico** en la raíz de `diodocup/App-PRO` y en
 `escritorio/` de `diodocup/Truelift`. Cualquier cambio se hace en los dos a la
@@ -36,7 +36,11 @@ Implementaciones:
 ```
 
 - `formato`: siempre `truelift-plan-entrenador`.
-- `v`: entero. Esta versión es la 1.
+- `v`: entero, `1` o `2`. La v2 (11/11/2026) solo añade los datos de partida
+  del cliente (`cliente.datos`, §3.1). Un plan se emite con la versión más
+  baja que lo describe: sin datos del cliente, `1`, que leen todas las
+  versiones de la app; con ellos, `2`, y una app que solo lee la v1 dice
+  «actualiza la app» en lugar de rechazar el contenido.
 - `clave`: identificador de la clave pública que firmó. Son los 8 primeros
   bytes del SHA-256 de la clave pública en crudo (32 bytes), en hexadecimal en
   minúsculas (16 caracteres).
@@ -49,7 +53,7 @@ Implementaciones:
   ```
 
   donde `bytesDeCarga` son exactamente los bytes que salen de decodificar
-  `carga`. **No se canoniza JSON**: se verifica sobre los bytes recibidos y
+  `carga`. El prefijo es el mismo en la v1 y en la v2. **No se canoniza JSON**: se verifica sobre los bytes recibidos y
   solo después se analiza la carga. En base64url sin relleno (86 caracteres).
 
 ## 3. Carga
@@ -60,7 +64,8 @@ Implementaciones:
   "emitido": "2026-11-10",
   "caduca": "2027-02-08",
   "entrenador": { "nombre": "Ana Pérez" },
-  "cliente": { "nombre": "Luis Gómez" },
+  "cliente": { "nombre": "Luis Gómez",
+               "datos": { "sexo": "hombre", "pesoKg": 82.5, "alturaCm": 178, "grasaPct": 18 } },
   "nota": "Texto libre del entrenador para el cliente.",
   "rutina": {
     "nombre": "Torso / Pierna",
@@ -108,10 +113,23 @@ cuentan como puntos de código Unicode.
 | `emitido` | fecha | sí | `AAAA-MM-DD`, fecha real. |
 | `caduca` | fecha | no | `AAAA-MM-DD`. Si viene, el paquete se puede importar **hasta ese día inclusive**. |
 | `entrenador` | objeto | sí | `{ "nombre": texto corto }` |
-| `cliente` | objeto | sí | `{ "nombre": texto corto }` |
+| `cliente` | objeto | sí | `{ "nombre": texto corto, "datos": objeto }`. `datos` es opcional y solo existe en la v2 (en un sobre v1 invalida el paquete). |
 | `nota` | texto | no | 0 a 2000 caracteres. |
 | `rutina` | objeto | no | §3.2 |
 | `temporada` | objeto | no | §3.3 |
+
+`cliente.datos` (v2): datos de partida del cliente que el entrenador anotó
+en su ficha. Al menos una clave; todas opcionales:
+
+| Clave | Tipo | Regla |
+|---|---|---|
+| `sexo` | texto | `hombre` o `mujer`. |
+| `pesoKg` | número | 40 a 150 (el rango de pesaje de la app). |
+| `alturaCm` | número | 130 a 220 (el del selector de altura de la app). |
+| `grasaPct` | número | 3 a 60 (`ConstantesNutricion.grasaRegistroMinPct`–`Max`). |
+
+Son un punto de partida, no un registro: la app los propone y el usuario los
+puede cambiar (§6).
 
 Debe venir `rutina`, `temporada` o las dos. Un plan inicial y una revisión
 posterior tienen exactamente la misma forma.
@@ -194,11 +212,11 @@ Al primer fallo se para y se devuelve el error. Nada se guarda ni se aplica.
 | 2 | `formato` es `truelift-plan-entrenador`. Si no lo es y el objeto no trae `formato` pero sí `logs` o `sexo` | `esUnaCopia` |
 | 2 | En otro caso de `formato` ajeno o ausente | `noEsUnPlan` |
 | 3 | `v` es un entero ≥ 1 | `noEsUnPlan` |
-| 3 | `v` mayor que la versión soportada (1) | `versionNoSoportada` |
+| 3 | `v` mayor que la versión soportada (2) | `versionNoSoportada` |
 | 4 | `clave` es texto y está entre las claves aceptadas | `claveDesconocida` |
 | 4 | `carga` y `firma` son texto en base64url sin relleno, la firma son 64 bytes y verifica | `firmaInvalida` |
 | 5 | La carga es UTF-8 y JSON válidos, y cumple el esquema de §3 | `contenidoInvalido` |
-| 6 | Límites de §3 (días, filas, series, longitudes, bloques, horizonte, tipos consecutivos, signo de la tasa) | `contenidoInvalido` |
+| 6 | Límites de §3 (días, filas, series, longitudes, bloques, horizonte, tipos consecutivos, signo de la tasa, rangos de `cliente.datos`) | `contenidoInvalido` |
 | 7 | `caduca`, si viene, es igual o posterior a hoy | `caducado` |
 
 `firmaInvalida` y `claveDesconocida` comparten texto de cara al usuario: «este
@@ -238,6 +256,12 @@ archivo no viene de un entrenador de TrueLift o se ha modificado».
 - `temporada` es una propuesta: la app la ancla a hoy, recorta cada ritmo a su
   tope conservando el signo y solo la escribe por
   `guardarPlanTemporadaNutricion` / `sincronizarFaseConPlanNutricion`.
+- `cliente.datos` es el punto de partida del cliente: en el onboarding rellena
+  «Sobre ti»; desde Rutina, con la nutrición sin activar, pasa a ser el sexo,
+  el peso y la altura de Ajustes (la vista previa lo dice antes de aplicar);
+  el % graso (y la altura) se proponen en el alta de nutrición. Con la
+  nutrición ya activa mandan los pesajes y mediciones del móvil y no se toca
+  nada. Siempre los puede cambiar el usuario.
 
 ## 7. Vectores dorados
 

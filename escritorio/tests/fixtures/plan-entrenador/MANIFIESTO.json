@@ -42,6 +42,12 @@
       "descripcion": "Revisión del plan v01 (otro id, otra rutina, con temporada)"
     },
     {
+      "archivo": "v06_datos_cliente.json",
+      "sha256": "b5e9ee7bf725bd8fbba13e5413648df8e51e264402b03959141414f6d331eabc",
+      "esperado": "valido",
+      "descripcion": "v2: rutina, temporada y datos de partida del cliente"
+    },
+    {
       "archivo": "i01_byte_alterado.json",
       "sha256": "aeb10c6f1e55df871c3966b986dd0c3b1d2edea2f5c98f03865eefc68572e46a",
       "esperado": "firmaInvalida",
@@ -72,8 +78,8 @@
       "descripcion": "Carga en base64 con relleno y caracteres ajenos"
     },
     {
-      "archivo": "i06_version_2.json",
-      "sha256": "00074392fa3fd7b1d2bfb15e2e182c456ea5e7d925c9173a132f3dac3c85fbc2",
+      "archivo": "i06_version_3.json",
+      "sha256": "1d85c802e661bf32a65b107ef67fb5946ba2d78d6daba1f2a0241ca09c9b4c1f",
       "esperado": "versionNoSoportada",
       "descripcion": "Versión del sobre mayor que la soportada"
     },
@@ -172,6 +178,30 @@
       "sha256": "93b6916bd859a27597fe2e4c2746affa3789aa55d8444d959bb5e04f07c0dee8",
       "esperado": "contenidoInvalido",
       "descripcion": "Ni rutina ni temporada"
+    },
+    {
+      "archivo": "i23_datos_en_v1.json",
+      "sha256": "47378670cabcdd66020e69f7314e0eb1775bbb6f2255154cb37928340d2a8f12",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Datos del cliente en un sobre v1"
+    },
+    {
+      "archivo": "i24_peso_texto.json",
+      "sha256": "30fb595d3ca9a06063dd2770f0f640a781c298d27906528c1a7fd6eabed6a2e4",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Peso del cliente como texto"
+    },
+    {
+      "archivo": "i25_altura_fuera_de_rango.json",
+      "sha256": "111d5b1b34ffb0387acd552f255a5d0aa42d64fd519d621874c170d6957135d6",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Altura del cliente fuera de lo que admite la app"
+    },
+    {
+      "archivo": "i26_datos_vacios.json",
+      "sha256": "221e34ac1ec3b2ec957b755996d62a6021b2dbd487d29f8333028ecf4a39e3b2",
+      "esperado": "contenidoInvalido",
+      "descripcion": "Datos del cliente sin ningún dato"
     }
   ]
 }

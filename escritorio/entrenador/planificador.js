@@ -607,13 +607,39 @@ const PlanificadorEntrenador = {
   // ---------------------------------------------------------------
 
   /* La ficha no viaja en el paquete (solo el nombre del cliente). */
+  /* Rangos de la ficha: los que la app admite a mano y los del contrato
+     (cliente.datos, v2), para que lo que viaja en el plan la app lo acepte. */
+  rangosFicha(){
+    const L = PaqueteEntrenador.LIMITES;
+    return { pesoKg: [L.pesoMinKg, L.pesoMaxKg, 'El peso', 'kg'], alturaCm: [L.alturaMinCm, L.alturaMaxCm, 'La altura', 'cm'],
+             grasaPct: [L.grasaMinPct, L.grasaMaxPct, 'El % graso', '%'] };
+  },
+  _numFicha(v){ return typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(',', '.')); },
+  /* Campos numéricos escritos pero fuera de rango: [{ campo, txt }]. */
+  fueraDeRango(f){
+    const o = f && typeof f === 'object' ? f : {};
+    return Object.entries(this.rangosFicha()).filter(([k]) => String(o[k] ?? '').trim() !== '').flatMap(([k, [a, b, nombre, u]]) => {
+      const n = this._numFicha(o[k]);
+      return isFinite(n) && n >= a && n <= b ? [] : [{ campo: k, txt: `${nombre} tiene que estar entre ${a} y ${b} ${u}.` }];
+    });
+  },
+  /* Lo que viaja en el plan (cliente.datos): sexo, peso, altura y % graso. */
+  datosPaquete(ficha){
+    if (!ficha) return null;
+    const f = this.leerFicha(ficha);
+    const d = {};
+    if (f.sexo) d.sexo = f.sexo;
+    for (const k of ['pesoKg', 'alturaCm', 'grasaPct']) if (f[k] != null) d[k] = f[k];
+    return Object.keys(d).length ? d : null;
+  },
   leerFicha(f){
     const o = f && typeof f === 'object' ? f : {};
-    const num = (v, a, b) => { const n = typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(',', '.')); return isFinite(n) && n >= a && n <= b ? Math.round(n * 10) / 10 : null; };
+    const R = this.rangosFicha();
+    const num = (v, [a, b]) => { const n = this._numFicha(v); return isFinite(n) && n >= a && n <= b ? Math.round(n * 10) / 10 : null; };
     const txt = (v, max) => String(v ?? '').trim().slice(0, max);
     return {
       sexo: ['hombre', 'mujer'].includes(o.sexo) ? o.sexo : '',
-      pesoKg: num(o.pesoKg, 25, 350), alturaCm: num(o.alturaCm, 100, 250), grasaPct: num(o.grasaPct, 3, 70),
+      pesoKg: num(o.pesoKg, R.pesoKg), alturaCm: num(o.alturaCm, R.alturaCm), grasaPct: num(o.grasaPct, R.grasaPct),
       experiencia: ['principiante', 'intermedio', 'avanzado'].includes(o.experiencia) ? o.experiencia : '',
       dias: (() => { const n = parseInt(o.dias, 10); return n >= 2 && n <= 7 ? n : null; })(),
       notas: txt(o.notas, 2000),

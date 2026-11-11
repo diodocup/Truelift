@@ -25,7 +25,7 @@ const metaActivo = id => `entBorradorActivo:${id}`;
 let A = null;            // API de app.js
 const S = {
   listo: false, soportado: null, clave: null,
-  error: null, errorDesbloqueo: null, desbloqueando: false, errorEmision: null,
+  error: null, errorDesbloqueo: null, desbloqueando: false, errorEmision: null, notaTemporada: null,
   espacioId: null, registros: [], activoId: null, pilas: new Map(), foco: null, otros: [],
 };
 const ahoraISO = () => new Date().toISOString();
@@ -88,7 +88,7 @@ function ctx(){
            emitidos: emitidos(), pila: { deshacer: p.deshacer.length, rehacer: p.rehacer.length }, error: S.error,
            nombreEntrenador: S.clave?.nombre || '', errorEmision: S.errorEmision, hoy, datos,
            temporada: b && b.temporada ? TE.analizar(b.temporada, { datos, hoy }) : null,
-           fechaCopia: fechaCopia() };
+           fechaCopia: fechaCopia(), notaTemporada: S.notaTemporada };
 }
 /* Fecha de la copia del cliente: la del nombre del archivo o la del último
    registro, la más reciente (la copia no trae su fecha de exportación). */
@@ -159,7 +159,22 @@ async function editarTemporada(op, foco, msg = null){
   const b = borradorActivo();
   if (!b) return;
   const t = TE.editar(b.temporada, op);
-  if (t) await cambiarContenido({ temporada: t }, foco, msg);
+  if (!t){
+    // Un valor que no es un número no cambia nada: el campo vuelve a lo guardado.
+    if (op.tipo === 'semanas' || op.tipo === 'ritmo'){ A.render(); A.anunciar(op.tipo === 'semanas' ? 'Escribe un número de semanas' : 'Escribe un ritmo'); }
+    return;
+  }
+  // Las semanas que no caben se recortan: se dice a la vista, junto a los
+  // bloques, no se hace a escondidas. Cualquier otro cambio la retira.
+  S.notaTemporada = null;
+  if (op.tipo === 'semanas'){
+    const pedidas = Math.round(parseFloat(String(op.valor).replace(',', '.')));
+    const quedan = t.bloques[op.i].semanas;
+    if (pedidas > quedan) S.notaTemporada = `Bloque ${op.i + 1}: la temporada no puede pasar de ${P.LIMITES.horizonteMaxSemanas} semanas en total, así que se queda en ${quedan}.`;
+    else if (pedidas < quedan) S.notaTemporada = `Bloque ${op.i + 1}: un bloque dura al menos una semana.`;
+    if (S.notaTemporada && !msg) msg = S.notaTemporada;
+  }
+  await cambiarContenido({ temporada: t }, foco, msg);
 }
 
 const crear = (b, msg) => guardar({ put: [b], activo: b.id, foco: 'entEmitir', msg });
@@ -228,13 +243,22 @@ async function salir(){
 // ---------- clientes ----------
 function leerFormFicha(){
   const v = id => $id(id)?.value ?? '';
-  return { nombre: v('entFNombre').trim().slice(0, 60),
-    ficha: PL.leerFicha({ sexo: v('entFSexo'), pesoKg: v('entFPeso'), alturaCm: v('entFAltura'), grasaPct: v('entFGrasa'),
-                          experiencia: v('entFExp'), dias: v('entFDias'), notas: v('entFNotas') }) };
+  const cruda = { sexo: v('entFSexo'), pesoKg: v('entFPeso'), alturaCm: v('entFAltura'), grasaPct: v('entFGrasa'),
+                  experiencia: v('entFExp'), dias: v('entFDias'), notas: v('entFNotas') };
+  return { nombre: v('entFNombre').trim().slice(0, 60), ficha: PL.leerFicha(cruda), fuera: PL.fueraDeRango(cruda) };
 }
+const ID_CAMPO_FICHA = { pesoKg: 'entFPeso', alturaCm: 'entFAltura', grasaPct: 'entFGrasa' };
 async function guardarFicha(nuevo){
-  const { nombre, ficha } = leerFormFicha();
+  const { nombre, ficha, fuera } = leerFormFicha();
   if (!nombre){ $id('entFNombre')?.focus(); A.anunciar('Escribe el nombre del cliente'); return; }
+  // Un valor fuera de lo que la app admite no se guarda en silencio como vacío.
+  const caja = $id('entFichaError');
+  if (fuera.length){
+    if (caja){ caja.hidden = false; caja.querySelector('span:last-child').textContent = fuera.map(x => x.txt).join(' '); }
+    $id(ID_CAMPO_FICHA[fuera[0].campo])?.focus();
+    A.anunciar(fuera.map(x => x.txt).join(' '));
+    return;
+  }
   const esp = nuevo
     ? { id: uuid(), nombre, creado: ahoraISO(), instantaneaId: null, instantaneaAnteriorId: null, ficha }
     : { ...A.E.espacio, nombre, ficha };
@@ -280,9 +304,11 @@ async function emitir(){
     return;
   }
   const cliente = [...String(A.E.espacio.nombre).trim()].slice(0, L.textoMax).join('') || 'Cliente';
+  // Datos de partida del cliente (contrato v2): los de su ficha.
+  const datos = PL.datosPaquete(A.E.espacio.ficha);
   const sim = b.incluirRutina ? PL.simular(b.rutina, A.E.raw, { nombre: b.nombre }) : null;
   const temporada = TE.paquete(b.temporada);
-  const carga = P.construirCarga({ entrenador: nombre, cliente, nota: [...nota].slice(0, L.notaMax).join(''),
+  const carga = P.construirCarga({ entrenador: nombre, cliente: { nombre: cliente, datos }, nota: [...nota].slice(0, L.notaMax).join(''),
     caduca: caduca || undefined, rutina: sim ? sim.paquete : undefined, temporada: temporada || undefined });
   let r;
   try { r = await P.emitir(carga, { clavePrivada: S.clave.privada, idClave: S.clave.id, clavePublica: S.clave.publica }); }
@@ -294,7 +320,7 @@ async function emitir(){
   const registro = { id: carga.id, tipo: 'emitido', espacioId: A.E.espacio.id, fecha: ahoraISO(), emitido: carga.emitido,
     caduca: carga.caduca || null,
     archivo: r.nombreArchivo, sha256: r.sha256, borradorId: b.id, borradorNombre: b.nombre, entrenador: nombre, cliente,
-    conNota: !!carga.nota,
+    conNota: !!carga.nota, datos: carga.cliente.datos || null,
     rutina: sim ? { sistema: sim.sistema, dias: sim.dias.length, firma: PL.firma(sim.normal) } : null,
     temporada: temporada ? { bloques: temporada.bloques.map(x => ({ ...x })), semanas: TE.totalSemanas(temporada) } : null };
   A.cerrarModal();

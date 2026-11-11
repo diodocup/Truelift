@@ -67,3 +67,23 @@
 .ent-lleva{margin:0 0 8px}
 .ent-caducidad input[type="date"]{max-width:220px}
 .ent-caducidad input[type="date"]:disabled{opacity:.5}
+/* Línea de tiempo de la temporada (LineaTiempoPlan de la app): relleno por
+   tipo al 25 %, inicial del tipo y borde del semáforo del bloque. */
+.ent-linea-tiempo{display:flex;gap:2px;height:34px;margin:14px 0 6px}
+.ent-lt-seg{min-width:0;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1.5px solid transparent;overflow:hidden}
+.ent-lt-seg b{font:700 12px var(--mono)}
+.ent-lt-seg.tipo-bulk{background:color-mix(in srgb,var(--lima) 25%,transparent)}
+.ent-lt-seg.tipo-bulk b{color:var(--lima)}
+.ent-lt-seg.tipo-cut{background:color-mix(in srgb,var(--azul) 25%,transparent)}
+.ent-lt-seg.tipo-cut b{color:var(--azul)}
+.ent-lt-seg.tipo-bridge{background:color-mix(in srgb,var(--txt3) 25%,transparent)}
+.ent-lt-seg.tipo-bridge b{color:var(--txt2)}
+.ent-lt-seg.borde-verde{border-color:color-mix(in srgb,var(--lima) 55%,transparent)}
+.ent-lt-seg.borde-ambar{border-color:var(--ambar)}
+.ent-lt-seg.borde-rojo{border-color:var(--rojo)}
+.ent-lt-rotulos{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0 0 10px;font-size:12px;color:var(--txt3)}
+.ent-lt-punto{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.ent-lt-punto.tipo-bulk{background:var(--lima)}
+.ent-lt-punto.tipo-cut{background:var(--azul)}
+.ent-lt-punto.tipo-bridge{background:var(--txt3)}
+.ent-graficas{margin-bottom:6px}
