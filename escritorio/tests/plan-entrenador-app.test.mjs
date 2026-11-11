@@ -78,7 +78,7 @@ test('vectores dorados: el verificador de la app da el resultado del manifiesto'
 
 test('planes recién emitidos: la app los acepta y se queda exactamente con lo emitido', { skip: omitir }, async () => {
   const k = await CE.desbloquear(await archivoClave(), CONTRASENA_PRUEBAS);
-  const ejemplo = JSON.parse(fs.readFileSync(path.join(AQUI, '../ejemplo/copia_truelift_2026-11-06.json'), 'utf8'));
+  const ejemplo = JSON.parse(fs.readFileSync(path.join(AQUI, './fixtures/copia_truelift_2026-11-06.json'), 'utf8'));
   const mod = copiaModalidades();
   const conDesconocido = PL.editar(PL.rutinaCopia(mod).rutina, { tipo: 'campo', d: 0, f: 1, k: 'ejercicio', valor: 'Remo inventado' });
   const temporada = [TE.nueva('CUT'), { tipo: 'ritmo', i: 0, valor: 0.6 }, { tipo: 'addBloque' }, { tipo: 'addBloque' }]

@@ -10,9 +10,8 @@ La carpeta se conserva porque el escritorio carga de aquí su motor y sus datos
 (`styles.css`) y el icono (`media/icono.png`). No los borres ni los muevas sin
 actualizar `../escritorio/index.html` y `../escritorio/sw.js`.
 
-Las copias de ejemplo del Coach (cinco clientes ficticios) se han retirado. La
-copia de ejemplo que se descarga desde la web es la del escritorio:
-`../escritorio/ejemplo/copia_truelift_2026-11-06.json`.
+Las copias de ejemplo del Coach (cinco clientes ficticios) se han retirado y la
+web ya no ofrece copias de ejemplo para descargar.
 
 Lo que sigue describe el Coach tal como funcionaba, como referencia de los
 módulos compartidos.

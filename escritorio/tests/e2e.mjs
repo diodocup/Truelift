@@ -778,7 +778,7 @@ try {
     await pagina.setViewportSize({ width: 1366, height: 900 });
     await pagina.goto(`${origenN}/escritorio/`);
     await pagina.waitForSelector('html[data-listo="1"]');
-    await pagina.setInputFiles('#inputDatos', [new URL('../ejemplo/copia_truelift_2026-11-06.json', import.meta.url).pathname]);
+    await pagina.setInputFiles('#inputDatos', [new URL('./fixtures/copia_truelift_2026-11-06.json', import.meta.url).pathname]);
     await pagina.getByText('Revisa la importación').waitFor();
     await pagina.click('[data-accion="confirmar"]');
     await pagina.getByRole('heading', { name: 'Importación completada', exact: true }).waitFor();
