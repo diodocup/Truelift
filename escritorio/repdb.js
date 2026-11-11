@@ -3,12 +3,16 @@
    TrueLift Escritorio — repdb.js
 
    GENERADO por tool/escritorio_repdb.py (repo de la app) desde
-   lib/ejercicio_repdb.dart. No editar a mano.
+   lib/ejercicio_repdb.dart y lib/ejercicio_propio.dart. No editar
+   a mano.
 
-   Ejercicio de la biblioteca -> foto de RepDB que enseña la app
-   (archivo en media/repdb/<hombre|mujer>/, sin extensión). Los que
-   no están aquí conservan el dibujo propio del Coach.
-   267 ejercicios con foto.
+   REPDB_FOTO: ejercicio de la biblioteca -> foto de RepDB que enseña
+   la app (archivo en media/repdb/<hombre|mujer>/, sin extensión).
+   PROPIA_FOTO: ejercicios sin RepDB con ilustración propia de
+   TrueLift -> archivo de cada figura en media/propias/<figura>/.
+   Los que no están en ninguno conservan el dibujo propio del Coach.
+   267 ejercicios con foto de RepDB y 36 con
+   ilustración propia.
    ================================================================ */
 
 const REPDB_FOTO = {
@@ -279,4 +283,43 @@ const REPDB_FOTO = {
  "Zancada con barra": "barbell-lunge-peak",
  "Zancada con mancuernas": "db-lunge-peak",
  "Zancada lateral con peso corporal": "side-lunge-peak",
+};
+
+const PROPIA_FOTO = {
+ "Abducción en polea": {"hombre": "abduccion-en-polea-peak", "mujer": "abduccion-en-polea-peak"},
+ "Aducción de cadera en polea": {"hombre": "aduccion-de-cadera-en-polea-peak", "mujer": "aduccion-de-cadera-en-polea-start"},
+ "Aperturas sentado en polea": {"hombre": "aperturas-sentado-en-polea-peak", "mujer": "aperturas-sentado-en-polea-peak"},
+ "Cruce de poleas bajo": {"hombre": "cruce-de-poleas-bajo-peak", "mujer": "cruce-de-poleas-bajo-peak"},
+ "Curl bayesiano en polea": {"hombre": "curl-bayesiano-en-polea-peak", "mujer": "curl-bayesiano-en-polea-peak"},
+ "Curl femoral con mancuerna": {"hombre": "curl-femoral-con-mancuerna-peak", "mujer": "curl-femoral-con-mancuerna-peak"},
+ "Curl sobre la cabeza en polea": {"hombre": "curl-sobre-la-cabeza-en-polea-peak", "mujer": "curl-sobre-la-cabeza-en-polea-peak"},
+ "Curl unilateral en polea": {"hombre": "curl-unilateral-en-polea-peak", "mujer": "curl-unilateral-en-polea-peak"},
+ "Elevación en Y en polea": {"hombre": "elevacion-en-y-en-polea-peak", "mujer": "elevacion-en-y-en-polea-start"},
+ "Encogimientos en polea": {"hombre": "encogimientos-en-polea-peak", "mujer": "encogimientos-en-polea-start"},
+ "Extensión de cadera en máquina": {"hombre": "extension-de-cadera-en-maquina-peak", "mujer": "extension-de-cadera-en-maquina-peak"},
+ "Extensión de tríceps agarre supino en polea": {"hombre": "extension-de-triceps-agarre-supino-en-polea-peak", "mujer": "extension-de-triceps-agarre-supino-en-polea-peak"},
+ "Extensión en cuerda en polea": {"hombre": "extension-en-cuerda-en-polea-start", "mujer": "extension-en-cuerda-en-polea-start"},
+ "Gemelo a una pierna en máquina": {"hombre": "gemelo-a-una-pierna-en-maquina-peak", "mujer": "gemelo-a-una-pierna-en-maquina-start"},
+ "Gemelo en prensa": {"hombre": "gemelo-en-prensa-peak", "mujer": "gemelo-en-prensa-peak"},
+ "Jalón al pecho agarre neutro abierto": {"hombre": "jalon-al-pecho-agarre-neutro-abierto-peak", "mujer": "jalon-al-pecho-agarre-neutro-abierto-peak"},
+ "Jalón al pecho en máquina": {"hombre": "jalon-al-pecho-en-maquina-peak", "mujer": "jalon-al-pecho-en-maquina-peak"},
+ "Peso muerto en Smith": {"hombre": "peso-muerto-en-smith-start", "mujer": "peso-muerto-en-smith-start"},
+ "Press de pecho unilateral en máquina": {"hombre": "press-de-pecho-unilateral-en-maquina-start", "mujer": "press-de-pecho-unilateral-en-maquina-start"},
+ "Press inclinado con mancuernas agarre neutro": {"hombre": "press-inclinado-con-mancuernas-agarre-neutro-start", "mujer": "press-inclinado-con-mancuernas-agarre-neutro-start"},
+ "Press inclinado en máquina": {"hombre": "press-inclinado-en-maquina-peak", "mujer": "press-inclinado-en-maquina-peak"},
+ "Press inclinado en máquina convergente": {"hombre": "press-inclinado-en-maquina-convergente-peak", "mujer": "press-inclinado-en-maquina-convergente-peak"},
+ "Pullover en máquina": {"hombre": "pullover-en-maquina-peak", "mujer": "pullover-en-maquina-start"},
+ "Pájaros con mancuernas en banco inclinado": {"hombre": "pajaros-con-mancuernas-en-banco-inclinado-peak", "mujer": "pajaros-con-mancuernas-en-banco-inclinado-peak"},
+ "Pájaros sentado con mancuernas": {"hombre": "pajaros-sentado-con-mancuernas-peak", "mujer": "pajaros-sentado-con-mancuernas-peak"},
+ "Pájaros unilateral en polea": {"hombre": "pajaros-unilateral-en-polea-peak", "mujer": "pajaros-unilateral-en-polea-peak"},
+ "Remo Meadows con barra": {"hombre": "remo-meadows-con-barra-peak", "mujer": "remo-meadows-con-barra-peak"},
+ "Remo alto en máquina Hammer": {"hombre": "remo-alto-en-maquina-hammer-peak", "mujer": "remo-alto-en-maquina-hammer-peak"},
+ "Remo bajo en máquina Hammer": {"hombre": "remo-bajo-en-maquina-hammer-peak", "mujer": "remo-bajo-en-maquina-hammer-peak"},
+ "Remo landmine": {"hombre": "remo-landmine-peak", "mujer": "remo-landmine-peak"},
+ "Rotación de tronco en polea (woodchop)": {"hombre": "rotacion-de-tronco-en-polea-woodchop-peak", "mujer": "rotacion-de-tronco-en-polea-woodchop-peak"},
+ "Sentadilla en máquina": {"hombre": "sentadilla-en-maquina-peak", "mujer": "sentadilla-en-maquina-peak"},
+ "Sentadilla española": {"hombre": "sentadilla-espanola-peak", "mujer": "sentadilla-espanola-peak"},
+ "Sentadilla pendular": {"hombre": "sentadilla-pendular-peak", "mujer": "sentadilla-pendular-peak"},
+ "Sentadilla sissy": {"hombre": "sentadilla-sissy-peak", "mujer": "sentadilla-sissy-peak"},
+ "Step-up en Smith": {"hombre": "step-up-en-smith-peak", "mujer": "step-up-en-smith-peak"},
 };

@@ -25,9 +25,10 @@ test('las dos herramientas solo borran sus propias cachés al activarse', () => 
 
 test('los dibujos y las ilustraciones del plan se guardan al verse y, sin conexión y sin copia, no dejan un error', () => {
   const sw = leer('sw.js');
-  assert.match(sw, /aMedida = href => href\.startsWith\(DIBUJOS\) \|\| href\.startsWith\(FOTOS\) \|\| href\.startsWith\(ESTADOS\)/, 'dibujos, fotos e ilustraciones pasan por la caché');
+  assert.match(sw, /aMedida = href => href\.startsWith\(DIBUJOS\) \|\| href\.startsWith\(FOTOS\) \|\| href\.startsWith\(PROPIAS\) \|\| href\.startsWith\(ESTADOS\)/, 'dibujos, fotos e ilustraciones pasan por la caché');
   assert.match(sw, /!URLS\.has\(url\.href\) && !aMedida\(url\.href\)/);
   assert.match(sw, /aMedida\(url\.href\) \? dibujoVacio\(\) : Response\.error\(\)/, 'sin copia: imagen vacía, no error');
   assert.ok(fs.existsSync(new URL('../coach/media/ejercicios/', dir)), 'carpeta de dibujos del Coach');
   assert.ok(fs.existsSync(new URL('estados/hombre/m3g3.webp', dir)), 'ilustraciones del cuerpo');
+  assert.match(sw, /PROPIAS = new URL\('media\/propias\/'/, 'ilustraciones propias de los ejercicios');
 });

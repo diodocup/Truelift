@@ -106,7 +106,13 @@ Las imágenes de los ejercicios (`dibujos.js`) son las mismas que en la app:
   comprueba que no estén desfasados) desde `lib/ejercicio_repdb.dart` y
   `assets/images/repdb/`. Son una figura en color sobre transparente: van
   sobre superficie 2 y no se invierten en el tema claro (clase `ej-foto`).
-- **Dibujos propios** para los ejercicios sin foto: no se duplican, son los
+- **Ilustraciones propias** de TrueLift, en el mismo estilo, para los
+  ejercicios que RepDB no tiene: `media/propias/<hombre|mujer>/<id>-<peak|start>.webp`
+  (el final del movimiento, o el inicio si esa figura solo tiene esa foto) y
+  el mapa `PROPIA_FOTO` en `repdb.js`. Las genera el mismo script desde
+  `lib/ejercicio_propio.dart` y `assets/images/propias/`. También llevan
+  `ej-foto`.
+- **Dibujos propios** para los ejercicios sin foto ni ilustración: no se duplican, son los
   que ya publica el Coach en `../coach/media/ejercicios/` (el Coach sigue
   enseñando sus dibujos).
 

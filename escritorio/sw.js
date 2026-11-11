@@ -10,7 +10,7 @@
    ni las de otras páginas del mismo origen. */
 
 const PREFIJO = 'tlescritorio-';
-const VERSION = `${PREFIJO}v19`;
+const VERSION = `${PREFIJO}v20`;
 const ARCHIVOS = [
   './',
   'index.html',
@@ -34,14 +34,16 @@ const ARCHIVOS = [
   '../fonts/ibmplexmono-600-latin.woff2', '../fonts/ibmplexmono-600-latin-ext.woff2',
 ];
 const URLS = new Set(ARCHIVOS.map(a => new URL(a, self.registration.scope).href));
-// Imágenes de los ejercicios (los dibujos del Coach y las fotos de RepDB):
+// Imágenes de los ejercicios (los dibujos del Coach, las fotos de RepDB y
+// las ilustraciones propias):
 // son cientos y no se precachean; la estrategia de abajo las guarda a medida
 // que se ven, y quedan disponibles sin conexión.
 const DIBUJOS = new URL('../coach/media/ejercicios/', self.registration.scope).href;
 const FOTOS = new URL('media/repdb/', self.registration.scope).href;
+const PROPIAS = new URL('media/propias/', self.registration.scope).href;
 // Ilustraciones del cuerpo del plan de temporada: igual, a medida que se ven.
 const ESTADOS = new URL('estados/', self.registration.scope).href;
-const aMedida = href => href.startsWith(DIBUJOS) || href.startsWith(FOTOS) || href.startsWith(ESTADOS);
+const aMedida = href => href.startsWith(DIBUJOS) || href.startsWith(FOTOS) || href.startsWith(PROPIAS) || href.startsWith(ESTADOS);
 const dibujoVacio = () => new Response('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>',
   { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' } });
 

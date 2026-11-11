@@ -1,14 +1,18 @@
 // Imágenes de los ejercicios: el escritorio enseña las mismas que la app, la
-// foto de RepDB (media/repdb/) si el ejercicio la tiene y, si no, el dibujo
-// propio que ya publica el Coach en ../coach/media/ejercicios/. Datos sintéticos.
+// foto de RepDB (media/repdb/) si el ejercicio la tiene; si no, la ilustración
+// propia de TrueLift (media/propias/); y si tampoco, el dibujo propio que ya
+// publica el Coach en ../coach/media/ejercicios/. Datos sintéticos.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 import { cargar, cargarCoach, copiaRica } from './comun.mjs';
 
 cargarCoach('motor.js', 'data.js', 'nutricion.js', 'charts.js', 'catalogo.js', 'canonico.js');
 const { Analisis, VistasEsc, DibujosEsc, CAT_FICHA, REPDB_FOTO } = cargar('analisis.js', 'vistas.js');
 
+// `const` de un script clásico: no cuelga de globalThis, pero sí del realm.
+const PROPIA_FOTO = vm.runInThisContext('PROPIA_FOTO');
 const dir = new URL('../', import.meta.url);
 // Las rutas son relativas a escritorio/ y van codificadas (acentos, espacios).
 const existe = ruta => fs.existsSync(new URL(decodeURIComponent(ruta), dir));
@@ -22,6 +26,7 @@ test('cada ejercicio de la biblioteca con imagen apunta a un archivo que existe,
       for (const n of conDibujo){
         const s = DibujosEsc.src(n);
         if (Object.hasOwn(REPDB_FOTO, n)) assert.equal(s, `media/repdb/${figura}/${REPDB_FOTO[n]}.webp`, n);
+        else if (Object.hasOwn(PROPIA_FOTO, n)) assert.equal(s, `media/propias/${figura}/${PROPIA_FOTO[n][figura]}.webp`, n);
         else assert.ok(s && s.startsWith('../coach/media/ejercicios/'), n);
         assert.ok(existe(s), `falta la imagen de ${n}: ${s}`);
       }
@@ -33,11 +38,36 @@ test('las fotos de RepDB solo cubren ejercicios de la biblioteca; el resto conse
   const fotos = Object.keys(REPDB_FOTO);
   assert.ok(fotos.length > 200, `con foto: ${fotos.length}`);
   for (const n of fotos) assert.ok(CAT_FICHA[n], `${n} no está en la biblioteca`);
-  // Sin equivalente en RepDB: el dibujo de siempre, que se invierte en claro.
-  const s = DibujosEsc.src('Abducción en polea');
+  // Sin foto ni ilustración: el dibujo de siempre, que se invierte en claro.
+  const sinFoto = Object.keys(CAT_FICHA).find(n => CAT_FICHA[n].img
+    && !Object.hasOwn(REPDB_FOTO, n) && !Object.hasOwn(PROPIA_FOTO, n));
+  assert.ok(sinFoto);
+  const s = DibujosEsc.src(sinFoto);
   assert.match(s, /^\.\.\/coach\/media\/ejercicios\//);
   assert.equal(DibujosEsc.esFoto(s), false);
-  assert.doesNotMatch(DibujosEsc.mini('Abducción en polea'), /ej-foto/);
+  assert.doesNotMatch(DibujosEsc.mini(sinFoto), /ej-foto/);
+});
+
+test('las ilustraciones propias cubren ejercicios de la biblioteca sin RepDB, como en la app', () => {
+  const propias = Object.keys(PROPIA_FOTO);
+  assert.ok(propias.length >= 36, `con ilustración: ${propias.length}`);
+  for (const n of propias){
+    assert.ok(CAT_FICHA[n], `${n} no está en la biblioteca`);
+    assert.ok(!Object.hasOwn(REPDB_FOTO, n), `${n} también tiene foto de RepDB`);
+  }
+  try {
+    const s = DibujosEsc.src('Abducción en polea');
+    assert.equal(s, 'media/propias/hombre/abduccion-en-polea-peak.webp');
+    // Se pinta en color, sin invertir en el tema claro.
+    assert.equal(DibujosEsc.esFoto(s), true);
+    assert.match(DibujosEsc.mini('Abducción en polea'), /ej-foto/);
+    // Si la figura solo tiene la foto de inicio, el inicio (la femenina aquí).
+    assert.equal(DibujosEsc.src('Pullover en máquina'), 'media/propias/hombre/pullover-en-maquina-peak.webp');
+    DibujosEsc.figuraDesdeCopia({ sexoUsuario: 'mujer' });
+    assert.equal(DibujosEsc.src('Pullover en máquina'), 'media/propias/mujer/pullover-en-maquina-start.webp');
+    // Solo inicio en las dos figuras.
+    assert.equal(DibujosEsc.src('Peso muerto en Smith'), 'media/propias/mujer/peso-muerto-en-smith-start.webp');
+  } finally { DibujosEsc.figuraDesdeCopia(null); }
 });
 
 test('la figura de las fotos sigue el sexo declarado, como en la app', () => {
