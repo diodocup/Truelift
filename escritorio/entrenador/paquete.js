@@ -122,18 +122,25 @@ const PaqueteEntrenador = (() => {
   function validarFila(f, donde){
     exige(esObj(f), `${donde}: debe ser un objeto`);
     soloClaves(f, ['patron', 'ejercicio', 'series', 'reps', 'rir', 'descanso', 'topBack', 'backoffPct',
-      'rirBack', 'dropSet', 'dropPct', 'superserie', 'restPause', 'pausaRpSeg'], donde);
+      'rirBack', 'dropSet', 'dropPct', 'superserie', 'restPause', 'pausaRpSeg',
+      'seriesLibres', 'repsSeries', 'rirSeries'], donde);
     texto(f.patron, `${donde}.patron`);
     texto(f.ejercicio, `${donde}.ejercicio`, { min: 1 });
     enteroEn(f.series, LIMITES.seriesMin, LIMITES.seriesMax, `${donde}.series`);
     texto(f.reps, `${donde}.reps`);
     texto(f.rir, `${donde}.rir`);
     opcional(f, 'descanso', v => exige(esNum(v) && v > 0 && v <= LIMITES.descansoMaxMin, `${donde}.descanso: fuera de rango`));
-    for (const k of ['topBack', 'dropSet', 'restPause']) opcional(f, k, v => exige(typeof v === 'boolean', `${donde}.${k}: debe ser booleano`));
+    for (const k of ['topBack', 'dropSet', 'restPause', 'seriesLibres']) opcional(f, k, v => exige(typeof v === 'boolean', `${donde}.${k}: debe ser booleano`));
     for (const k of ['backoffPct', 'dropPct']) opcional(f, k, v => enteroEn(v, LIMITES.pctMin, LIMITES.pctMax, `${donde}.${k}`));
     opcional(f, 'rirBack', v => texto(v, `${donde}.rirBack`));
     opcional(f, 'superserie', v => enteroEn(v, 0, LIMITES.superserieMax, `${donde}.superserie`));
     opcional(f, 'pausaRpSeg', v => enteroEn(v, LIMITES.pausaRpMin, LIMITES.pausaRpMax, `${donde}.pausaRpSeg`));
+    // Series libres: reps y RIR de cada serie, en orden (como mucho tantas
+    // como series admite una fila; las que falten copian la última).
+    for (const k of ['repsSeries', 'rirSeries']) opcional(f, k, v => {
+      exige(Array.isArray(v) && v.length <= LIMITES.seriesMax, `${donde}.${k}: lista de hasta ${LIMITES.seriesMax}`);
+      v.forEach((x, i) => texto(x, `${donde}.${k}[${i}]`, { min: 1 }));
+    });
   }
 
   function validarEjercicioPropio(e, donde){

@@ -38,6 +38,12 @@
 .rut-campo.ej{flex:1}
 .rut-campo.pat{width:150px}
 .rut-campo.n2{width:74px}
+/* Series libres: el objetivo de cada serie, una línea por serie. */
+.rut-libres{flex-basis:100%;border-top:1px solid var(--borde);padding-top:6px}
+.rut-libres-tit{margin:0 0 4px;font:600 10.5px var(--mono);letter-spacing:.03em;color:var(--txt3)}
+.rut-series{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.rut-serie{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end}
+.rut-serie-n{font:700 13px var(--mono);min-width:26px;padding-bottom:6px;color:var(--txt2)}
 .rut-campo.n3{width:124px}
 .rut-campo.n4{width:184px}
 .rut-campo.nombre{min-width:180px}

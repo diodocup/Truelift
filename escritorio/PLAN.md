@@ -1055,3 +1055,35 @@ contrato (v2) en los dos repositorios; el resto es del escritorio.
 
 Verificación: `node --test escritorio/tests/*.test.mjs` 224/224 (con Dart);
 `entrenador.e2e.mjs` 10/10; `integral.e2e.mjs` 13/13.
+
+## Series libres (App-PRO #297) en el escritorio y el modo entrenador (12/11/2026)
+
+Traslado de la quinta modalidad de línea de la app: cada serie con su
+objetivo de reps y de RIR, su peso y su progresión.
+
+- **Motor** (`coach/motor.js`): `entrada.seriesLibres`, `esSerieTop` (todas
+  top), `esSeriesLibresLinea`, `repsDeSerie`/`rirDeSerie`/`objetivosSeries`,
+  `lineaDeSerieLibre`, `entradaDeSerie` y `vistaSerieLibre`, que reproducen
+  `AppState.enSerieLibre` sin duplicar el contador de intentos.
+- **Visor**: estado por serie y del ejercicio (`Analisis.estadoSeriesLibres`,
+  agotado solo con todas las series agotadas), conclusión de intentos con la
+  serie de cada fila, chips «Series libres» en sesiones y ficha, modalidad
+  comparable propia (`configuracion` → `libres`), objetivo y RIR por serie en
+  la cabecera de la ficha y en *Mi rutina*.
+- **Modo entrenador**: modalidad «Series libres» en el editor con el objetivo
+  de cada serie (`porSerie` en el borrador; la nueva serie copia la última y
+  hacen falta 2), compatible con la superserie y que cede ante top + back,
+  drop set y rest-pause. El paquete solo lleva `seriesLibres`, `repsSeries` y
+  `rirSeries` si la fila los usa (un plan sin ellos lo sigue leyendo
+  cualquier versión de la app); `paquete.js` los valida como
+  `lib/plan_entrenador/validacion.dart`; `comoLaApp` reproduce el saneo de la
+  app; la comparación dice «Reps por serie» y «RIR por serie»; aviso si el
+  ejercicio se mide por tiempo.
+- `sw.js` sube a `v21` (y el del Coach a `tlcoach-v20`, porque cambia `motor.js`).
+- `CONTRATO_PLAN_ENTRENADOR.md` copiado de App-PRO (idéntico). Sin vectores
+  dorados nuevos: harían falta en los dos repositorios a la vez.
+
+Verificación: `node --test escritorio/tests/*.test.mjs` 236 correctas y 3
+omitidas (sin Dart), con `tests/series-libres.test.mjs` nuevo;
+`entrenador.e2e.mjs` 10/10 con un paso de series libres. `e2e.mjs` se para en
+Nutrición («DÉFICIT · SEMANA») igual que sin estos cambios.

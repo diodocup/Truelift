@@ -158,6 +158,9 @@ const Motor = {
       ejercicioPlan: plan,
       dropSet: raw.dropSet === true,
       restPause: raw.restPause === true,
+      // EntryLog.seriesLibres (App-PRO 12/11/2026): cada serie llevó su propio
+      // peso (`kgSets` completo), objetivo y progresión. Clave aditiva.
+      seriesLibres: raw.seriesLibres === true,
       superserie: this._int(raw.superserie),
       estancamientoRecurrente: raw.estancamientoRecurrente === true,
       // En déficit, se volvió a estancar con el peso ya bajado y la app
@@ -177,11 +180,116 @@ const Motor = {
     return k != null ? k : e.kg;
   },
   esSerieTop(e, s){
+    // En series libres no hay top ni back-offs: cada serie es la suya.
+    if (e.seriesLibres) return true;
     const base = e.kg, propio = this.kgSerie(e, s);
     if (base == null || propio == null) return true;
     return Math.abs(propio - base) < 0.001;
   },
   repsTop(e){ return e.reps.filter((_, s) => this.esSerieTop(e, s)); },
+  // ---------------------------------------------------------------
+  // Series libres (App-PRO 12/11/2026, ALGORITMO_FUNCIONAL §16.6): cada
+  // serie con su objetivo de reps y de RIR, su peso y su progresión. El
+  // motor no se duplica: se le enseña una VISTA de la serie (la línea con el
+  // objetivo de esa serie y una sola serie, y el historial del ejercicio en
+  // ese día reducido a lo que hizo esa serie), como `AppState.enSerieLibre`.
+  // ---------------------------------------------------------------
+
+  /* Separador de las listas por serie en `prescripcion` / `objetivoDia`. */
+  SEP_SERIES_LIBRES: '|',
+  /* AppState._seriesLibresLinea: al menos 2 series, ninguna otra modalidad
+     y nunca en ejercicios por tiempo. Compatible con la superserie. */
+  esSeriesLibresLinea(linea, raw = null){
+    return !!linea && linea.seriesLibres === true && (this._int(linea.series) ?? 0) >= 2 &&
+           linea.topBack !== true && linea.dropSet !== true && linea.restPause !== true &&
+           !this.esPorTiempo(linea.ejercicio, raw);
+  },
+  /* LineaRutina.repsDeSerie / rirDeSerie: el de la serie `s` (0-based) en
+     series libres; el de la línea en el resto o si falta. */
+  _deSerie(linea, lista, base, s){
+    if (!linea || linea.seriesLibres !== true || !Array.isArray(linea[lista]) || s < 0 || s >= linea[lista].length) return linea ? linea[base] : null;
+    const v = linea[lista][s];
+    return v == null || String(v).trim() === '' ? linea[base] : String(v);
+  },
+  repsDeSerie(linea, s){ return this._deSerie(linea, 'repsSeries', 'reps', s); },
+  rirDeSerie(linea, s){ return this._deSerie(linea, 'rirSeries', 'rir', s); },
+  /* Objetivos de cada serie de una línea en series libres, en orden. */
+  objetivosSeries(linea){
+    const n = Math.max(0, this._int(linea && linea.series) ?? 0);
+    return Array.from({ length: n }, (_, s) => ({ serie: s, reps: this.repsDeSerie(linea, s), rir: this.rirDeSerie(linea, s) }));
+  },
+  /* AppState.lineaDeSerieLibre: una sola serie con su objetivo. */
+  lineaDeSerieLibre(linea, s){
+    const l = { ...linea, seriesLibres: false, topBack: false, dropSet: false, restPause: false,
+                reps: this.repsDeSerie(linea, s), rir: this.rirDeSerie(linea, s), series: 1 };
+    delete l.repsSeries; delete l.rirSeries;
+    return l;
+  },
+  _deLista(v, s){ return Array.isArray(v) && s >= 0 && s < v.length ? v[s] : null; },
+  /* AppState.entradaDeSerie: la entrada cruda reducida a su serie `s`, o null
+     si no llegó a tener esa serie (la serie es nueva: empieza de cero). Una
+     entrada anterior a las series libres se lee por su serie `s`: cada serie
+     arranca del peso que llevó aquel día. */
+  entradaDeSerie(cruda, s){
+    if (!cruda || typeof cruda !== 'object' || s < 0) return null;
+    const e = this.entrada(cruda);
+    const n = e.reps.length;
+    if (!e.noDisponible && s >= n) return null;
+    const m = { ...cruda };
+    m.kg = e.noDisponible ? e.kg : this.kgSerie(e, s);
+    m.reps = [s < n ? e.reps[s] : null];
+    m.rir = [s < e.rir.length ? e.rir[s] : null];
+    for (const k of ['kgSets', 'dropSet', 'restPause', 'seriesLibres', 'repsExtraSeries', 'intentosTotalSeries']) delete m[k];
+    if (e.seriesLibres){
+      delete m.repsExtra; delete m.intentosTotal;
+      const rx = this._deLista(cruda.repsExtraSeries, s);
+      if (typeof rx === 'number' && rx > 0) m.repsExtra = Math.trunc(rx);
+      const it = this._deLista(cruda.intentosTotalSeries, s);
+      if (typeof it === 'number' && it > 0) m.intentosTotal = Math.trunc(it);
+      const deSerie = mapa => {
+        if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) return null;
+        const out = { ...mapa };
+        const trozo = k => {
+          const v = out[k]; delete out[k];
+          if (typeof v !== 'string') return null;
+          const partes = v.split(this.SEP_SERIES_LIBRES);
+          return s < partes.length ? partes[s] : null;
+        };
+        const reps = trozo('repsSeries'), rir = trozo('rirSeries');
+        if (reps != null) out.reps = reps;
+        if (rir != null) out.rir = rir;
+        if (out.tecnica === 'libres') out.tecnica = 'recta';
+        return out;
+      };
+      const presc = deSerie(cruda.prescripcion);
+      if (presc) m.prescripcion = presc;
+      const obj = deSerie(cruda.objetivoDia);
+      if (obj) m.objetivoDia = obj;
+    }
+    return m;
+  },
+  /* Copia de la copia de seguridad tal como la ve el motor al evaluar la
+     serie `s` de `linea` (una línea de `raw.planMod`): esa línea pasa a ser
+     la de la serie y las entradas de su ejercicio en su día, las de la serie.
+     Las sesiones que no lo tocan son las mismas y conservan su posición. */
+  vistaSerieLibre(raw, linea, s){
+    const plan = Array.isArray(raw.planMod) ? raw.planMod : [];
+    const ejercicio = this.nombreVigente(String(linea.ejercicio ?? ''));
+    const dia = linea.dia;
+    const delEjercicio = x => x && typeof x === 'object' && this.nombreVigente(String(x.ejercicio ?? '')) === ejercicio;
+    const logs = (Array.isArray(raw.logs) ? raw.logs : []).map(l => {
+      if (!l || typeof l !== 'object' || this.esCardio(l)) return l;
+      if (dia != null && l.dia !== dia) return l;
+      if (!Array.isArray(l.entradas) || !l.entradas.some(delEjercicio)) return l;
+      return { ...l, entradas: l.entradas.flatMap(x => {
+        if (!delEjercicio(x)) return [x];
+        const m = this.entradaDeSerie(x, s);
+        return m ? [m] : [];
+      }) };
+    });
+    return { ...raw, logs, planMod: plan.map(p => p === linea ? this.lineaDeSerieLibre(linea, s) : p) };
+  },
+
   incompleta(e){ return e.reps.some(r => r == null) && e.reps.some(r => r != null); },
   oportunidadCompleta(e){ const t = this.repsTop(e); return t.length > 0 && t.every(r => r != null); },
   /* Series hechas = series con reps anotadas; sin `reps`, las de RIR
