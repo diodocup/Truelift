@@ -58,11 +58,57 @@ const PlanificadorEntrenador = {
           // (15 %, RIR 2, 20 s): así se ven al activarlas y viajan igual.
           const fila = { ...this.filaVacia(), ...f };
           for (const k of ['backoffPct', 'rirBack', 'dropPct', 'pausaRpSeg']) if (fila[k] == null) fila[k] = this.filaVacia()[k];
+          // Series libres (claves aditivas: los borradores antiguos no las traen).
+          fila.seriesLibres = fila.seriesLibres === true;
+          fila.porSerie = Array.isArray(fila.porSerie) ? fila.porSerie.filter(x => x && typeof x === 'object')
+            .map(x => ({ repsMin: this._numONulo(x.repsMin), repsMax: this._numONulo(x.repsMax), rir: this._numONulo(x.rir) })) : [];
           return fila;
         }),
     }));
-    r.dias.forEach(d => { Planner._patronesVigentes(d.filas); Planner._sanearModalidades(d.filas, r.sistema); });
+    r.dias.forEach(d => { Planner._patronesVigentes(d.filas); Planner._sanearModalidades(d.filas, r.sistema); this._sanearLibres(d.filas); });
     return r;
+  },
+
+  // ---------------------------------------------------------------
+  // Series libres (App-PRO 12/11/2026): cada serie con su objetivo de reps
+  // y de RIR, su peso y su progresión. Excluyente con top+back, drop set y
+  // rest-pause (y son las que ceden), compatible con la superserie y con al
+  // menos 2 series. En el editor cada fila lleva `porSerie`: una entrada
+  // {repsMin, repsMax, rir} por serie; repsMin/repsMax/rir de la fila copian
+  // los de la 1.ª serie, como `LineaRutina.ajustarSeriesLibres`.
+  // ---------------------------------------------------------------
+
+  _numONulo(v){ if (v == null || v === '') return null; const n = Number(v); return isFinite(n) ? n : null; },
+  /* Una cifra por serie: las que faltan copian la última (o la fila) y las
+     que sobran se quitan; después la fila copia la 1.ª. */
+  _ajustarLibres(f){
+    if (!f || !f.seriesLibres) return f;
+    if ((Number(f.series) || 0) < 2) f.series = 2;
+    const n = Math.min(Number(f.series), PaqueteEntrenador.LIMITES.seriesMax);
+    const base = { repsMin: f.repsMin ?? null, repsMax: f.repsMax ?? null, rir: f.rir ?? null };
+    const lista = (Array.isArray(f.porSerie) ? f.porSerie : []).slice(0, n);
+    while (lista.length < n) lista.push({ ...(lista.length ? lista[lista.length - 1] : base) });
+    // Una cifra vacía se queda vacía: el paquete la completa y lo avisa.
+    f.porSerie = lista.map(x => ({ repsMin: x.repsMin ?? null, repsMax: x.repsMax ?? null, rir: x.rir ?? null }));
+    Object.assign(f, f.porSerie[0]);
+    return f;
+  },
+  /* Saneo de un día: las series libres ceden ante cualquier otra modalidad. */
+  _sanearLibres(filas){
+    (filas || []).forEach(f => {
+      if (f.seriesLibres && (f.topBack || f.dropSet || f.restPause)) f.seriesLibres = false;
+      if (f.seriesLibres) this._ajustarLibres(f); else f.porSerie = [];
+    });
+    return filas;
+  },
+  /* Reps de una serie en el formato del sistema, con los mismos valores por
+     defecto que la fila (simple: «N»; doble: «mín-máx», máx > mín). */
+  _repsTexto(min, max, sistema){
+    const a = this._ent(min) ?? 8;
+    if (sistema !== 'doble') return { reps: `${a}`, ajustado: this._ent(min) == null };
+    const b = this._ent(max) ?? a;
+    const m = b > a ? b : a + 2;
+    return { reps: `${a}-${m}`, ajustado: this._ent(min) == null || this._ent(max) == null || m !== b };
   },
 
   // ---------------------------------------------------------------
@@ -95,6 +141,8 @@ const PlanificadorEntrenador = {
           dropSet: p.dropSet === true, dropPct: num(p.dropPct),
           superConAnterior: p.superConAnterior === true,
           restPause: p.restPause === true, pausaRpSeg: num(p.pausaRpSeg) || 20,
+          seriesLibres: p.seriesLibres === true,
+          porSerie: p.seriesLibres === true ? Motor.objetivosSeries(p).map(o => ({ ...parseReps(o.reps), rir: num(o.rir) })) : [],
         })),
       })),
     };
@@ -141,7 +189,7 @@ const PlanificadorEntrenador = {
 
   /* Una línea comparable. `l` usa las claves de LineaRutina de la app. */
   _linea(l){
-    const modo = l.topBack ? 'topBack' : l.dropSet ? 'drop' : l.restPause ? 'rp' : 'normal';
+    const modo = l.topBack ? 'topBack' : l.dropSet ? 'drop' : l.restPause ? 'rp' : this._libres(l) ? 'libres' : 'normal';
     const out = {
       ejercicio: this._nombreEj(l.ejercicio),
       series: this._ent(l.series),
@@ -154,8 +202,16 @@ const PlanificadorEntrenador = {
     if (modo === 'topBack'){ out.backoffPct = this._ent(l.backoffPct) ?? 15; out.rirBack = this._ent(l.rirBack) ?? 2; }
     if (modo === 'drop') out.dropPct = this._ent(l.dropPct) ?? 15;
     if (modo === 'rp') out.pausaRpSeg = this._pausa(this._ent(l.pausaRpSeg));
+    if (modo === 'libres'){
+      const obj = Motor.objetivosSeries(l);
+      out.repsSeries = obj.map(o => String(o.reps ?? '').replace(/\s+/g, ''));
+      out.rirSeries = obj.map(o => this._ent(o.rir));
+      out.reps = out.repsSeries[0]; out.rir = out.rirSeries[0];
+    }
     return out;
   },
+  /* Series libres de una línea con las claves de la app (las ejecuta la app). */
+  _libres(l){ return !!l && l.seriesLibres === true && !l.topBack && !l.dropSet && !l.restPause && (this._ent(l.series) ?? 0) >= 2; },
 
   /* planMod tal como lo guarda el móvil → {sistema, dias:[{nombre, lineas}]}.
      Días en orden de aparición; líneas por `orden`. */
@@ -221,7 +277,8 @@ const PlanificadorEntrenador = {
           series = n;
         }
         const repMin = this._ent(f.repsMin) ?? 8;
-        if (this._ent(f.repsMin) == null) notas.push({ dia: nombreDia, ej, txt: `${ej}: sin repeticiones; la app usará ${repMin}.` });
+        const libres = !!f.seriesLibres && !f.topBack && !f.dropSet && !f.restPause;
+        if (this._ent(f.repsMin) == null && !libres) notas.push({ dia: nombreDia, ej, txt: `${ej}: sin repeticiones; la app usará ${repMin}.` });
         const tb = !!f.topBack, drop = !!f.dropSet && !tb, rp = !!f.restPause && !tb && !drop;
         let reps = `${repMin}`;
         // Drop set: un único objetivo, también en doble; un rango conserva
@@ -232,7 +289,7 @@ const PlanificadorEntrenador = {
         } else if (sistema === 'doble'){
           const repMax = this._ent(f.repsMax) ?? repMin;
           const max = repMax > repMin ? repMax : repMin + 2;
-          if (max !== repMax || this._ent(f.repsMax) == null)
+          if ((max !== repMax || this._ent(f.repsMax) == null) && !libres)
             notas.push({ dia: nombreDia, ej, txt: `${ej}: en progresión doble el máximo debe superar al mínimo; la app usará ${repMin}–${max}.` });
           reps = `${repMin}-${max}`;
         }
@@ -251,6 +308,22 @@ const PlanificadorEntrenador = {
         fila.pausaRpSeg = this._pausa(this._ent(f.pausaRpSeg) ?? 20);
         if (rp && typeof f.pausaRpSeg === 'number' && fila.pausaRpSeg !== f.pausaRpSeg)
           notas.push({ dia: nombreDia, ej, txt: `${ej}: la pausa del rest-pause se ajustará a ${fila.pausaRpSeg} s.` });
+        // Series libres: las claves solo viajan si la fila las usa, para que
+        // un plan sin ellas lo siga leyendo cualquier versión de la app.
+        if (f.seriesLibres && !tb && !drop && !rp){
+          const g = this._ajustarLibres({ ...f, series: Math.max(series, 2) });
+          if (series < 2) notas.push({ dia: nombreDia, ej, txt: `${ej}: las series libres necesitan al menos 2 series; irán 2.` });
+          fila.series = g.porSerie.length;
+          fila.seriesLibres = true;
+          fila.repsSeries = g.porSerie.map((x, k) => {
+            const t = this._repsTexto(x.repsMin, x.repsMax, sistema);
+            if (t.ajustado) notas.push({ dia: nombreDia, ej, txt: `${ej}: la serie ${k + 1} irá a ${t.reps} reps.` });
+            return t.reps;
+          });
+          fila.rirSeries = g.porSerie.map(x => `${this._ent(x.rir) ?? 2}`);
+          fila.reps = fila.repsSeries[0];
+          fila.rir = fila.rirSeries[0];
+        }
         return fila;
       });
       return { nombre: String(d.nombre ?? '').trim(), ejercicios };
@@ -309,6 +382,9 @@ const PlanificadorEntrenador = {
           dropSet: e.dropSet === true && !topBack, dropPct: this._acotar(e.dropPct ?? 15, 5, 30),
           superConAnterior: superserie !== 0 && superserie === previa,
           restPause: e.restPause === true, pausaRpSeg: this._pausa(e.pausaRpSeg),
+          seriesLibres: e.seriesLibres === true,
+          repsSeries: Array.isArray(e.repsSeries) ? e.repsSeries.map(String) : [],
+          rirSeries: Array.isArray(e.rirSeries) ? e.rirSeries.map(String) : [],
         };
         previa = superserie;
         return l;
@@ -316,6 +392,10 @@ const PlanificadorEntrenador = {
       // Saneo final de la app (AppState._sanearModalidades).
       lineas.forEach((l, i) => {
         if (l.restPause && (l.topBack || l.dropSet)) l.restPause = false;
+        // Las series libres ceden ante las otras tres y necesitan una cifra
+        // por serie (LineaRutina.ajustarSeriesLibres).
+        if (l.seriesLibres && (l.topBack || l.dropSet || l.restPause)) l.seriesLibres = false;
+        if (l.seriesLibres) this._ajustarListasApp(l);
         Object.assign(l, this._dropComoLaApp(l, sistema));
         if (l.superConAnterior && i > 0 && (this._conModo(l) || this._conModo(lineas[i - 1]))) l.superConAnterior = false;
       });
@@ -323,6 +403,21 @@ const PlanificadorEntrenador = {
     });
     return { sistema, dias, notas,
       normal: { sistema, dias: dias.map(d => ({ nombre: d.nombre, lineas: d.lineas.map(l => this._linea(l)) })) } };
+  },
+
+  /* LineaRutina.ajustarSeriesLibres sobre una línea con las claves de la app. */
+  _ajustarListasApp(l){
+    if ((this._ent(l.series) ?? 0) < 2) l.series = 2;
+    const ajustar = (lista, base) => {
+      const out = lista.slice(0, l.series);
+      while (out.length < l.series) out.push(out.length ? out[out.length - 1] : base);
+      return out.map(v => String(v).trim() === '' ? base : v);
+    };
+    l.repsSeries = ajustar(l.repsSeries || [], l.reps);
+    l.rirSeries = ajustar(l.rirSeries || [], l.rir);
+    if (l.repsSeries.length) l.reps = l.repsSeries[0];
+    if (l.rirSeries.length) l.rir = l.rirSeries[0];
+    return l;
   },
 
   /* Borrador → paquete y lo que hará la app con él, en un paso. */
@@ -345,6 +440,7 @@ const PlanificadorEntrenador = {
     ['series', 'Series'], ['reps', 'Repeticiones'], ['rir', 'RIR'], ['descanso', 'Descanso'],
     ['modalidad', 'Modalidad'], ['backoffPct', '% back-off'], ['rirBack', 'RIR back-off'],
     ['dropPct', '% drop'], ['pausaRpSeg', 'Pausa rest-pause'], ['superserie', 'Superserie con el anterior'],
+    ['repsSeries', 'Reps por serie'], ['rirSeries', 'RIR por serie'],
   ],
 
   /* Diferencias de B respecto de A. Los días se emparejan por posición (la
@@ -372,7 +468,9 @@ const PlanificadorEntrenador = {
           pares.push([ja, jb]);
           // En rest-pause no hay RIR (todo al fallo): el cambio de modalidad ya lo dice.
           const rp = a.lineas[ja].modalidad === 'rp' || lb.modalidad === 'rp';
-          const campos = this.CAMPOS.filter(([k]) => !(rp && k === 'rir') && JSON.stringify(a.lineas[ja][k] ?? null) !== JSON.stringify(lb[k] ?? null))
+          // En series libres las reps y el RIR van por serie: no se repiten.
+          const libres = a.lineas[ja].modalidad === 'libres' && lb.modalidad === 'libres';
+          const campos = this.CAMPOS.filter(([k]) => !(rp && k === 'rir') && !(libres && (k === 'reps' || k === 'rir')) && JSON.stringify(a.lineas[ja][k] ?? null) !== JSON.stringify(lb[k] ?? null))
             .map(([k, txt]) => ({ campo: k, txt, antes: a.lineas[ja][k] ?? null, despues: lb[k] ?? null }));
           if (campos.length) d.cambios.push({ tipo: 'cambiado', ejercicio: lb.ejercicio, campos, antes: a.lineas[ja], despues: lb });
         });
@@ -443,6 +541,8 @@ const PlanificadorEntrenador = {
         if (f.restPause && (f.series || 0) < 2) add('ambar', `${nombreDia} · ${f.ejercicio}: un rest-pause necesita al menos 2 series; con una sola la app lo hará como serie normal.`, di);
         if (f.restPause && Motor.esPorTiempo(f.ejercicio, raw))
           add('ambar', `${nombreDia} · ${f.ejercicio}: se mide por tiempo; la app no le aplica el rest-pause.`, di);
+        if (f.seriesLibres && Motor.esPorTiempo(f.ejercicio, raw))
+          add('ambar', `${nombreDia} · ${f.ejercicio}: se mide por tiempo; la app no le aplica las series libres.`, di);
         if (!P._esEjercicioBase(f.ejercicio) && !conocidos.has(P._claveEjercicio(f.ejercicio)))
           add('azul', `${nombreDia} · «${f.ejercicio}» no está en el catálogo ni en la biblioteca del cliente: la app lo añadirá como ejercicio nuevo y le pedirá confirmación. Revisa que el nombre sea exacto.`, di);
       });
@@ -553,20 +653,43 @@ const PlanificadorEntrenador = {
           for (const k of ['backoffPct', 'rirBack', 'dropPct', 'pausaRpSeg']) if (dia.filas[op.f][k] == null) dia.filas[op.f][k] = this.filaVacia()[k];
           const f = dia.filas[op.f];
           const k = { topBack: 'topBack', drop: 'dropSet', rp: 'restPause' }[op.valor];
-          if (k) Planner.aplicarCampo(dia.filas, op.f, k, true, r.sistema);
-          else { f.topBack = false; Planner._quitarDrop(f, r.sistema); f.restPause = false; }
+          if (k){ f.seriesLibres = false; Planner.aplicarCampo(dia.filas, op.f, k, true, r.sistema); }
+          else {
+            f.topBack = false; Planner._quitarDrop(f, r.sistema); f.restPause = false;
+            // Series libres: cada serie arranca con el objetivo de la fila; al
+            // quitarlas, la fila sigue con el de la 1.ª serie.
+            const libres = op.valor === 'libres';
+            if (libres && !f.seriesLibres) f.porSerie = [];
+            f.seriesLibres = libres;
+          }
+        } else if (op.k === 'series' && (dia.filas[op.f] || {}).seriesLibres){
+          // Con series libres hacen falta al menos 2; la nueva copia la última.
+          const n = Math.round(Number(op.valor));
+          if (!isFinite(n)) return null;
+          dia.filas[op.f].series = this._acotar(n, 2, PaqueteEntrenador.LIMITES.seriesMax);
         } else Planner.aplicarCampo(dia.filas, op.f, op.k, op.valor, r.sistema);
         // Ejercicio elegido sin patrón: el de su ficha del catálogo.
         const f = dia.filas[op.f];
         if (op.k === 'ejercicio' && !f.patron && typeof CAT_FICHA === 'object' && CAT_FICHA[f.ejercicio])
           f.patron = patronVigente(CAT_FICHA[f.ejercicio].patron, CAT_FICHA[f.ejercicio].grupo);
         Planner._sanearModalidades(dia.filas, r.sistema);
+        this._sanearLibres(dia.filas);
+        return r;
+      }
+      case 'serie': {
+        // Objetivo de una serie libre: {d, f, s, k: repsMin|repsMax|rir, valor}.
+        const f = dia && dia.filas[op.f];
+        if (!f || !f.seriesLibres || !['repsMin', 'repsMax', 'rir'].includes(op.k)) return null;
+        this._ajustarLibres(f);
+        if (!f.porSerie[op.s]) return null;
+        f.porSerie[op.s][op.k] = this._numONulo(op.valor);
+        this._ajustarLibres(f);
         return r;
       }
       case 'sistema': r.sistema = op.valor === 'simple' ? 'simple' : 'doble'; return r;
       case 'nombreDia': if (!dia) return null; dia.nombre = String(op.valor ?? '').trim().slice(0, 40) || `Día ${op.d + 1}`; return r;
       case 'addFila': if (!dia || dia.filas.length >= this.MAX_FILAS) return null; dia.filas.push(this.filaVacia()); return r;
-      case 'delFila': if (!dia || !dia.filas[op.f]) return null; dia.filas.splice(op.f, 1); Planner._sanearModalidades(dia.filas, r.sistema); return r;
+      case 'delFila': if (!dia || !dia.filas[op.f]) return null; dia.filas.splice(op.f, 1); Planner._sanearModalidades(dia.filas, r.sistema); this._sanearLibres(dia.filas); return r;
       case 'moverFila': {
         if (!dia) return null;
         const to = op.f + op.delta;
@@ -574,6 +697,7 @@ const PlanificadorEntrenador = {
         const [x] = dia.filas.splice(op.f, 1);
         dia.filas.splice(to, 0, x);
         Planner._sanearModalidades(dia.filas, r.sistema);
+        this._sanearLibres(dia.filas);
         return r;
       }
       case 'addDia':

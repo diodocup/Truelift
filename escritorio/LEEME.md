@@ -352,8 +352,11 @@ En **Plan para <cliente>**:
 
 **Rutina.** Sistema (progresión doble o simple), de 2 a 5 días con hasta 10
 ejercicios por día, series, repeticiones, RIR, descanso y las modalidades de
-la app (top set + back-off, drop set, superserie con el anterior y
-rest-pause), que se excluyen entre sí igual que en la app. Debajo:
+la app (top set + back-off, drop set, superserie con el anterior,
+rest-pause y series libres), que se excluyen entre sí igual que en la app.
+Con **series libres** cada serie lleva sus propias repeticiones y su propio
+RIR (una línea por serie en la fila) y en el móvil su propio peso y su propia
+progresión; pueden ir en superserie, como las series normales. Debajo:
 
 - **Avisos** de lo que la app haría distinto o no admitiría. «Sin avisos: la
   app aplicará este borrador tal cual» es lo que buscas.
@@ -533,6 +536,14 @@ Cambios de App-PRO del 11 al 20/10/2026 que afectan al escritorio:
 - **Peso fijo de máquina:** el 1RM estimado y las marcas suman el peso fijo,
   como la app; la carga que se ve sigue siendo la anotada.
 - **Rest-pause** en progresión simple: se progresa en el extremo alto del rango.
+- **Series libres** (App-PRO #297, 12/11/2026): cada serie con su objetivo de
+  reps y de RIR, su peso y su progresión. *Mi rutina* enseña el objetivo de
+  cada serie; las sesiones y la ficha marcan «Series libres» (sus series no
+  son back-offs); el estado del ejercicio junta el de sus series y la ficha
+  enseña el de cada una, con su porqué. Solo está «agotado» cuando lo están
+  todas, como en la app. En el modo entrenador es una modalidad más del
+  editor, viaja en el plan (`seriesLibres`, `repsSeries`, `rirSeries`, solo si
+  la fila la usa) y se compara serie a serie.
 - **Drop set:** un único objetivo de reps (la 1.ª serie), también en doble, en
   el editor, los avisos y el Excel.
 - **Biblioteca de ejercicios** regenerada desde la app (Face pull unificado,

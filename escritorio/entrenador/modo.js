@@ -511,6 +511,7 @@ async function cambio(el){
   if (tipo === 'bloque'){ await editarTemporada({ tipo: el.dataset.k, i: Number(el.dataset.i), valor: el.value }, el.id); return; }
   if (tipo === 'sistema') await editar({ tipo: 'sistema', valor: el.value }, 'entSistema');
   else if (tipo === 'nombreDia') await editar({ tipo: 'nombreDia', d: Number(el.dataset.d), valor: el.value }, el.id);
+  else if (tipo === 'serie') await editar({ tipo: 'serie', d: Number(el.dataset.d), f: Number(el.dataset.f), s: Number(el.dataset.s), k: el.dataset.k, valor: el.value }, el.id);
   else if (tipo === 'campo'){
     const valor = el.type === 'checkbox' ? el.checked : el.value;
     await editar({ tipo: 'campo', d: Number(el.dataset.d), f: Number(el.dataset.f), k: el.dataset.k, valor }, el.id);

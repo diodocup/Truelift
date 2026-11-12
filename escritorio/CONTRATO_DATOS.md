@@ -59,6 +59,11 @@ recientes) y `fechaNacimiento` son indicios, no identidad.
   y drops), reps[] (int|null), rir[] (int|null), obs, modulada,
   progresionPausada, estadoEjercicio, neutra, noDisponible, molestias,
   sustitucion, ejercicioPlan, dropSet, restPause, superserie`.
+- Series libres (12/11/2026): `seriesLibres: true`, `kgSets` completo (`kg` =
+  serie 1) y, si hacen falta, `repsExtraSeries[]` e `intentosTotalSeries[]`
+  (una cifra por serie). En `prescripcion` y `objetivoDia`: `tecnica:
+  'libres'` y `repsSeries`/`rirSeries` separados por `|`. Todas sus series son
+  «top» (`Motor.esSerieTop`) y cuentan para rendimiento, e1RM y marcas.
 - **Cero ≠ ausente:** `kg: 0` es válido (peso corporal sin lastre); `reps[i]:
   null` es una serie sin anotar (entrada incompleta), no un 0.
 - **Guardados por el motor (no se reconstruyen):** `rendimiento`,
@@ -80,7 +85,15 @@ ambos.
 `id ('linea_<µs>_<n>' o 'prefijada:<dia>:<orden>'), dia, orden, patron, grupo,
 ejercicio, series, reps (string), rir (string), descansoMin, topBack,
 backoffPct, rirBack, dropSet, dropPct, superConAnterior, restPause,
-pausaRpSeg`. Las copias antiguas no traen las modalidades.
+pausaRpSeg, seriesLibres, repsSeries[], rirSeries[]`. Las copias antiguas no
+traen las modalidades.
+
+- **Series libres (12/11/2026):** `seriesLibres: true` con `repsSeries` y
+  `rirSeries` (texto, una cifra por serie; `reps`/`rir` copian los de la 1.ª).
+  Solo se escriben si la línea las usa. Valen con 2 series o más, sin otra
+  modalidad y fuera de los ejercicios por tiempo (`Motor.esSeriesLibresLinea`).
+  En la versión gratuita viven en `topBackGratis` (clave `libres`), que el
+  escritorio no lee, igual que el top + back gratis.
 
 - **Drop set (13/10/2026):** `reps` es un único número (el objetivo de la 1.ª
   serie), también en doble. Una línea antigua con rango la app la deja al

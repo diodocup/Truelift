@@ -151,7 +151,8 @@ const Analisis = {
       estado: Motor.estadoDeEntrada(s.l, e),
       noVerde: Motor.estadoDeEntrada(s.l, e) !== 'verde',
       evaluable: !e.noDisponible && !Motor.noEvaluable(e) && !s.descarga,
-      topBack: kgDistintos && !e.dropSet,
+      // Series libres: cada serie con su peso, pero no son back-offs.
+      topBack: kgDistintos && !e.dropSet && !e.seriesLibres,
       superaMarca: false,
     };
   },
@@ -162,32 +163,61 @@ const Analisis = {
   estados(M, ej){
     if (ej.porTiempo) return [{ tipo: 'porTiempo' }];
     if (!ej.lineas.length) return [{ tipo: M.planConocido ? 'fueraDeRutina' : 'rutinaDesconocida' }];
-    return ej.lineas.map(linea => {
-      const dia = linea.dia;
-      const objetivo = Motor.objetivoLinea(linea, M.raw.sistema, M.raw);
-      const base = { dia, objetivo, reps: linea.reps, max: Motor.intentosMax(M.raw.fasePeso) };
-      if (objetivo == null) return { ...base, tipo: 'sinObjetivo' };
-      const op = Motor.oportunidades(M.raw, ej.nombre, dia, objetivo, { max: base.max + 5 });
-      const consumidos = Motor.sesionesEstancadas(op.map(o => o.kg), op.map(o => o.completo));
-      const recurrente = op.length && op[0].entrada.estancamientoRecurrente;
-      const trasPasoAtras = op.length && op[0].entrada.estancamientoTrasPasoAtras;
-      // Rango subido tras el paso atrás: sigue mientras la última sesión que
-      // cuenta lo llevaba y no logró el objetivo (AppState._repsExtraPendiente).
-      const repsExtra = op.length && op[0].extra > 0 && !op[0].completo ? op[0].extra : 0;
-      // `op` son las oportunidades que cuentan, de la más reciente a la más
-      // antigua; las `consumidos` primeras forman la racha del contador.
-      const r = { ...base, consumidos, oportunidades: op.length, ultima: op[0] || null, recurrente: !!recurrente,
-                  trasPasoAtras: !!trasPasoAtras, repsExtra, repsHoy: Motor.repsConExtra(linea.reps, repsExtra),
-                  descarga: M.descarga, op };
-      // Versión gratuita sin progresión automática: la app no cuenta intentos,
-      // así que el escritorio tampoco valora la racha.
-      if (Motor.ultimaSinProgresion(M.raw, ej.nombre, dia)) return { ...r, tipo: 'sinProgresion' };
-      if (!op.length) return { ...r, tipo: 'sinOportunidades' };
-      if (op[0].completo) return { ...r, tipo: 'objetivoCumplido' };
-      if (consumidos >= base.max) return { ...r, tipo: 'intentosAgotados' };
-      return { ...r, tipo: 'enCurso' };
-    });
+    return ej.lineas.map(linea => Motor.esSeriesLibresLinea(linea, M.raw)
+      ? this.estadoSeriesLibres(M, ej, linea)
+      : this.estadoLinea(M, M.raw, ej, linea));
   },
+
+  /* Estado de una línea con el contador del móvil. `raw` es la copia o, en
+     series libres, la vista de una serie (Motor.vistaSerieLibre). */
+  estadoLinea(M, raw, ej, linea){
+    const dia = linea.dia;
+    const objetivo = Motor.objetivoLinea(linea, raw.sistema, raw);
+    const base = { dia, objetivo, reps: linea.reps, max: Motor.intentosMax(raw.fasePeso) };
+    if (objetivo == null) return { ...base, tipo: 'sinObjetivo' };
+    const op = Motor.oportunidades(raw, ej.nombre, dia, objetivo, { max: base.max + 5 });
+    const consumidos = Motor.sesionesEstancadas(op.map(o => o.kg), op.map(o => o.completo));
+    const recurrente = op.length && op[0].entrada.estancamientoRecurrente;
+    const trasPasoAtras = op.length && op[0].entrada.estancamientoTrasPasoAtras;
+    // Rango subido tras el paso atrás: sigue mientras la última sesión que
+    // cuenta lo llevaba y no logró el objetivo (AppState._repsExtraPendiente).
+    const repsExtra = op.length && op[0].extra > 0 && !op[0].completo ? op[0].extra : 0;
+    // `op` son las oportunidades que cuentan, de la más reciente a la más
+    // antigua; las `consumidos` primeras forman la racha del contador.
+    const r = { ...base, consumidos, oportunidades: op.length, ultima: op[0] || null, recurrente: !!recurrente,
+                trasPasoAtras: !!trasPasoAtras, repsExtra, repsHoy: Motor.repsConExtra(linea.reps, repsExtra),
+                descarga: M.descarga, op };
+    // Versión gratuita sin progresión automática: la app no cuenta intentos,
+    // así que el escritorio tampoco valora la racha.
+    if (Motor.ultimaSinProgresion(raw, ej.nombre, dia)) return { ...r, tipo: 'sinProgresion' };
+    if (!op.length) return { ...r, tipo: 'sinOportunidades' };
+    if (op[0].completo) return { ...r, tipo: 'objetivoCumplido' };
+    if (consumidos >= base.max) return { ...r, tipo: 'intentosAgotados' };
+    return { ...r, tipo: 'enCurso' };
+  },
+
+  /* Series libres (App-PRO 12/11/2026): cada serie progresa por su cuenta,
+     así que cada una tiene su estado, calculado sobre la vista de esa serie
+     (`series`). El ejercicio solo está agotado cuando lo están TODAS sus
+     series, como en la app; si unas buscan el objetivo y otras no, el
+     ejercicio sigue «buscando el objetivo». */
+  estadoSeriesLibres(M, ej, linea){
+    const series = Motor.objetivosSeries(linea).map(({ serie }) => ({
+      ...this.estadoLinea(M, Motor.vistaSerieLibre(M.raw, linea, serie), ej, Motor.lineaDeSerieLibre(linea, serie)), serie }));
+    const todas = t => series.every(x => x.tipo === t);
+    const tipo = todas('sinObjetivo') ? 'sinObjetivo'
+      : series.some(x => x.tipo === 'sinProgresion') ? 'sinProgresion'
+      : todas('sinOportunidades') ? 'sinOportunidades'
+      : todas('objetivoCumplido') ? 'objetivoCumplido'
+      : todas('intentosAgotados') ? 'intentosAgotados'
+      : 'enCurso';
+    return { tipo, dia: linea.dia, libres: true, series, max: Motor.intentosMax(M.raw.fasePeso),
+             reps: series.map(x => x.reps).join(' · '), objetivo: null,
+             buscando: series.filter(x => x.tipo === 'enCurso' || x.tipo === 'intentosAgotados').length,
+             descarga: M.descarga };
+  },
+  /* Estados con contador, uno por serie en series libres. */
+  estadosPlanos(st){ return st && st.libres ? st.series : [st]; },
 
   /* Grupo, patrón y secundarios de un ejercicio, como `infoDe` del móvil:
      biblioteca de la app (catálogo) y, después, ejercicios propios. */
@@ -347,11 +377,12 @@ const Analisis = {
 
   // ---------- ejercicios comparables ----------
   /* Configuración de series: dos sesiones solo se comparan si se hicieron
-     con la misma modalidad (normal, top + back-off, drop set, rest-pause). */
+     con la misma modalidad (normal, top + back-off, drop set, rest-pause,
+     series libres). */
   configuracion(p){
-    return p.e.dropSet ? 'drop' : p.e.restPause ? 'restPause' : p.topBack ? 'topBack' : 'normal';
+    return p.e.seriesLibres ? 'libres' : p.e.dropSet ? 'drop' : p.e.restPause ? 'restPause' : p.topBack ? 'topBack' : 'normal';
   },
-  MODALIDAD_TXT: { normal: 'series normales', topBack: 'top + back-off', drop: 'drop set', restPause: 'rest-pause' },
+  MODALIDAD_TXT: { normal: 'series normales', topBack: 'top + back-off', drop: 'drop set', restPause: 'rest-pause', libres: 'series libres' },
 
   /* Motivo por el que una sesión del ejercicio no entra en la comparación
      (null si entra). Mismas exclusiones que las marcas de la app, más la
@@ -564,11 +595,12 @@ const Analisis = {
     M.ejercicios.forEach(ej => ej.estados.forEach(st => { if (st.tipo === 'intentosAgotados') agotados.push({ ej, st }); }));
     if (agotados.length){
       const filas = [];
-      agotados.forEach(({ ej, st }) => st.op.slice(0, st.consumidos).forEach(o => {
+      // En series libres, cada serie con su carga y su objetivo.
+      agotados.forEach(({ ej, st }) => this.estadosPlanos(st).forEach(sp => sp.op.slice(0, sp.consumidos).forEach(o => {
         const s = sesionDe(M.raw.logs[o.indice]);
-        filas.push({ fecha: s ? s.fecha : parseFecha(o.fecha), indice: s ? s.indice : null, celdas: [ej.nombre, String(st.dia),
-          this._kg(Motor.cargaOrientada(ej.nombre, o.kg), 2), Motor.repsTop(o.entrada).map(r => r == null ? '·' : r).join(' / '), String(st.reps)] });
-      }));
+        filas.push({ fecha: s ? s.fecha : parseFecha(o.fecha), indice: s ? s.indice : null, celdas: [ej.nombre, String(st.dia) + (sp.serie != null ? ` · serie ${sp.serie + 1}` : ''),
+          this._kg(Motor.cargaOrientada(ej.nombre, o.kg), 2), Motor.repsTop(o.entrada).map(r => r == null ? '·' : r).join(' / '), String(sp.reps)] });
+      })));
       filas.sort((x, y) => +x.fecha - +y.fecha);
       const nombres = [...new Set(agotados.map(x => x.ej.nombre))];
       // Si además su 1RM estimado baja de forma clara, se dice aquí y no se

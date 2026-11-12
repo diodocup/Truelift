@@ -20,7 +20,7 @@ const ayuda = (txt, titulo = 'Cómo funciona') => `<details class="detalle ayuda
 const btn = (accion, texto, { clase = 'sec', extra = '', des = false, titulo = '' } = {}) =>
   `<button type="button" class="btn ${clase}" data-ent-accion="${accion}"${des ? ' disabled' : ''}${titulo ? ` title="${esc(titulo)}"` : ''}${extra}>${texto}</button>`;
 const SISTEMA = { simple: 'progresión simple', doble: 'progresión doble' };
-const MODO = { normal: 'Series normales', topBack: 'Top set + back-off', drop: 'Drop set', rp: 'Rest-pause' };
+const MODO = { normal: 'Series normales', topBack: 'Top set + back-off', drop: 'Drop set', rp: 'Rest-pause', libres: 'Series libres' };
 const SEXO = { hombre: 'Hombre', mujer: 'Mujer' };
 const EXPERIENCIA = { principiante: 'Principiante', intermedio: 'Intermedio', avanzado: 'Avanzado' };
 /* «Mujer · 63,5 kg · 166 cm · 24,5 % graso» (datos de partida del plan). */
@@ -33,6 +33,7 @@ const momento = iso => {
 };
 const valorTxt = (campo, v) => {
   if (v == null) return campo === 'descanso' ? 'el de cada ejercicio' : '—';
+  if (Array.isArray(v)) return v.map(x => x == null ? '—' : String(x)).join(' · ');
   if (campo === 'modalidad') return MODO[v] || v;
   if (campo === 'superserie') return v ? 'sí' : 'no';
   if (campo === 'descanso') return `${fmtNum(v, 1)} min`;
@@ -157,7 +158,7 @@ function cambiosHtml(dif, { vacio = 'Sin cambios.' } = {}){
       : d.estado === 'quitado' ? `Día ${d.indice + 1} quitado: «${esc(d.antes)}»`
       : d.renombrado ? `Día ${d.indice + 1}: «${esc(d.antes)}» → «${esc(d.despues)}»` : `Día ${d.indice + 1}: «${esc(d.despues)}»`;
     const items = d.cambios.map(c => {
-      if (c.tipo === 'nuevo') return `<li>${chip('verde', 'Nuevo')} ${esc(c.ejercicio)} · ${c.despues.series} × ${esc(c.despues.reps)}</li>`;
+      if (c.tipo === 'nuevo') return `<li>${chip('verde', 'Nuevo')} ${esc(c.ejercicio)} · ${c.despues.series} × ${esc(c.despues.repsSeries ? valorTxt('repsSeries', c.despues.repsSeries) : c.despues.reps)}</li>`;
       if (c.tipo === 'quitado') return `<li>${chip('rojo', 'Quitado')} ${esc(c.ejercicio)}</li>`;
       return `<li>${chip('azul', 'Cambiado')} ${esc(c.ejercicio)}: ${c.campos.map(x => `${esc(x.txt)} ${esc(valorTxt(x.campo, x.antes))} → <b>${esc(valorTxt(x.campo, x.despues))}</b>`).join('; ')}</li>`;
     });
@@ -190,12 +191,29 @@ function campoNum(id, d, f, k, v, min, max, etiqueta, ancho = 'n2'){
     <input id="${id}" type="number" inputmode="numeric" data-ent="campo" data-d="${d}" data-f="${f}" data-k="${k}" value="${v ?? ''}" min="${min}" max="${max}" step="1"></label>`;
 }
 
+/* Series libres: reps y RIR de cada serie, una fila por serie. */
+function seriesLibresEditor(rutina, d, i, f){
+  const doble = rutina.sistema === 'doble';
+  const campo = (s, k, v, min, max, etiqueta) => {
+    const id = `ent-${d}-${i}-s${s}-${k}`;
+    return `<label class="rut-campo n2" for="${id}"><span>${esc(etiqueta)}</span>
+      <input id="${id}" type="number" inputmode="numeric" data-ent="serie" data-d="${d}" data-f="${i}" data-s="${s}" data-k="${k}" value="${v ?? ''}" min="${min}" max="${max}" step="1"></label>`;
+  };
+  const filas = (f.porSerie || []).map((x, s) => `<li class="rut-serie"><span class="rut-serie-n">S${s + 1}</span>
+    ${campo(s, 'repsMin', x.repsMin, 1, 30, doble ? 'Reps mín' : 'Reps')}
+    ${doble ? campo(s, 'repsMax', x.repsMax, 1, 30, 'Reps máx') : ''}
+    ${campo(s, 'rir', x.rir, 0, 6, 'RIR')}</li>`).join('');
+  return `<div class="rut-libres" role="group" aria-label="Objetivo de cada serie"><p class="rut-libres-tit">Objetivo de cada serie</p><ol class="rut-series">${filas}</ol></div>`;
+}
+
 function fila(rutina, d, i, f, ss, ctx){
   const id = k => `ent-${d}-${i}-${k}`;
-  const modo = f.topBack ? 'topBack' : f.dropSet ? 'drop' : f.restPause ? 'rp' : 'normal';
+  const modo = f.topBack ? 'topBack' : f.dropSet ? 'drop' : f.restPause ? 'rp' : f.seriesLibres ? 'libres' : 'normal';
+  const libres = modo === 'libres';
   const ant = i > 0 ? rutina.dias[d].filas[i - 1] : null;
   const enSS = ss[i] > 0;
-  const ssChoca = modo !== 'normal' || (ant && (ant.topBack || ant.dropSet || ant.restPause));
+  // Las series libres sí pueden ir en superserie, como las series normales.
+  const ssChoca = (modo !== 'normal' && !libres) || (ant && (ant.topBack || ant.dropSet || ant.restPause));
   const listaId = `ent-lista-${(CAT_PATRONES.indexOf(f.patron) + 1) || 0}`;
   ctx.listas.add(f.patron || '');
   const nombre = f.ejercicio || 'ejercicio sin elegir';
@@ -221,17 +239,18 @@ function fila(rutina, d, i, f, ss, ctx){
       <label class="rut-campo pat" for="${id('patron')}"><span>Patrón</span><select id="${id('patron')}" data-ent="campo" data-d="${d}" data-f="${i}" data-k="patron">
         ${CAT_PATRONES.map(p => { const v = p === '(Ninguno)' ? '' : p; return `<option value="${esc(v)}"${v === (f.patron || '') ? ' selected' : ''}>${esc(p)}</option>`; }).join('')}
         ${f.patron && !CAT_PATRONES.includes(f.patron) ? `<option value="${esc(f.patron)}" selected>${esc(f.patron)}</option>` : ''}</select></label>
-      ${campoNum(id('series'), d, i, 'series', f.series, 1, 10, 'Series')}
-      ${campoNum(id('repsMin'), d, i, 'repsMin', f.repsMin, 1, modo === 'rp' ? 60 : 30, modo === 'rp' ? (rutina.sistema === 'doble' ? 'Reps totales mín' : 'Reps totales') : modo === 'drop' ? 'Reps 1.ª serie' : rutina.sistema === 'doble' ? 'Reps mín' : 'Reps')}
+      ${campoNum(id('series'), d, i, 'series', f.series, libres ? 2 : 1, 10, 'Series')}
+      ${libres ? '' : `${campoNum(id('repsMin'), d, i, 'repsMin', f.repsMin, 1, modo === 'rp' ? 60 : 30, modo === 'rp' ? (rutina.sistema === 'doble' ? 'Reps totales mín' : 'Reps totales') : modo === 'drop' ? 'Reps 1.ª serie' : rutina.sistema === 'doble' ? 'Reps mín' : 'Reps')}
       ${rutina.sistema === 'doble' && modo !== 'drop' ? campoNum(id('repsMax'), d, i, 'repsMax', f.repsMax, 1, modo === 'rp' ? 60 : 30, modo === 'rp' ? 'Reps totales máx' : 'Reps máx') : ''}
-      ${modo === 'rp' ? '<span class="rut-campo n2 rut-fijo"><span>RIR</span><b title="En rest-pause todas las series van al fallo">al fallo</b></span>' : campoNum(id('rir'), d, i, 'rir', f.rir, 0, 6, 'RIR')}
+      ${modo === 'rp' ? '<span class="rut-campo n2 rut-fijo"><span>RIR</span><b title="En rest-pause todas las series van al fallo">al fallo</b></span>' : campoNum(id('rir'), d, i, 'rir', f.rir, 0, 6, 'RIR')}`}
       <label class="rut-campo n3" for="${id('descanso')}"><span>Descanso</span><select id="${id('descanso')}" title="Por defecto: el descanso que la app propone para ese ejercicio" data-ent="campo" data-d="${d}" data-f="${i}" data-k="descanso">
         <option value=""${f.descanso == null ? ' selected' : ''}>Por defecto</option>
         ${CAT_DESCANSOS.map(v => `<option value="${v}"${v === f.descanso ? ' selected' : ''}>${fmtNum(v, 1)} min</option>`).join('')}
         ${f.descanso != null && !CAT_DESCANSOS.includes(f.descanso) ? `<option value="${f.descanso}" selected>${fmtNum(f.descanso, 2)} min</option>` : ''}</select></label>
-      <label class="rut-campo n4" for="${id('modalidad')}"><span>Modalidad</span><select id="${id('modalidad')}" data-ent="campo" data-d="${d}" data-f="${i}" data-k="modalidad"${enSS ? ' disabled title="En una superserie se entrena a series normales: quita la superserie para usar otra modalidad."' : ''}>
-        ${Object.entries(MODO).map(([k, t]) => `<option value="${k}"${k === modo ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label class="rut-campo n4" for="${id('modalidad')}"><span>Modalidad</span><select id="${id('modalidad')}" data-ent="campo" data-d="${d}" data-f="${i}" data-k="modalidad"${enSS ? ' title="En una superserie solo caben las series normales o las series libres: quita la superserie para usar otra modalidad."' : ''}>
+        ${Object.entries(MODO).filter(([k]) => !enSS || k === 'normal' || k === 'libres').map(([k, t]) => `<option value="${k}"${k === modo ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
       ${params}
+      ${libres ? seriesLibresEditor(rutina, d, i, f) : ''}
       ${i > 0 ? `<label class="rut-ss" for="${id('superConAnterior')}" title="${esc(ssTitulo)}"><input id="${id('superConAnterior')}" type="checkbox" data-ent="campo" data-d="${d}" data-f="${i}" data-k="superConAnterior"${f.superConAnterior && !ssChoca ? ' checked' : ''}${ssChoca ? ' disabled' : ''}> Superserie con el anterior</label>` : ''}
     </div>
     ${enSS ? `<p class="rut-meta">${chip('azul', `Superserie ${ss[i]}`)}</p>` : ''}

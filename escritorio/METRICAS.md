@@ -56,6 +56,17 @@ El objetivo es el primer número del rango en sistema simple y el último en
 doble; en rest-pause cuenta la **suma** de reps. Los intentos son 5 en
 déficit, 3 en superávit y 4 en el resto.
 
+**Series libres** (App-PRO 12/11/2026, `ALGORITMO_FUNCIONAL_TRUELIFT.md`
+§16.6): cada serie se valora por su cuenta con la misma regla, sobre una vista
+de la serie como `AppState.enSerieLibre` (`Motor.vistaSerieLibre`): la línea
+con el objetivo de esa serie y una sola serie, y las entradas del ejercicio en
+ese día reducidas a esa serie (`Motor.entradaDeSerie`: su `kgSets[s]`, sus
+reps y RIR, y su `repsExtraSeries`/`intentosTotalSeries`/`prescripcion` por
+serie). Una entrada de antes de las series libres se lee por su serie; una
+serie que la entrada no tenía empieza de cero. El estado del ejercicio
+(`Analisis.estadoSeriesLibres`) es «intentos agotados» o «objetivo cumplido»
+solo si lo son todas sus series; si no, «buscando el objetivo».
+
 El escritorio recorre `logs` en **orden de archivo**, como el móvil (no por
 fecha). Estados que muestra:
 
@@ -117,7 +128,7 @@ misma que la valoración de la app). Código: `escritorio/analisis.js`.
 |---|---|---|
 | Días previstos por semana | Reproducida desde los datos | Semana lunes-domingo. Rutina conocida si la última sesión anterior, las de la semana y la primera posterior tienen la misma identidad `variante|dias|revisión`; sin sesión posterior, si la rutina actual es la de la última sesión. Previstos = `dias` de esa identidad. Si no, «sin calcular». La semana en curso no se valora. Se compara con días con sesión (como `diasEntrenados` del informe mensual). |
 | Evolución de un ejercicio | Reproducida (`resumen_mensual.dart` `_extremosComparables`, cortes de `informe_mensual.dart`) | Mejor 1RM estimado de marca (Epley con RIR, carga efectiva, tope de 18 reps efectivas) por sesión. Media de las dos primeras y las dos últimas (con 2–3, primera y última). Δ ≥ 1 % al alza; Δ < −1 % a la baja; si no, «sin cambios claros». |
-| Sesiones comparables | Más estricta que el informe mensual | Entrenado en verde (como el móvil) **y** sin descarga, molestias ni cambio de un día, con la misma modalidad (normal, top + back-off, drop set, rest-pause) que la última sesión válida. El informe mensual del móvil no excluye descargas ni molestias ni separa modalidades. |
+| Sesiones comparables | Más estricta que el informe mensual | Entrenado en verde (como el móvil) **y** sin descarga, molestias ni cambio de un día, con la misma modalidad (normal, top + back-off, drop set, rest-pause, series libres) que la última sesión válida. El informe mensual del móvil no excluye descargas ni molestias ni separa modalidades. |
 | Lectura «firme» | Propia del escritorio | ≥ 4 sesiones comparables y las dos últimas por debajo (o por encima) de la media inicial. Solo las firmes se convierten en conclusión. |
 | Ejercicio en varios días de la rutina | Como el selector «Sesión» de Progreso en la app (`progreso_screen.dart`) | `Analisis.diasEjercicio`: días con carga del ejercicio en todo el historial, del más reciente al más antiguo. Si en el periodo hay sesiones de dos o más días, `evolucionesEjercicio` da una evolución por día (cada día lleva su propia carga) en Mi resumen, sus conclusiones, «Tus últimas semanas» y el informe; si no, una sola del ejercicio. La ficha ofrece «Sesión» (todas o un día) para la gráfica y el historial. Marcas y comparación de sesiones siguen siendo del ejercicio entero. |
 | Marcas | Reproducida (`mejorMarca`) | Cada sesión que supera la mejor marca anterior; la primera fija la referencia. |

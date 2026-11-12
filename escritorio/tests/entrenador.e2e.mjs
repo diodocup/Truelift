@@ -204,13 +204,31 @@ try {
   assert.match(await pagina.locator('#entCambios').innerText(), /igual que la rutina de su copia/);
   await cambiar('#ent-1-0-series', 5);
   assert.match(await pagina.locator('#entCambios').innerText(), /Series 4 → 5/);
+  // Series libres (App-PRO #297): reps y RIR propios en cada serie.
+  await cambiar('#ent-0-1-modalidad', 'libres');
+  await pagina.locator('#ent-0-1-s2-rir').waitFor();
+  assert.equal(await pagina.locator('#ent-0-1-repsMin').count(), 0, 'las reps de la fila pasan a ser por serie');
+  await cambiar('#ent-0-1-s1-repsMax', 14);
+  await cambiar('#ent-0-1-s2-rir', 1);
+  const cambiosLibres = await pagina.locator('#entCambios').innerText();
+  assert.match(cambiosLibres, /Modalidad Series normales → Series libres/);
+  assert.match(cambiosLibres, /Reps por serie — → 8-12 · 8-14 · 8-12/);
+  await foto('e03b-series-libres.png');
   await pagina.click('#entEmitir');
   await pagina.locator('#entNombreEntrenador').waitFor();
   assert.equal(await pagina.inputValue('#entNombreEntrenador'), 'Ana Pérez');   // se recuerda
   const d2 = await descargarPlan();
   const v2 = await P.verificar(d2.bytes, { claves: CLAVES });
   assert.equal(v2.ok, true, v2.detalle);
-  const esperado = PL.editar(PL.rutinaCopia(copia).rutina, { tipo: 'campo', d: 1, f: 0, k: 'series', valor: 5 });
+  let esperado = PL.editar(PL.rutinaCopia(copia).rutina, { tipo: 'campo', d: 1, f: 0, k: 'series', valor: 5 });
+  esperado = PL.editar(esperado, { tipo: 'campo', d: 0, f: 1, k: 'modalidad', valor: 'libres' });
+  esperado = PL.editar(esperado, { tipo: 'serie', d: 0, f: 1, s: 1, k: 'repsMax', valor: 14 });
+  esperado = PL.editar(esperado, { tipo: 'serie', d: 0, f: 1, s: 2, k: 'rir', valor: 1 });
+  const remo = v2.carga.rutina.dias[0].ejercicios[1];
+  assert.equal(remo.seriesLibres, true);
+  assert.deepEqual(remo.repsSeries, ['8-12', '8-14', '8-12']);
+  assert.deepEqual(remo.rirSeries, ['2', '2', '1']);
+  assert.equal('seriesLibres' in v2.carga.rutina.dias[0].ejercicios[0], false, 'sin series libres no viaja la clave');
   assert.deepEqual(PL.comoLaApp(v2.carga.rutina).normal, PL.simular(esperado, copia).normal);
   assert.equal(v2.carga.rutina.dias[2].ejercicios[0].restPause, true);
   // Plantilla: borrador de otro cliente.

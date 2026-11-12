@@ -57,7 +57,21 @@ function fase(raw){ return raw.fasePeso === 'deficit' ? 'deficit' : raw.fasePeso
 const FASE_TXT = { deficit: 'Déficit (perder peso)', superavit: 'Superávit (ganar peso)', normo: 'Normocalórica (mantener)' };
 const VEREDICTO = { bueno: ['verde', 'Buena'], normal: ['gris', 'Normal'], flojo: ['ambar', 'Floja'], 'muy flojo': ['rojo', 'Muy floja'] };
 
+/* Series libres: el estado del ejercicio junta el de sus series (cada una
+   progresa por su cuenta) y el detalle de cada serie va aparte. */
+const LIBRES_LARGO = 'Entrena en series libres: cada serie tiene su propio objetivo y progresa por su cuenta.';
 function estadoTexto(st){
+  if (st.libres){
+    const n = st.series.length;
+    const base = estadoTexto({ ...st, libres: false });
+    if (st.tipo === 'enCurso') return { clase: 'azul', corto: `Buscando el objetivo (${st.buscando} de ${n} series)`,
+      largo: `${LIBRES_LARGO} Algunas series siguen buscando su objetivo con la misma carga.` };
+    if (st.tipo === 'intentosAgotados') return { clase: 'ambar', corto: 'Intentos agotados en todas las series',
+      largo: `${LIBRES_LARGO} Todas han usado los intentos que da la app con su carga. El siguiente paso lo decide la app según tu fase.` };
+    if (st.tipo === 'objetivoCumplido') return { ...base, corto: 'Objetivo cumplido en todas las series',
+      largo: `${LIBRES_LARGO} En su última sesión válida todas llegaron a su objetivo de repeticiones.` };
+    return { ...base, largo: `${LIBRES_LARGO} ${base.largo}` };
+  }
   switch (st.tipo){
     case 'porTiempo': return { clase: 'gris', corto: 'Por tiempo', largo: 'Se mide en segundos: no tiene 1RM estimado.' };
     case 'fueraDeRutina': return { clase: 'gris', corto: 'Fuera de tu rutina', largo: 'No está en tu rutina actual: se muestra su historial, sin valorar su progresión.' };
@@ -685,6 +699,7 @@ function detalleSesionHtml(M, indice){
     if (e.noDisponible) m.push(chip('gris', 'No realizado'));
     if (e.dropSet) m.push(chip('gris', 'Drop set'));
     if (e.restPause) m.push(chip('gris', 'Rest-pause'));
+    if (e.seriesLibres) m.push(chip('gris', 'Series libres'));
     if (e.superserie != null) m.push(chip('gris', `Superserie ${e.superserie}`));
     if (e.modulada) m.push(chip('gris', 'Intensidad ajustada'));
     if (e.estadoEjercicio && e.estadoEjercicio !== s.semaforo) m.push(chip(e.estadoEjercicio === 'verde' ? 'verde' : e.estadoEjercicio === 'rojo' ? 'rojo' : 'ambar', `Ejercicio en ${e.estadoEjercicio}`));
@@ -745,6 +760,16 @@ function seriesHtml(series, porTiempo){
   }).join('<span class="sep-serie"> · </span>');
 }
 
+/* Estado de cada serie de una línea en series libres. */
+function seriesLibresHtml(st){
+  const filas = st.series.map(sp => {
+    const t = estadoTexto(sp);
+    const extra = sp.repsExtra ? ` <span class="muted">(ahora ${esc(sp.repsHoy)})</span>` : '';
+    return [`Serie ${sp.serie + 1}`, `${esc(String(sp.reps ?? '—'))}${extra}`, chip(t.clase, t.corto, t.largo)];
+  });
+  return tabla(['Serie', 'Objetivo (reps)', 'Estado'], filas, { caption: `Estado de cada serie en ${st.dia}` });
+}
+
 const fechaSesion = p => `<button type="button" class="enlace" data-sesion="${p.sesion.indice}">${F.dia(p.fecha)}</button>`;
 
 function fichaEjercicio(M, nombre, st = {}){
@@ -756,7 +781,8 @@ function fichaEjercicio(M, nombre, st = {}){
   const unidadCarga = ej.asistido ? 'asistencia en kg' : ej.pesoCorporal ? 'lastre en kg' : 'kg';
 
   // --- estado de progresión y su porqué ---
-  const porQue = est.filter(({ s }) => s.op && s.op.length).map(({ s }) => {
+  // En series libres, una tabla por serie con su carga y su objetivo.
+  const porQue = est.flatMap(({ s }) => Analisis.estadosPlanos(s).map(sp => ({ s: sp, dia: s.dia }))).filter(({ s }) => s.op && s.op.length).map(({ s }) => {
     const filas = s.op.slice(0, Math.max(s.consumidos, 1) + 2).map((o, i) => {
       const p = ej.puntos.find(q => q.sesion.l === M.raw.logs[o.indice]);
       return [p ? fechaSesion(p) : F.dia(parseFecha(o.fecha)), F.num(Motor.cargaOrientada(nombre, o.kg), 2),
@@ -764,18 +790,21 @@ function fichaEjercicio(M, nombre, st = {}){
         o.completo ? chip('verde', 'Llegó al objetivo') : chip('gris', 'No llegó'),
         i < s.consumidos ? chip('azul', 'Cuenta como intento') : ''];
     });
-    return `<p class="sub-h">${esc(s.dia)} · objetivo ${esc(String(s.reps))} reps</p>
-      ${tabla(['Fecha', `Carga (${unidadCarga})`, 'Reps de las series principales', 'Objetivo', 'Contador'], filas, { caption: `Sesiones que cuentan para la progresión en ${s.dia}` })}`;
+    const serie = s.serie != null ? ` · serie ${s.serie + 1}` : '';
+    return `<p class="sub-h">${esc(s.dia)}${serie} · objetivo ${esc(String(s.reps))} reps</p>
+      ${tabla(['Fecha', `Carga (${unidadCarga})`, s.serie != null ? 'Reps de la serie' : 'Reps de las series principales', 'Objetivo', 'Contador'], filas, { caption: `Sesiones que cuentan para la progresión en ${s.dia}${serie}` })}`;
   });
   const etiquetas = [...new Set(ej.lineas.map(l => l.dia).filter(Boolean)), ej.grupo,
-    ...ej.lineas.slice(0, 1).map(l => [l.series && `${l.series} × ${l.reps || '—'}`, l.rir != null && `RIR ${l.rir}`].filter(Boolean).join(' · '))].filter(Boolean);
+    ...ej.lineas.slice(0, 1).map(l => Motor.esSeriesLibresLinea(l, M.raw)
+      ? `Series libres: ${Motor.objetivosSeries(l).map(o => `${o.reps} @${o.rir}`).join(' · ')}`
+      : [l.series && `${l.series} × ${l.reps || '—'}`, l.rir != null && `RIR ${l.rir}`].filter(Boolean).join(' · '))].filter(Boolean);
   // El dibujo de la biblioteca va a la derecha de la cabecera, como en la
   // app; pulsarlo abre la ficha ampliada. Debajo del título, la nota técnica.
   out.push(`<section class="card ficha-cab"><div class="ficha-cab-fila"><div class="ficha-cab-txt"><h2>${esc(nombre)}</h2>
     ${ficha && ficha.nota ? `<p class="ej-nota ficha-nota">${esc(ficha.nota)}</p>` : ''}
     ${etiquetas.length ? `<p class="ficha-etiquetas">${etiquetas.map(t => `<span>${esc(String(t))}</span>`).join('')}</p>` : ''}
     <p>${est.map(({ s, t }) => `${chip(t.clase, t.corto)}${s.dia ? ` <span class="muted">${esc(s.dia)}</span>` : ''}`).join(' · ')}</p>
-    ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.repsExtra ? ` Como bajaste el peso por estancamiento, ahora buscas ${esc(s.repsHoy)} reps; al conseguirlo volverá a subir la carga y recuperarás tu rango de siempre.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.trasPasoAtras ? ' La app marcó que se volvió a estancar tras bajar el peso y te propuso cambiarlo por una variante equivalente.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>` : '').join('')}
+    ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.repsExtra ? ` Como bajaste el peso por estancamiento, ahora buscas ${esc(s.repsHoy)} reps; al conseguirlo volverá a subir la carga y recuperarás tu rango de siempre.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.trasPasoAtras ? ' La app marcó que se volvió a estancar tras bajar el peso y te propuso cambiarlo por una variante equivalente.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>${s.libres ? seriesLibresHtml(s) : ''}` : '').join('')}
     ${porQue.length ? `<details class="detalle"><summary>Por qué este estado</summary>${porQue.join('')}
       <p class="muted" style="font-size:12.5px">Son las sesiones más recientes de tu rutina actual que cuentan para la progresión, igual que en la app. Las descargas, las sesiones con molestias o con un cambio de un día y las que tienen series principales sin anotar no aparecen porque no cuentan.</p></details>` : ''}
     <div class="cifras">${cifra(String(ej.sesiones), 'sesiones')}
@@ -972,6 +1001,7 @@ function marcasPunto(p){
   if (p.noVerde && !p.sesion.descarga) m.push(p.estado === 'rojo' ? chip('rojo', 'Día rojo') : chip('ambar', 'Día ámbar'));
   if (p.e.dropSet) m.push(chip('gris', 'Drop'));
   if (p.e.restPause) m.push(chip('gris', 'Rest-pause'));
+  if (p.e.seriesLibres) m.push(chip('gris', 'Series libres'));
   if (p.topBack) m.push(chip('gris', 'Top + back-off'));
   if (p.superaMarca) m.push(chip('verde', 'Nueva marca'));
   if (Motor.incompleta(p.e)) m.push(chip('gris', 'Series sin anotar'));
@@ -1242,8 +1272,13 @@ function rutina(M, { sinCabecera = false } = {}){
       if (l.topBack) mod.push(`Top + back-off${typeof l.backoffPct === 'number' ? ` (−${l.backoffPct} %)` : ''}`);
       if (l.dropSet) mod.push(`Drop set${typeof l.dropPct === 'number' ? ` (−${l.dropPct} %)` : ''}`);
       if (l.restPause) mod.push('Rest-pause');
+      // Series libres: objetivo de reps y RIR de cada serie, en orden.
+      const libres = Motor.esSeriesLibresLinea(l, M.raw);
+      if (libres) mod.push('Series libres');
       if (l.superConAnterior) mod.push('Superserie con el anterior');
-      return [DibujosEsc.celda(l.ejercicio, esc(l.ejercicio)), esc(l.grupo || '—'), esc(String(l.series ?? '—')), esc(String(l.reps ?? '—')), esc(String(l.rir ?? '—')),
+      const obj = libres ? Motor.objetivosSeries(l) : null;
+      return [DibujosEsc.celda(l.ejercicio, esc(l.ejercicio)), esc(l.grupo || '—'), esc(String(l.series ?? '—')),
+        esc(obj ? obj.map(o => o.reps).join(' · ') : String(l.reps ?? '—')), esc(obj ? obj.map(o => o.rir).join(' · ') : String(l.rir ?? '—')),
         typeof l.descansoMin === 'number' ? `${F.num(l.descansoMin, 1)} min` : '—', esc(mod.join(' · '))];
     });
     // Sin modalidades especiales en el día, la columna solo ocuparía sitio.
