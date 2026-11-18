@@ -19,7 +19,7 @@ const dias = (a, b) => Math.round((dia(b) - dia(a)) / 86400000);
 const mediana = xs => VFC._mediana(xs);
 
 function noches(R, campo, tope){
-  return R.filter(r => r && r.fecha && !r.vfcDescartada && Number.isFinite(r[campo]) && dia(r.fecha) <= tope)
+  return R.filter(r => r && r.fecha && !nocheFueraDeReferencia(r) && Number.isFinite(r[campo]) && dia(r.fecha) <= tope)
     .map(r => ({ f: dia(r.fecha), v: r[campo] })).sort((a, b) => a.f - b.f);
 }
 /* _ultimaNocheValida: la última noche hasta `tope`, si no tiene más de 2 días. */

@@ -59,6 +59,15 @@ recientes) y `fechaNacimiento` son indicios, no identidad.
   y drops), reps[] (int|null), rir[] (int|null), obs, modulada,
   progresionPausada, estadoEjercicio, neutra, noDisponible, molestias,
   sustitucion, ejercicioPlan, dropSet, restPause, superserie`.
+- Claves aditivas del 12-18/11/2026: `sesionCorta: true` (entrada de una
+  sesión corta; el log lleva `sesionCorta: 'corta'|'expres'`), `extra: true`
+  (entrada de una sesión extra, en `sesionesExtra[]`, no en `logs`),
+  `aPendientes: true` (dejado para la sesión extra; va además como no
+  realizado), `rampaParon: {marca, inicio, pasos, origen?}` (vuelta
+  escalonada tras un parón) y `vueltaMolestias` (`bien|mejor|sigue`,
+  informativa). Las entradas con `sesionCorta` o `extra` son no evaluables
+  (`Motor.noEvaluable`), como las de molestias. `superserie` es el número del
+  grupo de series alternas con el que se hizo (consultivo).
 - Series libres (12/11/2026): `seriesLibres: true`, `kgSets` completo (`kg` =
   serie 1) y, si hacen falta, `repsExtraSeries[]` e `intentosTotalSeries[]`
   (una cifra por serie). En `prescripcion` y `objetivoDia`: `tecnica:
@@ -84,9 +93,17 @@ ambos.
 
 `id ('linea_<µs>_<n>' o 'prefijada:<dia>:<orden>'), dia, orden, patron, grupo,
 ejercicio, series, reps (string), rir (string), descansoMin, topBack,
-backoffPct, rirBack, dropSet, dropPct, superConAnterior, restPause,
-pausaRpSeg, seriesLibres, repsSeries[], rirSeries[]`. Las copias antiguas no
-traen las modalidades.
+backoffPct, rirBack, dropSet, dropPct, grupoAlterno, superConAnterior,
+restPause, pausaRpSeg, seriesLibres, repsSeries[], rirSeries[]`. Las copias
+antiguas no traen las modalidades.
+
+- **Series alternas (17/11/2026):** `grupoAlterno` es el número del grupo de
+  la línea dentro de su día (0 = sin grupo); las líneas del mismo número
+  alternan sus series aunque no vayan seguidas. `superConAnterior` ya no
+  decide nada: se escribe derivado de los grupos. Una copia sin
+  `grupoAlterno` es del modelo antiguo y cada cadena de enlaces es un grupo
+  (`Motor.saNormalizar`, como `SeriesAlternas.normalizar`). Drop set y
+  rest-pause sacan su línea del grupo; un grupo de una sola línea no vale.
 
 - **Series libres (12/11/2026):** `seriesLibres: true` con `repsSeries` y
   `rirSeries` (texto, una cifra por serie; `reps`/`rir` copian los de la 1.ª).

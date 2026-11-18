@@ -171,9 +171,150 @@ const Motor = {
       repsExtra: typeof raw.repsExtra === 'number' && raw.repsExtra > 0 ? Math.trunc(raw.repsExtra) : 0,
       prescripcionReps: raw.prescripcion && typeof raw.prescripcion === 'object' && typeof raw.prescripcion.reps === 'string'
         ? raw.prescripcion.reps : null,
+      // EntryLog.extra: ejercicio hecho en una SESIÓN EXTRA (pendientes de
+      // otras sesiones, App-PRO 09/11/2026). Clave aditiva.
+      extra: raw.extra === true,
+      // EntryLog.corta: la entrada es de una SESIÓN CORTA («Corta» o
+      // «Exprés», App-PRO 16/11/2026). Nada de esa sesión cuenta para la
+      // progresión, ni los ejercicios que quedaron intactos. Clave aditiva.
+      corta: raw.sesionCorta === true,
+      // EntryLog.aPendientes: se dejó para la sesión extra (también va como
+      // no realizado). Clave aditiva.
+      aPendientes: raw.aPendientes === true,
+      // EntryLog.rampaParon: vuelta escalonada tras un parón (App-PRO
+      // 12/11/2026): marca de antes del parón, carga con la que se volvió y
+      // sesiones para recuperarla. Clave aditiva.
+      rampaParon: this._rampa(raw.rampaParon),
     };
   },
-  noEvaluable(e){ return e.molestias || e.sustitucion; },
+  /* EntryLog.rampaParon: {marca, inicio, pasos} o null si falta o no vale. */
+  _rampa(v){
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const marca = this._num(v.marca), inicio = this._num(v.inicio), pasos = this._num(v.pasos);
+    if (marca == null || inicio == null || pasos == null || pasos < 1 || inicio >= marca) return null;
+    return { marca, inicio, pasos: Math.trunc(pasos), origen: typeof v.origen === 'string' && v.origen ? v.origen : null };
+  },
+  /* AppState._rampaDeEntrada: la vuelta escalonada sigue en curso mientras la
+     carga (canónica) de la entrada no haya recuperado la marca. */
+  rampaEnCurso(e){
+    const r = e && e.rampaParon;
+    if (!r || e.kg == null || e.noDisponible) return null;
+    return this.lastreCanonico(e.ejercicio, e.kg) < r.marca - 1e-6 ? r : null;
+  },
+  /* EntryLog.noEvaluable: cuenta para el volumen y el historial y para nada
+     más (rendimiento, marcas, niveles, progresión ni estancamiento). Con
+     molestias, cambiado solo por hoy, en una sesión extra o en una sesión
+     corta. */
+  noEvaluable(e){ return e.molestias || e.sustitucion || e.extra || e.corta; },
+  /* Motivo por el que una entrada no cuenta, para los textos del visor. */
+  motivoNoEvaluable(e){
+    return e.molestias ? 'molestias' : e.sustitucion ? 'cambioDia' : e.corta ? 'corta' : e.extra ? 'extra' : null;
+  },
+  /* SessionLog.nivelSesionCorta: 'corta' | 'expres' | null (sesión completa). */
+  nivelSesionCorta(l){
+    const v = l && l.sesionCorta;
+    return v === 'corta' || v === 'expres' ? v : null;
+  },
+
+  // ---------------------------------------------------------------
+  // Series alternas (App-PRO 17/11/2026, lib/series_alternas.dart). Antes
+  // «superserie». Cada línea lleva el número de su grupo dentro del día
+  // (`grupoAlterno`, 0 = sin grupo); las líneas del mismo número alternan
+  // sus series aunque no vayan seguidas, y el grupo se hace en la posición
+  // de su primer ejercicio. Las rutinas guardadas sin `grupoAlterno` traen
+  // el modelo antiguo (`superConAnterior`, enlace con la línea anterior):
+  // cada cadena de enlaces es un grupo. Caben series rectas, series libres y
+  // top + back-offs; drop set y rest-pause no (encadenan sus series).
+  // Las funciones trabajan sobre las líneas de UN día, en su orden, con las
+  // claves de la app (dropSet, restPause, grupoAlterno, superConAnterior);
+  // sirven igual para las filas del editor del modo entrenador.
+  // ---------------------------------------------------------------
+
+  /* SeriesAlternas.admite. */
+  saAdmite(l){ return !!l && l.dropSet !== true && l.restPause !== true; },
+  /* ¿La línea trae el enlace antiguo pendiente de convertir? */
+  saLegado(l){
+    return !!l && (l._enlaceLegado === true || (typeof l.grupoAlterno !== 'number' && l.superConAnterior === true));
+  },
+  /* SeriesAlternas.normalizar sobre las líneas de un día (las muta y las
+     devuelve): convierte el enlace antiguo, saca las líneas con drop set o
+     rest-pause, deshace grupos de una línea y reescribe `superConAnterior`
+     derivado de los grupos. */
+  saNormalizar(lineas){
+    const ls = Array.isArray(lineas) ? lineas : [];
+    const legado = ls.map(l => this.saLegado(l));
+    ls.forEach(l => {
+      const g = typeof l.grupoAlterno === 'number' && isFinite(l.grupoAlterno) ? Math.trunc(l.grupoAlterno) : 0;
+      l.grupoAlterno = g;
+      delete l._enlaceLegado;
+    });
+    const libre = () => ls.reduce((m, l) => Math.max(m, l.grupoAlterno), 0) + 1;
+    ls.forEach((l, pos) => {
+      if (!legado[pos] || pos === 0 || l.grupoAlterno > 0) return;
+      const ant = ls[pos - 1];
+      if (ant.grupoAlterno <= 0) ant.grupoAlterno = libre();
+      l.grupoAlterno = ant.grupoAlterno;
+    });
+    const cuenta = new Map();
+    ls.forEach(l => {
+      if (l.grupoAlterno < 0 || !this.saAdmite(l)) l.grupoAlterno = 0;
+      if (l.grupoAlterno > 0) cuenta.set(l.grupoAlterno, (cuenta.get(l.grupoAlterno) || 0) + 1);
+    });
+    ls.forEach((l, pos) => {
+      if ((cuenta.get(l.grupoAlterno) || 0) < 2) l.grupoAlterno = 0;
+      l.superConAnterior = pos > 0 && l.grupoAlterno > 0 && ls[pos - 1].grupoAlterno === l.grupoAlterno;
+    });
+    return ls;
+  },
+  /* SeriesAlternas.numeroVisible de cada línea (1, 2, … por la posición del
+     primer ejercicio de cada grupo; 0 si no va en ninguno). Lee los grupos
+     tal cual: normaliza antes si hace falta. */
+  saNumeros(lineas){
+    const ls = Array.isArray(lineas) ? lineas : [];
+    const g = l => (typeof l.grupoAlterno === 'number' ? l.grupoAlterno : 0);
+    const cuenta = new Map();
+    ls.forEach(l => { if (g(l) > 0) cuenta.set(g(l), (cuenta.get(g(l)) || 0) + 1); });
+    const visible = new Map();
+    ls.forEach(l => { if (g(l) > 0 && cuenta.get(g(l)) > 1 && !visible.has(g(l))) visible.set(g(l), visible.size + 1); });
+    return ls.map(l => visible.get(g(l)) || 0);
+  },
+  /* SeriesAlternas.ordenEjecucion: índices en el orden en que se hacen
+     (cada grupo entero en la posición de su primer ejercicio). */
+  saOrden(lineas){
+    const ls = Array.isArray(lineas) ? lineas : [];
+    const num = this.saNumeros(ls);
+    const out = [], puestos = new Set();
+    ls.forEach((_, i) => {
+      if (puestos.has(i)) return;
+      const miembros = num[i] ? ls.map((_, k) => k).filter(k => num[k] === num[i]) : [i];
+      miembros.forEach(k => { if (!puestos.has(k)){ puestos.add(k); out.push(k); } });
+    });
+    return out;
+  },
+  /* SeriesAlternas.numeroLibre: un número de grupo sin usar en el día. */
+  saNumeroLibre(lineas){
+    return (Array.isArray(lineas) ? lineas : []).reduce((m, l) => Math.max(m, typeof l.grupoAlterno === 'number' ? l.grupoAlterno : 0), 0) + 1;
+  },
+  /* Los grupos de una rutina guardada por la app (`planMod`, con `dia` y
+     `orden`): mapa línea → número visible del grupo en su día. No toca las
+     líneas. */
+  saGruposPlan(plan){
+    const porDia = new Map();
+    (Array.isArray(plan) ? plan : []).forEach(p => {
+      if (!p || typeof p !== 'object') return;
+      const d = String(p.dia ?? '—');
+      if (!porDia.has(d)) porDia.set(d, []);
+      porDia.get(d).push(p);
+    });
+    const out = new Map();
+    porDia.forEach(ls => {
+      const orden = ls.slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+      const copia = this.saNormalizar(orden.map(p => ({ grupoAlterno: p.grupoAlterno, superConAnterior: p.superConAnterior,
+        dropSet: p.dropSet, restPause: p.restPause })));
+      this.saNumeros(copia).forEach((n, i) => out.set(orden[i], n));
+    });
+    return out;
+  },
   soloPrimeraSerie(e){ return e.dropSet || e.restPause; },
   kgSerie(e, s){
     const k = s >= 0 && s < e.kgSets.length ? e.kgSets[s] : null;
@@ -198,7 +339,7 @@ const Motor = {
   /* Separador de las listas por serie en `prescripcion` / `objetivoDia`. */
   SEP_SERIES_LIBRES: '|',
   /* AppState._seriesLibresLinea: al menos 2 series, ninguna otra modalidad
-     y nunca en ejercicios por tiempo. Compatible con la superserie. */
+     y nunca en ejercicios por tiempo. Compatible con las series alternas. */
   esSeriesLibresLinea(linea, raw = null){
     return !!linea && linea.seriesLibres === true && (this._int(linea.series) ?? 0) >= 2 &&
            linea.topBack !== true && linea.dropSet !== true && linea.restPause !== true &&
@@ -239,7 +380,7 @@ const Motor = {
     m.kg = e.noDisponible ? e.kg : this.kgSerie(e, s);
     m.reps = [s < n ? e.reps[s] : null];
     m.rir = [s < e.rir.length ? e.rir[s] : null];
-    for (const k of ['kgSets', 'dropSet', 'restPause', 'seriesLibres', 'repsExtraSeries', 'intentosTotalSeries']) delete m[k];
+    for (const k of ['kgSets', 'dropSet', 'restPause', 'seriesLibres', 'repsExtraSeries', 'intentosTotalSeries', 'rampaParon']) delete m[k];
     if (e.seriesLibres){
       delete m.repsExtra; delete m.intentosTotal;
       const rx = this._deLista(cruda.repsExtraSeries, s);
@@ -485,6 +626,9 @@ const Motor = {
       // atrás por estancamiento el rango iba subido (repsExtra).
       const extra = this.repsExtraDeEntrada(e, linea ? linea.reps : null);
       const completo = this.repsObjetivoCumplido(this.repsTop(e), objetivo + extra, total);
+      // Vuelta escalonada tras un parón (App-PRO 12/11/2026): fallar con la
+      // carga reducida no es un intento de progresión; cumplir sí cuenta.
+      if (!completo && this.rampaEnCurso(e)) continue;
       if (e.neutra && !completo) continue;
       out.push({ kg: e.kg, completo, fecha: l.fecha, indice: i, entrada: e, extra });
     }
@@ -681,11 +825,17 @@ const Motor = {
       return p ? this._int(p.series) : null;
     };
   },
-  volumenReal({ logs, info, hoy, gran = 'semana', desde = null, nominalHoy = null }){
+  /* `sesionesExtra`: AppState.sesionesExtra (pendientes recuperados y
+     ejercicios fuera de la rutina). Suman sus series en su fecha, pero no
+     recortan nada ni marcan cambios de rutina (historialVolumenReal). */
+  volumenReal({ logs, info, hoy, gran = 'semana', desde = null, nominalHoy = null, sesionesExtra = [] }){
     const dia = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const sumar = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-    const ses = (logs || []).filter(l => l && !this.esCardio(l) && this._fecha(l.fecha))
-      .map(l => ({ l, f: this._fecha(l.fecha) })).sort((a, b) => a.f - b.f);
+    const ses = [
+      ...(logs || []).filter(l => l && !this.esCardio(l) && this._fecha(l.fecha)).map(l => ({ l, f: this._fecha(l.fecha), extra: false })),
+      ...(Array.isArray(sesionesExtra) ? sesionesExtra : []).filter(l => l && typeof l === 'object' && this._fecha(l.fecha))
+        .map(l => ({ l, f: this._fecha(l.fecha), extra: true })),
+    ].sort((a, b) => a.f - b.f);
     if (!ses.length) return [];
     const primer = dia(ses[0].f), ultimo = dia(hoy);
     let ini = desde ? dia(desde) : primer;
@@ -703,20 +853,21 @@ const Motor = {
                    recortes: new Map(this.GRUPOS_VOLUMEN.map(g => [g, 0])), cambioRutina: false, sesiones: 0 });
     }
     let ant = null;
-    ses.forEach(({ l, f }) => {
+    ses.forEach(({ l, f, extra }) => {
       const r = `${l.variante ?? ''}|${l.dias ?? ''}`;
-      const estrena = ant != null && r !== ant;
-      ant = r;
+      // Una sesión extra no es de ninguna rutina: no estrena nada.
+      const estrena = !extra && ant != null && r !== ant;
+      if (!extra) ant = r;
       const d = dia(f);
       if (d < ini || d > ultimo) return;
       const c = cubos[idx.get(+iniCubo(d))];
       if (!c) return;
       if (estrena) c.cambioRutina = true;
-      c.sesiones++;
+      if (!extra) c.sesiones++;
       this.entradasDe(l).forEach(e => {
         const v = this.seriesPorGrupo(e, info);
         if (v) v.forEach((n, g) => c.series.set(g, c.series.get(g) + n));
-        const quitadas = this.seriesRecortadas(l, e, nominalHoy);
+        const quitadas = extra ? 0 : this.seriesRecortadas(l, e, nominalHoy);
         const r = quitadas > 0 ? this.seriesPorGrupo(e, info, quitadas) : null;
         if (r) r.forEach((n, g) => c.recortes.set(g, c.recortes.get(g) + n));
       });

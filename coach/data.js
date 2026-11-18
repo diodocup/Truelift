@@ -57,6 +57,14 @@ function fmtISO(d){
 function diasEntre(a, b){ return Math.round((soloDia(b) - soloDia(a)) / 86400000); }
 
 // ---------- Validación y normalización ----------
+/* AppState.nocheFueraDeReferencia (App-PRO 18/11/2026): una noche no entra
+   en la referencia de VFC ni de FC en reposo (línea base, media de 7 días,
+   rachas y bandas) si se marcó como dato poco fiable o si ese día se marcó
+   «Enfermo»: con fiebre la VFC se hunde y la FC sube, y al recuperarse esas
+   noches seguían frenando la sesión. Las noches siguientes, ya sin
+   «Enfermo», cuentan con normalidad. */
+function nocheFueraDeReferencia(r){ return !!r && (r.vfcDescartada === true || r.enfermo === true); }
+
 function pareceTrueLift(raw){
   return raw && typeof raw === 'object' && !Array.isArray(raw) &&
          (Array.isArray(raw.logs) || Array.isArray(raw.planMod));
@@ -576,7 +584,7 @@ const Metricas = {
     if (bandaMin == null) return [];
     const lim = new Date(soloDia(hasta) - 6 * 86400000);
     return readinessR.filter(r =>
-      r.fecha >= lim && r.vfc != null && !r.vfcDescartada && r.vfc < bandaMin);
+      r.fecha >= lim && r.vfc != null && !nocheFueraDeReferencia(r) && r.vfc < bandaMin);
   },
 
   // % de rendimiento unificado (antiguo ~100 / nuevo ±% → base 100)
@@ -625,7 +633,7 @@ const VFC = {
   // Noches válidas ordenadas: [{fecha, clave, vfc}]
   validas(readiness){
     return readiness
-      .filter(r => r.vfc != null && !r.vfcDescartada && r.fecha)
+      .filter(r => r.vfc != null && !nocheFueraDeReferencia(r) && r.fecha)
       .map(r => ({ fecha: soloDia(r.fecha), clave: fmtISO(r.fecha), vfc: r.vfc }))
       .sort((a,b) => a.fecha - b.fecha);
   },
@@ -725,10 +733,11 @@ const FCReposo = {
   NOCHES_BANDA: 30,
   MIN_NOCHES_BANDA: 14,
 
-  // La marca vfcDescartada identifica una noche no representativa completa.
+  // La marca vfcDescartada identifica una noche no representativa completa;
+  // las noches con «Enfermo» tampoco entran (nocheFueraDeReferencia).
   validas(readiness){
     return readiness
-      .filter(r => Number.isFinite(r.fcReposo) && !r.vfcDescartada && r.fecha)
+      .filter(r => Number.isFinite(r.fcReposo) && !nocheFueraDeReferencia(r) && r.fecha)
       .map(r => ({ fecha: soloDia(r.fecha), clave: fmtISO(r.fecha), fcReposo: r.fcReposo }))
       .sort((a,b) => a.fecha - b.fecha);
   },

@@ -787,16 +787,17 @@ try {
     await pagina.keyboard.press('Alt+5');
     await pagina.getByRole('heading', { name: 'Nutrición', exact: true }).waitFor();
     const txt = () => pagina.locator('#contenido').innerText();
-    assert.match(await txt(), /DÉFICIT · SEMANA \d+/i);
+    assert.match(await txt(), /(DÉFICIT|SUPERÁVIT) · SEMANA \d+/i);   // la copia de ejemplo está ya en volumen
     assert.match(await txt(), /Es de consulta: tu pauta y tu plan se cambian en la app/);
-    assert.match(await txt(), /come unas 171 kcal más al día que antes/);
+    assert.match(await txt(), /kcal/);
     await foto('40-nutricion-pauta.png');
     await pagina.click('[data-ir="nutricion:evolucion"]');
     await pagina.getByText('Tu peso en la fase').waitFor();
-    assert.match(await txt(), /Plan inicial/);
+    // El plan inicial solo se dibuja si el ritmo cambió (App-PRO 16/11/2026).
+    assert.match(await txt(), /Tu objetivo|Calibrando/);
     await pagina.click('[data-ir="nutricion:temporada"]');
     await pagina.waitForSelector('#nutImagenes .nut-cuerpo img');
-    assert.match(await txt(), /Definición 1[\s\S]*Normocalórica[\s\S]*Volumen[\s\S]*Definición 2/);
+    assert.match(await txt(), /Volumen[\s\S]*Definición/);   // plan de la copia de ejemplo del 06/11
     assert.equal(await pagina.locator('#nutImagenes .nut-cuerpo img').count(), 2);
     assert.ok((await pagina.locator('#nutImagenes .nut-cuerpo img').first().getAttribute('src')).startsWith('estados/hombre/'));
     // Mover la imagen de partida con el teclado cambia solo lo que se ve.

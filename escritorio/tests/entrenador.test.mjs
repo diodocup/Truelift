@@ -115,7 +115,13 @@ test('rutina de la copia: modelo del editor con modalidades, contexto y forma ca
   assert.equal(pierna.filas[1].dropSet, true);
   assert.equal(brazos.filas[0].restPause, true);
   assert.equal(brazos.filas[0].pausaRpSeg, 30);
-  assert.equal(m.normal.dias[0].lineas[2].superserie, true);
+  // Copia anterior a las series alternas: el enlace con la anterior pasa a
+  // ser un grupo (número visible 1) con la fila de encima.
+  assert.equal(torso.filas[1].grupoAlterno > 0, true);
+  assert.equal(torso.filas[2].grupoAlterno, torso.filas[1].grupoAlterno);
+  assert.equal(m.normal.dias[0].lineas[1].superserie, 1);
+  assert.equal(m.normal.dias[0].lineas[2].superserie, 1);
+  assert.equal(m.normal.dias[0].lineas[0].superserie, 0);
   assert.equal(m.normal.dias[0].lineas[0].modalidad, 'topBack');
   assert.deepEqual(plain(PL.rutinaCopia({ ...raw, importPendiente: { nombre: 'Mi prueba', origen: 'entrenador', previo: {} } }).aPrueba), { nombre: 'Mi prueba', origen: 'entrenador' });
   assert.equal(PL.rutinaCopia({ ...raw, planMod: [] }), null);
@@ -216,9 +222,23 @@ test('ediciones: modalidades excluyentes, superseries, orden, límites y sin mut
   r = PL.editar(base, { tipo: 'campo', d: 2, f: 0, k: 'modalidad', valor: 'topBack' });
   assert.equal(r.dias[2].filas[0].topBack, true);
   assert.equal(r.dias[2].filas[0].restPause, false);
+  // Top + back-offs cabe en unas series alternas (App-PRO 17/11/2026): la
+  // fila de encima lo conserva. La 2.ª deja su grupo con la 3.ª, que se
+  // queda sola y sale.
   r = PL.editar(base, { tipo: 'campo', d: 0, f: 1, k: 'superConAnterior', valor: true });
-  assert.equal(r.dias[0].filas[0].topBack, false);
+  assert.equal(r.dias[0].filas[0].topBack, true);
   assert.equal(r.dias[0].filas[1].superConAnterior, true);
+  assert.equal(r.dias[0].filas[2].grupoAlterno, 0);
+  // Alternar con un ejercicio que no va seguido.
+  r = PL.editar(base, { tipo: 'campo', d: 0, f: 2, k: 'alternarCon', valor: '0' });
+  assert.deepEqual(Planner._gruposSuperserie(r.dias[0].filas), [1, 0, 1]);
+  assert.equal(PL.simular(r, raw).normal.dias[0].lineas[2].superserie, 1);
+  assert.equal(PL.simular(r, raw).paquete.dias[0].ejercicios[2].superserie, 1);
+  // Un drop set sale de su grupo; vaciar el selector también.
+  assert.deepEqual(Planner._gruposSuperserie(PL.editar(r, { tipo: 'campo', d: 0, f: 0, k: 'modalidad', valor: 'drop' }).dias[0].filas), [0, 0, 0]);
+  assert.deepEqual(Planner._gruposSuperserie(PL.editar(r, { tipo: 'campo', d: 0, f: 2, k: 'alternarCon', valor: '' }).dias[0].filas), [0, 0, 0]);
+  // Mover una fila no rompe el grupo.
+  assert.deepEqual(Planner._gruposSuperserie(PL.editar(r, { tipo: 'moverFila', d: 0, f: 1, delta: 1 }).dias[0].filas), [1, 1, 0]);
   r = PL.editar(base, { tipo: 'campo', d: 0, f: 2, k: 'superConAnterior', valor: true });
   r = PL.editar(r, { tipo: 'moverFila', d: 0, f: 2, delta: -1 });
   assert.equal(r.dias[0].filas[1].ejercicio, 'Extensión en cuerda en polea');
@@ -275,7 +295,8 @@ test('comparación con la copia: ejercicios, campos, orden, días y series por g
   assert.equal(d.iguales, false);
   const [torso, pierna, brazos] = d.dias;
   assert.deepEqual(torso.cambios.map(c => [c.tipo, c.ejercicio]), [['cambiado', 'Remo con barra inclinado'], ['quitado', 'Extensión en cuerda en polea']]);
-  assert.deepEqual(plain(torso.cambios[0].campos.map(c => [c.campo, c.antes, c.despues])), [['series', 3, 4]]);
+  // Al quitar la extensión, el remo se queda sin compañero de series alternas.
+  assert.deepEqual(plain(torso.cambios[0].campos.map(c => [c.campo, c.antes, c.despues])), [['series', 3, 4], ['superserie', 1, 0]]);
   assert.equal(pierna.ordenCambiado, true);
   assert.deepEqual(pierna.cambios.map(c => c.tipo), ['nuevo']);
   assert.equal(brazos.renombrado, true);

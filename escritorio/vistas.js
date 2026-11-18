@@ -413,7 +413,7 @@ function tarjetaComparables(M){
   });
   return tarjeta('Evolución de tus ejercicios', `${tabla(['Ejercicio', 'Evolución', '1RM estimado', 'Cambio', 'Lectura'], filas, { caption: 'Evolución del 1RM estimado en las últimas semanas', clase: 'tabla-ejercicios' })}
     <div class="fila-botones">${ir('entrenamiento:comparar', 'Comparar dos periodos')}</div>
-    ${ayuda('Compara el 1RM estimado del principio y del final de tus últimas semanas, solo con las sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias ni cambios de un día) y con la misma modalidad de series. Si un ejercicio está en varios días de tu rutina, cada día se valora por separado, porque suele llevar su propia carga. «Sin cambios claros» describe una diferencia pequeña; no significa que estés estancado. Con pocas sesiones comparables la lectura es orientativa y no se usa como conclusión. El 1RM es una estimación a partir de tus series.')}`);
+    ${ayuda('Compara el 1RM estimado del principio y del final de tus últimas semanas, solo con las sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias, sin cambios de un día y fuera de las sesiones cortas) y con la misma modalidad de series. Si un ejercicio está en varios días de tu rutina, cada día se valora por separado, porque suele llevar su propia carga. «Sin cambios claros» describe una diferencia pequeña; no significa que estés estancado. Con pocas sesiones comparables la lectura es orientativa y no se usa como conclusión. El 1RM es una estimación a partir de tus series.')}`);
 }
 
 /* Progreso de la fase frente a lo pactado, como «Cómo vas» de la app
@@ -442,20 +442,29 @@ function progresoFase(N){
     etiqueta = t[0]; clase = t[1]; frase = typeof t[2] === 'function' ? t[2](kgAbs(p.desvioKg)) : t[2];
   }
   const ver = p.conVeredicto;
-  const barra = (fr, color, marca, nombre) => `<div class="fase-barra" role="img" aria-label="${esc(nombre)}"><i style="width:${Math.round(fr * 1000) / 10}%;background:${color}"></i>${marca != null ? `<b style="left:${Math.round(marca * 1000) / 10}%" title="Lo previsto a esta fecha"></b>` : ''}</div>`;
   const color = !ver ? 'var(--txt4)' : clase === 'verde' ? 'var(--lima)' : 'var(--ambar)';
+  const pct = fr => `${Math.round(Math.max(0, Math.min(1, fr)) * 1000) / 10}%`;
+  const kgSigno = v => `${p.direccion < 0 ? '−' : '+'}${F.num(Math.max(0, v), 1)} kg`;
   const filas = [];
-  // Como «Cómo vas» de la app (28-29/10/2026): dos barras a la misma escala,
-  // lo que llevas y tu objetivo, que se rellena hasta lo que el objetivo
-  // vigente esperaba llevar hoy.
+  // Como «Cómo vas» de la app (16/11/2026): un solo recorrido de inicio a
+  // meta en peso real, con el tramo recorrido, la marca de «hoy tocaba» y el
+  // margen dentro del cual se va en línea. Mientras calibra, el recorrido va
+  // en gris y sin lo previsto.
   if (p.fraccionPeso != null && p.totalKg != null){
-    filas.push(`<div class="fase-fila"><span>Llevas</span><b class="mono">${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPeso, color, null, `Llevas ${F.num(Math.max(0, p.hechoKg), 1)} de ${F.kg(p.totalKg)}`)}`);
-    if (p.fraccionPrevista != null)
-      filas.push(`<div class="fase-fila"><span>Tu objetivo</span><b class="mono">${F.kg(p.totalKg)}</b></div>${barra(p.fraccionPrevista, 'var(--azul, #4F8EF7)', null, `Tu objetivo esperaba llevar ${F.num(Math.max(0, p.previstoKg), 1)} de ${F.kg(p.totalKg)} a esta fecha`)}`);
+    const conPrevisto = ver && p.fraccionPrevista != null;
+    const fm = conPrevisto && p.margenInferiorHoyKg != null ? [p.margenInferiorHoyKg, p.margenSuperiorHoyKg]
+      .map(kg => (kg - p.pesoInicioKg) * p.direccion / p.totalKg).sort((x, y) => x - y) : null;
+    filas.push(`<div class="fase-fila"><span>Llevas</span><b class="mono">${kgSigno(p.hechoKg)} de ${kgSigno(p.totalKg)}</b></div>
+      <div class="fase-barra fase-recorrido" role="img" aria-label="${esc(`Llevas ${kgSigno(p.hechoKg)} de ${kgSigno(p.totalKg)}${conPrevisto ? `; hoy tocaba ${kgSigno(p.previstoKg)}` : ''}`)}">
+        ${fm ? `<s class="fase-margen" style="left:${pct(fm[0])};width:calc(${pct(fm[1])} - ${pct(fm[0])})" title="Margen dentro del cual vas en línea"></s>` : ''}
+        <i style="width:${pct(p.fraccionPeso)};background:${color}"></i>
+        ${conPrevisto ? `<b style="left:${pct(p.fraccionPrevista)}" title="Hoy tocaba"></b>` : ''}
+        <u style="left:${pct(p.fraccionPeso)};background:${color}" title="Tú"></u></div>
+      <p class="fase-leyenda mono">Inicio ${F.kg(p.pesoInicioKg)} · Tú ${F.kg(p.pesoHoyKg)}${conPrevisto ? ` · <span class="fase-hoy">Hoy tocaba ${F.kg(p.pesoPrevistoHoyKg)}</span>` : ''} · Final ${F.kg(p.pesoPactadoFinKg ?? p.pesoMetaKg)}</p>`);
   }
-  if (p.fraccionTiempo != null && p.semanasTotales != null){
+  if (p.semanasTotales != null){
     const sem = Math.min(p.semanaActual, Math.ceil(p.semanasTotales));
-    filas.push(`<div class="fase-fila"><span>Tiempo</span><b class="mono">Semana ${sem} de ${F.num(p.semanasTotales, p.semanasTotales % 1 ? 1 : 0)}</b></div>${barra(p.fraccionTiempo, 'var(--txt3)', null, `Semana ${sem} de ${F.num(p.semanasTotales, 1)}`)}`);
+    filas.push(`<div class="fase-fila"><span>Tiempo</span><b class="mono">Semana ${sem} de ${F.num(Math.ceil(p.semanasTotales), 0)}${p.fin ? ` · hasta el ${F.dia(p.fin)}` : ''}</b></div>`);
   }
   let llegada = '';
   if (ver && p.pesoAlFinKg != null && p.fin) llegada = `Si sigues la pauta desde tu último pesaje, acabarás la etapa hacia ${F.kg(p.pesoAlFinKg)} el ${F.dia(p.fin)}.`;
@@ -466,12 +475,14 @@ function progresoFase(N){
     cambio = c.fin && p.fin ? `Al empezar, tu meta era ${F.kg(c.pesoMetaKg)} para el ${F.dia(c.fin)}. Ahora es ${F.kg(p.pesoMetaKg)} para el ${F.dia(p.fin)}.`
                             : `Al empezar, tu meta era ${F.kg(c.pesoMetaKg)}. Ahora es ${F.kg(p.pesoMetaKg)}.`;
   return `<div class="fase-progreso">
-    <div class="fase-cab"><h3 class="sub-h">Progreso de la fase</h3>${ver ? chip(clase, etiqueta) : chip('gris', 'Sin veredicto todavía', 'Al empezar una fase, o con la fase en pausa, el peso aún no dice cómo vas.')}</div>
+    <div class="fase-cab"><h3 class="sub-h">Progreso de la fase</h3>${ver ? chip(clase, etiqueta) : p.calibrando ? chip('gris', 'Calibrando', 'Al empezar una fase el peso sube o baja por el agua y el glucógeno: hasta que se asienta no dice cómo vas.') : chip('gris', 'Sin veredicto todavía', 'Con la fase en pausa, el peso no dice cómo vas.')}</div>
     ${filas.join('')}
-    ${ver ? `<p class="fase-frase">${esc(frase)}</p>` : '<p class="muted" style="font-size:12.5px">La fase aún se está calibrando o está en pausa: se enseña el avance, sin veredicto.</p>'}
+    ${ver ? `<p class="fase-frase">${esc(frase)}</p>` : (p.calibrando ? '<p class="muted" style="font-size:12.5px">Al empezar la fase el peso se mueve por el agua y el glucógeno, no por la grasa. En cuanto se asiente verás cómo vas frente a lo previsto, y ese cambio inicial no contará como avance.</p>'
+      : '<p class="muted" style="font-size:12.5px">La fase está en pausa: se enseña el avance, sin veredicto.</p>')}
     ${llegada ? `<p class="muted" style="font-size:12.5px">${esc(llegada)}</p>` : ''}
     ${cambio ? `<p class="muted" style="font-size:12.5px">${esc(cambio)}</p>` : ''}
     ${c && c.reconstruido ? '<p class="muted" style="font-size:12.5px">El punto de partida se ha estimado con tu historial.</p>' : ''}
+    ${c && c.pesoInicioAsentadoKg != null && c.pesoInicioKg != null && Math.abs(c.pesoInicioAsentadoKg - c.pesoInicioKg) >= 0.05 ? `<p class="muted" style="font-size:12.5px">El punto de partida es ${F.kg(c.pesoInicioAsentadoKg)} y no los ${F.kg(c.pesoInicioKg)} con que abriste la fase: así el agua del arranque no cuenta como avance.</p>` : ''}
     <p class="muted" style="font-size:12.5px">A fecha de tu último pesaje (${F.dia(p.hoy)}).</p>
   </div>`;
 }
@@ -617,7 +628,7 @@ function compararPeriodos(M, st){
   });
   out.push(tarjeta('Ejercicios comunes · 1RM estimado', `${ejerc.length ? tabla(['Ejercicio / modalidad', 'Mediana A', 'Mediana B', 'Diferencia B − A', 'Limitaciones'], ejerc, { caption: 'Comparación de ejercicios comunes' }) : vacio('No hay ejercicios realizados en ambos periodos.')}
     <p class="muted">Solo A: ${esc(C.ejercicios.soloA.join(', ') || 'ninguno')}. Solo B: ${esc(C.ejercicios.soloB.join(', ') || 'ninguno')}.</p>
-    ${ayuda('Se compara la mediana del 1RM estimado de marca, con el tope de repeticiones de la app, por nombre y modalidad. Se excluyen descarga, molestias, cambio de un día, días no verdes y entradas sin estimación. Cada sesión cuenta una vez. Con pocas sesiones por periodo la diferencia es descriptiva: no confirma una tendencia. En ejercicios de peso corporal la estimación usa el peso del perfil actual: no se calcula una diferencia histórica. La copia tampoco permite verificar cambios de máquina, técnica o rango de movimiento.')}`));
+    ${ayuda('Se compara la mediana del 1RM estimado de marca, con el tope de repeticiones de la app, por nombre y modalidad. Se excluyen descarga, molestias, cambio de un día, sesiones cortas, días no verdes y entradas sin estimación. Cada sesión cuenta una vez. Con pocas sesiones por periodo la diferencia es descriptiva: no confirma una tendencia. En ejercicios de peso corporal la estimación usa el peso del perfil actual: no se calcula una diferencia histórica. La copia tampoco permite verificar cambios de máquina, técnica o rango de movimiento.')}`));
 
   const rend = C.rendimiento.flatMap(g => ['bruto', 'neto'].filter(k => g[`${k}A`].n || g[`${k}B`].n).map(k => {
     const A = g[`${k}A`], B = g[`${k}B`];
@@ -666,9 +677,14 @@ function marcasSesion(s){
   if (s.cambioRutina) m.push(chip('azul', 'Cambio de rutina', 'Primera sesión con una rutina distinta de la anterior'));
   if (s.descarga) m.push(chip('azul', 'Descarga'));
   if (s.semaforo !== 'verde') m.push(chip(s.semaforo === 'rojo' ? 'rojo' : 'ambar', s.semaforo === 'rojo' ? 'Día rojo' : 'Día ámbar', 'Estado para entrenar con el que se hizo la sesión'));
+  // Entrenamiento corto (App-PRO 16/11/2026): la sesión se redujo por falta
+  // de tiempo y no cuenta para la progresión.
+  const corta = Motor.nivelSesionCorta(s.l);
+  if (corta) m.push(chip('azul', corta === 'expres' ? 'Sesión exprés' : 'Sesión corta', 'Se redujo por falta de tiempo: no cuenta para tu progresión'));
   if (s.entradas.some(e => e.molestias)) m.push(chip('ambar', 'Molestias'));
   if (s.entradas.some(e => e.sustitucion)) m.push(chip('gris', 'Cambio solo por hoy'));
   if (s.entradas.some(e => e.noDisponible)) m.push(chip('gris', 'Ejercicio no realizado'));
+  if (s.entradas.some(e => e.superserie != null)) m.push(chip('gris', 'Series alternas'));
   return m.join(' ');
 }
 
@@ -680,13 +696,21 @@ function sesiones(M, st){
     const [cl, txt] = VEREDICTO[s.veredicto] || ['gris', '—'];
     return [`<button type="button" class="enlace" data-sesion="${s.indice}">${F.dia(s.fecha)}</button>`,
       esc(s.dia), String(s.series), s.duracionMin != null ? `${s.duracionMin} min${s.duracionAnomala ? ' <span class="muted" title="Duración poco habitual">*</span>' : ''}` : '—',
-      s.descarga ? '<span class="muted">descarga</span>' : s.sinBase ? '<span class="muted" title="La app la guardó sin una referencia previa con la que comparar">sin referencia</span>' : s.bruto != null ? F.signo(s.bruto) : '—',
+      s.descarga ? '<span class="muted">descarga</span>' : Motor.nivelSesionCorta(s.l) && s.bruto == null ? '<span class="muted" title="Una sesión corta no se valora: no cuenta para tu progresión">no se valora</span>' : s.sinBase ? '<span class="muted" title="La app la guardó sin una referencia previa con la que comparar">sin referencia</span>' : s.bruto != null ? F.signo(s.bruto) : '—',
       s.veredicto ? chip(cl, txt) : '—', marcasSesion(s)];
   });
   return tarjeta(`Sesiones (${M.sesiones.length})`, `
     ${tabla(['Fecha', 'Sesión', 'Series', 'Duración', 'Rendimiento', 'Valoración', 'Marcas'], filas, { caption: 'Historial de sesiones de fuerza' })}
     ${max < lista.length ? `<div class="fila-botones"><button type="button" class="btn sec" data-accion-vista="ver-todas">Ver las ${lista.length} sesiones</button></div>` : ''}
     ${ayuda('El historial es de consulta: se ve tal como lo guardó la app y no se puede editar aquí. «Rendimiento» compara cada sesión con tu nivel reciente en ese mismo día de la rutina; «Valoración» es la que te dio la app al guardarla. Abre una fecha para ver cada serie.')}`);
+}
+
+/* ¿La rutina actual lleva drop set en este ejercicio y día? Si no, el drop
+   set de una sesión corta fue solo de ese día. Sin rutina conocida o con una
+   sesión de otra rutina no se puede saber: se da por de la rutina. */
+function lineaDrop(M, s, e){
+  if (!M.planConocido || !s.deRutinaActual) return true;
+  return M.planMod.some(l => l.dia === s.dia && Motor.nombreVigente(l.ejercicio) === e.ejercicio && l.dropSet === true);
 }
 
 function detalleSesionHtml(M, indice){
@@ -700,7 +724,12 @@ function detalleSesionHtml(M, indice){
     if (e.dropSet) m.push(chip('gris', 'Drop set'));
     if (e.restPause) m.push(chip('gris', 'Rest-pause'));
     if (e.seriesLibres) m.push(chip('gris', 'Series libres'));
-    if (e.superserie != null) m.push(chip('gris', `Superserie ${e.superserie}`));
+    if (e.superserie != null) m.push(chip('gris', `Series alternas ${e.superserie}`));
+    // Drop set de un día: en una sesión corta un accesorio se condensó en un
+    // drop set solo para esa sesión (la rutina no lo lleva).
+    if (e.corta && e.dropSet && !lineaDrop(M, s, e)) m.push(chip('gris', 'Drop set solo ese día'));
+    if (e.aPendientes) m.push(chip('gris', 'Para pendientes'));
+    if (Motor.rampaEnCurso(e)) m.push(chip('azul', e.rampaParon.origen === 'molestias' ? 'Vuelta tras molestias' : 'Vuelta tras un parón', 'Vuelve a su marca de forma escalonada: un fallo con la carga reducida no gasta intento'));
     if (e.modulada) m.push(chip('gris', 'Intensidad ajustada'));
     if (e.estadoEjercicio && e.estadoEjercicio !== s.semaforo) m.push(chip(e.estadoEjercicio === 'verde' ? 'verde' : e.estadoEjercicio === 'rojo' ? 'rojo' : 'ambar', `Ejercicio en ${e.estadoEjercicio}`));
     const kgs = e.kgSets.some(k => k != null) && new Set(e.kgSets.filter(k => k != null)).size > 1
@@ -719,6 +748,7 @@ function detalleSesionHtml(M, indice){
       ${cifra(s.bruto != null ? F.signo(s.bruto) : s.sinBase ? 'sin referencia' : '—', 'rendimiento bruto')}
       ${cifra(s.neto != null ? F.signo(s.neto) : '—', 'rendimiento neto')}
       ${s.rpe != null ? cifra(String(s.rpe), 'esfuerzo percibido (RPE)') : ''}</div>
+    ${Motor.nivelSesionCorta(s.l) ? `<p class="muted" style="font-size:13px">Sesión ${Motor.nivelSesionCorta(s.l) === 'expres' ? 'exprés' : 'corta'}: la redujiste por falta de tiempo. Cuenta para tu volumen y tu constancia, pero no para tu progresión ni para tus marcas; la siguiente sesión completa sigue donde lo dejaste.</p>` : ''}
     ${tabla(['Ejercicio', 'Carga (kg)', 'Repeticiones', 'RIR', 'Marcas', 'Nota'], filas, { caption: 'Series de la sesión' })}
     <p class="muted" style="font-size:12.5px">Cargas por serie separadas por «/»; «·» es una serie sin anotar (no cuenta como cero).</p>`;
 }
@@ -743,7 +773,7 @@ function listaEjercicios(M, st){
       ? (enRutina.length ? tabla(cab, enRutina.sort(orden).map(fila), { caption: 'Ejercicios de tu rutina actual' }) : vacio('Ninguno coincide.'))
       : tabla(cab, todos.sort(orden).map(fila), { caption: 'Ejercicios registrados' }))}
     ${M.planConocido && otros.length ? tarjeta(`Otros ejercicios de tu historial (${otros.length})`, tabla(cab, otros.sort(orden).map(fila), { caption: 'Ejercicios fuera de tu rutina actual' })) : ''}
-    ${ayuda('El estado usa el mismo criterio que la app: solo cuentan las sesiones de tu rutina actual hechas en condiciones de progresar (sin descarga, sin molestias, sin cambios de un día y con todas las series principales anotadas). Que una carga no suba no significa por sí solo un estancamiento. El 1RM es una estimación a partir de tus series, no una prueba de máximo.')}`;
+    ${ayuda('El estado usa el mismo criterio que la app: solo cuentan las sesiones de tu rutina actual hechas en condiciones de progresar (sin descarga, sin molestias, sin cambios de un día, fuera de las sesiones cortas y con todas las series principales anotadas). Que una carga no suba no significa por sí solo un estancamiento. El 1RM es una estimación a partir de tus series, no una prueba de máximo.')}`;
 }
 
 /* Series de una sesión como «80×8 @2 · 80×8 @2 · 70×10 @2»: back-off,
@@ -806,7 +836,7 @@ function fichaEjercicio(M, nombre, st = {}){
     <p>${est.map(({ s, t }) => `${chip(t.clase, t.corto)}${s.dia ? ` <span class="muted">${esc(s.dia)}</span>` : ''}`).join(' · ')}</p>
     ${est.map(({ s, t }) => t.largo ? `<p style="font-size:13px">${s.dia ? `<b>${esc(s.dia)}</b>: ` : ''}${esc(t.largo)}${s.objetivo != null ? ` Objetivo de la rutina: ${esc(String(s.reps))} reps.` : ''}${s.repsExtra ? ` Como bajaste el peso por estancamiento, ahora buscas ${esc(s.repsHoy)} reps; al conseguirlo volverá a subir la carga y recuperarás tu rango de siempre.` : ''}${s.recurrente ? ' La app marcó que el estancamiento se repitió tras reiniciar los intentos.' : ''}${s.trasPasoAtras ? ' La app marcó que se volvió a estancar tras bajar el peso y te propuso cambiarlo por una variante equivalente.' : ''}${s.descarga ? ' Estás en descarga: ahora no se cuentan intentos.' : ''}</p>${s.libres ? seriesLibresHtml(s) : ''}` : '').join('')}
     ${porQue.length ? `<details class="detalle"><summary>Por qué este estado</summary>${porQue.join('')}
-      <p class="muted" style="font-size:12.5px">Son las sesiones más recientes de tu rutina actual que cuentan para la progresión, igual que en la app. Las descargas, las sesiones con molestias o con un cambio de un día y las que tienen series principales sin anotar no aparecen porque no cuentan.</p></details>` : ''}
+      <p class="muted" style="font-size:12.5px">Son las sesiones más recientes de tu rutina actual que cuentan para la progresión, igual que en la app. Las descargas, las sesiones cortas, las sesiones con molestias o con un cambio de un día y las que tienen series principales sin anotar no aparecen porque no cuentan.</p></details>` : ''}
     <div class="cifras">${cifra(String(ej.sesiones), 'sesiones')}
       ${cifra(F.dia(ej.primero && ej.primero.fecha), 'primera')}
       ${cifra(F.dia(ej.ultimo && ej.ultimo.fecha), 'última')}
@@ -851,7 +881,7 @@ function fichaEjercicio(M, nombre, st = {}){
       { nombre: ej.asistido ? 'Asistencia' : ej.pesoCorporal ? 'Lastre' : 'Carga de la serie principal', color: TL.azul, puntos: serie2, unidad: 'kg', eje: 'der', dash: '5 4' },
     ], marcas: marcasCtx, w: 960, h: 280 });
     out.push(tarjeta('Evolución', selRango + grafica(svg, `1RM estimado y carga de ${nombre} por sesión`, tablaHist) +
-      `<p class="muted" style="font-size:12.5px">El 1RM estimado es una estimación a partir de tu mejor serie de cada sesión (en drop set y rest-pause, solo la primera), no una prueba de máximo. Puntos grises sueltos: sesiones que no cuentan para la progresión (descarga, molestias, cambio de un día). Puntos ámbar: entrenado en un día ámbar; puntos rojos: en un día rojo. Las líneas verticales marcan descargas, molestias y cambios de rutina.</p>`));
+      `<p class="muted" style="font-size:12.5px">El 1RM estimado es una estimación a partir de tu mejor serie de cada sesión (en drop set y rest-pause, solo la primera), no una prueba de máximo. Puntos grises sueltos: sesiones que no cuentan para la progresión (descarga, molestias, cambio de un día, sesión corta). Puntos ámbar: entrenado en un día ámbar; puntos rojos: en un día rojo. Las líneas verticales marcan descargas, molestias y cambios de rutina.</p>`));
   } else {
     out.push(tarjeta('Historial', selRango + tablaHist));
   }
@@ -955,11 +985,11 @@ function tarjetaEvolucionReciente(M, ej, dia = null){
 
 function tarjetaMarcas(M, ej){
   const marcas = Analisis.marcas(ej);
-  if (!marcas.length) return tarjeta('Mejores marcas', vacio('Aún no hay ninguna sesión que pueda fijar una marca (hace falta entrenarlo en verde, sin molestias ni cambios de un día).'));
+  if (!marcas.length) return tarjeta('Mejores marcas', vacio('Aún no hay ninguna sesión que pueda fijar una marca (hace falta entrenarlo en verde, sin molestias ni cambios de un día y en una sesión completa).'));
   const filas = marcas.slice().reverse().map(m => [fechaSesion(m.p), esc(m.p.dia), esc(Analisis.serieTxt(m.p.e, m.serie)), F.kg(m.valor),
     m.anterior == null ? '<span class="muted">primera referencia</span>' : `+${F.kg(m.valor - m.anterior)}`]);
   return tarjeta('Mejores marcas', `${tabla(['Fecha', 'Sesión', 'Serie', '1RM estimado', 'Mejora'], filas, { caption: `Mejores marcas de ${ej.nombre}` })}
-    <p class="muted" style="font-size:12.5px">Cada fila es una sesión que superó tu mejor marca anterior, con las reglas de la app: solo cuentan los ejercicios entrenados en verde, sin molestias ni cambios de un día, y en drop set y rest-pause solo la primera serie. La primera fila fija la referencia.</p>`);
+    <p class="muted" style="font-size:12.5px">Cada fila es una sesión que superó tu mejor marca anterior, con las reglas de la app: solo cuentan los ejercicios entrenados en verde, sin molestias ni cambios de un día y en sesiones completas, y en drop set y rest-pause solo la primera serie. La primera fila fija la referencia.</p>`);
 }
 
 function tarjetaCompararSesiones(M, ej, st){
@@ -998,6 +1028,7 @@ function marcasPunto(p){
   if (p.sesion.descarga) m.push(chip('azul', 'Descarga'));
   if (p.e.molestias) m.push(chip('ambar', 'Molestias'));
   if (p.e.sustitucion) m.push(chip('gris', 'Cambio de un día'));
+  if (p.e.corta) m.push(chip('azul', Motor.nivelSesionCorta(p.sesion.l) === 'expres' ? 'Sesión exprés' : 'Sesión corta'));
   if (p.noVerde && !p.sesion.descarga) m.push(p.estado === 'rojo' ? chip('rojo', 'Día rojo') : chip('ambar', 'Día ámbar'));
   if (p.e.dropSet) m.push(chip('gris', 'Drop'));
   if (p.e.restPause) m.push(chip('gris', 'Rest-pause'));
@@ -1158,6 +1189,10 @@ function recuperacion(M){
   const luces = typeof Senales === 'object' ? Senales.preparar(M.raw, R, M.datos.perfil, M.ref) : null;
   // --- VFC ---
   const vfcV = VFC.validas(R);
+  // Noches con «Enfermo»: se ven en gris, pero no entran en la referencia.
+  const enfermas = campo => R.filter(r => r.enfermo && !r.vfcDescartada && Number.isFinite(r[campo]) && r.fecha >= soloDia(desde) && r.fecha <= M.ref)
+    .map(r => ({ x: soloDia(r.fecha), y: r[campo] }));
+  const NOCHE_ENFERMO = 'Noche con «Enfermo» (no cuenta)';
   if (vfcV.length){
     const tend = VFC.tendenciaSerie(R);
     const pts = vfcV.filter(v => v.fecha >= soloDia(desde)).map(v => ({ x: v.fecha, y: v.vfc }));
@@ -1167,11 +1202,12 @@ function recuperacion(M){
       { nombre: 'VFC de la noche', color: TL.txt3, puntos: pts, soloPuntos: true, unidad: 'ms' },
       { nombre: 'Media de 7 días', color: TL.lima, puntos: media, unidad: 'ms', sinPuntos: true, bajo: { ref: umbral, color: ROJO } },
       { nombre: 'Tu umbral', color: TL.ambar, puntos: umbral, unidad: 'ms', dash: '5 4', sinPuntos: true },
+      ...(enfermas('vfc').length ? [{ nombre: NOCHE_ENFERMO, color: TL.vacio, puntos: enfermas('vfc'), soloPuntos: true, unidad: 'ms' }] : []),
     ], leyendaExtra: media.some((m, i) => m.y < umbral[i].y) ? [{ color: ROJO, texto: 'Media por debajo del umbral' }] : [], w: 960, h: 240 });
     const filas = vfcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => { const t = tend.get(v.clave);
       return [F.dia(v.fecha), F.num(v.vfc, 0), t ? F.num(t.media7, 1) : '—', t ? F.num(t.umbral, 1) : '—']; });
     out.push(tarjeta('Variabilidad de la frecuencia cardiaca (VFC)', pastillaSenal(luces && luces.vfc, true, M.ref) + grafica(svg, 'VFC nocturna, media de 7 días y umbral', tabla(['Noche', 'VFC (ms)', 'Media 7 días', 'Umbral'], filas, { caption: 'VFC' })) +
-      ayuda('La media de varias noches se compara con tu propia referencia. Si queda por debajo de forma sostenida, la app lo tiene en cuenta como señal de cansancio. Las noches que descartaste no cuentan.')));
+      ayuda('La media de varias noches se compara con tu propia referencia. Si queda por debajo de forma sostenida, la app lo tiene en cuenta como señal de cansancio. Las noches que descartaste o marcaste como «Enfermo» no cuentan: se ven en gris.')));
   }
   // --- FC en reposo ---
   const fcV = FCReposo.validas(R);
@@ -1182,7 +1218,8 @@ function recuperacion(M){
       return { x: v.fecha, y: v.fcReposo, ...(b && v.fcReposo > b.alta ? { c: ROJO } : {}) }; });
     const alta = fcV.filter(v => v.fecha >= soloDia(desde) && banda.get(v.clave)).map(v => ({ x: v.fecha, y: Math.round(banda.get(v.clave).alta * 10) / 10 }));
     const svg = Charts.lineas({ series: [{ nombre: 'FC en reposo', color: TL.azul, puntos: pts, unidad: 'ppm' },
-      { nombre: 'Límite alto para ti', color: TL.ambar, puntos: alta, unidad: 'ppm', dash: '5 4', sinPuntos: true }],
+      { nombre: 'Límite alto para ti', color: TL.ambar, puntos: alta, unidad: 'ppm', dash: '5 4', sinPuntos: true },
+      ...(enfermas('fcReposo').length ? [{ nombre: NOCHE_ENFERMO, color: TL.vacio, puntos: enfermas('fcReposo'), soloPuntos: true, unidad: 'ppm' }] : [])],
       leyendaExtra: pts.some(p => p.c) ? [{ color: ROJO, texto: 'Por encima de tu límite' }] : [], w: 960, h: 220 });
     out.push(tarjeta('Frecuencia cardiaca en reposo', pastillaSenal(luces && luces.fc, false, M.ref) + grafica(svg, 'FC en reposo y su límite alto',
       tabla(['Día', 'FC (ppm)', 'Límite alto'], fcV.filter(v => v.fecha >= soloDia(desde)).reverse().map(v => [F.dia(v.fecha), F.num(v.fcReposo, 0), banda.get(v.clave) ? F.num(banda.get(v.clave).alta, 1) : '—']), { caption: 'FC en reposo' }))));
@@ -1265,6 +1302,7 @@ function rutina(M, { sinCabecera = false } = {}){
     ? `<p class="muted" style="font-size:13px">Rutina guardada en tu copia: ${ENFOQUE[M.raw.sexo] ? `${esc(ENFOQUE[M.raw.sexo])}, ` : ''}${esc(M.raw.sistema === 'simple' ? 'progresión simple' : 'progresión doble')}, ${esc(M.raw.dias || '—')} días por semana${Motor.enCasa(M.raw) ? ' en casa' : ''}. Es de consulta: los cambios se hacen en la app.</p>`
     : `<div class="alerta ambar"><span class="tag">Revisar</span><span>Esta rutina personalizada está guardada en tu copia, pero es de otra combinación de días, sistema o lugar de entrenamiento que la que tienes ahora en la app, así que puede no ser la que usas.</span></div>`;
   const dias = [...new Set(lineas.map(l => l.dia))];
+  const grupos = Motor.saGruposPlan(lineas);
   const bloques = dias.map(d => {
     const ls = lineas.filter(l => l.dia === d).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     const filas = ls.map(l => {
@@ -1275,7 +1313,9 @@ function rutina(M, { sinCabecera = false } = {}){
       // Series libres: objetivo de reps y RIR de cada serie, en orden.
       const libres = Motor.esSeriesLibresLinea(l, M.raw);
       if (libres) mod.push('Series libres');
-      if (l.superConAnterior) mod.push('Superserie con el anterior');
+      // Series alternas (App-PRO 17/11/2026): grupos por número, aunque sus
+      // ejercicios no vayan seguidos.
+      if (grupos.get(l)) mod.push(`Series alternas ${grupos.get(l)}`);
       const obj = libres ? Motor.objetivosSeries(l) : null;
       return [DibujosEsc.celda(l.ejercicio, esc(l.ejercicio)), esc(l.grupo || '—'), esc(String(l.series ?? '—')),
         esc(obj ? obj.map(o => o.reps).join(' · ') : String(l.reps ?? '—')), esc(obj ? obj.map(o => o.rir).join(' · ') : String(l.rir ?? '—')),

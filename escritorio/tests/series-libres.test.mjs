@@ -159,7 +159,7 @@ test('rutina de la copia: series libres en el editor y la misma rutina al simula
   assert.deepEqual(plain(f.porSerie), [{ repsMin: 5, repsMax: null, rir: 1 }, { repsMin: 8, repsMax: 10, rir: 2 }, { repsMin: 10, repsMax: 12, rir: 2 }]);
   assert.equal(m.normal.dias[0].lineas[0].modalidad, 'libres');
   assert.deepEqual(m.normal.dias[0].lineas[0].repsSeries, ['5', '8-10', '10-12']);
-  assert.equal(m.normal.dias[0].lineas[1].superserie, true, 'la superserie se conserva');
+  assert.equal(m.normal.dias[0].lineas[1].superserie, 1, 'las series alternas se conservan');
   // En doble, la serie de «5» no es un rango: el paquete lo completa y lo avisa.
   const sim = PL.simular(m.rutina, raw);
   const fila = sim.paquete.dias[0].ejercicios[0];

@@ -270,7 +270,10 @@ const Analisis = {
   volumen(M, { gran = 'semana', desde = null } = {}){
     const sinGrupo = new Set();
     const info = n => { const i = this.info(M, n); if (!i) sinGrupo.add(n); return i; };
-    const cubos = Motor.volumenReal({ logs: M.raw.logs, info, hoy: M.ref, gran, desde, nominalHoy: Motor.nominalDePlan(M.raw.planMod) });
+    // Las sesiones extra (pendientes recuperados) suman su volumen, como en
+    // la app; no están en `logs`.
+    const cubos = Motor.volumenReal({ logs: M.raw.logs, info, hoy: M.ref, gran, desde, nominalHoy: Motor.nominalDePlan(M.raw.planMod),
+      sesionesExtra: Array.isArray(M.raw.sesionesExtra) ? M.raw.sesionesExtra : [] });
     return { cubos, sinGrupo: [...sinGrupo] };
   },
 
@@ -392,11 +395,14 @@ const Analisis = {
     if (p.sesion.descarga) return 'descarga';
     if (p.e.molestias) return 'molestias';
     if (p.e.sustitucion) return 'cambioDia';
+    if (p.e.corta) return 'corta';
+    if (p.e.extra) return 'extra';
     if (p.noVerde) return 'noVerde';
     if (p.e1rmMarca == null) return 'sinEstimacion';
     return null;
   },
   MOTIVO_TXT: { sinSeries: 'sin series anotadas', descarga: 'descarga', molestias: 'con molestias', cambioDia: 'cambio de un día',
+                corta: 'sesión corta', extra: 'sesión extra',
                 noVerde: 'día ámbar o rojo', sinEstimacion: 'sin estimación posible', otraConfig: 'otra modalidad de series' },
 
   /* Evolución del 1RM estimado de un ejercicio en [desde, hasta]: puntos
@@ -655,7 +661,7 @@ const Analisis = {
         this._kg(p.e1rmMarca)] })));
       filas.sort((a, b) => +a.fecha - +b.fecha);
       const lim = ['El 1RM es una estimación a partir de tus series, no una prueba de máximo.',
-        'Solo se comparan sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias, sin cambios de un día) y con la misma modalidad de series.',
+        'Solo se comparan sesiones normales de cada ejercicio (en verde, sin descarga, sin molestias, sin cambios de un día y fuera de las sesiones cortas) y con la misma modalidad de series.',
         'Describe un cambio; no explica su causa (descanso, nutrición, técnica u orden de los ejercicios pueden influir).'];
       if (lista.some(x => x.cambioRutina)) lim.push('Incluye sesiones de rutinas distintas.');
       if (lectura === 'baja' && lista.some(x => x.ej.estados.some(st => st.tipo === 'objetivoCumplido')))
@@ -704,7 +710,7 @@ const Analisis = {
           fecha: m.p.fecha, indice: m.p.sesion.indice, celdas: [ej.nombre,
             this.serieTxt(m.p.e, m.serie),
             this._kg(m.valor), this._kg(m.anterior)] })) },
-        limitaciones: ['Mismas reglas de marca que la app: solo cuentan los ejercicios entrenados en verde, sin molestias ni cambios de un día.',
+        limitaciones: ['Mismas reglas de marca que la app: solo cuentan los ejercicios entrenados en verde, sin molestias ni cambios de un día y fuera de las sesiones cortas.',
           'El 1RM es una estimación, no una prueba de máximo.'],
         enlace: { destino: `entrenamiento:ejercicios:${encodeURIComponent(nombres[0])}`, texto: nombres.length === 1 ? 'Ver la ficha del ejercicio' : `Ver la ficha de ${nombres[0]}` } });
     }

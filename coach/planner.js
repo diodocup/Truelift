@@ -15,15 +15,19 @@ const Planner = {
   // ---------- Modelo y persistencia ----------
   // Claves aditivas (los borradores antiguos no las traen): dropSet/dropPct
   // (drop set: solo la 1.ª serie progresa; el resto baja el % en cascada sin
-  // descanso) y superConAnterior (superserie: en la app se alternan las
-  // series con el ejercicio de la fila anterior). restPause/pausaRpSeg
+  // descanso) y grupoAlterno (series alternas, antes «superserie»: número
+  // del grupo dentro del día, 0 = sin grupo; las filas del mismo número
+  // alternan sus series aunque no vayan seguidas). superConAnterior es el
+  // enlace antiguo con la fila anterior: se sigue leyendo de los borradores
+  // y Excel anteriores (Motor.saNormalizar lo convierte) y se reescribe
+  // derivado de los grupos. restPause/pausaRpSeg
   // (rest-pause: mismo peso y al fallo en todas las series, con una pausa de
   // 10–50 s entre ellas; las reps son el TOTAL de todas las series).
   filaVacia(){
     return { patron: '', ejercicio: '', series: 3, rir: 1,
              repsMin: null, repsMax: null, descanso: 2,
              topBack: false, backoffPct: 15, rirBack: 2,
-             dropSet: false, dropPct: 15, superConAnterior: false,
+             dropSet: false, dropPct: 15, grupoAlterno: 0, superConAnterior: false,
              restPause: false, pausaRpSeg: 20 };
   },
   rutinaVacia(){
@@ -441,9 +445,11 @@ const Planner = {
     rutina.dias.forEach((d, di) => {
       let seriesDia = 0, durMin = 0, nEj = 0;
       const vistos = new Set();
+      // Grupos de series alternas tal como los pidió el entrenador (enlaces
+      // antiguos convertidos), antes de que el saneo saque a nadie.
+      const pedidos = Motor.saNormalizar(d.filas.map(f => ({ grupoAlterno: f.grupoAlterno,
+        superConAnterior: f.superConAnterior, _enlaceLegado: f._enlaceLegado })));
       d.filas.forEach((f, fi) => {
-        if (f.superConAnterior && fi === 0)
-          add('azul', `${d.nombre}: la primera fila del día no tiene anterior con quien ir en superserie; la marca se ignorará.`);
         if (!f.patron && !f.ejercicio) return;
         if (!f.patron || f.patron === '(Ninguno)' || !f.ejercicio){
           add('ambar', `${d.nombre}: hay una fila incompleta (patrón y ejercicio son obligatorios); se ignorará al exportar.`);
@@ -490,13 +496,10 @@ const Planner = {
           add('ambar', `${d.nombre} · ${f.ejercicio}: un rest-pause necesita al menos 2 series.`);
         if (f.restPause && (f.topBack || f.dropSet))
           add('rojo', `${d.nombre} · ${f.ejercicio}: el rest-pause no se combina con top+back ni con drop set; la app se quedará con ${f.topBack ? 'top+back' : 'el drop set'}.`);
-        // Superserie solo con series rectas: si el enlace choca con una carga
-        // por serie, la app (y el exportador) rompen el enlace.
-        if (f.superConAnterior && fi > 0){
-          const ant = d.filas[fi - 1];
-          if (this._conModalidad(f) || this._conModalidad(ant))
-            add('rojo', `${d.nombre} · ${f.ejercicio}: una superserie va a series rectas y aquí hay top+back, drop set o rest-pause; el enlace se romperá.`);
-        }
+        // Series alternas: drop set y rest-pause encadenan sus series sin
+        // descanso, así que la app saca esa fila de su grupo.
+        if (pedidos[fi].grupoAlterno > 0 && !Motor.saAdmite(f))
+          add('rojo', `${d.nombre} · ${f.ejercicio}: el drop set y el rest-pause no caben en unas series alternas; la fila saldrá de su grupo.`);
         if (!CAT_LISTAS[f.patron])
           add('azul', `${d.nombre} · ${f.ejercicio}: el patrón "${f.patron}" no es de la plantilla; al exportar se ajustará si es posible.`);
         else if (this._esEjercicioBase(f.ejercicio) === false &&
@@ -655,10 +658,13 @@ const Planner = {
     const filas = this.rutina.dias[dia]?.filas;
     if (!filas || desde < 0 || desde >= filas.length ||
         destino < 0 || destino >= filas.length || desde === destino) return false;
+    // Los enlaces antiguos se convierten antes de mover: después ya no se
+    // sabría con quién iba cada fila.
+    Motor.saNormalizar(filas);
     const [movida] = filas.splice(desde, 1);
     filas.splice(destino, 0, movida);
-    // Mover cambia los vecinos: una fila con top+back o drop set puede caer
-    // dentro de una superserie.
+    // Mover no rompe las series alternas: el grupo se hace donde está su
+    // primer ejercicio.
     this._sanearModalidades(filas);
     return true;
   },
@@ -673,15 +679,12 @@ const Planner = {
     const r = JSON.parse(JSON.stringify(rutina));
     // Limpieza para exportar: filas completas y patrón compatible con la plantilla
     r.dias.forEach(d => {
-      d.filas = d.filas.filter((f, i) => {
-        const vale = f.patron && f.patron !== '(Ninguno)' && f.ejercicio;
-        // Si una fila incompleta se cae, la siguiente no puede quedar en
-        // superserie con la anterior a la eliminada: el enlace se rompe.
-        if (!vale && d.filas[i + 1]) d.filas[i + 1].superConAnterior = false;
-        return vale;
-      });
-      // Al caerse filas incompletas cambian los vecinos: se rehace la
-      // exclusión antes de escribir K/L/M/N en el Excel.
+      // Grupos de series alternas antes de quitar filas: un borrador antiguo
+      // los trae como enlaces con la fila anterior.
+      Motor.saNormalizar(d.filas);
+      d.filas = d.filas.filter(f => f.patron && f.patron !== '(Ninguno)' && f.ejercicio);
+      // Al caerse filas incompletas un grupo puede quedarse con una sola
+      // fila: se rehace el saneo antes de escribir K/L/M/N en el Excel.
       this._sanearModalidades(d.filas, r.sistema);
       this._patronesVigentes(d.filas);
     });
@@ -740,14 +743,12 @@ const Planner = {
       if (rev.ultKg != null) chips += `<span class="chip gris">últ. ${fmtNum(rev.ultKg, 2)} kg</span>`;
       else if (rev.ultKgReal != null) chips += `<span class="chip ambar" title="Su única carga registrada en el rango es de una sesión con molestias, bajada a propósito: no sirve de referencia para planificar.">últ. ${fmtNum(rev.ultKgReal, 2)} kg (con molestias)</span>`;
     }
-    // Las modalidades son excluyentes: dentro de una superserie no hay
-    // top+back, drop set ni rest-pause, y una fila con cualquiera de ellas no
-    // se enlaza.
+    // En unas series alternas no caben el drop set ni el rest-pause (sí
+    // top+back), y una fila con cualquiera de los dos no alterna.
     const enSS = ssNum > 0;
-    const ssChoca = !!(this._conModalidad(f) ||
-                       (anterior && this._conModalidad(anterior)));
-    const noEnSS = 'En una superserie se entrena a series rectas: quita la superserie para usar esta modalidad.';
-    const noConCarga = 'Una superserie va a series rectas: quita el top+back, el drop set o el rest-pause de esta fila y de la anterior.';
+    const ssChoca = !Motor.saAdmite(f) || (!!anterior && !Motor.saAdmite(anterior));
+    const noEnSS = 'En unas series alternas se descansa entre series: quita las series alternas para usar esta modalidad.';
+    const noConCarga = 'El drop set y el rest-pause no caben en unas series alternas: quítalos de esta fila y de la anterior.';
     // Rest-pause: las reps son el TOTAL de todas las series (admiten cifras
     // más altas) y no hay RIR: todas las series van al fallo.
     const rp = !!f.restPause && !enSS;
@@ -782,10 +783,10 @@ const Planner = {
         <select class="pln-campo" data-d="${d}" data-f="${i}" data-k="descanso" title="Descanso (min)">
           ${CAT_DESCANSOS.map(v => `<option value="${v}" ${v === f.descanso ? 'selected' : ''}>${fmtNum(v, 1)}′</option>`).join('')}
         </select>
-        <label class="pln-tb${enSS ? ' pln-tb-off' : ''}" title="${enSS ? noEnSS : 'Top set + back-offs: la 1.ª serie fija la progresión. Excluyente con Drop y con SS.'}">
-          <input type="checkbox" class="pln-campo" data-d="${d}" data-f="${i}" data-k="topBack" ${f.topBack && !enSS ? 'checked' : ''} ${enSS ? 'disabled' : ''}> T+B
+        <label class="pln-tb" title="Top set + back-offs: la 1.ª serie fija la progresión. Excluyente con Drop; cabe en unas series alternas.">
+          <input type="checkbox" class="pln-campo" data-d="${d}" data-f="${i}" data-k="topBack" ${f.topBack ? 'checked' : ''}> T+B
         </label>
-        ${f.topBack && !enSS ? `<span class="pln-x">−</span>${numIn('backoffPct', f.backoffPct, 5, 30, 5, 48, '% de peso menos en los back-offs')}<span class="pln-x">% @RIR</span>${numIn('rirBack', f.rirBack, 0, 6, 1, 44, 'RIR de los back-offs')}` : ''}
+        ${f.topBack ? `<span class="pln-x">−</span>${numIn('backoffPct', f.backoffPct, 5, 30, 5, 48, '% de peso menos en los back-offs')}<span class="pln-x">% @RIR</span>${numIn('rirBack', f.rirBack, 0, 6, 1, 44, 'RIR de los back-offs')}` : ''}
         <label class="pln-tb${enSS ? ' pln-tb-off' : ''}" title="${enSS ? noEnSS : 'Drop set: la 1.ª serie fija la progresión; el resto son drops inmediatos, sin descanso, cada uno con un % menos que la serie anterior. Excluyente con T+B y con SS.'}">
           <input type="checkbox" class="pln-campo" data-d="${d}" data-f="${i}" data-k="dropSet" ${f.dropSet && !enSS ? 'checked' : ''} ${enSS ? 'disabled' : ''}> Drop
         </label>
@@ -796,38 +797,37 @@ const Planner = {
         ${rp ? `<select class="pln-campo" data-d="${d}" data-f="${i}" data-k="pausaRpSeg" title="Pausa entre series del rest-pause">
           ${[10, 20, 30, 40, 50].map(v => `<option value="${v}" ${v === (f.pausaRpSeg || 20) ? 'selected' : ''}>${v} s</option>`).join('')}
         </select>` : ''}
-        ${i > 0 ? `<label class="pln-tb${ssChoca ? ' pln-tb-off' : ''}" title="${ssChoca ? noConCarga : 'Superserie con el ejercicio anterior: en la app se alternan las series de los dos (A1→B1→A2→B2…), con los descansos de siempre. Solo con series rectas: excluyente con T+B y con Drop.'}">
+        ${i > 0 ? `<label class="pln-tb${ssChoca ? ' pln-tb-off' : ''}" title="${ssChoca ? noConCarga : 'Series alternas con el ejercicio anterior: en la app se alternan las series de los dos (A1→B1→A2→B2…) y se descansa menos al cambiar de ejercicio. No caben el drop set ni el rest-pause.'}">
           <input type="checkbox" class="pln-campo" data-d="${d}" data-f="${i}" data-k="superConAnterior" ${f.superConAnterior && !ssChoca ? 'checked' : ''} ${ssChoca ? 'disabled' : ''}> SS
         </label>` : ''}
         <span class="pln-acciones">
           <button class="btn-mini peligro pln-del-fila" data-d="${d}" data-f="${i}" title="Eliminar fila">✕</button>
         </span>
       </div>
-      ${grupo || chips || ssNum ? `<div class="pln-fila-meta">${grupo ? `<span class="muted">${esc(grupo)}</span>` : ''}${ssNum ? `<span class="chip azul" title="Superserie ${ssNum}: en la app se alternan las series de las filas del grupo">Superserie ${ssNum}</span>` : ''}${chips}</div>` : ''}
+      ${grupo || chips || ssNum ? `<div class="pln-fila-meta">${grupo ? `<span class="muted">${esc(grupo)}</span>` : ''}${ssNum ? `<span class="chip azul" title="Series alternas ${ssNum}: en la app se alternan las series de las filas del grupo">Series alternas ${ssNum}</span>` : ''}${chips}</div>` : ''}
     </div>`;
   },
 
   /* Deshace las combinaciones imposibles de un día: una fila tiene UNA
-     modalidad (top+back, drop set o rest-pause) y una superserie va SIEMPRE a series
-     rectas. Manda la modalidad de la fila (decide cómo progresa el
-     ejercicio) y se suelta el enlace de superserie (solo decide el orden de
-     ejecución): misma precedencia que la app. Hace falta además de las
-     casillas porque borrar o reordenar filas cambia quién es vecino de
-     quién, y un Excel o un JSON pueden traer las tres marcas juntas. */
+     modalidad (top+back, drop set o rest-pause) y en unas series alternas
+     caben las series rectas, las libres y top+back, pero no el drop set ni el
+     rest-pause. Manda la modalidad de la fila (decide cómo progresa el
+     ejercicio) y esa fila sale de su grupo (solo decide el orden de
+     ejecución): misma precedencia que la app (AppState._sanearModalidades y
+     SeriesAlternas.normalizar). Hace falta además de las casillas porque
+     borrar filas puede dejar un grupo de una sola, y un Excel o un JSON
+     pueden traer las marcas juntas o el enlace antiguo. */
   _sanearModalidades(filas, sistema){
     const sis = sistema || (this.rutina && this.rutina.sistema) || 'doble';
-    (filas || []).forEach((f, i) => {
+    (filas || []).forEach(f => {
       if (f.topBack && f.dropSet) this._quitarDrop(f, sis);
       // El rest-pause cede ante top+back y drop set (misma precedencia que la
       // app al importar).
       if (f.restPause && (f.topBack || f.dropSet)) f.restPause = false;
       // Un drop set con rango (Excel antiguo, borrador) se queda con una cifra.
       this._dropRepsUnicas(f, sis);
-      if (!f.superConAnterior || i === 0) return;
-      const ant = filas[i - 1];
-      if (this._conModalidad(f) || this._conModalidad(ant))
-        f.superConAnterior = false;
     });
+    Motor.saNormalizar(filas || []);
     return filas;
   },
 
@@ -851,27 +851,25 @@ const Planner = {
     f.repsMin = Math.max(1, f.repsMin - 4);
   },
   /* ¿La fila lleva alguna modalidad propia (top+back, drop set o
-     rest-pause)? Cualquiera de ellas impide la superserie. */
+     rest-pause)? */
   _conModalidad(f){
     return !!(f && (f.topBack || f.dropSet || f.restPause));
   },
 
-  /* Número de superserie (1, 2, …) de cada fila de un día, o 0 si va sola.
-     Los grupos son las cadenas contiguas de filas con superConAnterior; el
-     enlace de la primera fila del día se ignora. Misma regla que la app. */
+  /* Número visible del grupo de series alternas (1, 2, …) de cada fila de
+     un día, o 0 si va sola: los grupos se cuentan por la posición de su
+     primer ejercicio y sus filas no tienen por qué ir seguidas
+     (SeriesAlternas.numeroVisible). No toca las filas: un borrador antiguo
+     se lee con sus enlaces convertidos. */
   _gruposSuperserie(filas){
-    const out = filas.map(() => 0);
-    let n = 0, k = 0;
-    while (k < filas.length){
-      let fin = k;
-      while (fin + 1 < filas.length && filas[fin + 1].superConAnterior) fin++;
-      if (fin > k){
-        n++;
-        for (let j = k; j <= fin; j++) out[j] = n;
-      }
-      k = fin + 1;
-    }
-    return out;
+    const copia = (filas || []).map(f => ({ grupoAlterno: f.grupoAlterno, superConAnterior: f.superConAnterior,
+      _enlaceLegado: f._enlaceLegado, dropSet: f.dropSet, restPause: f.restPause }));
+    return Motor.saNumeros(Motor.saNormalizar(copia));
+  },
+  /* Filas con las que alterna la fila `i` (su grupo sin ella), en orden. */
+  _companerosAlternas(filas, i){
+    const num = this._gruposSuperserie(filas);
+    return num[i] ? num.map((n, k) => k).filter(k => k !== i && num[k] === num[i]) : [];
   },
 
   render(ctx){
@@ -976,8 +974,11 @@ const Planner = {
 
   /* Cambia un campo de la fila `i` de un día respetando las reglas de la
      app: las modalidades son excluyentes (una fila tiene UNA de top+back /
-     drop set / rest-pause) y una superserie solo enlaza filas a series
-     rectas; activar una apaga las que no caben. `valor`: booleano en las
+     drop set / rest-pause) y en unas series alternas no caben el drop set
+     ni el rest-pause; activar una apaga las que no caben. `alternarCon`
+     (valor: índice de otra fila del día, o vacío para quitarla) mete la fila
+     en el grupo de esa otra, vayan seguidas o no (AppState.alternarCon);
+     `superConAnterior` es su atajo con la fila de encima. `valor`: booleano en las
      marcas, texto en patrón y ejercicio, número (o texto numérico; vacío =
      sin dato) en el resto. Lo usan el editor del Coach y el del escritorio.
      `sistema` (simple/doble) decide cómo queda el objetivo de un drop set. */
@@ -986,13 +987,23 @@ const Planner = {
     if (!fila) return false;
     const sis = sistema || (this.rutina && this.rutina.sistema) || 'doble';
     const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
-    const romperSS = () => {
-      fila.superConAnterior = false;
-      if (filas[i + 1]) filas[i + 1].superConAnterior = false;
+    // Antes de tocar grupos, los enlaces antiguos pasan a números.
+    Motor.saNormalizar(filas);
+    // Saca la fila de su grupo; si el grupo se queda con una, desaparece.
+    const romperSS = () => { fila.grupoAlterno = 0; Motor.saNormalizar(filas); };
+    const alternarCon = j => {
+      const otra = filas[j];
+      if (!otra || j === i) return;
+      for (const x of [otra, fila]){ this._quitarDrop(x, sis); x.restPause = false; }
+      if (!(otra.grupoAlterno > 0) || this._companerosAlternas(filas, j).length === 0)
+        otra.grupoAlterno = Motor.saNumeroLibre(filas);
+      fila.grupoAlterno = otra.grupoAlterno;
+      Motor.saNormalizar(filas);
     };
     if (k === 'topBack'){
+      // Top + back-offs sí cabe en unas series alternas.
       fila.topBack = !!valor;
-      if (valor){ this._quitarDrop(fila, sis); fila.restPause = false; romperSS(); }
+      if (valor){ this._quitarDrop(fila, sis); fila.restPause = false; }
     }
     else if (k === 'dropSet'){
       if (valor){
@@ -1011,19 +1022,11 @@ const Planner = {
       }
     }
     else if (k === 'superConAnterior'){
-      fila.superConAnterior = !!valor && i > 0;
-      if (fila.superConAnterior){
-        // Todo el grupo resultante va a series rectas.
-        let ini = i;
-        while (ini > 0 && filas[ini].superConAnterior) ini--;
-        let fin = i;
-        while (filas[fin + 1] && filas[fin + 1].superConAnterior) fin++;
-        for (let j = ini; j <= fin; j++){
-          filas[j].topBack = false;
-          this._quitarDrop(filas[j], sis);
-          filas[j].restPause = false;
-        }
-      }
+      if (valor && i > 0) alternarCon(i - 1); else if (!valor) romperSS();
+    }
+    else if (k === 'alternarCon'){
+      const j = valor === '' || valor == null ? null : Number(valor);
+      if (j == null || !isFinite(j)) romperSS(); else alternarCon(j);
     }
     // Si el ejercicio actual no encaja con el nuevo patrón no se borra: los
     // avisos lo señalan.

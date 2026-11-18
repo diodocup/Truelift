@@ -161,17 +161,18 @@ Cada fila de ejercicio usa las claves y tipos que lee
 | `rirBack` | texto | no | 0 a 80. |
 | `dropSet` | booleano | no | |
 | `dropPct` | entero | no | 5 a 30. |
-| `superserie` | entero | no | 0 a 99. Filas consecutivas con el mismo número distinto de cero quedan enlazadas. |
+| `superserie` | entero | no | 0 a 99. Series alternas: las filas del día con el mismo número distinto de cero alternan sus series, vayan seguidas o no. Un número con una sola fila no forma grupo. |
 | `restPause` | booleano | no | |
 | `pausaRpSeg` | entero | no | 10 a 50. |
 | `seriesLibres` | booleano | no | Series libres: cada serie con sus reps, su RIR, su peso y su progresión. |
 | `repsSeries` | lista de texto | no | Reps de cada serie libre, en orden (`["5", "8", "10-12"]`). Hasta 10 elementos; si faltan, copian la última. |
 | `rirSeries` | lista de texto | no | RIR de cada serie libre, en orden (`["1", "2", "2"]`). Mismas reglas que `repsSeries`. |
 
-Las modalidades excluyentes (top+back, drop set, rest-pause, superserie) las
-sanea la app al aplicar, igual que con cualquier plantilla. Las series libres
-ceden ante cualquiera de las otras tres modalidades, pero sí pueden ir en
-superserie.
+Las modalidades excluyentes (top+back, drop set, rest-pause) las sanea la app
+al aplicar, igual que con cualquier plantilla. Las series libres ceden ante
+cualquiera de las otras tres modalidades. En series alternas (`superserie`)
+caben las series rectas, las series libres y top+back; una fila con drop set o
+rest-pause sale de su grupo.
 
 Cada ejercicio propio (claves del bloque `TRUELIFT_EXERCISES_V1` de
 `lib/rutina_excel.dart`):

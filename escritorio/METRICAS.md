@@ -32,7 +32,7 @@ Prioridad aplicada en todas las vistas:
 | Cambio de rutina | Dato de la copia | Identidad `variante|dias|rutinaRevision` (`rutinaKeyDeLog`). | `analisis.test.mjs` |
 | Recuperación reciente | Reproducida | `recuperacionValoracion`: días con `estadoEntrenar` < 70 en los 14 días previos; ≥ 4 registros; cargada ≥ 50 %, buena ≤ 25 %. Solo con `readinessActivo`. | `analisis.test.mjs` |
 | Peso tendencia, ritmo, fase | `coach/nutricion.js` (port previo del Coach) evaluado en la fecha del último registro | Filtro de peso de la app. El ritmo no se muestra con un solo pesaje. | pruebas del Coach |
-| VFC y FC en reposo | `coach/data.js` (port previo del Coach) | Cada noche con su propia banda. La media de 7 días y el umbral de tendencia se calculan con las noches medidas en la ventana (≥ 3), así que los huecos no cortan la curva. | pruebas del Coach |
+| VFC y FC en reposo | `coach/data.js` (port previo del Coach) | Las noches descartadas o con «Enfermo» quedan fuera de la referencia (`nocheFueraDeReferencia`, App-PRO 18/11/2026). Cada noche con su propia banda. La media de 7 días y el umbral de tendencia se calculan con las noches medidas en la ventana (≥ 3), así que los huecos no cortan la curva. | pruebas del Coach |
 
 ## Estancamiento
 
@@ -43,11 +43,15 @@ kg sin cumplir el objetivo de reps. Una oportunidad es válida si:
 - la sesión es de la rutina actual (`variante`, `dias`, `rutinaRevision`);
 - no es descarga, el ejercicio no está «no realizado», no tiene compuerta
   cerrada (`progresionPausada`), no está modulado (`modulada`), no tiene
-  molestias ni es un cambio solo por hoy;
+  molestias, no es un cambio solo por hoy ni es de una sesión corta o extra
+  (`Motor.noEvaluable`, App-PRO 16/11/2026);
 - todas las series **top** están anotadas (`oportunidadCompleta`);
 - con marca por ejercicio (`progresionPausada`/`modulada` registradas) cuenta
   aunque el día no fuera verde; sin marca, solo en verde;
 - una entrada **neutra** fallida se ignora; una neutra cumplida corta la racha;
+- una entrada en **vuelta escalonada tras un parón** (`rampaParon`, con la
+  carga aún por debajo de la marca de antes del parón) que no cumple se
+  ignora; si cumple, corta la racha (App-PRO 12/11/2026);
 - la entrada no se guardó sin progresión automática (`sinProgresion`, versión
   gratuita de la app desde el 07/11/2026): esas sesiones ni suman intento ni
   rompen la racha.
@@ -128,7 +132,7 @@ misma que la valoración de la app). Código: `escritorio/analisis.js`.
 |---|---|---|
 | Días previstos por semana | Reproducida desde los datos | Semana lunes-domingo. Rutina conocida si la última sesión anterior, las de la semana y la primera posterior tienen la misma identidad `variante|dias|revisión`; sin sesión posterior, si la rutina actual es la de la última sesión. Previstos = `dias` de esa identidad. Si no, «sin calcular». La semana en curso no se valora. Se compara con días con sesión (como `diasEntrenados` del informe mensual). |
 | Evolución de un ejercicio | Reproducida (`resumen_mensual.dart` `_extremosComparables`, cortes de `informe_mensual.dart`) | Mejor 1RM estimado de marca (Epley con RIR, carga efectiva, tope de 18 reps efectivas) por sesión. Media de las dos primeras y las dos últimas (con 2–3, primera y última). Δ ≥ 1 % al alza; Δ < −1 % a la baja; si no, «sin cambios claros». |
-| Sesiones comparables | Más estricta que el informe mensual | Entrenado en verde (como el móvil) **y** sin descarga, molestias ni cambio de un día, con la misma modalidad (normal, top + back-off, drop set, rest-pause, series libres) que la última sesión válida. El informe mensual del móvil no excluye descargas ni molestias ni separa modalidades. |
+| Sesiones comparables | Más estricta que el informe mensual | Entrenado en verde (como el móvil) **y** sin descarga, molestias, cambio de un día, sesión corta ni sesión extra, con la misma modalidad (normal, top + back-off, drop set, rest-pause, series libres) que la última sesión válida. El informe mensual del móvil no excluye descargas ni molestias ni separa modalidades. |
 | Lectura «firme» | Propia del escritorio | ≥ 4 sesiones comparables y las dos últimas por debajo (o por encima) de la media inicial. Solo las firmes se convierten en conclusión. |
 | Ejercicio en varios días de la rutina | Como el selector «Sesión» de Progreso en la app (`progreso_screen.dart`) | `Analisis.diasEjercicio`: días con carga del ejercicio en todo el historial, del más reciente al más antiguo. Si en el periodo hay sesiones de dos o más días, `evolucionesEjercicio` da una evolución por día (cada día lleva su propia carga) en Mi resumen, sus conclusiones, «Tus últimas semanas» y el informe; si no, una sola del ejercicio. La ficha ofrece «Sesión» (todas o un día) para la gráfica y el historial. Marcas y comparación de sesiones siguen siendo del ejercicio entero. |
 | Marcas | Reproducida (`mejorMarca`) | Cada sesión que supera la mejor marca anterior; la primera fija la referencia. |

@@ -25,7 +25,7 @@ function cargarPlanner(store = { clientes: [], ejerciciosCoach: [] }) {
     V: {},
   };
   vm.createContext(sandbox);
-  const codigo = fs.readFileSync(new URL('planner.js', appDir), 'utf8');
+  const codigo = fs.readFileSync(new URL('motor.js', appDir), 'utf8') + '\n;' + fs.readFileSync(new URL('planner.js', appDir), 'utf8');
   vm.runInContext(`${codigo}\n;globalThis.__Planner = Planner;`, sandbox);
   return sandbox.__Planner;
 }
@@ -116,7 +116,7 @@ test('el planificador reordena ejercicios dentro del mismo día', () => {
 });
 
 test('el planificador usa arrastre y los nuevos nombres de importación y exportación', () => {
-  const codigo = fs.readFileSync(new URL('planner.js', appDir), 'utf8');
+  const codigo = fs.readFileSync(new URL('motor.js', appDir), 'utf8') + '\n;' + fs.readFileSync(new URL('planner.js', appDir), 'utf8');
   assert.match(codigo, /class="pln-drag"/);
   assert.match(codigo, /addEventListener\('pointerdown'/);
   assert.match(codigo, /addEventListener\('pointermove'/);

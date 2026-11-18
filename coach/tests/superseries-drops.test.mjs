@@ -28,7 +28,7 @@ function cargarPlanner(store = { clientes: [], ejerciciosCoach: [] }, extras = {
     ...extras,
   };
   vm.createContext(sandbox);
-  const codigo = fs.readFileSync(new URL('planner.js', appDir), 'utf8');
+  const codigo = fs.readFileSync(new URL('motor.js', appDir), 'utf8') + '\n;' + fs.readFileSync(new URL('planner.js', appDir), 'utf8');
   vm.runInContext(`${codigo}\n;globalThis.__Planner = Planner;`, sandbox);
   return sandbox.__Planner;
 }
@@ -49,7 +49,7 @@ test('la fila vacía trae las claves nuevas con sus valores por defecto', () => 
   assert.equal(f.superConAnterior, false);
 });
 
-test('los grupos de superserie son cadenas contiguas y se numeran por día', () => {
+test('los enlaces antiguos son cadenas contiguas y se numeran por día', () => {
   const planner = cargarPlanner();
   const filas = [
     { superConAnterior: false },
@@ -202,17 +202,19 @@ test('la duración estimada de un drop set solo cuenta un descanso', () => {
    enlaza filas a series rectas. Manda la modalidad de la fila y se suelta el
    enlace, igual que en la app. */
 
-test('_sanearModalidades suelta el enlace si hay T+B o drop set a algún lado', () => {
+test('_sanearModalidades: el drop set sale de sus series alternas y T+B se queda', () => {
   const planner = cargarPlanner();
+  // Enlaces antiguos: las cuatro filas forman una cadena (un grupo).
   const filas = [
     { topBack: true, dropSet: false, superConAnterior: false },
-    { topBack: false, dropSet: false, superConAnterior: true },  // choca con la 1.ª
-    { topBack: false, dropSet: true, superConAnterior: true },   // choca consigo misma
-    { topBack: false, dropSet: false, superConAnterior: true },  // la 3.ª sigue con carga
+    { topBack: false, dropSet: false, superConAnterior: true },  // T+B sí cabe
+    { topBack: false, dropSet: true, superConAnterior: true },   // drop set: sale
+    { topBack: false, dropSet: false, superConAnterior: true },  // sigue en el grupo
   ];
   planner._sanearModalidades(filas);
-  assert.deepEqual(filas.map(f => f.superConAnterior), [false, false, false, false]);
-  // Las modalidades de la fila se conservan: solo se rompe el enlace.
+  assert.deepEqual(planner._gruposSuperserie(filas), [1, 1, 0, 1]);
+  assert.deepEqual(filas.map(f => f.superConAnterior), [false, true, false, false]);
+  // Las modalidades de la fila se conservan: solo sale del grupo la que no cabe.
   assert.equal(filas[0].topBack, true);
   assert.equal(filas[2].dropSet, true);
 });
@@ -241,14 +243,16 @@ test('reordenar dentro del día rehace la exclusión', () => {
       { ejercicio: 'C', superConAnterior: false, topBack: true, dropSet: false },
     ] },
   ] };
-  // C (top+back) se cuela entre A y B: el enlace de B ya no vale.
+  // C (top+back) se cuela entre A y B: A y B siguen alternando aunque ya
+  // no vayan seguidas (el grupo se hace donde está A).
   assert.equal(planner._reordenarEnDia(0, 2, 1), true);
   const filas = planner.rutina.dias[0].filas;
   assert.deepEqual(filas.map(f => f.ejercicio), ['A', 'C', 'B']);
   assert.equal(filas[2].superConAnterior, false);
+  assert.deepEqual(planner._gruposSuperserie(filas), [1, 0, 1]);
 });
 
-test('analiza avisa en rojo de una superserie con T+B o drop set', () => {
+test('analiza avisa en rojo de unas series alternas con drop set, no con T+B', () => {
   const planner = cargarPlanner();
   const fila = (extra = {}) => ({
     patron: 'Empuje horizontal', ejercicio: 'Press banca', series: 3,
@@ -256,10 +260,12 @@ test('analiza avisa en rojo de una superserie con T+B o drop set', () => {
   });
   const rutina = { sistema: 'doble', dias: [
     { nombre: 'Día 1', filas: [fila({ topBack: true }), fila({ superConAnterior: true })] },
-    { nombre: 'Día 2', filas: [fila()] },
+    { nombre: 'Día 2', filas: [fila({ grupoAlterno: 1, dropSet: true }), fila(), fila({ grupoAlterno: 1 })] },
   ] };
   const an = planner.analiza(rutina, null);
-  assert.ok(an.avisos.some(a => a.nivel === 'rojo' && /superserie va a series rectas/.test(a.txt)));
+  const rojos = an.avisos.filter(a => a.nivel === 'rojo' && /series alternas/.test(a.txt));
+  assert.equal(rojos.length, 1);
+  assert.match(rojos[0].txt, /^Día 2/);
 });
 
 test('exportar rompe el enlace que quede sobre una fila con carga por serie', async () => {
@@ -288,4 +294,29 @@ test('exportar rompe el enlace que quede sobre una fila con carga por serie', as
   // Al caerse la fila de en medio, la última queda pegada al drop set: el
   // enlace se rompe en vez de viajar al Excel.
   assert.equal(filas[1].superConAnterior, false);
+});
+
+test('series alternas: grupos no consecutivos por número, también en el Excel', () => {
+  const planner = cargarPlanner();
+  const filas = [{ grupoAlterno: 3 }, { grupoAlterno: 0 }, { grupoAlterno: 3 }, { grupoAlterno: 7 }];
+  // Se cuentan por la posición del primero; un número con una fila no vale.
+  assert.deepEqual(planner._gruposSuperserie(filas), [1, 0, 1, 0]);
+  // «Alternar con» cualquier fila del día, y quitarla.
+  const dia = [{ ejercicio: 'A' }, { ejercicio: 'B', dropSet: true }, { ejercicio: 'C' }];
+  planner.aplicarCampo(dia, 2, 'alternarCon', '0', 'doble');
+  assert.deepEqual(planner._gruposSuperserie(dia), [1, 0, 1]);
+  planner.aplicarCampo(dia, 1, 'alternarCon', '2', 'doble');
+  assert.equal(dia[1].dropSet, false, 'alternar quita el drop set');
+  assert.deepEqual(planner._gruposSuperserie(dia), [1, 1, 1]);
+  planner.aplicarCampo(dia, 0, 'alternarCon', '', 'doble');
+  assert.deepEqual(planner._gruposSuperserie(dia), [0, 1, 1]);
+  const xlsx = cargarXlsx();
+  const xml = xlsx._sheetDataDia('Día 1', [
+    { patron: 'P', ejercicio: 'A', series: 3, grupoAlterno: 4 },
+    { patron: 'P', ejercicio: 'B', series: 3, grupoAlterno: 0 },
+    { patron: 'P', ejercicio: 'C', series: 3, grupoAlterno: 4 },
+  ], 'doble');
+  assert.match(xml, /r="K4"[^>]*>[\s\S]*?<x:v>1<\/x:v>/);
+  assert.doesNotMatch(xml, /r="K5"/);
+  assert.match(xml, /r="K6"[^>]*>[\s\S]*?<x:v>1<\/x:v>/);
 });

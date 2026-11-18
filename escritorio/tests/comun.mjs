@@ -27,7 +27,7 @@ export function cargar(...archivos){
 // Scripts del Coach que reutiliza el escritorio (../coach/), en el mismo
 // realm. `nombres` lista los globales que exporta cada uno.
 const GLOBALES_COACH = { 'motor.js': ['Motor'], 'data.js': ['esc', 'parseFecha', 'fmtISO', 'soloDia', 'diasEntre',
-  'normalizar', 'Metricas', 'VFC', 'FCReposo', 'Fatiga', 'Salud', 'num', 'patronVigente'],
+  'normalizar', 'nocheFueraDeReferencia', 'Metricas', 'VFC', 'FCReposo', 'Fatiga', 'Salud', 'num', 'patronVigente'],
   'nutricion.js': ['Nutricion', 'normalizarNutricion', 'NUT', 'ProgresoFase', 'PlanTemporada', 'BandaTasa', 'GuardarrailesNut', 'Particion'],
   'catalogo.js': ['CAT_FICHA', 'CAT_GRUPO_DE', 'CAT_LISTAS', 'CAT_PATRONES', 'CAT_PATRON_GRUPO', 'CAT_DESCANSOS',
                   'CAT_SISTEMAS', 'OBJETIVOS_GRUPO', 'ORDEN_GRUPOS'],
