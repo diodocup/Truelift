@@ -734,6 +734,12 @@ img.ej-dibujo.ej-foto{background:var(--sup2);object-fit:contain}
 .fase-barra{position:relative;height:8px;background:var(--sup3);border-radius:6px}
 .fase-barra i{display:block;height:100%;border-radius:6px}
 .fase-barra b{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--txt);border-radius:1px}
+.fase-recorrido{margin-bottom:6px}
+.fase-recorrido .fase-margen{position:absolute;top:-4px;bottom:-4px;border-radius:4px;background:color-mix(in srgb, var(--azul, #4F8EF7) 22%, transparent);text-decoration:none}
+.fase-recorrido b{background:var(--azul, #4F8EF7);width:3px;margin-left:-1.5px}
+.fase-recorrido u{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid var(--sup2);text-decoration:none}
+.fase-leyenda{margin:4px 0 0;font-size:11.5px;color:var(--txt3)}
+.fase-leyenda .fase-hoy{color:var(--azul, #4F8EF7)}
 .fase-frase{margin:10px 0 4px;font-weight:600}
 @media print{.fase-progreso{break-inside:avoid}}
 

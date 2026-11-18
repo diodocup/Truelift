@@ -1087,3 +1087,59 @@ Verificación: `node --test escritorio/tests/*.test.mjs` 236 correctas y 3
 omitidas (sin Dart), con `tests/series-libres.test.mjs` nuevo;
 `entrenador.e2e.mjs` 10/10 con un paso de series libres. `e2e.mjs` se para en
 Nutrición («DÉFICIT · SEMANA») igual que sin estos cambios.
+
+## Al día con App-PRO del 12 al 18/11/2026: series alternas y entrenamiento corto (18/11/2026)
+
+Revisión de lo que llegó a la app desde el #297 (series libres), solo la parte
+de fuerza (el modo híbrido está congelado).
+
+- **Series alternas** (App-PRO F1–F6, 17/11/2026). Port de
+  `lib/series_alternas.dart` en `coach/motor.js` (`saAdmite`, `saNormalizar`,
+  `saNumeros`, `saOrden`, `saNumeroLibre`, `saGruposPlan`): grupos por número
+  en el día, conversión del enlace antiguo, drop set y rest-pause fuera,
+  grupos de una línea deshechos y `superConAnterior` derivado.
+  - Planificador compartido (`coach/planner.js`): `grupoAlterno` en la fila,
+    T+B admitido en grupo, `aplicarCampo` con `alternarCon` (cualquier fila
+    del día, como `AppState.alternarCon`) y `superConAnterior` como atajo;
+    reordenar no rompe grupos; avisos y Excel (`coach/xlsx.js`, columna K
+    tal cual, también no consecutiva).
+  - Modo entrenador: selector «Series alternas: Alternar con…» por fila,
+    modalidades permitidas en grupo, chip «Series alternas N» con nota si el
+    grupo no va seguido; `comoLaApp` lleva `superserie` a `grupoAlterno` y
+    normaliza; la forma canónica compara el número de grupo («Series
+    alternas»). `CONTRATO_PLAN_ENTRENADOR.md` copiado de App-PRO (idéntico).
+  - Visor: «Series alternas N» en *Mi rutina* y en el detalle de la sesión.
+- **Entrenamiento corto** (F1–F6, 16/11/2026): `Motor.noEvaluable` incluye
+  `sesionCorta` (y la sesión extra, `extra`, que faltaba); motivo propio en
+  las comparaciones; chips «Sesión corta/exprés», nota en el detalle,
+  «no se valora» en el rendimiento, «Drop set solo ese día» y una línea en
+  los cambios del informe.
+- **Sesión extra**: `Motor.volumenReal` suma `sesionesExtra` sin recortes ni
+  cambio de rutina (`historialVolumenReal`).
+- **Parón por grupo** (12/11/2026): `Motor.oportunidades` ignora los fallos en
+  vuelta escalonada (`rampaParon`, `Motor.rampaEnCurso`); chip en la sesión.
+- **VFC y FC con «Enfermo»** (18/11/2026): `nocheFueraDeReferencia` en
+  `coach/data.js` y `senales.js`; gráficas con esas noches en gris.
+- **«Cómo vas»** (16/11/2026): `pesoInicioAsentadoKg`/`asentadoEn` del
+  compromiso, `pesoPactadoFinKg`, dirección de lo pactado y margen de hoy en
+  `ProgresoFase.calcular`; tarjeta con un solo recorrido y modo
+  «Calibrando»; la gráfica no dibuja contrato mientras calibra y el plan
+  inicial solo si el ritmo cambió.
+- `sw.js` a `v22` y `coach/sw.js` a `tlcoach-v21` (cambian `motor.js`,
+  `data.js`, `nutricion.js`, `planner.js` y `xlsx.js`).
+- No aplica al escritorio: etiquetas RP1/RP2 del registro, mensajes y
+  consejos del módulo de fuerza, sueño sugerido, copia en el teléfono.
+  Pendiente: resumen anual.
+
+Pruebas: `tests/al-dia-18112026.test.mjs` (nuevo); `entrenador.test.mjs`,
+`series-libres.test.mjs`, `progreso-fase.test.mjs` y las de planificador del
+Coach (`superseries-drops`, `rest-pause`, `compat`, que ahora cargan
+`motor.js`) con las reglas nuevas; paso nuevo en `entrenador.e2e.mjs`;
+`e2e.mjs` ajustado a la copia de ejemplo del 06/11 (ya estaba en volumen).
+La versión de caché que espera `e2e.mjs` sale ahora de `sw.js`.
+
+Verificación: `node --test escritorio/tests/*.test.mjs` 245 correctas y 3
+omitidas (sin Dart); pruebas de planificador del Coach 31/31;
+`entrenador.e2e.mjs` 10/10; `e2e.mjs` 51/51. Siguen fallando, igual que
+antes de estos cambios, 8 pruebas del Coach retirado (`fc-reposo`,
+`nutricion`, `umbral-por-dia`).

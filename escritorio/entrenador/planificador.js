@@ -56,7 +56,11 @@ const PlanificadorEntrenador = {
         .map(f => {
           // Sin dato en los parámetros de las modalidades valen los de la app
           // (15 %, RIR 2, 20 s): así se ven al activarlas y viajan igual.
-          const fila = { ...this.filaVacia(), ...f };
+          // Series alternas: un borrador anterior al 17/11/2026 no trae
+          // `grupoAlterno`, solo el enlace con la fila anterior, que se
+          // convierte en grupo al sanear (Motor.saNormalizar).
+          const legado = !!f && typeof f.grupoAlterno !== 'number' && f.superConAnterior === true;
+          const fila = { ...this.filaVacia(), ...f, ...(legado ? { _enlaceLegado: true } : {}) };
           for (const k of ['backoffPct', 'rirBack', 'dropPct', 'pausaRpSeg']) if (fila[k] == null) fila[k] = this.filaVacia()[k];
           // Series libres (claves aditivas: los borradores antiguos no las traen).
           fila.seriesLibres = fila.seriesLibres === true;
@@ -72,7 +76,7 @@ const PlanificadorEntrenador = {
   // ---------------------------------------------------------------
   // Series libres (App-PRO 12/11/2026): cada serie con su objetivo de reps
   // y de RIR, su peso y su progresión. Excluyente con top+back, drop set y
-  // rest-pause (y son las que ceden), compatible con la superserie y con al
+  // rest-pause (y son las que ceden), compatible con las series alternas y con al
   // menos 2 series. En el editor cada fila lleva `porSerie`: una entrada
   // {repsMin, repsMax, rir} por serie; repsMin/repsMax/rir de la fila copian
   // los de la 1.ª serie, como `LineaRutina.ajustarSeriesLibres`.
@@ -139,6 +143,10 @@ const PlanificadorEntrenador = {
           descanso: num(p.descansoMin),
           topBack: p.topBack === true, backoffPct: num(p.backoffPct), rirBack: num(p.rirBack),
           dropSet: p.dropSet === true, dropPct: num(p.dropPct),
+          // Series alternas: número de grupo del día. Las copias anteriores al
+          // 17/11/2026 solo traen el enlace con la anterior (se convierte al
+          // normalizar la rutina).
+          ...(typeof p.grupoAlterno === 'number' ? { grupoAlterno: p.grupoAlterno } : { _enlaceLegado: p.superConAnterior === true }),
           superConAnterior: p.superConAnterior === true,
           restPause: p.restPause === true, pausaRpSeg: num(p.pausaRpSeg) || 20,
           seriesLibres: p.seriesLibres === true,
@@ -187,8 +195,10 @@ const PlanificadorEntrenador = {
   _nombreEj(n){ const s = String(n ?? '').trim(); return typeof Motor === 'object' ? Motor.nombreVigente(s) : s; },
   _acotar(v, a, b){ return Math.min(b, Math.max(a, v)); },
 
-  /* Una línea comparable. `l` usa las claves de LineaRutina de la app. */
-  _linea(l){
+  /* Una línea comparable. `l` usa las claves de LineaRutina de la app;
+     `superserie` es el número visible de su grupo de series alternas en el
+     día (0 si va sola), que pone quien conoce el día entero (`_lineasDia`). */
+  _linea(l, superserie = 0){
     const modo = l.topBack ? 'topBack' : l.dropSet ? 'drop' : l.restPause ? 'rp' : this._libres(l) ? 'libres' : 'normal';
     const out = {
       ejercicio: this._nombreEj(l.ejercicio),
@@ -197,7 +207,7 @@ const PlanificadorEntrenador = {
       rir: modo === 'rp' ? null : this._ent(l.rir),
       descanso: typeof l.descansoMin === 'number' && isFinite(l.descansoMin) ? Math.round(l.descansoMin * 100) / 100 : null,
       modalidad: modo,
-      superserie: !!l.superConAnterior,
+      superserie,
     };
     if (modo === 'topBack'){ out.backoffPct = this._ent(l.backoffPct) ?? 15; out.rirBack = this._ent(l.rirBack) ?? 2; }
     if (modo === 'drop') out.dropPct = this._ent(l.dropPct) ?? 15;
@@ -226,11 +236,18 @@ const PlanificadorEntrenador = {
       sistema: sistema === 'simple' ? 'simple' : 'doble',
       dias: dias.map(d => {
         const ls = por.get(d).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
-        return { nombre: d, lineas: ls.map((l, i) => ({ ...this._linea(this._dropComoLaApp(l, sistema)), superserie: i > 0 && l.superConAnterior === true && !this._conModo(l) && !this._conModo(ls[i - 1]) })) };
+        return { nombre: d, lineas: this._lineasDia(ls.map(l => this._dropComoLaApp(l, sistema))) };
       }),
     };
   },
-  _conModo(l){ return !!(l && (l.topBack || l.dropSet || l.restPause)); },
+  /* Líneas comparables de un día con el número visible de su grupo de
+     series alternas (Motor.saNumeros sobre los grupos normalizados, sin tocar
+     las líneas). */
+  _lineasDia(ls){
+    const num = Motor.saNumeros(Motor.saNormalizar(ls.map(l => ({ grupoAlterno: l.grupoAlterno,
+      superConAnterior: l.superConAnterior, dropSet: l.dropSet && !l.topBack, restPause: l.restPause && !l.topBack && !l.dropSet }))));
+    return ls.map((l, i) => this._linea(l, num[i]));
+  },
   /* Un drop set con rango la app lo deja en una sola cifra: la que abría la
      subida (en doble, el extremo alto). AppState._repsUnicasDropSet. */
   _dropComoLaApp(l, sistema){
@@ -351,7 +368,8 @@ const PlanificadorEntrenador = {
   /* Lo que construye `AppState.importarRutina` con la `rutina` de un
      paquete: días con ejercicios, nombres de día vacíos o repetidos,
      patrón del catálogo, porcentajes acotados, pausa a la rejilla,
-     superseries por número y el saneo final de modalidades. Devuelve
+     series alternas por número (vayan seguidas o no) y el saneo final de
+     modalidades. Devuelve
      `{ sistema, dias:[{nombre, lineas}], notas, normal }`. */
   comoLaApp(paquete){
     const sistema = paquete.sistema === 'simple' ? 'simple' : 'doble';
@@ -367,12 +385,10 @@ const PlanificadorEntrenador = {
         nombre = nuevo;
       }
       nombres.add(nombre);
-      let previa = 0;
       const lineas = d.ejercicios.map(e => {
         const ej = String(e.ejercicio).trim();
         const info = typeof CAT_FICHA === 'object' ? CAT_FICHA[ej] : null;
         const topBack = e.topBack === true;
-        const superserie = e.superserie ?? 0;
         const l = {
           ejercicio: ej,
           patron: info ? patronVigente(info.patron, info.grupo) : patronVigente(e.patron ?? '', ''),
@@ -380,29 +396,31 @@ const PlanificadorEntrenador = {
           descansoMin: typeof e.descanso === 'number' ? e.descanso : null,
           topBack, backoffPct: this._acotar(e.backoffPct ?? 15, 5, 30), rirBack: e.rirBack ?? '2',
           dropSet: e.dropSet === true && !topBack, dropPct: this._acotar(e.dropPct ?? 15, 5, 30),
-          superConAnterior: superserie !== 0 && superserie === previa,
+          // La columna «superserie» pasa tal cual a `grupoAlterno`.
+          grupoAlterno: e.superserie ?? 0,
           restPause: e.restPause === true, pausaRpSeg: this._pausa(e.pausaRpSeg),
           seriesLibres: e.seriesLibres === true,
           repsSeries: Array.isArray(e.repsSeries) ? e.repsSeries.map(String) : [],
           rirSeries: Array.isArray(e.rirSeries) ? e.rirSeries.map(String) : [],
         };
-        previa = superserie;
         return l;
       });
       // Saneo final de la app (AppState._sanearModalidades).
-      lineas.forEach((l, i) => {
+      lineas.forEach(l => {
         if (l.restPause && (l.topBack || l.dropSet)) l.restPause = false;
         // Las series libres ceden ante las otras tres y necesitan una cifra
         // por serie (LineaRutina.ajustarSeriesLibres).
         if (l.seriesLibres && (l.topBack || l.dropSet || l.restPause)) l.seriesLibres = false;
         if (l.seriesLibres) this._ajustarListasApp(l);
         Object.assign(l, this._dropComoLaApp(l, sistema));
-        if (l.superConAnterior && i > 0 && (this._conModo(l) || this._conModo(lineas[i - 1]))) l.superConAnterior = false;
       });
+      // SeriesAlternas.normalizar: drop set y rest-pause salen de su grupo y
+      // un número con una sola fila no forma grupo.
+      Motor.saNormalizar(lineas);
       return { nombre, lineas };
     });
     return { sistema, dias, notas,
-      normal: { sistema, dias: dias.map(d => ({ nombre: d.nombre, lineas: d.lineas.map(l => this._linea(l)) })) } };
+      normal: { sistema, dias: dias.map(d => ({ nombre: d.nombre, lineas: this._lineasDia(d.lineas) })) } };
   },
 
   /* LineaRutina.ajustarSeriesLibres sobre una línea con las claves de la app. */
@@ -439,7 +457,7 @@ const PlanificadorEntrenador = {
   CAMPOS: [
     ['series', 'Series'], ['reps', 'Repeticiones'], ['rir', 'RIR'], ['descanso', 'Descanso'],
     ['modalidad', 'Modalidad'], ['backoffPct', '% back-off'], ['rirBack', 'RIR back-off'],
-    ['dropPct', '% drop'], ['pausaRpSeg', 'Pausa rest-pause'], ['superserie', 'Superserie con el anterior'],
+    ['dropPct', '% drop'], ['pausaRpSeg', 'Pausa rest-pause'], ['superserie', 'Series alternas'],
     ['repsSeries', 'Reps por serie'], ['rirSeries', 'RIR por serie'],
   ],
 

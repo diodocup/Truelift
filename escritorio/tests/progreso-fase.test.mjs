@@ -102,6 +102,33 @@ test('vistas: Mi resumen y Evolución física enseñan el progreso de la fase de
   const ctx = { inst: { resumen, importadoEn: '2026-10-09T10:00:00Z' }, galeriaHtml: () => '' };
   for (const html of [VistasEsc.resumen(M, ctx), VistasEsc.fisica(M, ctx)]){
     assert.match(html, /Progreso de la fase/);
-    assert.match(html, /class="fase-barra"/);
+    assert.match(html, /class="fase-barra fase-recorrido"/);
   }
+});
+
+// «Cómo vas» (App-PRO 16/11/2026): punto de partida asentado tras la
+// calibración y recorrido medido contra lo pactado.
+test('punto de partida asentado: el progreso se mide desde él, no desde la apertura', () => {
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const pesajes = Array.from({ length: 50 }, (_, i) => ({ fecha: iso(mas(inicio, i)), pesoKg: 80 - i * 0.05 }));
+  const fase = { id: 'f1', tipo: 'DEFICIT', inicio: iso(inicio), tasaObjetivoPctSemana: -0.75, pesoObjetivoKg: 75, estado: 'ACTIVE', semanasPreviasEnTipo: 4 };
+  const con = asentado => normalizarNutricion({ nutricion: { activo: true, pesajes, faseActual: { ...fase,
+    compromiso: { tasaPctSemana: -0.75, pesoInicioKg: 80, pesoMetaKg: 75, ...(asentado ? { pesoInicioAsentadoKg: 79.2, asentadoEn: iso(mas(inicio, 14)) } : {}) } } } });
+  const sin = Nutricion.contexto(con(false), { hoy: mas(inicio, 49) }).progreso;
+  const asen = Nutricion.contexto(con(true), { hoy: mas(inicio, 49) }).progreso;
+  assert.equal(sin.pesoInicioKg, 80);
+  assert.equal(asen.pesoInicioKg, 79.2);
+  assert.equal(asen.compromiso.pesoInicioKg, 80, 'se conserva el peso de apertura');
+  cerca(asen.hechoKg, sin.hechoKg - 0.8, 1e-9);
+  assert.ok(asen.margenInferiorHoyKg < asen.pesoPrevistoHoyKg && asen.pesoPrevistoHoyKg < asen.margenSuperiorHoyKg);
+});
+
+test('recorrido pactado: con fin fijo el total sale de la trayectoria, no de la meta re-anclada', () => {
+  const fin = mas(inicio, 70);
+  const p = deficit(79.5, { finFijo: fin, meta: 70 });
+  cerca(p.pesoPactadoFinKg, tras(80, -0.75, 70), 1e-6);
+  cerca(p.totalKg, 80 - tras(80, -0.75, 70), 1e-6);
+  assert.equal(p.direccion, -1);
+  // Sin fin fijo el final del recorrido es la meta.
+  assert.equal(deficit(79.5).pesoPactadoFinKg, 75);
 });

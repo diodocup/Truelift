@@ -248,6 +248,12 @@ function normalizarNutricion(raw){
         pesoMetaKg: numNut(f.compromiso.pesoMetaKg),
         fin: parseFecha(f.compromiso.fin),
         reconstruido: f.compromiso.reconstruido === true,
+        // Punto de partida asentado (App-PRO 16/11/2026): al terminar la
+        // calibración la app fija, una sola vez, el punto de partida que hace
+        // pasar lo pactado por la tendencia ya asentada, para que el escalón
+        // de agua y glucógeno del arranque no cuente como avance. Aditivo.
+        pesoInicioAsentadoKg: numNut(f.compromiso.pesoInicioAsentadoKg),
+        asentadoEn: parseFecha(f.compromiso.asentadoEn),
       } : null,
       // Pasos extra al día que la fase lleva pedidos: con la base del reloj
       // previa a la fase, es el objetivo de pasos que enseña la app.
@@ -1145,7 +1151,15 @@ const ProgresoFase = {
     const tasa = tramos[tramos.length - 1].tasaPctSemana;
     const meta = tipo === 'MAINTENANCE' || pesoMetaKg == null || pesoMetaKg < NUT.pesoMinKg ||
                  Math.abs(pesoMetaKg - pesoInicioKg) < 0.05 ? null : pesoMetaKg;
-    const dir = meta != null ? (meta > pesoInicioKg ? 1 : -1) : (tipo === 'MAINTENANCE' ? 0 : (tasa > 0 ? 1 : -1));
+    // Final del recorrido (App-PRO 16/11/2026): con fin fijo, donde lo
+    // pactado deja la fase ese día; sin él, la meta. La dirección sale de lo
+    // pactado y no de la meta vigente, que el plan re-ancla cada día.
+    let pactadoFin = meta;
+    if (meta != null && finFijo){
+      const alFin = this.trayectoria({ inicio: desde, fin: soloDia(finFijo), pesoInicialKg: pesoInicioKg, tramos });
+      if (alFin.length && Math.abs(alFin[alFin.length - 1].pesoObjetivoKg - pesoInicioKg) >= 0.05) pactadoFin = alFin[alFin.length - 1].pesoObjetivoKg;
+    }
+    const dir = pactadoFin != null ? (pactadoFin > pesoInicioKg ? 1 : -1) : (tipo === 'MAINTENANCE' ? 0 : (tasa > 0 ? 1 : -1));
     let fin = finFijo ? soloDia(finFijo) : null;
     if (!fin && meta != null){
       const p = contrato.find(x => (x.pesoObjetivoKg - meta) * dir >= 0);
@@ -1172,13 +1186,14 @@ const ProgresoFase = {
       const sem = this.semanasHastaPeso(pesoHoyKg, meta, tasa);
       if (sem != null) llegadaMeta = diaMas(dia, Math.ceil(sem * 7));
     }
-    const total = meta == null ? null : Math.abs(meta - pesoInicioKg);
+    const total = pactadoFin == null ? null : Math.abs(pactadoFin - pesoInicioKg);
     const fr = kg => total ? nutClamp(kg / total, 0, 1) : null;
     const hechoKg = (pesoHoyKg - pesoInicioKg) * dir, previstoKg = (previsto.pesoObjetivoKg - pesoInicioKg) * dir;
     const diasTranscurridos = diasEntre(desde, dia), diasTotales = fin ? diasEntre(desde, fin) : null;
     return {
       inicio: desde, hoy: dia, pesoInicioKg, pesoHoyKg, pesoPrevistoHoyKg: previsto.pesoObjetivoKg,
-      direccion: dir, estado, pesoMetaKg: meta, fin, pesoAlFinKg, llegadaMeta,
+      margenInferiorHoyKg: previsto.limiteInferiorKg, margenSuperiorHoyKg: previsto.limiteSuperiorKg,
+      direccion: dir, estado, pesoMetaKg: meta, pesoPactadoFinKg: pactadoFin, fin, pesoAlFinKg, llegadaMeta,
       desvioKg: pesoHoyKg - previsto.pesoObjetivoKg, hechoKg, previstoKg, totalKg: total,
       fraccionPeso: fr(hechoKg), fraccionPrevista: fr(previstoKg),
       diasTranscurridos, diasTotales,
@@ -1194,8 +1209,10 @@ const ProgresoFase = {
     if (!fase || !fase.inicio || fase.estado === 'CLOSED' || tendenciaKg == null) return null;
     const c = this.compromiso(nut, fase, serie);
     if (c.pesoInicioKg == null) return null;
+    // CompromisoFase.pesoPartidaKg: el asentado si la app ya lo fijó.
+    const partida = c.pesoInicioAsentadoKg ?? c.pesoInicioKg;
     const p = this.calcular({
-      tipo: fase.tipo, inicio: fase.inicio, hoy, pesoInicioKg: c.pesoInicioKg, pesoHoyKg: tendenciaKg,
+      tipo: fase.tipo, inicio: fase.inicio, hoy, pesoInicioKg: partida, pesoHoyKg: tendenciaKg,
       tramos: this.tramos(nut, fase), pesoMetaKg: this._metaValida(fase.pesoObjetivoKg),
       finFijo: this._bloqueDeFase(nut, fase, hoy)?.fin || null,
     });
@@ -1333,7 +1350,9 @@ const Nutricion = {
     // calibra o en pausa no hay veredicto (agua y glucógeno del arranque).
     const progresoBase = ProgresoFase.deFase(nut, { fase, serie, tendenciaKg, hoy: ultimoPunto ? ultimoPunto.fecha : ref });
     const progreso = progresoBase && { ...progresoBase,
-      conVeredicto: (asentamiento ? asentamiento.asentado : true) && fase.estado !== 'PAUSED' };
+      conVeredicto: (asentamiento ? asentamiento.asentado : true) && fase.estado !== 'PAUSED',
+      // Modo calibración de «Cómo vas» (App-PRO 16/11/2026).
+      calibrando: !!(asentamiento && !asentamiento.asentado) && fase.estado !== 'PAUSED' };
 
     return {
       nut, fase, perfil, pesajes, serie, ciclo, progreso,

@@ -352,11 +352,16 @@ En **Plan para <cliente>**:
 
 **Rutina.** Sistema (progresión doble o simple), de 2 a 5 días con hasta 10
 ejercicios por día, series, repeticiones, RIR, descanso y las modalidades de
-la app (top set + back-off, drop set, superserie con el anterior,
-rest-pause y series libres), que se excluyen entre sí igual que en la app.
-Con **series libres** cada serie lleva sus propias repeticiones y su propio
-RIR (una línea por serie en la fila) y en el móvil su propio peso y su propia
-progresión; pueden ir en superserie, como las series normales. Debajo:
+la app (top set + back-off, drop set, rest-pause y series libres), que se
+excluyen entre sí igual que en la app, y las **series alternas** (antes
+«superserie»). Con **series libres** cada serie lleva sus propias
+repeticiones y su propio RIR (una línea por serie en la fila) y en el móvil su
+propio peso y su propia progresión. **Series alternas** («Alternar con…» en
+cada fila): alterna sus series con cualquier otro ejercicio del día, vaya
+seguido o no; en la app el grupo se hace en el puesto de su primer ejercicio.
+Caben las series normales, las libres y top + back-off; un drop set o un
+rest-pause no se pueden alternar, y alternar una fila que los lleva se los
+quita. Mover filas no rompe los grupos. Debajo:
 
 - **Avisos** de lo que la app haría distinto o no admitiría. «Sin avisos: la
   app aplicará este borrador tal cual» es lo que buscas.
@@ -504,6 +509,37 @@ pierde al cerrar.
   datos sin el ZIP.
 - Como último recurso: **Borrar todos los datos del escritorio** y volver a
   importar tus archivos originales.
+
+## Al día con la app (18/11/2026)
+
+Cambios de App-PRO del 12 al 18/11/2026 (solo la parte de fuerza; el modo
+híbrido está congelado) que afectan al escritorio y al modo entrenador:
+
+- **Series alternas** (antes «superserie»): grupos por número dentro del día
+  (`grupoAlterno`), aunque sus ejercicios no vayan seguidos; top + back-off y
+  series libres caben en un grupo, drop set y rest-pause no. Las copias y
+  borradores anteriores (enlace con la fila de encima) se convierten solos.
+  *Mi rutina* y las sesiones dicen «Series alternas N»; en el modo entrenador
+  cada fila tiene «Series alternas: Alternar con…» y el plan lleva el número
+  de grupo en `superserie`, como el contrato.
+- **Entrenamiento corto** («Corta» o «Exprés»): la sesión se marca como tal en
+  el historial, la ficha y el informe. Cuenta para el volumen y la constancia,
+  pero no para la progresión, el rendimiento, las marcas ni las
+  comparaciones, como en la app. Un drop set que solo se hizo ese día se
+  señala como tal.
+- **Sesión extra** (pendientes recuperados): sus ejercicios no se evalúan y
+  su volumen suma en la semana en que se hizo, sin marcar cambio de rutina.
+- **Vuelta escalonada tras un parón**: un fallo con la carga reducida no gasta
+  intento; la sesión lo enseña con «Vuelta tras un parón».
+- **Noches con «Enfermo»** fuera de la referencia de VFC y FC en reposo
+  (línea base, media, rachas y semáforo); se ven en gris en las gráficas.
+- **«Cómo vas»**: mide desde el punto de partida asentado tras la calibración
+  (el agua del arranque no cuenta como avance), un solo recorrido con «hoy
+  tocaba» y el margen, modo «Calibrando», y el plan inicial (morado) solo si
+  el ritmo cambió.
+
+Fuera de esta entrega: el **resumen anual** de la app (sus historias y el reto
+del año) no tiene equivalente en el escritorio.
 
 ## Al día con la app (01/11/2026)
 

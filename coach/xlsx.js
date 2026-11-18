@@ -16,13 +16,14 @@
    { sistema: 'simple'|'doble',
      dias: [ { nombre, filas: [ { patron, ejercicio, series, rir,
                repsMin, repsMax, descanso, topBack, backoffPct,
-               rirBack, dropSet, dropPct, superConAnterior,
-               restPause, pausaRpSeg } ] } ] }
+               rirBack, dropSet, dropPct, grupoAlterno,
+               superConAnterior, restPause, pausaRpSeg } ] } ] }
    Columnas de cada hoja Día (igual que rutina_excel.dart de la app):
    A patrón · B ejercicio · C series · D RIR · E reps mín · F reps máx ·
    G descanso · H top+back (sí/no) · I % back-off · J RIR back ·
-   K nº de superserie (filas consecutivas con el mismo número van
-   enlazadas) · L drop set (sí/no) · M % drop · N rest-pause (sí/no) ·
+   K nº de grupo de series alternas («superserie» en la plantilla: las
+   filas del día con el mismo número alternan sus series, vayan seguidas o
+   no) · L drop set (sí/no) · M % drop · N rest-pause (sí/no) ·
    O pausa del rest-pause (s).
    Bloque de biblioteca (hoja Listas, desde W101): W..AC como la app y AD
    «1» si el ejercicio se mide por tiempo (aditiva, rutina_excel.dart).
@@ -318,8 +319,8 @@ const XLSX = {
           // «sí» (es), «yes» (en), «sim» (pt) o 1; igual que la app (s/y/1)
           topBack: /^\s*(s|y|1)/i.test(String(g('H') ?? '')),
           backoffPct: num(g('I')), rirBack: num(g('J')),
-          // K: nº de superserie (se convierte a enlaces al cerrar el día).
-          _superserie: num(g('K')) || 0,
+          // K: nº de grupo de series alternas, tal cual (App-PRO 17/11/2026).
+          grupoAlterno: Math.max(0, Math.trunc(num(g('K')) || 0)),
           dropSet: /^\s*(s|y|1)/i.test(String(g('L') ?? '')),
           dropPct: num(g('M')),
           // N/O: rest-pause y su pausa (aditivas, como K..M).
@@ -328,12 +329,14 @@ const XLSX = {
           superConAnterior: false,
         });
       }
-      // Superserie: dos filas consecutivas con el mismo número de la columna
-      // K quedan enlazadas (mismo convenio que la app al importar).
-      const numsSS = filas.map(f => f._superserie);
+      // Series alternas: las filas del día con el mismo número de la columna
+      // K forman grupo aunque no vayan seguidas (mismo convenio que la app al
+      // importar). El enlace antiguo con la fila anterior se deriva de ellos.
+      const cuenta = new Map();
+      filas.forEach(f => { if (f.grupoAlterno > 0) cuenta.set(f.grupoAlterno, (cuenta.get(f.grupoAlterno) || 0) + 1); });
       filas.forEach((f, i) => {
-        f.superConAnterior = numsSS[i] !== 0 && i > 0 && numsSS[i - 1] === numsSS[i];
-        delete f._superserie;
+        if ((cuenta.get(f.grupoAlterno) || 0) < 2) f.grupoAlterno = 0;
+        f.superConAnterior = i > 0 && f.grupoAlterno > 0 && filas[i - 1].grupoAlterno === f.grupoAlterno;
       });
       const nombreDia = `Día ${d}`;
       if (filas.length || celdas.get('B1'))
@@ -412,10 +415,20 @@ const XLSX = {
     return xml;
   },
 
-  /* Número de superserie (1, 2, …) por fila, 0 si va sola: cadenas contiguas
-     de filas con superConAnterior (el enlace de la primera fila se ignora).
-     Es el mismo derivado que usa el planificador y la app. */
+  /* Número del grupo de series alternas (1, 2, …) por fila, 0 si va sola.
+     Con `grupoAlterno` (modelo actual) los grupos se numeran por la posición
+     de su primer ejercicio y no tienen por qué ir seguidos; sin él (filas
+     antiguas), son las cadenas contiguas de filas con superConAnterior (el
+     enlace de la primera fila se ignora). */
   _numerosSuperserie(filas){
+    if (filas.some(f => typeof f.grupoAlterno === 'number')){
+      const g = f => (typeof f.grupoAlterno === 'number' && f.grupoAlterno > 0 && !f.dropSet && !f.restPause ? f.grupoAlterno : 0);
+      const cuenta = new Map();
+      filas.forEach(f => { if (g(f)) cuenta.set(g(f), (cuenta.get(g(f)) || 0) + 1); });
+      const visible = new Map();
+      filas.forEach(f => { if (g(f) && cuenta.get(g(f)) > 1 && !visible.has(g(f))) visible.set(g(f), visible.size + 1); });
+      return filas.map(f => visible.get(g(f)) || 0);
+    }
     const out = filas.map(() => 0);
     let n = 0, k = 0;
     while (k < filas.length){
@@ -503,11 +516,12 @@ const XLSX = {
     '9) DROP SET (opcional, columna L) = "sí": la 1.ª serie fija la progresión',
     '   y el resto son drops sin descanso, cada uno con el % de peso menos (M)',
     '   que la serie anterior. Necesita al menos 2 series.',
-    '10) SUPERSERIE (opcional, columna K): pon el MISMO número (1, 2, 3…) en',
-    '   filas CONSECUTIVAS del mismo día para alternar sus series (A1→B1→A2…).',
-    '   Deja la columna vacía en los ejercicios que van solos.',
+    '10) SERIES ALTERNAS (opcional, columna K): pon el MISMO número (1, 2, 3…)',
+    '   en las filas del mismo día que quieras alternar (A1→B1→A2…), vayan',
+    '   seguidas o no. Deja la columna vacía en los ejercicios que van solos.',
     '11) Las modalidades son EXCLUYENTES: una fila lleva H (top+back), L (drop',
-    '   set) o N (rest-pause), y una superserie solo enlaza filas sin H, L ni N.',
+    '   set) o N (rest-pause). En series alternas caben H y las series normales,',
+    '   pero no L ni N.',
     '12) REST-PAUSE (opcional, columna N) = "sí": mismo peso y al fallo en todas',
     '   las series, con la pausa de la columna O (10-50 s) entre ellas; las reps',
     '   son el TOTAL de todas las series. Necesita al menos 2 series.',
@@ -883,6 +897,9 @@ const XLSX = {
               backoffPct: num(p.backoffPct), rirBack: num(p.rirBack),
               dropSet: p.dropSet === true,
               dropPct: num(p.dropPct),
+              // Copias anteriores al 17/11/2026: sin grupoAlterno, solo el
+              // enlace con la anterior (Motor.saNormalizar lo convierte).
+              ...(typeof p.grupoAlterno === 'number' ? { grupoAlterno: p.grupoAlterno } : {}),
               superConAnterior: p.superConAnterior === true,
               restPause: p.restPause === true,
               pausaRpSeg: num(p.pausaRpSeg) || 20,

@@ -161,7 +161,16 @@ try {
   await pagina.click('[data-ent-accion="fila-nueva"][data-d="1"]');
   await cambiar('#ent-1-1-patron', 'Aislamiento');
   await cambiar('#ent-1-1-ejercicio', 'Curl de bíceps con barra');
-  assert.equal(await pagina.isDisabled('#ent-1-1-superConAnterior'), true);   // tras un drop set no cabe superserie
+  // Series alternas: un drop set no se puede alternar; alternar el curl con la
+  // sentadilla le quita el drop set (no cabe en el grupo).
+  assert.equal(await pagina.isDisabled('#ent-1-0-alternarCon'), true);
+  await cambiar('#ent-1-1-alternarCon', '0');
+  assert.equal(await pagina.inputValue('#ent-1-0-modalidad'), 'normal');
+  assert.equal(await pagina.inputValue('#ent-1-0-alternarCon'), '1');
+  assert.match(await pagina.locator('.rut-fila.en-ss').first().innerText(), /Series alternas 1/);
+  await cambiar('#ent-1-1-alternarCon', '');
+  assert.equal(await pagina.locator('.rut-fila.en-ss').count(), 0);
+  await cambiar('#ent-1-0-modalidad', 'drop');
   await pagina.click('[data-ent-accion="dia-quitar"][data-d="2"]');
   await pagina.waitForFunction(() => !document.getElementById('ent-2-nombre'));
   // Deshacer y rehacer.

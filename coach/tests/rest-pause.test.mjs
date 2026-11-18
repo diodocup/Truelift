@@ -30,7 +30,7 @@ function cargarPlanner(store = { clientes: [], ejerciciosCoach: [] }, extras = {
     ...extras,
   };
   vm.createContext(sandbox);
-  const codigo = fs.readFileSync(new URL('planner.js', appDir), 'utf8');
+  const codigo = fs.readFileSync(new URL('motor.js', appDir), 'utf8') + '\n;' + fs.readFileSync(new URL('planner.js', appDir), 'utf8');
   vm.runInContext(`${codigo}\n;globalThis.__Planner = Planner;`, sandbox);
   return sandbox.__Planner;
 }
@@ -93,7 +93,7 @@ test('analiza avisa de rest-pause de 1 serie, de la exclusión y de la superseri
   const an = planner.analiza(rutina, null);
   assert.ok(an.avisos.some(a => a.nivel === 'ambar' && /rest-pause necesita al menos 2/.test(a.txt)));
   assert.ok(an.avisos.some(a => a.nivel === 'rojo' && /rest-pause no se combina/.test(a.txt)));
-  assert.ok(an.avisos.some(a => a.nivel === 'rojo' && /superserie va a series rectas/.test(a.txt)));
+  assert.ok(an.avisos.some(a => a.nivel === 'rojo' && /no caben en unas series alternas/.test(a.txt)));
 });
 
 test('la duración estimada de un rest-pause solo cuenta la pausa corta', () => {

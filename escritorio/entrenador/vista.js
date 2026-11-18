@@ -35,7 +35,7 @@ const valorTxt = (campo, v) => {
   if (v == null) return campo === 'descanso' ? 'el de cada ejercicio' : '—';
   if (Array.isArray(v)) return v.map(x => x == null ? '—' : String(x)).join(' · ');
   if (campo === 'modalidad') return MODO[v] || v;
-  if (campo === 'superserie') return v ? 'sí' : 'no';
+  if (campo === 'superserie') return v ? `grupo ${v}` : 'no';
   if (campo === 'descanso') return `${fmtNum(v, 1)} min`;
   if (campo === 'pausaRpSeg') return `${v} s`;
   if (campo === 'backoffPct' || campo === 'dropPct') return `−${v} %`;
@@ -210,10 +210,15 @@ function fila(rutina, d, i, f, ss, ctx){
   const id = k => `ent-${d}-${i}-${k}`;
   const modo = f.topBack ? 'topBack' : f.dropSet ? 'drop' : f.restPause ? 'rp' : f.seriesLibres ? 'libres' : 'normal';
   const libres = modo === 'libres';
-  const ant = i > 0 ? rutina.dias[d].filas[i - 1] : null;
+  const filasDia = rutina.dias[d].filas;
   const enSS = ss[i] > 0;
-  // Las series libres sí pueden ir en superserie, como las series normales.
-  const ssChoca = (modo !== 'normal' && !libres) || (ant && (ant.topBack || ant.dropSet || ant.restPause));
+  // Series alternas (App-PRO 17/11/2026): caben las series normales, las
+  // libres y top + back-offs; el drop set y el rest-pause no, porque
+  // encadenan sus series sin descanso. Se alterna con cualquier ejercicio
+  // del día, vaya seguido o no (AppState.alternarCon).
+  const ssChoca = modo === 'drop' || modo === 'rp';
+  const miembros = enSS ? filasDia.map((x, k) => k).filter(k => ss[k] === ss[i]) : [];
+  const companero = miembros.find(k => k !== i) ?? -1;
   const listaId = `ent-lista-${(CAT_PATRONES.indexOf(f.patron) + 1) || 0}`;
   ctx.listas.add(f.patron || '');
   const nombre = f.ejercicio || 'ejercicio sin elegir';
@@ -222,7 +227,9 @@ function fila(rutina, d, i, f, ss, ctx){
     : modo === 'drop' ? campoNum(id('dropPct'), d, i, 'dropPct', f.dropPct, 5, 30, '% menos en cada drop')
     : modo === 'rp' ? `<label class="rut-campo n3" for="${id('pausaRpSeg')}"><span>Pausa entre series</span><select id="${id('pausaRpSeg')}" data-ent="campo" data-d="${d}" data-f="${i}" data-k="pausaRpSeg">
         ${[10, 20, 30, 40, 50].map(v => `<option value="${v}"${v === (f.pausaRpSeg || 20) ? ' selected' : ''}>${v} s</option>`).join('')}</select></label>` : '';
-  const ssTitulo = ssChoca ? 'Una superserie va a series normales: quita la modalidad de esta fila y de la anterior.' : 'Alterna sus series con el ejercicio anterior (A1→B1→A2…).';
+  const ssTitulo = ssChoca ? 'El drop set y el rest-pause no caben en unas series alternas: cambia la modalidad para alternar este ejercicio.'
+    : 'Alterna sus series con otro ejercicio del día (A1→B1→A2…), vaya seguido o no, y se descansa menos al cambiar de ejercicio.';
+  const ssOpciones = filasDia.map((x, k) => k === i ? '' : `<option value="${k}"${k === companero ? ' selected' : ''}>Con ${k + 1} · ${esc(x.ejercicio || 'sin elegir')}${ss[k] > 0 && ss[k] !== ss[i] ? ` (grupo ${ss[k]})` : ''}</option>`).join('');
   return `<li class="rut-fila${enSS ? ' en-ss' : ''}" data-d="${d}" data-f="${i}" aria-label="${esc(rutina.dias[d].nombre)}, ejercicio ${i + 1}: ${esc(nombre)}">
     <div class="rut-fila-cab">
       <span class="rut-num" aria-hidden="true">${i + 1}</span>
@@ -247,13 +254,14 @@ function fila(rutina, d, i, f, ss, ctx){
         <option value=""${f.descanso == null ? ' selected' : ''}>Por defecto</option>
         ${CAT_DESCANSOS.map(v => `<option value="${v}"${v === f.descanso ? ' selected' : ''}>${fmtNum(v, 1)} min</option>`).join('')}
         ${f.descanso != null && !CAT_DESCANSOS.includes(f.descanso) ? `<option value="${f.descanso}" selected>${fmtNum(f.descanso, 2)} min</option>` : ''}</select></label>
-      <label class="rut-campo n4" for="${id('modalidad')}"><span>Modalidad</span><select id="${id('modalidad')}" data-ent="campo" data-d="${d}" data-f="${i}" data-k="modalidad"${enSS ? ' title="En una superserie solo caben las series normales o las series libres: quita la superserie para usar otra modalidad."' : ''}>
-        ${Object.entries(MODO).filter(([k]) => !enSS || k === 'normal' || k === 'libres').map(([k, t]) => `<option value="${k}"${k === modo ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label class="rut-campo n4" for="${id('modalidad')}"><span>Modalidad</span><select id="${id('modalidad')}" data-ent="campo" data-d="${d}" data-f="${i}" data-k="modalidad"${enSS ? ' title="En unas series alternas no caben el drop set ni el rest-pause: quita las series alternas para usarlos."' : ''}>
+        ${Object.entries(MODO).filter(([k]) => !enSS || (k !== 'drop' && k !== 'rp')).map(([k, t]) => `<option value="${k}"${k === modo ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
       ${params}
       ${libres ? seriesLibresEditor(rutina, d, i, f) : ''}
-      ${i > 0 ? `<label class="rut-ss" for="${id('superConAnterior')}" title="${esc(ssTitulo)}"><input id="${id('superConAnterior')}" type="checkbox" data-ent="campo" data-d="${d}" data-f="${i}" data-k="superConAnterior"${f.superConAnterior && !ssChoca ? ' checked' : ''}${ssChoca ? ' disabled' : ''}> Superserie con el anterior</label>` : ''}
+      ${filasDia.length > 1 ? `<label class="rut-campo n4" for="${id('alternarCon')}" title="${esc(ssTitulo)}"><span>Series alternas</span><select id="${id('alternarCon')}" data-ent="campo" data-d="${d}" data-f="${i}" data-k="alternarCon"${ssChoca ? ' disabled' : ''}>
+        <option value=""${enSS ? '' : ' selected'}>No</option>${ssChoca ? '' : ssOpciones}</select></label>` : ''}
     </div>
-    ${enSS ? `<p class="rut-meta">${chip('azul', `Superserie ${ss[i]}`)}</p>` : ''}
+    ${enSS ? `<p class="rut-meta">${chip('azul', `Series alternas ${ss[i]}`)}${miembros.length && miembros[miembros.length - 1] - miembros[0] + 1 > miembros.length ? ' <span class="muted">· en la app el grupo se hace en el puesto de su primer ejercicio</span>' : ''}</p>` : ''}
   </li>`;
 }
 

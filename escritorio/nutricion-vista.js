@@ -141,24 +141,30 @@ function evolucion(M, X){
     { nombre: 'Pesajes', color: TL.txt3, puntos: pts, soloPuntos: true, unidad: 'kg' },
     { nombre: 'Peso tendencia', color: TL.lima, puntos: tend, unidad: 'kg', sinPuntos: true },
   ];
-  if (f && p && p.compromiso && p.compromiso.pesoInicioKg > 0){
+  // Mientras la fase calibra no hay contrato que dibujar: solo la tendencia
+  // (App-PRO 16/11/2026). Asentada, lo pactado sale del punto de partida
+  // asentado, el que no cuenta el agua del arranque como avance.
+  if (f && p && !p.calibrando && p.compromiso && p.pesoInicioKg > 0){
     const c = p.compromiso;
     const tramos = ProgresoFase.tramos(N.nut, f);
-    const obj = ProgresoFase.trayectoria({ inicio: f.inicio, fin: hasta, pesoInicialKg: c.pesoInicioKg, tramos });
+    const obj = ProgresoFase.trayectoria({ inicio: f.inicio, fin: hasta, pesoInicialKg: p.pesoInicioKg, tramos });
     const hoyIdx = obj.findIndex(x => +x.fecha >= +X.ref);
     const objPts = obj.map(x => ({ x: x.fecha, y: Math.round(x.pesoObjetivoKg * 100) / 100 }));
     const corte = hoyIdx < 0 ? objPts.length : hoyIdx + 1;
     series.push({ nombre: 'Tu objetivo', color: AZUL, puntos: objPts.slice(0, corte), unidad: 'kg', sinPuntos: true });
     if (corte < objPts.length) series.push({ nombre: 'Tu objetivo (pronóstico)', color: AZUL, puntos: objPts.slice(corte - 1), unidad: 'kg', sinPuntos: true, dash: '5 4' });
-    // El plan inicial llega hasta el fin con el que empezó la fase.
-    const ini = ProgresoFase.trayectoria({ inicio: f.inicio, fin: c.fin || hasta, pesoInicialKg: c.pesoInicioKg,
-      tramos: [{ desde: f.inicio, tasaPctSemana: c.tasaPctSemana }] });
-    // El plan inicial va encima del objetivo: donde coinciden, se ve el inicial.
-    series.push({ nombre: 'Plan inicial', color: MORADO, puntos: ini.map(x => ({ x: x.fecha, y: Math.round(x.pesoObjetivoKg * 100) / 100 })), unidad: 'kg', sinPuntos: true });
+    // El plan inicial llega hasta el fin con el que empezó la fase. Solo se
+    // dibuja si el ritmo ha cambiado: si no, es la misma línea que el objetivo.
+    if (tramos.some(t => Math.abs(t.tasaPctSemana - c.tasaPctSemana) > 1e-9)){
+      const ini = ProgresoFase.trayectoria({ inicio: f.inicio, fin: c.fin || hasta, pesoInicialKg: p.pesoInicioKg,
+        tramos: [{ desde: f.inicio, tasaPctSemana: c.tasaPctSemana }] });
+      // El plan inicial va encima del objetivo: donde coinciden, se ve el inicial.
+      series.push({ nombre: 'Plan inicial', color: MORADO, puntos: ini.map(x => ({ x: x.fecha, y: Math.round(x.pesoObjetivoKg * 100) / 100 })), unidad: 'kg', sinPuntos: true });
+    }
   }
   const svg = Charts.lineas({ series, marcas: [{ x: X.ref, color: TL.txt3, label: 'Tu último registro', tipo: 'último registro' }], w: 960, h: 300 });
   out.push(tarjeta(f ? 'Tu peso en la fase' : 'Tu peso', `${VistasEsc.grafica(svg, 'Pesajes, peso tendencia, tu objetivo y el plan inicial de la fase', '')}
-    ${ayuda('La línea lima es tu peso tendencia, la que calcula la app para suavizar las subidas y bajadas diarias. La azul es tu objetivo: dónde deberías estar con el ritmo de tu pauta, contando los cambios que aceptaste; a trazos, por dónde seguiría. La morada es el plan con el que empezaste la fase, sin esos cambios.')}`));
+    ${ayuda('La línea lima es tu peso tendencia, la que calcula la app para suavizar las subidas y bajadas diarias. La azul es tu objetivo: dónde deberías estar con el ritmo de tu pauta, contando los cambios que aceptaste; a trazos, por dónde seguiría. La morada, si tu ritmo ha cambiado, es el plan con el que empezaste la fase, sin esos cambios. Mientras la fase se calibra solo se ve tu tendencia.')}`));
 
   // Fases anteriores.
   const cerradas = (N.nut.fasesCerradas || []).slice().reverse();

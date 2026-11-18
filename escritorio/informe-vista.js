@@ -135,7 +135,7 @@ function documento(M, R, { inst, fotos = [] } = {}){
     ${filasM.length ? tabla(['Fecha', 'Ejercicio', 'Serie', '1RM estimado', 'Marca anterior'], filasM, { caption: 'Nuevas mejores marcas del periodo' }) : vacio('Ninguna en este periodo.')}
     <h4 class="sub-h">Valoración que la app dio a cada sesión</h4>
     <p>${verTxt.length ? esc(verTxt.join(' · ')) : 'Sin valoraciones guardadas en el periodo.'}${p.sinVeredicto && verTxt.length ? ` <span class="muted">(${F.plural(p.sinVeredicto, 'sesión sin valoración guardada', 'sesiones sin valoración guardada')})</span>` : ''}</p>
-    <p class="muted inf-nota">Cada ejercicio compara el principio y el final del periodo usando solo sus sesiones normales (en verde, sin descarga, sin molestias, sin cambios de un día) y con la misma modalidad de series. «Sin cambios claros» describe una diferencia pequeña; no significa estancamiento. Una lectura orientativa se apoya en pocas sesiones y no aparece en los cambios relevantes. El estado de progresión de cada ejercicio (intentos) es el de la app y se consulta en su ficha.</p>`, 'infProgresion'));
+    <p class="muted inf-nota">Cada ejercicio compara el principio y el final del periodo usando solo sus sesiones normales (en verde, sin descarga, sin molestias, sin cambios de un día y fuera de las sesiones cortas) y con la misma modalidad de series. «Sin cambios claros» describe una diferencia pequeña; no significa estancamiento. Una lectura orientativa se apoya en pocas sesiones y no aparece en los cambios relevantes. El estado de progresión de cada ejercicio (intentos) es el de la app y se consulta en su ficha.</p>`, 'infProgresion'));
 
   // --- Evolución física ---
   const fisHtml = [];

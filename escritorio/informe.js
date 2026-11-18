@@ -200,13 +200,20 @@ const rutinaTxt = key => {
 
 /* Cambios relevantes del periodo, en orden cronológico. Solo hechos de la
    copia: cambios de rutina, descargas, marcas, lecturas firmes del 1RM
-   estimado, fases de nutrición, molestias y ejercicios cambiados o no hechos. */
+   estimado, fases de nutrición, sesiones cortas, molestias y ejercicios
+   cambiados o no hechos. */
 function cambios(M, P, prog, fis){
   const c = [];
   P.sesiones.forEach(s => {
     if (s.cambioRutina) c.push({ fecha: s.fecha, tipo: 'rutina', indice: s.indice,
       texto: `Primera sesión registrada con otra rutina: ${rutinaTxt(Comparacion.identidad(s.l))}.` });
   });
+  // Entrenamiento corto: sesiones reducidas por falta de tiempo; cuentan
+  // para la constancia y el volumen, no para la progresión.
+  const cortas = P.sesiones.filter(s => Motor.nivelSesionCorta(s.l));
+  if (cortas.length) c.push({ fecha: cortas[0].fecha, tipo: 'corta', indice: cortas[0].indice,
+    texto: cortas.length === 1 ? 'Una sesión corta: cuenta para tu constancia, no para tu progresión.'
+      : `${cortas.length} sesiones cortas (desde esta fecha): cuentan para tu constancia, no para tu progresión.` });
   const desc = P.sesiones.filter(s => s.descarga);
   if (desc.length) c.push({ fecha: desc[0].fecha, tipo: 'descarga', indice: desc[0].indice,
     texto: desc.length === 1 ? 'Sesión de descarga.' : `${desc.length} sesiones de descarga (desde esta fecha).` });
