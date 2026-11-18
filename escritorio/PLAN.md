@@ -1136,3 +1136,10 @@ Pruebas: `tests/al-dia-18112026.test.mjs` (nuevo); `entrenador.test.mjs`,
 Coach (`superseries-drops`, `rest-pause`, `compat`, que ahora cargan
 `motor.js`) con las reglas nuevas; paso nuevo en `entrenador.e2e.mjs`;
 `e2e.mjs` ajustado a la copia de ejemplo del 06/11 (ya estaba en volumen).
+La versión de caché que espera `e2e.mjs` sale ahora de `sw.js`.
+
+Verificación: `node --test escritorio/tests/*.test.mjs` 245 correctas y 3
+omitidas (sin Dart); pruebas de planificador del Coach 31/31;
+`entrenador.e2e.mjs` 10/10; `e2e.mjs` 51/51. Siguen fallando, igual que
+antes de estos cambios, 8 pruebas del Coach retirado (`fc-reposo`,
+`nutricion`, `umbral-por-dia`).

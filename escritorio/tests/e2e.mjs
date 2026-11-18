@@ -980,7 +980,9 @@ try {
     await pagina.click('#modalCaja [data-accion="cerrar"]');
     await pagina.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
     await pagina.getByText('esta página ya se puede abrir sin conexión en este navegador').waitFor();
-    assert.deepEqual((await pagina.evaluate(() => caches.keys())).sort(), ['otra-pagina', 'tlcoach-v16', 'tlescritorio-v15']);
+    // La versión de la caché propia es la que declare sw.js en cada entrega.
+    const cacheSw = 'tlescritorio-' + /PREFIJO\}(v\d+)/.exec(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'))[1];
+    assert.deepEqual((await pagina.evaluate(() => caches.keys())).sort(), ['otra-pagina', 'tlcoach-v16', cacheSw]);
     // Sin red ni servidor: la página, los datos y el informe siguen disponibles.
     await ctx.setOffline(true);
     servidor8.closeAllConnections(); await new Promise(ok => servidor8.close(ok));
