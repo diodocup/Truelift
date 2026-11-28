@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /branding/
 
 Sitemap: https://truelift.es/sitemap.xml

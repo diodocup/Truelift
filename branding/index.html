@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>TrueLift · Configurador de marca</title>
+<link rel="icon" type="image/png" href="../coach/media/icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&family=Oswald:wght@500;600&family=Barlow+Condensed:wght@600;700&family=Anton&family=Space+Grotesk:wght@500;700&family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Mono:wght@400;700&family=Roboto+Mono:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#0A0C0B;color:#F4F6F4;font:15px/1.5 "Instrument Sans",system-ui,sans-serif;min-height:100vh}
+  button,input,select{font:inherit}
+  [hidden]{display:none!important}
+
+  /* ---------- Acceso ---------- */
+  .acceso{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .acceso form{width:100%;max-width:360px;background:#101312;border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:32px;display:flex;flex-direction:column;gap:16px}
+  .acceso h1{margin:0;font:700 34px/1 "Saira Condensed",sans-serif;text-transform:uppercase}
+  .acceso p{margin:0;color:#C9CFC9}
+  .acceso label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:#C9CFC9}
+  .acceso input{min-height:46px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#171B19;color:#F4F6F4;padding:0 14px}
+  .acceso input:focus{outline:2px solid #A3E020;outline-offset:1px}
+  .acceso button{min-height:50px;border:0;border-radius:12px;background:#A3E020;color:#0A0C0B;font:700 18px "Saira Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+  .acceso .error{color:#F0872D;font-size:14px;min-height:21px}
+
+  /* ---------- Configurador ---------- */
+  .app{max-width:1240px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+  .panel{flex:999 1 420px;min-width:0;display:flex;flex-direction:column;gap:24px}
+  .vista{flex:1 1 390px;display:flex;flex-direction:column;align-items:center;gap:20px;position:sticky;top:24px}
+  @media (max-width:860px){.vista{position:static}}
+  .cab h1{margin:0;font:700 44px/1 "Saira Condensed",sans-serif;text-transform:uppercase}
+  .cab p{margin:8px 0 0;color:#C9CFC9;max-width:560px}
+  .grupo{background:#101312;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:16px}
+  .grupo h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#A3E020}
+  .campo{display:flex;flex-direction:column;gap:8px}
+  .campo > span{font-size:14px;color:#C9CFC9}
+  .fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg label{position:relative}
+  .seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .seg label > span{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#171B19;color:#C9CFC9;font-size:14px;cursor:pointer}
+  .seg input:checked + span{border-color:#A3E020;color:#F4F6F4;background:rgba(163,224,32,.12)}
+  .seg input:focus-visible + span{outline:2px solid #A3E020;outline-offset:2px}
+  select,input[type=text]{min-height:42px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#171B19;color:#F4F6F4;padding:0 12px;width:100%}
+  input[type=color]{width:48px;height:42px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:#171B19;padding:4px;cursor:pointer}
+  input[type=range]{width:100%;accent-color:#A3E020}
+  .muestra{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;padding:0}
+  .muestra:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .nota{font-size:13px;color:#8E948F;margin:0}
+  .aviso{font-size:13px;color:#F0872D;margin:0;min-height:20px}
+  .dos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  @media (max-width:520px){.dos{grid-template-columns:minmax(0,1fr)}}
+  .acciones{display:flex;flex-wrap:wrap;gap:10px}
+  .btn{min-height:44px;padding:0 18px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#171B19;color:#F4F6F4;cursor:pointer;font-weight:600}
+  .btn.prim{background:#A3E020;border-color:#A3E020;color:#0A0C0B}
+  .icono-app{display:flex;align-items:center;gap:14px;align-self:stretch;justify-content:center}
+  .icono-app .ico{width:60px;height:60px;border-radius:15px;display:grid;place-items:center;overflow:hidden}
+  .icono-app .ico img{width:100%;height:100%;object-fit:cover}
+  .icono-app small{display:block;color:#8E948F;font-size:12px}
+
+  /* ---------- Teléfono (pantalla Registro con sesión en curso) ---------- */
+  .telefono{width:390px;max-width:100%;border-radius:44px;padding:10px;background:#000;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08)}
+  .pantalla{
+    --r:16px;--rc:12px;--rchip:999px;--rbtn:16px;
+    background:var(--bg);color:var(--t1);font-family:var(--f-body);border-radius:34px;overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .mono{font-family:var(--f-mono)}
+  .disp{font-family:var(--f-disp);font-weight:var(--w-disp)}
+  .p-barra{display:flex;align-items:center;gap:10px;padding:18px 14px 12px;border-bottom:1px solid var(--borde)}
+  .ver-sesion{display:flex;align-items:center;gap:8px;border:0;background:none;color:var(--accInk);font-size:20px;cursor:pointer;padding:0;min-height:44px;flex:1;text-align:left}
+  .contador{font-family:var(--f-mono);font-size:15px;color:var(--t2);padding-right:10px;border-right:1px solid var(--borde2)}
+  .restante{display:flex;flex-direction:column;align-items:center;font-family:var(--f-mono);line-height:1.15}
+  .restante small{font-size:10px;letter-spacing:.08em;color:var(--t3)}
+  .restante b{font-size:17px;font-weight:500}
+  .icbtn{width:40px;height:44px;flex:none;display:grid;place-items:center;border:0;background:none;color:var(--t1);cursor:pointer}
+  .p-cuerpo{padding:16px 14px 8px;display:flex;flex-direction:column;gap:14px}
+  .ej{display:flex;gap:12px;align-items:flex-start}
+  .miniatura{position:relative;width:64px;height:64px;flex:none;border-radius:var(--rc);background:var(--sup2);overflow:hidden;display:grid;place-items:center}
+  .miniatura img{width:100%;height:100%;object-fit:contain}
+  .pantalla:not([data-claro]) .miniatura img{filter:none}
+  .ej-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .ej-tx small{font-family:var(--f-mono);font-size:12px;color:var(--t3);letter-spacing:.04em}
+  .ej-tx b{font-size:19px;line-height:1.15;font-weight:700}
+  .fila-obj{display:flex;align-items:center;gap:8px}
+  .obj{font-family:var(--f-mono);font-size:13px;color:var(--accInk);background:var(--accSoft);border-radius:calc(var(--rc) * .6);padding:4px 8px}
+  .ayuda{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--t4);background:none;color:var(--t3);font-size:13px;display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+  .tecnica{align-self:flex-start;margin-left:76px;display:flex;align-items:center;gap:6px;border:0;background:none;color:var(--accInk);font-family:var(--f-mono);font-size:13px;letter-spacing:.04em;cursor:pointer;padding:0;min-height:32px}
+  .series{display:flex;gap:8px;overflow:hidden;margin-right:-14px}
+  .serie{flex:none;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 0 12px;border-radius:var(--rchip);border:1.5px solid var(--borde2);background:transparent;color:var(--t3);font-size:17px;font-weight:700;cursor:pointer}
+  .serie i{width:13px;height:13px;border-radius:50%;border:1.5px solid currentColor}
+  .serie.on{border-color:var(--accInk);color:var(--accInk)}
+  .panel-serie{background:var(--panel);border-top:1px solid var(--accLinea);padding:12px 10px 14px;display:flex;flex-direction:column;gap:10px;border-radius:0 0 var(--rc) var(--rc)}
+  .panel-serie .tit{font-family:var(--f-mono);font-size:14px;color:var(--t2)}
+  .panel-serie .tit b{font-family:var(--f-disp);font-weight:var(--w-disp);color:var(--accInk);font-size:17px;margin-right:4px;text-transform:var(--tt)}
+  .valores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .valor{display:flex;flex-direction:column;gap:6px}
+  .valor .et{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--f-mono);font-size:12px;color:var(--t3);min-height:24px}
+  .insignia{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:999px;background:var(--accSoft);color:var(--accInk);font-family:var(--f-mono);font-size:12px;font-weight:600}
+  .valor .mm{display:grid;grid-template-columns:38px 1fr 38px;align-items:center}
+  .valor .num{text-align:center;font-size:32px;font-weight:700;line-height:1}
+  .ctl{height:48px;border-radius:var(--rc);border:1px solid var(--borde2);background:var(--sup2);color:var(--t1);font-size:20px;cursor:pointer;padding:0}
+  .rir{display:flex;align-items:center;gap:5px}
+  .rir > span{display:flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:12px;color:var(--t3);margin-right:2px}
+  .rir button{flex:1;min-height:44px;border-radius:var(--rc);border:1px solid var(--borde2);background:transparent;color:var(--t3);font-family:var(--f-mono);font-size:15px;cursor:pointer;padding:0}
+  .rir button.on{border-color:var(--accInk);color:var(--accInk);background:var(--accSoft)}
+  .card{background:var(--sup);border:1px solid var(--borde);border-radius:var(--r)}
+  .pantalla[data-tarjeta=sombra] .card{border-color:transparent;box-shadow:var(--sombra)}
+  .pantalla[data-tarjeta=plana] .card{border-color:transparent;background:var(--sup2)}
+  .ultima{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+  .ultima small{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;color:var(--t3)}
+  .ultima b{font-family:var(--f-mono);font-size:18px;font-weight:500;padding-left:22px}
+  .senales{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--t3);line-height:1.35}
+  .senal{display:flex;align-items:center;gap:8px}
+  .senal .tx{flex:1}
+  .rayas{display:flex;gap:4px;margin-top:6px}
+  .rayas i{width:14px;height:4px;border-radius:2px;background:var(--vacio)}
+  .rayas i.a{background:var(--acc)}
+  .p-cuerpo{gap:var(--gap,14px)}
+  .miniatura canvas{width:100%;height:100%;display:block}
+  .logo-barra{width:30px;height:30px;flex:none;border-radius:calc(var(--rc) * .7);background:var(--acc);color:var(--onAcc);display:grid;place-items:center;overflow:hidden;font-family:var(--f-disp);font-weight:var(--w-disp);font-size:14px}
+  .logo-barra img{width:100%;height:100%;object-fit:cover}
+  .nota-ent{display:flex;gap:12px;align-items:center;padding:12px 14px}
+  .avatar{width:40px;height:40px;flex:none;border-radius:50%;background:var(--acc);color:var(--onAcc);display:grid;place-items:center;overflow:hidden;font-weight:700;font-size:15px}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .nota-ent small{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--accInk)}
+  .nota-ent p{margin:2px 0 0;font-size:14px;line-height:1.35;color:var(--t2)}
+  .nav span.i{position:relative}
+  .nav[data-ind=subrayado] a.on span.i{background:none;border-radius:0;box-shadow:inset 0 -3px 0 var(--acc)}
+  .nav[data-ind=punto] a.on span.i{background:none}
+  .nav[data-ind=punto] a.on span.i::after{content:"";position:absolute;bottom:-3px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--acc)}
+  .nav[data-ind=ninguno] a.on span.i{background:none}
+  .nav[data-ind=bloque] a.on span.i{background:var(--acc);color:var(--onAcc);border-radius:var(--rc)}
+  .nav[data-etiquetas=activa] a:not(.on) .lbl{visibility:hidden}
+  .seg .iconos{display:inline-flex;gap:6px;color:#F4F6F4}
+  .seg .iconos svg{width:18px;height:18px}
+  .seg input:checked + span .iconos{color:#A3E020}
+  .igual{flex:none;width:34px;height:20px;border-radius:999px;border:1.5px solid var(--rojo);color:var(--rojo);display:grid;place-items:center;font-weight:700;font-size:13px}
+  .p-pie{margin-top:auto;padding:10px 14px 12px;border-top:1px solid var(--borde);display:flex;flex-direction:column;gap:10px;align-items:center}
+  .p-pie > span{font-size:15px;color:var(--t2)}
+  .cta{min-height:54px;width:100%;border-radius:var(--rbtn);border:2px solid var(--acc);background:var(--acc);color:var(--onAcc);font-family:var(--f-disp);font-weight:var(--w-disp);font-size:21px;letter-spacing:var(--ls);text-transform:var(--tt);cursor:pointer}
+  .pantalla[data-boton=contorno] .cta{background:transparent;color:var(--accInk);border-color:var(--accInk)}
+  .nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:8px 6px 10px;background:var(--sup)}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--t2);text-decoration:none;font-size:13px;min-height:48px}
+  .nav a span.i{display:grid;place-items:center;width:56px;height:30px;border-radius:999px}
+  .nav a.on{color:var(--accInk)}
+  .nav a.on span.i{background:var(--accSoft)}
+  .leyenda{font-size:13px;color:#8E948F;text-align:center;max-width:390px;margin:0}
+</style>
+</head>
+<body>
+
+<!-- Acceso provisional. GitHub Pages no tiene acceso con servidor: esto solo
+     oculta la página a quien no tenga la clave, no protege datos. El código
+     de la página es público en el repositorio. -->
+<main class="acceso" id="acceso">
+  <form id="formAcceso" autocomplete="on">
+    <h1>Configurador de marca</h1>
+    <p>Acceso para entrenadores.</p>
+    <label>Usuario<input id="usuario" name="username" autocomplete="username" required></label>
+    <label>Contraseña<input id="clave" name="password" type="password" autocomplete="current-password" required></label>
+    <div class="error" id="errorAcceso" role="alert"></div>
+    <button type="submit">Entrar</button>
+  </form>
+</main>
+
+<div class="app" id="app" hidden>
+  <section class="panel" aria-label="Opciones de marca">
+    <header class="cab">
+      <h1>Configurador de marca</h1>
+      <p>Elige el aspecto de tu versión de TrueLift y mira al momento cómo queda la pantalla de registro durante un entrenamiento.</p>
+    </header>
+
+    <div class="grupo">
+      <h2>Punto de partida</h2>
+      <div class="seg" id="presets"></div>
+    </div>
+
+    <div class="grupo">
+      <h2>Marca</h2>
+      <div class="dos">
+        <label class="campo"><span>Nombre de la app</span><input type="text" id="nombre" maxlength="24"></label>
+        <label class="campo"><span>Logo o icono (opcional)</span><input type="file" id="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp"></label>
+      </div>
+    </div>
+
+    <div class="grupo">
+      <h2>Color</h2>
+      <div class="campo">
+        <span>Color de marca</span>
+        <div class="fila">
+          <input type="color" id="acento" aria-label="Color de marca">
+          <div class="fila" id="muestras"></div>
+        </div>
+        <p class="aviso" id="avisoColor" role="status"></p>
+      </div>
+      <div class="campo">
+        <span>Fondo</span>
+        <div class="seg" id="fondo"></div>
+      </div>
+    </div>
+
+    <div class="grupo">
+      <h2>Tipografía</h2>
+      <div class="dos">
+        <label class="campo"><span>Titulares y botón</span><select id="fDisp"></select></label>
+        <label class="campo"><span>Texto</span><select id="fBody"></select></label>
+        <label class="campo"><span>Números (kg, reps, tiempos)</span><select id="fMono"></select></label>
+        <div class="campo"><span>Titulares en mayúsculas</span>
+          <div class="seg" id="mayus"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grupo">
+      <h2>Forma</h2>
+      <label class="campo"><span>Redondez: <b id="radioTxt"></b></span><input type="range" id="radio" min="0" max="28" step="1"></label>
+      <div class="campo"><span>Botón principal</span><div class="seg" id="boton"></div></div>
+      <div class="campo"><span>Tarjetas</span><div class="seg" id="tarjeta"></div></div>
+      <div class="campo"><span>Espaciado</span><div class="seg" id="densidad"></div></div>
+      <p class="nota">Los avisos en rojo y naranja son iguales en todas las marcas para que se entiendan siempre.</p>
+    </div>
+
+    <div class="grupo">
+      <h2>Menú de navegación</h2>
+      <div class="campo"><span>Estilo de iconos</span><div class="seg" id="iconos"></div></div>
+      <div class="campo"><span>Pestaña activa</span><div class="seg" id="indicador"></div></div>
+      <div class="campo"><span>Nombres de las pestañas</span><div class="seg" id="etiquetas"></div></div>
+    </div>
+
+    <div class="grupo">
+      <h2>Toque personal</h2>
+      <div class="dos">
+        <label class="campo"><span>Nombre del entrenador</span><input type="text" id="entrenador" maxlength="28" placeholder="Tu nombre"></label>
+        <label class="campo"><span>Foto del entrenador (opcional)</span><input type="file" id="foto" accept="image/png,image/jpeg,image/webp"></label>
+      </div>
+      <div class="campo"><span>Notas del entrenador en cada ejercicio</span><div class="seg" id="nota"></div></div>
+      <div class="campo"><span>Logo en la barra de la sesión</span><div class="seg" id="logoBarraOp"></div></div>
+      <div class="campo"><span>Músculo trabajado en el color de marca</span><div class="seg" id="musculo"></div></div>
+      <div class="campo"><span>Texto del botón principal</span><div class="seg" id="cta"></div></div>
+    </div>
+
+    <div class="grupo">
+      <h2>Guardar</h2>
+      <div class="acciones">
+        <button class="btn prim" type="button" id="exportar">Descargar marca.json</button>
+        <button class="btn" type="button" id="restablecer">Volver a TrueLift</button>
+      </div>
+      <p class="nota">El logo no va dentro del archivo: envíalo aparte en buena resolución.</p>
+    </div>
+  </section>
+
+  <aside class="vista" aria-label="Vista previa">
+    <div class="icono-app">
+      <div class="ico" id="icoApp"></div>
+      <div><b id="nombreApp"></b><small>Icono en el móvil</small></div>
+    </div>
+
+    <div class="telefono">
+      <div class="pantalla" id="pantalla">
+        <div class="p-barra">
+          <span class="logo-barra" id="logoBarra" hidden></span>
+          <button class="ver-sesion" type="button">
+            <svg id="icoLista" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>
+            Ver sesión
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 4h8L6 9z"/></svg>
+          </button>
+          <span class="contador">0/12</span>
+          <span class="restante"><small>RESTANTE</small><b>~56m</b></span>
+          <button class="icbtn" type="button" aria-label="Avisos de descanso">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4"/></svg>
+          </button>
+        </div>
+
+        <div class="p-cuerpo">
+          <div class="ej">
+            <div class="miniatura"><canvas id="imgEj" width="512" height="512" role="img" aria-label="Figura del press banca con mancuernas"></canvas></div>
+            <div class="ej-tx">
+              <small>EJERCICIO 1/4</small>
+              <b>Press banca con mancuernas</b>
+              <div class="fila-obj"><span class="obj">top 7-10 · RIR 1</span><button class="ayuda" type="button" aria-label="Ayuda del objetivo">?</button></div>
+            </div>
+          </div>
+          <button class="tecnica" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor"/></svg>TÉCNICA
+          </button>
+
+          <div class="series">
+            <button class="serie on" type="button"><i></i>TOP</button>
+            <button class="serie" type="button"><i></i>Back 1</button>
+            <button class="serie" type="button"><i></i>Back 2</button>
+            <button class="serie" type="button"><i></i>Back 3</button>
+          </div>
+
+          <div class="panel-serie">
+            <div class="tit"><b id="serieNombre">TOP</b>objetivo 7-10 · RIR 1</div>
+            <div class="valores">
+              <div class="valor">
+                <span class="et">KG</span>
+                <div class="mm"><button class="ctl" type="button" data-d="kg:-1" aria-label="Bajar kilos">−</button><span class="num" id="kg">36</span><button class="ctl" type="button" data-d="kg:1" aria-label="Subir kilos">+</button></div>
+              </div>
+              <div class="valor">
+                <span class="et">REPS <span class="insignia">↗ 10</span></span>
+                <div class="mm"><button class="ctl" type="button" data-d="reps:-1" aria-label="Bajar repeticiones">−</button><span class="num" id="reps">8</span><button class="ctl" type="button" data-d="reps:1" aria-label="Subir repeticiones">+</button></div>
+              </div>
+            </div>
+            <div class="rir" id="rir"><span>RIR <span class="insignia">↗ ≥1</span></span></div>
+          </div>
+
+          <div class="card ultima">
+            <small><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>ÚLTIMA SESIÓN EN VERDE · <span id="ultimaSerie">TOP</span></small>
+            <b>36 kg × 8 reps · RIR 1</b>
+          </div>
+
+          <div class="card nota-ent" id="notaEnt">
+            <span class="avatar" id="avatar"></span>
+            <div><small id="notaDe">NOTA DE TU ENTRENADOR</small><p>Baja despacio y para un segundo abajo antes de empujar.</p></div>
+          </div>
+
+          <div class="senales">
+            <div class="senal"><div class="tx">INTENTOS DE PROGRESIÓN<div class="rayas"><i class="a"></i><i class="a"></i><i></i><i></i></div></div><button class="ayuda" type="button" aria-label="Ayuda de intentos">?</button></div>
+            <div class="senal"><span class="igual" aria-hidden="true">=</span><span class="tx">HOY NO PROGRESAS</span><button class="ayuda" type="button" aria-label="Ayuda de progresión">?</button></div>
+          </div>
+        </div>
+
+        <div class="p-pie">
+          <span id="serieN">Serie 1 de 4</span>
+          <button class="cta" type="button" id="ctaTexto">Registrar serie 1</button>
+        </div>
+
+        <nav class="nav" id="nav" aria-label="Pestañas">
+          <a href="#"><span class="i" data-ico="rutina"></span><span class="lbl">Rutina</span></a>
+          <a href="#" class="on" aria-current="page"><span class="i" data-ico="registro"></span><span class="lbl">Registro</span></a>
+          <a href="#"><span class="i" data-ico="progreso"></span><span class="lbl">Progreso</span></a>
+          <a href="#"><span class="i" data-ico="nutricion"></span><span class="lbl">Nutrición</span></a>
+        </nav>
+      </div>
+    </div>
+    <p class="leyenda">Vista aproximada de la pestaña Registro durante una sesión. Puedes tocar kilos, repeticiones, RIR y la serie.</p>
+  </aside>
+</div>
+
+<script>
+(() => {
+  // SHA-256 de "usuario:contraseña" (usuario en minúsculas). Para cambiar la
+  // clave, calcula el hash nuevo y sustituye esta línea.
+  const HASH_ACCESO = 'da28f171b80a091a5e5842741b6590fc66091ebda74ac0402d054fbf4f9ea515';
+  const CLAVE_SESION = 'tl-branding-ok';
+  const CLAVE_CONFIG = 'tl-branding-config';
+
+  async function sha256(texto) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function entrar() {
+    document.getElementById('acceso').hidden = true;
+    document.getElementById('app').hidden = false;
+    iniciar();
+  }
+
+  document.getElementById('formAcceso').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const u = document.getElementById('usuario').value.trim().toLowerCase();
+    const c = document.getElementById('clave').value;
+    if ((await sha256(u + ':' + c)) === HASH_ACCESO) {
+      sessionStorage.setItem(CLAVE_SESION, HASH_ACCESO);
+      entrar();
+    } else {
+      document.getElementById('errorAcceso').textContent = 'Usuario o contraseña incorrectos.';
+    }
+  });
+
+  // ---------- Opciones ----------
+  const FONDOS = {
+    'oscuro': { nombre: 'Oscuro', claro: false, bg: '#0A0C0B', sup: '#101312', sup2: '#171B19', t1: '#F4F6F4', t2: '#C9CFC9', t3: '#8E948F', t4: '#6B7370', vacio: '#2A2F2C', borde: 'rgba(255,255,255,.07)', borde2: 'rgba(255,255,255,.10)', sombra: '0 10px 28px rgba(0,0,0,.5)', ambar: '#E0A92E' },
+    'calido': { nombre: 'Oscuro cálido', claro: false, bg: '#100D0A', sup: '#18140F', sup2: '#211B15', t1: '#F7F2EC', t2: '#D6CCC1', t3: '#9C9186', t4: '#7A7066', vacio: '#352D25', borde: 'rgba(255,240,225,.08)', borde2: 'rgba(255,240,225,.12)', sombra: '0 10px 28px rgba(0,0,0,.5)', ambar: '#E0A92E' },
+    'azulado': { nombre: 'Oscuro azulado', claro: false, bg: '#080B12', sup: '#0F1420', sup2: '#161D2C', t1: '#EEF2F8', t2: '#C3CCDA', t3: '#8A94A6', t4: '#687286', vacio: '#262F40', borde: 'rgba(220,230,255,.08)', borde2: 'rgba(220,230,255,.12)', sombra: '0 10px 28px rgba(0,0,0,.55)', ambar: '#E0A92E' },
+    'claro': { nombre: 'Claro', claro: true, bg: '#F3F5F2', sup: '#FFFFFF', sup2: '#ECEFEB', t1: '#0E1210', t2: '#353D38', t3: '#4F5853', t4: '#626C67', vacio: '#D3D9D4', borde: 'rgba(14,24,18,.10)', borde2: 'rgba(14,24,18,.16)', sombra: '0 8px 24px rgba(14,24,18,.10)', ambar: '#946200' }
+  };
+  const F_DISP = { 'Saira Condensed': 700, 'Bebas Neue': 400, 'Oswald': 600, 'Barlow Condensed': 700, 'Anton': 400, 'Space Grotesk': 700, 'DM Serif Display': 400 };
+  const F_BODY = ['Instrument Sans', 'Inter', 'Barlow', 'DM Sans', 'IBM Plex Sans', 'Manrope'];
+  const F_MONO = ['IBM Plex Mono', 'JetBrains Mono', 'Space Mono', 'Roboto Mono', 'DM Mono'];
+  const BOTONES = { relleno: 'Relleno', contorno: 'Contorno', pildora: 'Píldora' };
+  const TARJETAS = { borde: 'Con borde', sombra: 'Con sombra', plana: 'Plana' };
+  const MUESTRAS = ['#A3E020', '#FF6A2B', '#4C8DFF', '#D6336C', '#14B8A6', '#F5C518', '#8B5CF6', '#FFFFFF'];
+  // Colores de señal que el color de marca no debe imitar.
+  const SENALES = ['#F0872D', '#E8412B'];
+  const DENSIDAD = { compacta: 'Compacto', normal: 'Normal', amplia: 'Amplio' };
+  const GAP = { compacta: 10, normal: 14, amplia: 20 };
+  const INDICADORES = { pildora: 'Píldora', bloque: 'Bloque de color', subrayado: 'Subrayado', punto: 'Punto', ninguno: 'Solo color' };
+  const ETIQUETAS = { siempre: 'Siempre', activa: 'Solo la activa' };
+  const SI_NO = { true: 'Sí', false: 'No' };
+  const CTAS = { registrar: 'Registrar serie 1', guardar: 'Guardar serie 1', hecha: 'Serie 1 hecha' };
+  const ctaTexto = (tipo, n) => ({ registrar: `Registrar serie ${n}`, guardar: `Guardar serie ${n}`, hecha: `Serie ${n} hecha` })[tipo] || `Registrar serie ${n}`;
+
+  // Iconos del menú: cada uno en trazo (line) y en relleno (solid). El estilo
+  // decide cómo se pintan; las formas son las mismas para que solo cambie el carácter.
+  const ICONOS = {
+    rutina: { line: 'M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 8h8M8 12h8M8 16h5', solid: 'M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 7v2h8V7zM8 11v2h8v-2zM8 15v2h5v-2z' },
+    registro: { line: 'M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12', solid: 'M4.5 6h3v12h-3zM16.5 6h3v12h-3zM1.5 9.5h2v5h-2zM20.5 9.5h2v5h-2zM7.5 11h9v2h-9z' },
+    progreso: { line: 'M3 17l6-6 4 4 8-8M15 7h6v6', solid: 'M3 20v-3l6-6 4 4 8-8v13zM15 4h6v6z' },
+    nutricion: { line: 'M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 0-3 3-3 7h3v11', solid: 'M4 3h1.5v5h1V3h1v5h1V3H10v5a3 3 0 0 1-2.1 2.9V21H6.1V10.9A3 3 0 0 1 4 8zM17.8 3C15.6 3 14 6 14 10.5h2.1V21H18V3z' }
+  };
+  const ESTILOS_ICONO = { lineal: 'Lineal', fino: 'Fino', grueso: 'Grueso', geometrico: 'Geométrico', relleno: 'Relleno', duotono: 'Dos tonos' };
+  function svgIcono(nombre, estilo, tam = 22) {
+    const ic = ICONOS[nombre];
+    const linea = (w, cap = 'round', join = 'round') => `<path d="${ic.line}" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="${cap}" stroke-linejoin="${join}"/>`;
+    const relleno = (op = 1) => `<path d="${ic.solid}" fill="currentColor" fill-rule="evenodd" opacity="${op}"/>`;
+    const cuerpo = {
+      lineal: linea(1.8), fino: linea(1.2), grueso: linea(2.6),
+      geometrico: linea(2, 'square', 'miter'), relleno: relleno(), duotono: relleno(0.3) + linea(1.8)
+    }[estilo] || linea(1.8);
+    return `<svg width="${tam}" height="${tam}" viewBox="0 0 24 24" aria-hidden="true">${cuerpo}</svg>`;
+  }
+
+  const BASE = { nombre: 'TrueLift', acento: '#A3E020', fondo: 'oscuro', fDisp: 'Saira Condensed', fBody: 'Instrument Sans', fMono: 'IBM Plex Mono', mayus: true, radio: 16, boton: 'relleno', tarjeta: 'borde', densidad: 'normal', iconos: 'lineal', indicador: 'pildora', etiquetas: 'siempre', entrenador: '', nota: false, logoBarra: false, musculo: true, cta: 'registrar' };
+  const PRESETS = {
+    'TrueLift': BASE,
+    'Fuerza clásica': { ...BASE, nombre: 'Hierro', acento: '#FF6A2B', fondo: 'calido', fDisp: 'Bebas Neue', fBody: 'Barlow', fMono: 'Roboto Mono', radio: 4, tarjeta: 'plana', iconos: 'geometrico', indicador: 'bloque', densidad: 'compacta', logoBarra: true },
+    'Rendimiento': { ...BASE, nombre: 'Norte', acento: '#4C8DFF', fondo: 'azulado', fDisp: 'Space Grotesk', fBody: 'Inter', fMono: 'JetBrains Mono', mayus: false, radio: 14, boton: 'pildora', iconos: 'duotono', indicador: 'punto', etiquetas: 'activa', cta: 'guardar' },
+    'Estudio': { ...BASE, nombre: 'Forma', acento: '#D6336C', fondo: 'claro', fDisp: 'DM Serif Display', fBody: 'DM Sans', fMono: 'DM Mono', mayus: false, radio: 24, boton: 'contorno', tarjeta: 'sombra', densidad: 'amplia', iconos: 'fino', indicador: 'subrayado', entrenador: 'Laura', nota: true, cta: 'hecha' }
+  };
+
+  let cfg;
+  try { cfg = { ...BASE, ...JSON.parse(localStorage.getItem(CLAVE_CONFIG) || '{}') }; } catch { cfg = { ...BASE }; }
+  let logoUrl = null;
+  let fotoUrl = null;
+  let sim = null;
+
+  // Figura 3D del ejercicio: el músculo trabajado viene en lima; se repinta
+  // con el color de marca conservando el sombreado.
+  const figura = new Image();
+  let figuraOriginal = null;
+  let tinteFigura = null;
+  figura.onload = () => {
+    const c = document.getElementById('imgEj');
+    const ctx = c.getContext('2d');
+    ctx.drawImage(figura, 0, 0, c.width, c.height);
+    figuraOriginal = ctx.getImageData(0, 0, c.width, c.height);
+    teñirFigura(tinteFigura, true);
+  };
+  figura.src = '../escritorio/media/repdb/hombre/db-bench-press-peak.webp';
+  function teñirFigura(color, forzar) {
+    if (!forzar && color === tinteFigura) return;
+    tinteFigura = color;
+    if (!figuraOriginal) return;
+    const c = document.getElementById('imgEj');
+    const datos = new ImageData(new Uint8ClampedArray(figuraOriginal.data), figuraOriginal.width, figuraOriginal.height);
+    if (color) {
+      const [cr, cg, cb] = rgb(color);
+      const d = datos.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        // Píxeles lima: verde dominante y poco azul. El gris de la figura no entra.
+        if (g > 90 && g - b > 70 && g - r > 25) {
+          const f = Math.min(1.15, g / 224);
+          d[i] = cr * f; d[i + 1] = cg * f; d[i + 2] = cb * f;
+        }
+      }
+    }
+    c.getContext('2d').putImageData(datos, 0, 0);
+  }
+
+  // ---------- Color ----------
+  const rgb = (h) => { h = h.replace('#', ''); if (h.length === 3) h = [...h].map((c) => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  const hex = (c) => '#' + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+  const lum = (h) => { const c = rgb(h).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const contraste = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const mezcla = (a, b, t) => { const x = rgb(a), y = rgb(b); return hex(x.map((v, i) => v + (y[i] - v) * t)); };
+  const rgba = (h, a) => { const c = rgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; };
+  // Tinta: el color de marca ajustado hasta leerse como texto sobre la tarjeta.
+  function tinta(acento, sup, claro) {
+    let c = acento;
+    for (let i = 1; i <= 12 && contraste(c, sup) < 4.5; i++) c = mezcla(acento, claro ? '#000000' : '#FFFFFF', i * 0.07);
+    return c;
+  }
+  const distancia = (a, b) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); };
+
+  // ---------- Pintar ----------
+  const $ = (id) => document.getElementById(id);
+  const pantalla = $('pantalla');
+
+  function aplicar() {
+    const f = FONDOS[cfg.fondo] || FONDOS.oscuro;
+    const acc = /^#[0-9a-f]{6}$/i.test(cfg.acento) ? cfg.acento : BASE.acento;
+    const ink = tinta(acc, f.sup, f.claro);
+    const onAcc = contraste(acc, '#0A0C0B') >= contraste(acc, '#FFFFFF') ? '#0A0C0B' : '#FFFFFF';
+    const r = Number(cfg.radio);
+    const vars = {
+      '--bg': f.bg, '--sup': f.sup, '--sup2': f.sup2, '--t1': f.t1, '--t2': f.t2, '--t3': f.t3, '--t4': f.t4,
+      '--vacio': f.vacio, '--borde': f.borde, '--borde2': f.borde2, '--sombra': f.sombra, '--ambar': f.ambar,
+      '--rojo': f.claro ? '#CC3318' : '#E8412B', '--panel': rgba(acc, f.claro ? 0.07 : 0.05),
+      '--acc': acc, '--accInk': ink, '--onAcc': onAcc, '--accSoft': rgba(acc, f.claro ? 0.16 : 0.12), '--accLinea': rgba(acc, 0.35),
+      '--f-disp': `"${cfg.fDisp}", "${cfg.fBody}", sans-serif`, '--w-disp': F_DISP[cfg.fDisp] || 700,
+      '--f-body': `"${cfg.fBody}", system-ui, sans-serif`, '--f-mono': `"${cfg.fMono}", ui-monospace, monospace`,
+      '--r': r + 'px', '--rc': Math.round(r * 0.75) + 'px', '--rchip': (r >= 10 ? 999 : r) + 'px',
+      '--rbtn': (cfg.boton === 'pildora' ? 999 : r) + 'px',
+      '--tt': cfg.mayus ? 'uppercase' : 'none', '--ls': cfg.mayus ? '.06em' : '0'
+    };
+    for (const [k, v] of Object.entries(vars)) pantalla.style.setProperty(k, v);
+    pantalla.dataset.tarjeta = cfg.tarjeta;
+    pantalla.dataset.boton = cfg.boton;
+    pantalla.style.setProperty('--gap', (GAP[cfg.densidad] || 14) + 'px');
+
+    // Menú de navegación.
+    const nav = $('nav');
+    nav.dataset.ind = cfg.indicador;
+    nav.dataset.etiquetas = cfg.etiquetas;
+    nav.querySelectorAll('[data-ico]').forEach((s) => { s.innerHTML = svgIcono(s.dataset.ico, cfg.iconos); });
+
+    // Toque personal.
+    const iniciales = (t, n) => (t || '').trim().split(/\s+/).map((p) => p[0] || '').join('').slice(0, n).toUpperCase();
+    const lb = $('logoBarra');
+    lb.hidden = !cfg.logoBarra;
+    $('icoLista').style.display = cfg.logoBarra ? 'none' : '';
+    lb.innerHTML = '';
+    if (logoUrl) { const img = new Image(); img.src = logoUrl; img.alt = ''; lb.append(img); }
+    else lb.textContent = (cfg.nombre || 'T').trim().slice(0, 1).toUpperCase();
+    $('notaEnt').hidden = !cfg.nota;
+    const av = $('avatar');
+    av.innerHTML = '';
+    if (fotoUrl) { const img = new Image(); img.src = fotoUrl; img.alt = ''; av.append(img); }
+    else av.textContent = iniciales(cfg.entrenador, 2) || '?';
+    $('notaDe').textContent = cfg.entrenador.trim() ? `NOTA DE ${cfg.entrenador.trim().toUpperCase()}` : 'NOTA DE TU ENTRENADOR';
+    teñirFigura(cfg.musculo ? acc : null);
+    if (typeof pintarSim === 'function' && sim) pintarSim();
+
+    // Icono de la app.
+    const ico = $('icoApp');
+    ico.style.background = acc;
+    ico.style.color = onAcc;
+    ico.style.borderRadius = Math.min(r + 6, 22) + 'px';
+    ico.style.font = `${F_DISP[cfg.fDisp] || 700} 26px "${cfg.fDisp}", sans-serif`;
+    ico.innerHTML = '';
+    if (logoUrl) { const img = new Image(); img.src = logoUrl; img.alt = ''; ico.append(img); }
+    else ico.textContent = (cfg.nombre || 'T').trim().slice(0, 2).toUpperCase();
+    $('nombreApp').textContent = cfg.nombre || 'Sin nombre';
+    $('radioTxt').textContent = r <= 4 ? 'recto' : r <= 18 ? 'suave' : 'redondo';
+
+    // Avisos de color.
+    const avisos = [];
+    if (contraste(acc, f.bg) < 3) avisos.push('Este color apenas destaca sobre el fondo; prueba uno más vivo o cambia el fondo.');
+    if (SENALES.some((s) => distancia(acc, s) < 60)) avisos.push('Se parece a los colores de aviso de la app y puede confundir.');
+    $('avisoColor').textContent = avisos.join(' ');
+
+    localStorage.setItem(CLAVE_CONFIG, JSON.stringify(cfg));
+  }
+
+  function sincronizarControles() {
+    $('nombre').value = cfg.nombre;
+    $('acento').value = cfg.acento;
+    $('fDisp').value = cfg.fDisp;
+    $('fBody').value = cfg.fBody;
+    $('fMono').value = cfg.fMono;
+    $('radio').value = cfg.radio;
+    $('entrenador').value = cfg.entrenador;
+    for (const [g, k] of Object.entries(GRUPOS)) {
+      const v = String(cfg[k]);
+      document.querySelectorAll(`#${g} input`).forEach((i) => { i.checked = i.value === v; });
+    }
+    document.querySelectorAll('#presets input').forEach((i) => { i.checked = false; });
+  }
+
+  // Control segmentado → clave de cfg que guarda.
+  const GRUPOS = { fondo: 'fondo', boton: 'boton', tarjeta: 'tarjeta', mayus: 'mayus', densidad: 'densidad', iconos: 'iconos', indicador: 'indicador', etiquetas: 'etiquetas', nota: 'nota', logoBarraOp: 'logoBarra', musculo: 'musculo', cta: 'cta' };
+
+  function segmentado(id, opciones, alCambiar) {
+    const cont = $(id);
+    for (const [valor, texto] of Object.entries(opciones)) {
+      const l = document.createElement('label');
+      const i = document.createElement('input');
+      i.type = 'radio'; i.name = id; i.value = valor;
+      i.addEventListener('change', () => alCambiar(valor));
+      const s = document.createElement('span'); s.textContent = texto;
+      l.append(i, s); cont.append(l);
+    }
+  }
+
+  function opciones(id, lista) {
+    const sel = $(id);
+    for (const n of lista) { const o = document.createElement('option'); o.value = n; o.textContent = n; o.style.fontFamily = `"${n}"`; sel.append(o); }
+    sel.addEventListener('change', () => { cfg[id] = sel.value; aplicar(); });
+  }
+
+  // ---------- Simulación de la sesión ----------
+  sim = { kg: 36, reps: 8, rir: 1, serie: 0 };
+  const SERIES = ['TOP', 'Back 1', 'Back 2', 'Back 3'];
+  function pintarSim() {
+    $('kg').textContent = String(sim.kg).replace('.', ',');
+    $('reps').textContent = sim.reps;
+    document.querySelectorAll('#rir button').forEach((b) => { b.classList.toggle('on', Number(b.dataset.v) === sim.rir); b.setAttribute('aria-pressed', Number(b.dataset.v) === sim.rir); });
+    document.querySelectorAll('.serie').forEach((b, i) => { b.classList.toggle('on', i === sim.serie); b.setAttribute('aria-pressed', i === sim.serie); });
+    $('serieNombre').textContent = SERIES[sim.serie];
+    $('ultimaSerie').textContent = SERIES[sim.serie];
+    $('serieN').textContent = `Serie ${sim.serie + 1} de 4`;
+    $('ctaTexto').textContent = ctaTexto(cfg.cta, sim.serie + 1);
+  }
+
+  let iniciado = false;
+  function iniciar() {
+    if (iniciado) return;
+    iniciado = true;
+
+    const nombresPreset = Object.fromEntries(Object.keys(PRESETS).map((k) => [k, k]));
+    segmentado('presets', nombresPreset, (k) => { cfg = { ...PRESETS[k] }; logoUrl = null; fotoUrl = null; $('logo').value = ''; $('foto').value = ''; sincronizarControles(); document.querySelector(`#presets input[value="${k}"]`).checked = true; aplicar(); });
+    segmentado('fondo', Object.fromEntries(Object.entries(FONDOS).map(([k, v]) => [k, v.nombre])), (v) => { cfg.fondo = v; aplicar(); });
+    segmentado('boton', BOTONES, (v) => { cfg.boton = v; aplicar(); });
+    segmentado('tarjeta', TARJETAS, (v) => { cfg.tarjeta = v; aplicar(); });
+    segmentado('mayus', SI_NO, (v) => { cfg.mayus = v === 'true'; aplicar(); });
+    segmentado('densidad', DENSIDAD, (v) => { cfg.densidad = v; aplicar(); });
+    segmentado('iconos', ESTILOS_ICONO, (v) => { cfg.iconos = v; aplicar(); });
+    document.querySelectorAll('#iconos span').forEach((s) => {
+      const estilo = s.previousElementSibling.value;
+      s.insertAdjacentHTML('afterbegin', `<span class="iconos">${Object.keys(ICONOS).map((n) => svgIcono(n, estilo, 18)).join('')}</span>&nbsp;`);
+      s.style.gap = '8px';
+    });
+    segmentado('indicador', INDICADORES, (v) => { cfg.indicador = v; aplicar(); });
+    segmentado('etiquetas', ETIQUETAS, (v) => { cfg.etiquetas = v; aplicar(); });
+    segmentado('nota', SI_NO, (v) => { cfg.nota = v === 'true'; aplicar(); });
+    segmentado('logoBarraOp', SI_NO, (v) => { cfg.logoBarra = v === 'true'; aplicar(); });
+    segmentado('musculo', SI_NO, (v) => { cfg.musculo = v === 'true'; aplicar(); });
+    segmentado('cta', CTAS, (v) => { cfg.cta = v; aplicar(); });
+    $('entrenador').addEventListener('input', (e) => { cfg.entrenador = e.target.value; aplicar(); });
+    $('foto').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (fotoUrl) URL.revokeObjectURL(fotoUrl);
+      fotoUrl = f ? URL.createObjectURL(f) : null;
+      aplicar();
+    });
+    opciones('fDisp', Object.keys(F_DISP));
+    opciones('fBody', F_BODY);
+    opciones('fMono', F_MONO);
+
+    for (const c of MUESTRAS) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'muestra'; b.style.background = c; b.setAttribute('aria-label', 'Color ' + c);
+      b.addEventListener('click', () => { cfg.acento = c; $('acento').value = c; aplicar(); });
+      $('muestras').append(b);
+    }
+    $('acento').addEventListener('input', (e) => { cfg.acento = e.target.value; aplicar(); });
+    $('nombre').addEventListener('input', (e) => { cfg.nombre = e.target.value; aplicar(); });
+    $('radio').addEventListener('input', (e) => { cfg.radio = Number(e.target.value); aplicar(); });
+    $('logo').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (logoUrl) URL.revokeObjectURL(logoUrl);
+      logoUrl = f ? URL.createObjectURL(f) : null;
+      aplicar();
+    });
+
+    $('exportar').addEventListener('click', () => {
+      const datos = {
+        version: 1,
+        nombre: cfg.nombre,
+        colorMarca: cfg.acento,
+        fondo: cfg.fondo,
+        fuentes: { titulares: cfg.fDisp, texto: cfg.fBody, numeros: cfg.fMono },
+        titularesMayusculas: cfg.mayus,
+        radio: cfg.radio,
+        boton: cfg.boton,
+        tarjeta: cfg.tarjeta,
+        espaciado: cfg.densidad,
+        menu: { iconos: cfg.iconos, pestanaActiva: cfg.indicador, nombres: cfg.etiquetas },
+        entrenador: cfg.entrenador.trim(),
+        notasEntrenador: cfg.nota,
+        logoEnSesion: cfg.logoBarra,
+        musculoEnColorMarca: cfg.musculo,
+        textoBoton: cfg.cta
+      };
+      const url = URL.createObjectURL(new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'marca.json'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    $('restablecer').addEventListener('click', () => { cfg = { ...BASE }; logoUrl = null; fotoUrl = null; $('logo').value = ''; $('foto').value = ''; sincronizarControles(); aplicar(); });
+
+    // Controles de la pantalla simulada.
+    for (let v = 0; v <= 4; v++) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.v = v; b.textContent = v;
+      b.addEventListener('click', () => { sim.rir = v; pintarSim(); });
+      $('rir').append(b);
+    }
+    document.querySelectorAll('[data-d]').forEach((b) => b.addEventListener('click', () => {
+      const [k, d] = b.dataset.d.split(':');
+      sim[k] = Math.max(0, Math.round((sim[k] + Number(d)) * 10) / 10);
+      pintarSim();
+    }));
+    document.querySelectorAll('.serie').forEach((c, i) => c.addEventListener('click', () => { sim.serie = i; pintarSim(); }));
+
+    sincronizarControles();
+    aplicar();
+    pintarSim();
+  }
+
+  if (sessionStorage.getItem(CLAVE_SESION) === HASH_ACCESO) entrar();
+})();
+</script>
+</body>
+</html>
