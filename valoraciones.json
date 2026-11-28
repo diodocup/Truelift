@@ -1,14 +1,23 @@
 {
-  "actualizado": "2026-11-26T15:23:56.562Z",
+  "actualizado": "2026-11-28T14:17:05.004Z",
   "android": {
     "nota": 4.7,
-    "total": 25
+    "total": 26
   },
   "ios": {
     "nota": 5,
     "total": 13
   },
   "resenas": [
+    {
+      "id": "gp:473a4450-8582-4bbc-b4b3-72fd9ad9a2b8",
+      "tienda": "android",
+      "autor": "Daniel D.",
+      "estrellas": 5,
+      "texto": "¡Me parece una obra maestra! De gran ayuda para entrenar sin necesitar hojas de cálculo externas. ¡La recomiendo sin duda!",
+      "fecha": "2026-11-26",
+      "idioma": "es"
+    },
     {
       "id": "as:14704347692",
       "tienda": "ios",
