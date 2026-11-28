@@ -121,14 +121,8 @@
   .rayas i{width:14px;height:4px;border-radius:2px;background:var(--vacio)}
   .rayas i.a{background:var(--acc)}
   .p-cuerpo{gap:var(--gap,14px)}
-  .miniatura canvas{width:100%;height:100%;display:block}
   .logo-barra{width:30px;height:30px;flex:none;border-radius:calc(var(--rc) * .7);background:var(--acc);color:var(--onAcc);display:grid;place-items:center;overflow:hidden;font-family:var(--f-disp);font-weight:var(--w-disp);font-size:14px}
   .logo-barra img{width:100%;height:100%;object-fit:cover}
-  .nota-ent{display:flex;gap:12px;align-items:center;padding:12px 14px}
-  .avatar{width:40px;height:40px;flex:none;border-radius:50%;background:var(--acc);color:var(--onAcc);display:grid;place-items:center;overflow:hidden;font-weight:700;font-size:15px}
-  .avatar img{width:100%;height:100%;object-fit:cover}
-  .nota-ent small{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--accInk)}
-  .nota-ent p{margin:2px 0 0;font-size:14px;line-height:1.35;color:var(--t2)}
   .nav span.i{position:relative}
   .nav[data-ind=subrayado] a.on span.i{background:none;border-radius:0;box-shadow:inset 0 -3px 0 var(--acc)}
   .nav[data-ind=punto] a.on span.i{background:none}
@@ -234,13 +228,7 @@
 
     <div class="grupo">
       <h2>Toque personal</h2>
-      <div class="dos">
-        <label class="campo"><span>Nombre del entrenador</span><input type="text" id="entrenador" maxlength="28" placeholder="Tu nombre"></label>
-        <label class="campo"><span>Foto del entrenador (opcional)</span><input type="file" id="foto" accept="image/png,image/jpeg,image/webp"></label>
-      </div>
-      <div class="campo"><span>Notas del entrenador en cada ejercicio</span><div class="seg" id="nota"></div></div>
       <div class="campo"><span>Logo en la barra de la sesión</span><div class="seg" id="logoBarraOp"></div></div>
-      <div class="campo"><span>Músculo trabajado en el color de marca</span><div class="seg" id="musculo"></div></div>
       <div class="campo"><span>Texto del botón principal</span><div class="seg" id="cta"></div></div>
     </div>
 
@@ -278,7 +266,7 @@
 
         <div class="p-cuerpo">
           <div class="ej">
-            <div class="miniatura"><canvas id="imgEj" width="512" height="512" role="img" aria-label="Figura del press banca con mancuernas"></canvas></div>
+            <div class="miniatura"><img src="../escritorio/media/repdb/hombre/db-bench-press-peak.webp" alt="Figura del press banca con mancuernas"></div>
             <div class="ej-tx">
               <small>EJERCICIO 1/4</small>
               <b>Press banca con mancuernas</b>
@@ -314,11 +302,6 @@
           <div class="card ultima">
             <small><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>ÚLTIMA SESIÓN EN VERDE · <span id="ultimaSerie">TOP</span></small>
             <b>36 kg × 8 reps · RIR 1</b>
-          </div>
-
-          <div class="card nota-ent" id="notaEnt">
-            <span class="avatar" id="avatar"></span>
-            <div><small id="notaDe">NOTA DE TU ENTRENADOR</small><p>Baja despacio y para un segundo abajo antes de empujar.</p></div>
           </div>
 
           <div class="senales">
@@ -418,53 +401,18 @@
     return `<svg width="${tam}" height="${tam}" viewBox="0 0 24 24" aria-hidden="true">${cuerpo}</svg>`;
   }
 
-  const BASE = { nombre: 'TrueLift', acento: '#A3E020', fondo: 'oscuro', fDisp: 'Saira Condensed', fBody: 'Instrument Sans', fMono: 'IBM Plex Mono', mayus: true, radio: 16, boton: 'relleno', tarjeta: 'borde', densidad: 'normal', iconos: 'lineal', indicador: 'pildora', etiquetas: 'siempre', entrenador: '', nota: false, logoBarra: false, musculo: true, cta: 'registrar' };
+  const BASE = { nombre: 'TrueLift', acento: '#A3E020', fondo: 'oscuro', fDisp: 'Saira Condensed', fBody: 'Instrument Sans', fMono: 'IBM Plex Mono', mayus: true, radio: 16, boton: 'relleno', tarjeta: 'borde', densidad: 'normal', iconos: 'lineal', indicador: 'pildora', etiquetas: 'siempre', logoBarra: false, cta: 'registrar' };
   const PRESETS = {
     'TrueLift': BASE,
     'Fuerza clásica': { ...BASE, nombre: 'Hierro', acento: '#FF6A2B', fondo: 'calido', fDisp: 'Bebas Neue', fBody: 'Barlow', fMono: 'Roboto Mono', radio: 4, tarjeta: 'plana', iconos: 'geometrico', indicador: 'bloque', densidad: 'compacta', logoBarra: true },
     'Rendimiento': { ...BASE, nombre: 'Norte', acento: '#4C8DFF', fondo: 'azulado', fDisp: 'Space Grotesk', fBody: 'Inter', fMono: 'JetBrains Mono', mayus: false, radio: 14, boton: 'pildora', iconos: 'duotono', indicador: 'punto', etiquetas: 'activa', cta: 'guardar' },
-    'Estudio': { ...BASE, nombre: 'Forma', acento: '#D6336C', fondo: 'claro', fDisp: 'DM Serif Display', fBody: 'DM Sans', fMono: 'DM Mono', mayus: false, radio: 24, boton: 'contorno', tarjeta: 'sombra', densidad: 'amplia', iconos: 'fino', indicador: 'subrayado', entrenador: 'Laura', nota: true, cta: 'hecha' }
+    'Estudio': { ...BASE, nombre: 'Forma', acento: '#D6336C', fondo: 'claro', fDisp: 'DM Serif Display', fBody: 'DM Sans', fMono: 'DM Mono', mayus: false, radio: 24, boton: 'contorno', tarjeta: 'sombra', densidad: 'amplia', iconos: 'fino', indicador: 'subrayado', cta: 'hecha' }
   };
 
   let cfg;
   try { cfg = { ...BASE, ...JSON.parse(localStorage.getItem(CLAVE_CONFIG) || '{}') }; } catch { cfg = { ...BASE }; }
   let logoUrl = null;
-  let fotoUrl = null;
   let sim = null;
-
-  // Figura 3D del ejercicio: el músculo trabajado viene en lima; se repinta
-  // con el color de marca conservando el sombreado.
-  const figura = new Image();
-  let figuraOriginal = null;
-  let tinteFigura = null;
-  figura.onload = () => {
-    const c = document.getElementById('imgEj');
-    const ctx = c.getContext('2d');
-    ctx.drawImage(figura, 0, 0, c.width, c.height);
-    figuraOriginal = ctx.getImageData(0, 0, c.width, c.height);
-    teñirFigura(tinteFigura, true);
-  };
-  figura.src = '../escritorio/media/repdb/hombre/db-bench-press-peak.webp';
-  function teñirFigura(color, forzar) {
-    if (!forzar && color === tinteFigura) return;
-    tinteFigura = color;
-    if (!figuraOriginal) return;
-    const c = document.getElementById('imgEj');
-    const datos = new ImageData(new Uint8ClampedArray(figuraOriginal.data), figuraOriginal.width, figuraOriginal.height);
-    if (color) {
-      const [cr, cg, cb] = rgb(color);
-      const d = datos.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const r = d[i], g = d[i + 1], b = d[i + 2];
-        // Píxeles lima: verde dominante y poco azul. El gris de la figura no entra.
-        if (g > 90 && g - b > 70 && g - r > 25) {
-          const f = Math.min(1.15, g / 224);
-          d[i] = cr * f; d[i + 1] = cg * f; d[i + 2] = cb * f;
-        }
-      }
-    }
-    c.getContext('2d').putImageData(datos, 0, 0);
-  }
 
   // ---------- Color ----------
   const rgb = (h) => { h = h.replace('#', ''); if (h.length === 3) h = [...h].map((c) => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
@@ -514,20 +462,12 @@
     nav.querySelectorAll('[data-ico]').forEach((s) => { s.innerHTML = svgIcono(s.dataset.ico, cfg.iconos); });
 
     // Toque personal.
-    const iniciales = (t, n) => (t || '').trim().split(/\s+/).map((p) => p[0] || '').join('').slice(0, n).toUpperCase();
     const lb = $('logoBarra');
     lb.hidden = !cfg.logoBarra;
     $('icoLista').style.display = cfg.logoBarra ? 'none' : '';
     lb.innerHTML = '';
     if (logoUrl) { const img = new Image(); img.src = logoUrl; img.alt = ''; lb.append(img); }
     else lb.textContent = (cfg.nombre || 'T').trim().slice(0, 1).toUpperCase();
-    $('notaEnt').hidden = !cfg.nota;
-    const av = $('avatar');
-    av.innerHTML = '';
-    if (fotoUrl) { const img = new Image(); img.src = fotoUrl; img.alt = ''; av.append(img); }
-    else av.textContent = iniciales(cfg.entrenador, 2) || '?';
-    $('notaDe').textContent = cfg.entrenador.trim() ? `NOTA DE ${cfg.entrenador.trim().toUpperCase()}` : 'NOTA DE TU ENTRENADOR';
-    teñirFigura(cfg.musculo ? acc : null);
     if (typeof pintarSim === 'function' && sim) pintarSim();
 
     // Icono de la app.
@@ -558,7 +498,6 @@
     $('fBody').value = cfg.fBody;
     $('fMono').value = cfg.fMono;
     $('radio').value = cfg.radio;
-    $('entrenador').value = cfg.entrenador;
     for (const [g, k] of Object.entries(GRUPOS)) {
       const v = String(cfg[k]);
       document.querySelectorAll(`#${g} input`).forEach((i) => { i.checked = i.value === v; });
@@ -567,7 +506,7 @@
   }
 
   // Control segmentado → clave de cfg que guarda.
-  const GRUPOS = { fondo: 'fondo', boton: 'boton', tarjeta: 'tarjeta', mayus: 'mayus', densidad: 'densidad', iconos: 'iconos', indicador: 'indicador', etiquetas: 'etiquetas', nota: 'nota', logoBarraOp: 'logoBarra', musculo: 'musculo', cta: 'cta' };
+  const GRUPOS = { fondo: 'fondo', boton: 'boton', tarjeta: 'tarjeta', mayus: 'mayus', densidad: 'densidad', iconos: 'iconos', indicador: 'indicador', etiquetas: 'etiquetas', logoBarraOp: 'logoBarra', cta: 'cta' };
 
   function segmentado(id, opciones, alCambiar) {
     const cont = $(id);
@@ -607,7 +546,7 @@
     iniciado = true;
 
     const nombresPreset = Object.fromEntries(Object.keys(PRESETS).map((k) => [k, k]));
-    segmentado('presets', nombresPreset, (k) => { cfg = { ...PRESETS[k] }; logoUrl = null; fotoUrl = null; $('logo').value = ''; $('foto').value = ''; sincronizarControles(); document.querySelector(`#presets input[value="${k}"]`).checked = true; aplicar(); });
+    segmentado('presets', nombresPreset, (k) => { cfg = { ...PRESETS[k] }; logoUrl = null; $('logo').value = ''; sincronizarControles(); document.querySelector(`#presets input[value="${k}"]`).checked = true; aplicar(); });
     segmentado('fondo', Object.fromEntries(Object.entries(FONDOS).map(([k, v]) => [k, v.nombre])), (v) => { cfg.fondo = v; aplicar(); });
     segmentado('boton', BOTONES, (v) => { cfg.boton = v; aplicar(); });
     segmentado('tarjeta', TARJETAS, (v) => { cfg.tarjeta = v; aplicar(); });
@@ -621,17 +560,8 @@
     });
     segmentado('indicador', INDICADORES, (v) => { cfg.indicador = v; aplicar(); });
     segmentado('etiquetas', ETIQUETAS, (v) => { cfg.etiquetas = v; aplicar(); });
-    segmentado('nota', SI_NO, (v) => { cfg.nota = v === 'true'; aplicar(); });
     segmentado('logoBarraOp', SI_NO, (v) => { cfg.logoBarra = v === 'true'; aplicar(); });
-    segmentado('musculo', SI_NO, (v) => { cfg.musculo = v === 'true'; aplicar(); });
     segmentado('cta', CTAS, (v) => { cfg.cta = v; aplicar(); });
-    $('entrenador').addEventListener('input', (e) => { cfg.entrenador = e.target.value; aplicar(); });
-    $('foto').addEventListener('change', (e) => {
-      const f = e.target.files[0];
-      if (fotoUrl) URL.revokeObjectURL(fotoUrl);
-      fotoUrl = f ? URL.createObjectURL(f) : null;
-      aplicar();
-    });
     opciones('fDisp', Object.keys(F_DISP));
     opciones('fBody', F_BODY);
     opciones('fMono', F_MONO);
@@ -665,10 +595,7 @@
         tarjeta: cfg.tarjeta,
         espaciado: cfg.densidad,
         menu: { iconos: cfg.iconos, pestanaActiva: cfg.indicador, nombres: cfg.etiquetas },
-        entrenador: cfg.entrenador.trim(),
-        notasEntrenador: cfg.nota,
         logoEnSesion: cfg.logoBarra,
-        musculoEnColorMarca: cfg.musculo,
         textoBoton: cfg.cta
       };
       const url = URL.createObjectURL(new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' }));
@@ -676,7 +603,7 @@
       a.href = url; a.download = 'marca.json'; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
-    $('restablecer').addEventListener('click', () => { cfg = { ...BASE }; logoUrl = null; fotoUrl = null; $('logo').value = ''; $('foto').value = ''; sincronizarControles(); aplicar(); });
+    $('restablecer').addEventListener('click', () => { cfg = { ...BASE }; logoUrl = null; $('logo').value = ''; sincronizarControles(); aplicar(); });
 
     // Controles de la pantalla simulada.
     for (let v = 0; v <= 4; v++) {
